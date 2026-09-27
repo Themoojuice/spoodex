@@ -1,4 +1,4 @@
-# SPOODEX — handover (as of 2026-09-27, v1.4)
+# SPOODEX — handover (as of 2026-09-28, v1.5)
 
 Read this before touching the code. It covers what exists, how it's wired, how to test and ship,
 the owner's preferences, and a spec for the next piece of work: the **regional ladder** and the
@@ -58,7 +58,13 @@ Search for `/* ---------------- <name>` to jump to a section. Line numbers drift
 | compare | `viewCompare`, `lineageRows`, `loadCompare(login)` | |
 | regional ladder | `loadLadder(force)`, `ladderRows`, `viewLadder`, `myStanding`, `starsIn`, `idPrestige` | One `observers` call + one in-place `taxonomy` call per person; streams rows, resumable, 24 h cache |
 | crew mode | `setCrew(list)`, `loadCrew(force)`, `crewMembers`, `viewCrew` | You + ≤5 others; one all-time `taxonomy` call (`captive=false`) each; "you" comes from local `S.M` |
-| title card | `openTitleCard`, `drawTitleCard(cv, tiles, photosOnly)`, `cardPhotos`, `cardExport` | 1080×1350 canvas; see §9 on CORS |
+| share of the record | `recordShare(pid)`, `shareHtml`, `shareLine(g)`, `inPlace`, `pctTxt` | No extra calls: your verifiable in-place obs vs `S.ref` counts (`ref.t` = family total) |
+| pioneer badges | `pioneerTargets`, `drainPioneer`, `myPioneers`, `pioneerHtml`, `pioneerLine` | Earliest verifiable record per (genus, place): your countries/states + LGA of your first record. ~180 calls for the owner, 30-day cache, runs while Profile is open |
+| spood report | `loadReport(force)`, `viewReport` | "This week" tab: state taxonomy/observers/most-faved with `d1` (7 days) + a per-person weekly mini-ladder; 6 h cache. "First on iNat" = week count ≥ freshly-refreshed all-time count |
+| cards (shared) | `cardKit(cv)`, `cardPhotos`, `mountCard(el, draw, name)`, `cardBlob`, `cardExport`, `rarestFirst` | 1080×1350 canvas kit; see §9 on CORS |
+| title card | `drawTitleCard`, `openTitleCard` | |
+| wrapped | `wrappedData(Y)`, `wrappedExtras` (most-faved obs + state total for the year), `openWrapped`, `showWrapped`, `drawWrappedCard` | 6-slide modal, last slide is a downloadable card |
+| crew feed | in `loadCrew`: diff vs previous snapshot → `S.crew.feed`; `row.wk` = uploads in last 7 days (`created_d1`); `crewFeedHtml`, `crewUnseen` (tab dot) | Crew refreshes every 6 h, also in the background after each sync |
 | boot / flows | `loadUser`, `updateUrl`, `copyLink`, `doSync`, `onboard`, `enterApp`, `startGuest`, `settings`, global click/submit/change handlers, `boot()` | |
 
 **UI event wiring**: one delegated `click` listener on `document` dispatches on data attributes:
@@ -76,7 +82,7 @@ Forms use `data-form` (`compare`, `placeSearch`, `crew`) on a delegated `submit`
 `tab`, `M` (model), `cmp` (`{login, save, M, loading, log, error}`), `pendingVs`.
 
 localStorage keys: `spoodex:u:<login lowercased>`, `nodes`, `places`, `info`, `ref`, `observers`,
-`pheno`, `prefs` (now also `ladderScope`, `ladderSort`), `cmp` (only the most recent rival is cached), `ladder` (`'p<place>'` → `{ts, n, icons, queue, rows:[{login, obs, g:[ids], s:[ids]}]}`, ≤4 places), `crew` (`{logins, data:{login→{ts, obs, g:{id:obs}, s:{id:obs}, err?}}}`), `lastLogin`.
+`pheno`, `prefs` (now also `ladderScope`, `ladderSort`), `cmp` (only the most recent rival is cached), `ladder` (`'p<place>'` → `{ts, n, icons, queue, rows:[{login, obs, g:[ids], s:[ids]}]}`, ≤4 places), `crew` (`{logins, data:{login→{ts, obs, g:{id:obs}, s:{id:obs}, wk:{obs,g[]}, err?}}, feed:[{ts, since, login, g[], s[]}], seen}`), `pioneer` (`'gid:pid'` → `{ts, u, d, id}`), `report` (one cached report), `lastLogin`.
 
 Per-user save `S.u`: `obs` (id → trimmed obs, see `trimObs`), `meta {lastSync,lastFull}`, `seen` (genus
 ids already revealed), `scans` (point key → `{ts,g:[{id,c}]}`), `active` (same, last 30 days, with `d1`),
@@ -190,6 +196,9 @@ the session's system reminder. Commit only when the owner asks, or as part of a 
 ---
 
 ## 10. NEXT: regional ladder + the rest of the envy engine
+
+v1.5 added share of the record, pioneer badges, the weekly Spood Report, Wrapped and the crew feed (ideas 3, 4, 7, 8, 9 of the 2026-09-27 list;
+not yet built: 1 "often confused with" via `/identifications/similar_species` ✅, 2 identifier track ✅, 5 monthly forecast, 6 hotspots, 10 ID bounties).
 
 Owner-approved roadmap order: **regional ladder**, then faster imports (v2 API `fields=`) + IndexedDB,
 then share cards, crew mode, and curated habitat sets / field notes.

@@ -113,6 +113,23 @@ table.matrix td.have, table.matrix th.have { text-align:center; color:var(--lit)
 table.matrix tr.solo td { background:var(--panel2); }
 table.matrix tr.solo td:last-child { color:var(--accent); font-weight:600; }
 table.matrix tr.all td:last-child { color:var(--lit); }
+.report .mast { font:400 44px/1.1 'Special Elite', 'Courier New', monospace; text-align:center; border-bottom:3px double var(--line); padding-bottom:6px; }
+.report .dateline { text-align:center; font-size:12px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin:6px 0 10px; }
+.report .headline { justify-content:space-around; text-align:center; }
+.report .headline b { display:block; font:600 34px var(--head); color:var(--accent); }
+.report .headline span { font-size:12px; color:var(--muted); letter-spacing:.1em; text-transform:uppercase; }
+p.story { margin:0 0 8px; padding-bottom:8px; border-bottom:1px dashed var(--dim); }
+.wslide { min-height:400px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:20px 8px; }
+.wslide .kick { letter-spacing:.3em; font-size:12px; color:var(--muted); }
+.wslide .huge { font:600 76px/1.05 var(--head); color:var(--accent); margin:10px 0; }
+.wslide .huge .unit { font-size:26px; display:block; color:var(--ink); font-weight:400; }
+.wslide .line { font-size:16px; margin:4px 0; }
+.wslide .mosaic.wide { grid-template-columns:repeat(3,1fr); aspect-ratio:3/2; max-width:330px; width:100%; }
+.wslide .favpic { display:block; width:220px; margin:10px auto 0; }
+.wslide .cardcanvas { max-width:360px; }
+.wdots { display:flex; gap:6px; } .wdots i { width:8px; height:8px; border-radius:50%; background:var(--dim); } .wdots i.on { background:var(--accent); }
+.feed { padding:6px 0; border-bottom:1px dashed var(--dim); }
+nav.tabs button .news { color:var(--accent); font-size:10px; vertical-align:super; }
 .cardcanvas { width:100%; max-width:540px; height:auto; display:block; margin:0 auto 12px; border-radius:4px; box-shadow:0 6px 20px rgba(0,0,0,.25); }
 @media (max-width:600px) { .vs { grid-template-columns:1fr; } .vsmark { text-align:center; } .mosaic { max-width:150px; } }
 
@@ -507,20 +524,22 @@ function scopeLabel(scope) {
   const id = scopePlace(scope);
   return id ? (S.places[id]?.n || 'home region') : 'the world';
 }
-async function ensureRef(scope) {
+async function ensureRef(scope, force = false) {
   const pid = scopePlace(scope);
   const key = pid ? 'p' + pid : 'world';
   const cur = S.ref[key];
-  if (cur && cur.s && Date.now() - cur.ts < REF_TTL) return cur;
+  if (!force && cur && cur.s && cur.t != null && Date.now() - cur.ts < REF_TTL) return cur;
   const d = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, place_id:pid, verifiable:true });
   const g = {}, s = {};
+  let t = 0;
   d.results.forEach(r => {
     addNode(r);
     const c = r.descendant_obs_count || r.count || 0;
     if (r.rank === 'genus') g[r.id] = c;
     if (r.rank === 'species') s[r.id] = c;
+    if (r.id === SALTICIDAE) t = c;
   });
-  S.ref[key] = { ts:Date.now(), g, s };
+  S.ref[key] = { ts:Date.now(), g, s, t };
   saveShared();
   return S.ref[key];
 }
@@ -821,6 +840,7 @@ const TABS = [
   { k:'dex', label:'SPOODEX' },
   { k:'tree', label:'Lineage tree', tier:2 },
   { k:'map', label:'Map & scanner' },
+  { k:'report', label:'This week' },
   { k:'compare', label:'Compare' },
   { k:'ladder', label:'Ladder' },
   { k:'crew', label:'Crew' },
@@ -837,14 +857,17 @@ function render() {
   $('#whoami').textContent = who();
   $('#shareBtn').classList.toggle('hidden', isGuest());
   $('#lvlBadge').textContent = `LEVEL ${M.G.size}`;
-  $('#tabs').innerHTML = TABS.map(t => `<button data-tab="${t.k}" class="${S.tab===t.k?'on':''}">${t.label}${t.tier && !moduleOn(t.tier) ? ' <span class="lock">🔒</span>' : ''}</button>`).join('');
+  $('#tabs').innerHTML = TABS.map(t => `<button data-tab="${t.k}" class="${S.tab===t.k?'on':''}">${t.label}${t.tier && !moduleOn(t.tier) ? ' <span class="lock">🔒</span>' : ''}${t.k === 'crew' && S.tab !== 'crew' && crewUnseen() ? ' <span class="news">●</span>' : ''}</button>`).join('');
   const v = $('#view');
   const locked = TABS.find(t => t.k === S.tab)?.tier;
   if (locked && !moduleOn(locked)) { v.innerHTML = lockedPlate(locked); return; }
   // Ladder and crew fetch lazily when opened (errors stop the auto-retry until the player asks again)
   if (S.tab === 'ladder' && !ladderBusy && !ladderErr && ladderKey() && ladderNeedsLoad(S.ladder[ladderKey()])) loadLadder();
   if (S.tab === 'crew' && !crewBusy && !crewErr && crewNeedsLoad()) loadCrew();
-  v.innerHTML = ({ profile:viewProfile, dex:viewDex, tree:viewTree, map:viewMapShell, quests:viewQuests, compare:viewCompare, ladder:viewLadder, crew:viewCrew })[S.tab]();
+  if (S.tab === 'report' && !reportBusy && !reportErr && reportNeedsLoad()) loadReport();
+  if (S.tab === 'profile' && !pioneerBusy && !isGuest()) setTimeout(drainPioneer, 0);
+  if (S.tab === 'crew') { S.crew.seen = Date.now(); saveCrew(); }
+  v.innerHTML = ({ profile:viewProfile, dex:viewDex, tree:viewTree, map:viewMapShell, quests:viewQuests, compare:viewCompare, ladder:viewLadder, crew:viewCrew, report:viewReport })[S.tab]();
   if (S.tab === 'map') initMap();
 }
 function lockedPlate(t) {
@@ -880,7 +903,7 @@ function viewProfile() {
       <div class="muted small">${esc(who().toUpperCase())}'S SPOODEX</div>
       <h1 style="font-size:34px;margin:4px 0">SPOOD NATURALIST — LEVEL ${M.G.size}</h1>
       <div class="hand">${esc(generatedTitle(M))}</div>
-      ${isGuest() ? '' : '<p><button data-act="card">🪪 Make my title card</button></p>'}
+      ${isGuest() ? '' : `<p class="row" style="gap:8px"><button data-act="card">🪪 Title card</button>${M.fieldDays.length ? `<button data-act="wrapped">🎁 ${esc(wrappedYears()[0])} in spoods</button>` : ''}</p>`}
       <p><b>${M.G.size}</b> Salticidae genera recorded${sc.ref ? ` · <b>${sc.found} / ${sc.inScope.length}</b> of those on iNat in ${esc(scopeLabel(S.prefs.scope))}` : ''}</p>
       <div class="kv">
         <dt>Observations</dt><dd>${fmt(M.obs.length)}</dd>
@@ -926,6 +949,10 @@ function viewProfile() {
         ${rare.map(x => `<div><a href="#" data-genus="${x.g.id}"><i>${esc(x.g.name)}</i></a> <span class="small muted">${fmt(x.r.count)} records</span></div>`).join('')}` : ''}
     </div>
   </div>
+  ${isGuest() ? '' : `<div class="grid2" style="margin-top:16px">
+    <div class="panel"><h2>Your share of the record</h2>${shareHtml()}</div>
+    <div class="panel"><h2>Pioneer badges</h2><div data-pioneer>${pioneerHtml()}</div></div>
+  </div>`}
   <div class="panel" style="margin-top:16px">
     <h2>New genera per year</h2>
     <div class="row" style="align-items:flex-end;gap:6px;height:120px">
@@ -1341,6 +1368,7 @@ async function openGenus(id) {
         <dt>First recorded</dt><dd>${esc(g.first.d)}${firstPlace ? ' · ' + esc(firstPlace) : ''}</dd>
         <dt>Latest</dt><dd>${esc(g.last.d)}</dd>
         <dt>Best record</dt><dd>${g.f.rg ? 'Research Grade' : g.f.supported ? 'Community-supported genus' : 'Your ID (not yet community-supported)'}</dd>
+        ${shareLine(g)}${pioneerLine(id)}
         <dt>Your ${ordinal(g.discIndex)} genus</dt><dd></dd>
       </dl></div>
       <div><h3>Mastery challenges</h3><ul class="checks">${CRITERIA.map(c => `<li class="${g.f[c.k]?'done':''}">${g.f[c.k]?'☑':'☐'} ${c.icon} ${esc(c.label)}${g.f[c.k] ? '' : fixIt(g, c.k)}</li>`).join('')}</ul>
@@ -1664,8 +1692,8 @@ function viewLadder() {
 }
 
 /* ---------------- crew mode: you plus up to five others, genus by genus ---------------- */
-const CREW_MAX = 5, CREW_TTL = 864e5;
-S.crew = store.get('crew', { logins:[], data:{} });   // data: lowercased login -> {ts, login, obs, g:{genusId:obs}, s:{speciesId:obs}, err?}
+const CREW_MAX = 5, CREW_TTL = 6 * 3600e3, CREW_FEED = 40;
+S.crew = store.get('crew', { logins:[], data:{} });   // data: lowercased login -> {ts, login, obs, g:{genusId:obs}, s:{speciesId:obs}, wk:{obs, g:[ids]}, err?}; feed:[events]; seen: ts
 let crewBusy = false, crewErr = null;
 const saveCrew = () => store.set('crew', S.crew);
 function setCrew(list) {
@@ -1697,13 +1725,39 @@ async function loadCrew(force = false) {
       try {
         const d = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, user_login:l, captive:false });
         d.results.forEach(t => { addNode(t); const c = t.descendant_obs_count || 0; if (t.rank === 'genus') row.g[t.id] = c; else if (t.rank === 'species') row.s[t.id] = c; else if (t.id === SALTICIDAE) row.obs = c; });
+        // uploads in the last 7 days (created, not observed, so late uploads of old trips count as news)
+        const wk = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, user_login:l, captive:false, created_d1:new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10) });
+        row.wk = { obs:0, g:[] };
+        wk.results.forEach(t => { addNode(t); if (t.rank === 'genus') row.wk.g.push(t.id); else if (t.id === SALTICIDAE) row.wk.obs = t.descendant_obs_count || 0; });
       } catch (e) { if (!/returned 422/.test(e.message)) throw e; row.err = 'No iNaturalist user by that name.'; }
       if (!S.crew.logins.includes(l)) continue;   // removed while loading
+      // Feed: genera/species that appeared in their collection since we last looked
+      if (cur && !cur.err && !row.err) {
+        const add = (a, b) => Object.keys(a).filter(id => !(id in b)).map(Number);
+        const g = add(row.g, cur.g), s = add(row.s, cur.s);
+        if (g.length || s.length) S.crew.feed = [...(S.crew.feed || []), { ts:row.ts, since:cur.ts, login:l, g, s }].slice(-CREW_FEED);
+      }
       S.crew.data[k] = row; saveCrew(); redraw();
     }
     saveShared();
   } catch (e) { crewErr = e.message; }
   crewBusy = false; redraw();
+}
+const crewUnseen = () => (S.crew.feed || []).some(e => e.ts > (S.crew.seen || 0) && S.crew.logins.includes(e.login));
+function crewFeedHtml(ready) {
+  const M = S.M, feed = (S.crew.feed || []).filter(e => S.crew.logins.includes(e.login)).slice(-12).reverse();
+  const names = ids => ids.slice(0, 6).map(gLink).join(', ') + (ids.length > 6 ? ` and ${ids.length - 6} more` : '');
+  const day = ts => new Date(ts).toLocaleDateString(undefined, { day:'numeric', month:'short' });
+  const ev = e => { const miss = isGuest() ? [] : e.g.filter(id => !M.G.has(id));
+    return `<div class="feed">🆕 <b>${esc(e.login)}</b> added ${e.g.length ? `${e.g.length} ${e.g.length === 1 ? 'genus' : 'genera'} (${names(e.g)})` : ''}${e.g.length && e.s.length ? ' and ' : ''}${e.s.length ? `${e.s.length} species` : ''} to their collection${miss.length ? ` <span class="small">· ${miss.length < e.g.length ? `${miss.length} not` : e.g.length === 1 ? 'not' : 'none of them'} in yours 😤</span>` : ''}
+      <div class="small muted">spotted between ${day(e.since)} and ${day(e.ts)}</div></div>`; };
+  const others = ready.filter(m => !m.me && m.wk);
+  const busy = others.filter(m => m.wk.obs).sort((a,b) => b.wk.obs - a.wk.obs), quiet = others.filter(m => !m.wk.obs);
+  return `<div class="panel" style="margin-bottom:16px"><h2>Crew feed</h2>
+    ${feed.map(ev).join('') || '<p class="small muted">Nothing new in anyone\'s collection yet. SPOODEX checks the crew every 6 hours and posts new genera and species here.</p>'}
+    <h3 style="margin-top:12px">Uploads in the last 7 days</h3>
+    ${busy.map(m => `<div class="small">📷 <b>${esc(m.login)}</b>: ${m.wk.obs} salticid record${m.wk.obs === 1 ? '' : 's'}${m.wk.g.length ? ` across ${names(m.wk.g)}` : ''}</div>`).join('') || '<p class="small muted">A quiet week for the crew.</p>'}
+    ${quiet.length ? `<p class="small muted">No uploads: ${quiet.map(m => esc(m.login)).join(', ')}</p>` : ''}</div>`;
 }
 function crewMembers() {
   const M = S.M, out = [];
@@ -1715,7 +1769,7 @@ function crewMembers() {
 function viewCrew() {
   const scope = S.prefs.scope, where = esc(scopeLabel(scope));
   const members = crewMembers(), ready = members.filter(m => !m.pending && !m.err);
-  const form = `<div class="panel" style="margin-bottom:16px"><h2>Crew</h2>
+  let form = `<div class="panel" style="margin-bottom:16px"><h2>Crew</h2>
     <p class="muted small">Line up ${isGuest() ? '' : 'yourself and '}up to ${CREW_MAX} other naturalists: who has which genus, what only one of you has, and what none of you has found yet. Public iNaturalist records, all time and everywhere, captive/cultivated excluded.</p>
     <form class="row" data-form="crew"><input name="logins" value="${esc(S.crew.logins.join(', '))}" placeholder="iNaturalist usernames, separated by commas" autocomplete="off" style="flex:1;min-width:220px"><button class="primary" ${crewBusy ? 'disabled' : ''}>Set crew</button></form>
     ${S.crew.logins.length ? `<div class="row small" style="margin-top:8px;gap:6px">${S.crew.logins.map(l => `<span class="chip">${esc(l)} <span data-act="crewDel" data-v="${esc(l)}" title="Remove from crew" style="cursor:pointer">✕</span></span>`).join('')}
@@ -1723,6 +1777,7 @@ function viewCrew() {
     ${crewBusy ? `<p class="small">Reading crew records… (about a second per person)</p>` : ''}
     ${crewErr ? `<p>${esc(crewErr)} <button data-act="crewRefresh">Try again</button></p>` : ''}
     ${members.filter(m => m.err).map(m => `<p class="small">⚠ ${esc(m.login)}: ${esc(m.err)}</p>`).join('')}</div>`;
+  if (ready.some(m => !m.me)) form += crewFeedHtml(ready);
   if (ready.length < 2) return form + (S.crew.logins.length ? '' : `<p class="muted">Add at least ${isGuest() ? 'two naturalists' : 'one other naturalist'}. Tip: the <a href="#" data-tab="ladder">Ladder</a> has a “+ Crew” button on every row.</p>`);
 
   const holders = new Map(), sHolders = new Map();
@@ -1768,9 +1823,201 @@ function viewCrew() {
   <div class="panel tablewrap"><table class="cmp matrix"><tr><th>Genus</th>${ready.map(m => `<th class="have">${esc(m.login)}</th>`).join('')}<th class="n"></th></tr>${matrix}</table></div>`;
 }
 
-/* ---------------- title card: a shareable picture of your collection ---------------- */
+/* ---------------- share of the record: your records as a fraction of iNat's for a region (no extra calls) ---------------- */
+const inPlace = (o, pid) => o.q !== 'casual' && o.pl.includes(pid);
+const gLink = id => `<a href="#" data-genus="${id}"><i>${esc(S.nodes[id]?.n || '?')}</i></a>`;
+const pctTxt = p => p >= .995 ? '100%' : p >= .1 ? Math.round(p * 100) + '%' : p >= .01 ? (p * 100).toFixed(1) + '%' : p > 0 ? '<1%' : '0%';
+function recordShare(pid) {
+  const ref = pid && S.ref['p' + pid], M = S.M; if (!ref) return null;
+  // Regional totals can be a few days older than your records, so never let "all" fall below "yours"
+  const rows = M.genera.map(g => { const mine = g.obs.filter(o => inPlace(o, pid)).length; if (!mine) return null;
+    const all = Math.max(mine, ref.g[g.id] || 0); return { g, mine, all, pc:mine / all }; }).filter(Boolean)
+    .sort((a,b) => b.pc - a.pc || b.mine - a.mine);
+  const mine = M.obs.filter(o => inPlace(o, pid)).length;
+  const total = Math.max(mine, ref.t || Object.values(ref.g).reduce((a,b) => a + b, 0));
+  let spSole = 0;
+  M.S.forEach(sp => { const m = sp.obs.filter(o => inPlace(o, pid)).length; if (m && ref.s && m >= (ref.s[sp.id] || 0)) spSole++; });
+  return { rows, mine, total, pc:total ? mine / total : 0, sole:rows.filter(r => r.mine >= r.all), spSole, where:S.places[pid]?.n || 'your region' };
+}
+function shareHtml() {
+  const M = S.M, st = M.home.state, co = M.home.country;
+  const A = recordShare(st || co);
+  if (!A) return '<p class="muted small">Waiting for regional totals… (set a home base if you have no records yet)</p>';
+  const B = co && st && co !== st ? recordShare(co) : null, where = esc(A.where);
+  const partial = A.rows.filter(r => r.mine < r.all).slice(0, 8);
+  return `<div class="envy"><div class="big">You've made <b>${pctTxt(A.pc)}</b> of all verifiable salticid records on iNat in ${where}.</div>
+      <div class="small muted">${fmt(A.mine)} of ${fmt(A.total)}${B ? ` · and ${pctTxt(B.pc)} of ${esc(B.where)}'s (${fmt(B.mine)} of ${fmt(B.total)})` : ''}</div></div>
+    ${A.sole.length ? `<p>🗝 Every ${where} record of ${A.sole.length === 1 ? 'this genus' : `these ${A.sole.length} genera`} is yours: ${A.sole.map(r => gLink(r.g.id)).join(', ')}</p>` : ''}
+    ${A.spSole ? `<p class="small">…plus ${A.spSole} species where every ${where} record is yours.</p>` : ''}
+    ${partial.length ? `<h3 style="margin-top:10px">Biggest shares in ${where}</h3>
+      ${partial.map(r => `<div class="row" style="gap:8px"><a href="#" data-genus="${r.g.id}" style="min-width:130px"><i>${esc(r.g.name)}</i></a><div class="bar"><i style="width:${Math.round(r.pc * 100)}%"></i></div><span class="small">${pctTxt(r.pc)} <span class="muted">(${r.mine} of ${fmt(r.all)})</span></span></div>`).join('')}` : ''}
+    <p class="small muted">Your verifiable records as a share of every verifiable iNaturalist record in the region. Regional totals refresh weekly.</p>`;
+}
+function shareLine(g) {
+  const pid = S.M.home.state || S.M.home.country, ref = pid && S.ref['p' + pid]; if (!ref) return '';
+  const mine = g.obs.filter(o => inPlace(o, pid)).length; if (!mine) return '';
+  const all = Math.max(mine, ref.g[g.id] || 0);
+  return `<dt>Share of the record</dt><dd>${mine >= all ? `🗝 every one of ${esc(S.places[pid]?.n)}'s ${fmt(all)} iNat record${all === 1 ? '' : 's'}` : `${pctTxt(mine / all)} of ${esc(S.places[pid]?.n)}'s iNat records (${mine} of ${fmt(all)})`}</dd>`;
+}
+
+/* ---------------- pioneer badges: is your record the earliest verifiable one on iNat in a place? ---------------- */
+const PIONEER_TTL = 30 * 864e5;
+S.pioneer = store.get('pioneer', {});   // `${genus}:${place}` -> {ts, u:login of earliest record, d:date observed, id:observation}
+let pioneerBusy = false;
+// Every country and state where you've recorded the genus, plus the local area (LGA/county) of your first record of it
+function pioneerTargets() {
+  if (isGuest() || !S.M) return [];
+  const out = [];
+  for (const g of S.M.genera) {
+    const ps = [...g.places].filter(p => [0, 10].includes(S.places[p]?.l));
+    const local = g.first.pl.find(p => S.places[p]?.l === 20);
+    if (local) ps.push(local);
+    ps.forEach(p => out.push(`${g.id}:${p}`));
+  }
+  return out;
+}
+async function drainPioneer() {
+  if (pioneerBusy || isGuest()) return;
+  pioneerBusy = true;
+  try {
+    for (const k of pioneerTargets()) {
+      const cur = S.pioneer[k]; if (cur && Date.now() - cur.ts < PIONEER_TTL) continue;
+      const [gid, pid] = k.split(':').map(Number);
+      const d = await api('/observations', { taxon_id:gid, place_id:pid, verifiable:true, order_by:'observed_on', order:'asc', per_page:1 });
+      const o = d.results[0];
+      S.pioneer[k] = { ts:Date.now(), u:o?.user?.login || '', d:o?.observed_on || '', id:o?.id || 0 };
+      store.set('pioneer', S.pioneer);
+      pioneerUpdated();
+    }
+  } catch (e) { console.warn(e); }
+  pioneerBusy = false;
+  pioneerUpdated();
+}
+function myPioneers() {
+  return pioneerTargets().map(k => { const p = S.pioneer[k]; if (!p || !isMe(p.u)) return null;
+    const [gid, pid] = k.split(':').map(Number); return { gid, pid, lvl:S.places[pid]?.l, d:p.d, id:p.id }; }).filter(Boolean);
+}
+function pioneerHtml() {
+  const t = pioneerTargets(), done = t.filter(k => S.pioneer[k]).length, mine = myPioneers();
+  const levels = [[0, '🌏', 'National firsts'], [10, '🗺', 'State firsts'], [20, '📍', 'Local firsts']];
+  const where = p => esc(S.places[p.pid]?.n || '?');
+  return `${done < t.length ? `<p class="small">Checking iNat's earliest records… ${done} of ${t.length}${pioneerBusy ? ` (about ${Math.ceil((t.length - done) * 1.1 / 60)} min left)` : ' (resumes while this page is open)'}</p>` : ''}
+    ${mine.length ? `<div class="envy"><div class="big"><b>${mine.length}</b> pioneer badge${mine.length === 1 ? '' : 's'}</div></div>` : ''}
+    ${levels.map(([l, icon, label]) => { const xs = mine.filter(p => p.lvl === l).sort((a,b) => (a.d || '').localeCompare(b.d || ''));
+      return xs.length ? `<h3 style="margin-top:10px">${icon} ${label} (${xs.length})</h3>${xs.map(p => `<div class="small">${gLink(p.gid)} in ${where(p)} · <a href="https://www.inaturalist.org/observations/${p.id}" target="_blank" rel="noopener">${esc(p.d)} ↗</a></div>`).join('')}` : ''; }).join('')}
+    ${!mine.length && done ? '<p class="muted">No firsts so far. Somewhere nearby is a genus nobody has put on iNat yet.</p>' : ''}
+    <p class="small muted">A pioneer badge means your record is the earliest verifiable iNaturalist record of that genus in the place, by date observed. It's about iNat's record, not who first discovered it.</p>`;
+}
+function pioneerLine(gid) {
+  const xs = pioneerTargets().filter(k => k.startsWith(gid + ':')).map(k => ({ pid:+k.split(':')[1], p:S.pioneer[k] })).filter(x => x.p && x.p.u);
+  if (!xs.length) return '';
+  return `<dt>Earliest on iNat</dt><dd>${xs.map(x => `${isMe(x.p.u) ? '🏅 <b>you</b>' : esc(x.p.u)} in ${esc(S.places[x.pid]?.n)} (${esc(x.p.d)})`).join('<br>')}</dd>`;
+}
+function pioneerUpdated() { document.querySelectorAll('[data-pioneer]').forEach(el => el.innerHTML = pioneerHtml()); }
+
+/* ---------------- the spood report: this week's salticid news for your state ---------------- */
+const REPORT_TTL = 6 * 3600e3, REPORT_DAYS = 7, REPORT_TOP = 8;
+S.report = store.get('report', null);   // {pid, ts, d1, tax{t,g,s}, obsv{n, top[]}, picks[], wk{login:[genus ids]}, wkq[logins still to read]}
+let reportBusy = false, reportErr = null;
+const reportPlace = () => S.M?.home.state || S.M?.home.country || null;
+const reportNeedsLoad = () => { const R = S.report; return !R || R.pid !== reportPlace() || Date.now() - R.ts > REPORT_TTL || !R.picks || R.wkq?.length; };
+async function loadReport(force = false) {
+  const pid = reportPlace(); if (!pid || reportBusy) return;
+  let R = S.report;
+  if (force || !R || R.pid !== pid || Date.now() - R.ts > REPORT_TTL)
+    R = S.report = { pid, ts:Date.now(), d1:new Date(Date.now() - REPORT_DAYS * 864e5).toISOString().slice(0, 10), tax:null, obsv:null, picks:null, wk:{}, wkq:null };
+  reportBusy = true; reportErr = null;
+  const redraw = () => { store.set('report', S.report); if (S.tab === 'report') render(); };
+  const base = { taxon_id:SALTICIDAE, place_id:pid, verifiable:true, d1:R.d1 };
+  try {
+    // All-time totals must be as fresh as the week's to call a genus "first ever"
+    const ref = S.ref['p' + pid];
+    if (!ref || Date.now() - ref.ts > REPORT_TTL) await ensureRef('state', true);
+    if (!R.tax) {
+      const d = await api('/observations/taxonomy', base), t = { t:0, g:{}, s:{} };
+      d.results.forEach(x => { addNode(x); const c = x.descendant_obs_count || 0; if (x.rank === 'genus') t.g[x.id] = c; else if (x.rank === 'species') t.s[x.id] = c; else if (x.id === SALTICIDAE) t.t = c; });
+      R.tax = t; redraw();
+    }
+    if (!R.obsv) {
+      const d = await api('/observations/observers', { ...base, per_page:REPORT_TOP });
+      R.obsv = { n:d.total_results, top:d.results.map(r => ({ login:r.user.login, icon:r.user.icon_url || '', obs:r.observation_count })) };
+      R.wkq = R.obsv.top.map(r => r.login);
+      if (!isGuest() && S.login && !R.wkq.some(isMe)) R.wkq.push(S.login);
+      redraw();
+    }
+    if (!R.picks) {
+      const d = await api('/observations', { ...base, photos:true, order_by:'votes', order:'desc', per_page:6 });
+      R.picks = d.results.map(o => { const t = o.taxon || {}; addNode(t);
+        return { id:o.id, u:o.user?.login || '', n:t.name || 'Salticidae', r:t.rank || '', ph:o.photos?.[0]?.url || '', f:o.faves_count || 0, gid:genusOf([...(t.ancestor_ids || []), t.id]) }; });
+      redraw();
+    }
+    while (R.wkq?.length && S.report === R) {
+      const l = R.wkq[0];
+      try {
+        const d = await api('/observations/taxonomy', { ...base, user_login:l });
+        R.wk[l] = d.results.filter(x => x.rank === 'genus').map(x => x.id);
+      } catch (e) { if (!/returned 4\d\d/.test(e.message)) throw e; }
+      R.wkq.shift(); redraw();
+    }
+    saveShared();
+  } catch (e) { reportErr = e.message; }
+  reportBusy = false;
+  if (S.tab === 'report') render();
+}
+function viewReport() {
+  const pid = reportPlace();
+  if (!pid) return `<div class="panel"><h2>The Spood Report</h2><p>The report covers your home state. Record a salticid on iNaturalist, or set a home base on the map.</p><button class="primary" data-tab="map">🏠 Set a home base</button></div>`;
+  const R = S.report && S.report.pid === pid ? S.report : null, where = esc(S.places[pid]?.n || 'your region'), M = S.M;
+  const dfmt = s => new Date(s + 'T12:00:00').toLocaleDateString(undefined, { day:'numeric', month:'short' });
+  const mast = `<div class="panel report" style="margin-bottom:14px"><div class="mast">The Spood Report</div>
+    <div class="dateline">${where} · ${R ? `${dfmt(R.d1)} – ${new Date(R.ts).toLocaleDateString(undefined, { day:'numeric', month:'short' })}` : 'this week'} · jumping spiders on iNaturalist</div>
+    ${R?.tax ? `<div class="row headline"><div><b>${fmt(R.tax.t)}</b><span>records</span></div><div><b>${Object.keys(R.tax.g).length}</b><span>genera</span></div><div><b>${R.obsv ? fmt(R.obsv.n) : '…'}</b><span>observers</span></div></div>` : ''}
+    ${reportBusy ? '<p class="small">Gathering this week\'s records… stories appear as they arrive.</p>' : ''}
+    ${reportErr ? `<p>${esc(reportErr)} <button data-act="reportRefresh">Try again</button></p>` : ''}
+    ${R && !reportBusy ? `<p class="small muted" style="margin:6px 0 0">Verifiable records observed in the last ${REPORT_DAYS} days, compiled ${esc(new Date(R.ts).toLocaleString())}. <a href="#" data-act="reportRefresh">Refresh</a></p>` : ''}</div>`;
+  if (!R?.tax) return mast;
+  const ref = S.ref['p' + pid], scope = 'state';
+  const wkG = Object.entries(R.tax.g).map(([id, c]) => ({ id:+id, c, all:ref?.g[id] || 0 })).sort((a,b) => b.c - a.c);
+  // Every record of the genus in the region was observed this week = first on iNat there
+  const firsts = ref ? wkG.filter(x => x.c >= x.all) : [];
+  const rare = wkG.filter(x => !firsts.includes(x) && starsIn(x.id, 'g', scope) === 3).slice(0, 5);
+  const mine = R.wk[Object.keys(R.wk).find(isMe)] || null;
+  const newToMe = M.genera.filter(g => (g.first.d || '') >= R.d1);
+  const stories = [];
+  firsts.forEach(x => stories.push(`🆕 <b>First on iNat in ${where}:</b> ${gLink(x.id)}, ${x.c} record${x.c === 1 ? '' : 's'} this week.`));
+  if (wkG[0]) stories.push(`🏆 <b>Genus of the week:</b> ${gLink(wkG[0].id)} with ${wkG[0].c} records${wkG[1] ? `, ahead of ${gLink(wkG[1].id)} (${wkG[1].c})` : ''}.`);
+  rare.forEach(x => stories.push(`★★★ <b>Rare sighting:</b> ${gLink(x.id)}, only ${fmt(x.all)} ${where} record${x.all === 1 ? '' : 's'} ever, ${x.c} of them this week.`));
+  if (!isGuest()) {
+    if (newToMe.length) stories.push(`🎉 <b>You unlocked</b> ${newToMe.map(g => gLink(g.id)).join(', ')} this week.`);
+    if (mine) stories.push(mine.length ? `🕷 <b>Your week:</b> ${mine.length} ${mine.length === 1 ? 'genus' : 'genera'} recorded in ${where}.` : `🕷 <b>Your week:</b> no ${where} records yet. There's still time.`);
+  }
+  const top = R.obsv?.top || [];
+  const rows = top.map(r => ({ ...r, g:R.wk[r.login] }));
+  if (!isGuest() && S.login && !rows.some(r => isMe(r.login)) && R.wk[S.login]) rows.push({ login:S.login, obs:null, g:R.wk[S.login] });
+  const picks = (R.picks || []).filter(p => p.ph);
+  const faved = picks.some(p => p.f);
+  return mast + `
+  <div class="grid2">
+    <div class="panel"><h2>Headlines</h2>${stories.map(s => `<p class="story">${s}</p>`).join('') || '<p class="muted">A quiet week in the field.</p>'}</div>
+    <div class="panel"><h2>Top spooders this week</h2>
+      <table class="ladder">${rows.map((r, i) => `<tr class="${isMe(r.login) ? 'me' : ''}"><td class="rk">${r.obs == null ? '–' : i < 3 ? ['🥇','🥈','🥉'][i] : '#' + (i + 1)}</td>
+        <td class="who"><span class="avatar" style="background-image:url('${esc(r.icon || '')}')"></span>${esc(r.login)}</td>
+        <td class="n">${r.obs == null ? '' : fmt(r.obs) + ' rec.'}</td><td class="n">${r.g ? `${r.g.length} gen.` : '…'}</td></tr>`).join('')}</table>
+      <p class="small muted">Ranked by records observed this week; genera counted as they load.</p></div>
+  </div>
+  ${picks.length ? `<h2 style="margin-top:22px">${faved ? 'Picks of the week' : 'Fresh from the field'}</h2>
+    <p class="small muted">${faved ? 'Most-faved records observed this week.' : 'Recent records with photos.'} Photos © their observers; tap to see the record on iNaturalist.</p>
+    <div class="jewels">${picks.map(p => `<a class="jewel" href="https://www.inaturalist.org/observations/${p.id}" target="_blank" rel="noopener" style="background-image:url('${esc(photoSize(p.ph, 'medium'))}')">
+      <div class="lab"><div style="font-family:var(--head);font-size:17px;${['genus','species','subspecies'].includes(p.r) ? 'font-style:italic' : ''}">${esc(p.n)}</div>
+      <div class="small">© ${esc(p.u)}${p.f ? ` · ♥ ${p.f}` : ''}</div></div></a>`).join('')}</div>` : ''}
+  <h2 style="margin-top:22px">Genera recorded this week (${wkG.length})</h2>
+  <div class="panel">${wkG.map(x => `<div class="row" style="gap:6px"><span style="min-width:22px">${M.G.has(x.id) ? '☑' : '🎯'}</span><a href="#" data-genus="${x.id}" style="min-width:140px"><i>${esc(S.nodes[x.id]?.n || '?')}</i></a><span class="small muted">${x.c} this week${ref ? ` · ${fmt(x.all)} all time` : ''}</span></div>`).join('')}
+    <p class="small muted">☑ in your SPOODEX · 🎯 not yet.</p></div>`;
+}
+
+/* ---------------- cards: shared canvas kit for the title card and wrapped ---------------- */
 // iNat serves most photos (all-rights-reserved ones) without CORS headers, so drawing them taints the canvas and blocks PNG export.
-// The card is drawn with every photo for on-screen viewing/screenshots; the PNG download falls back to name plates for those.
+// Cards are drawn with every photo for on-screen viewing/screenshots; the PNG download falls back to name plates for those.
 function loadImg(url, cors) {
   return new Promise(res => {
     if (!url) return res(null);
@@ -1789,102 +2036,221 @@ async function cardPhotos(list) {
     return { g, open, any: open || await loadImg(url, false) };
   }));
 }
-function drawTitleCard(cv, tiles, photosOnly) {
-  const M = S.M, W = 1080, H = 1350, x = cv.getContext('2d');
+function cardKit(cv) {
+  const W = 1080, H = 1350, x = cv.getContext('2d');
   cv.width = W; cv.height = H;
   const css = getComputedStyle(document.body), v = n => css.getPropertyValue(n).trim();
-  const C = { bg:v('--bg'), panel:v('--panel'), panel2:v('--panel2'), ink:v('--ink'), muted:v('--muted'), accent:v('--accent'), lit:v('--lit'), line:v('--line'), dim:v('--dim') };
+  const C = { bg:v('--bg'), panel:v('--panel'), panel2:v('--panel2'), ink:v('--ink'), muted:v('--muted'), accent:v('--accent'), line:v('--line'), dim:v('--dim') };
   const fit = (t, max) => { t = String(t); if (x.measureText(t).width <= max) return t; while (t.length > 1 && x.measureText(t + '…').width > max) t = t.slice(0, -1); return t + '…'; };
   const text = (t, px, py, font, color, align = 'left', max = 920) => { x.font = font; x.fillStyle = color; x.textAlign = align; x.fillText(fit(t, max), px, py); };
-  // Frame and label card
-  x.fillStyle = C.bg; x.fillRect(0, 0, W, H);
-  x.fillStyle = C.panel; x.fillRect(36, 36, W - 72, H - 72);
-  x.strokeStyle = C.line; x.lineWidth = 3; x.strokeRect(36, 36, W - 72, H - 72);
-  x.lineWidth = 1; x.strokeRect(52, 52, W - 104, H - 104);
-  const tier = TIERS[M.tier];
-  try { x.letterSpacing = '6px'; } catch {}
-  text(`SPOODEX · ${tier.name.toUpperCase()}`, 80, 118, '600 24px "IBM Plex Mono", monospace', C.muted);
-  try { x.letterSpacing = '0px'; } catch {}
-  text(who(), 80, 200, '600 72px Fraunces, Georgia, serif', C.ink);
-  text(generatedTitle(M), 80, 260, '600 48px Caveat, cursive', C.accent);
-  // Six specimen tiles: rarest genera first
-  const tw = 293, th = 293, gap = 20, top = 300;
-  for (let i = 0; i < 6; i++) {
-    const t = tiles[i], cx = 80 + (i % 3) * (tw + gap), cy = top + Math.floor(i / 3) * (th + 78);
+  const rule = y => { x.strokeStyle = C.line; x.lineWidth = 1; x.beginPath(); x.moveTo(80, y); x.lineTo(1000, y); x.stroke(); };
+  const K = { x, C, text, rule, tainted:false };
+  K.frame = kicker => {
+    x.fillStyle = C.bg; x.fillRect(0, 0, W, H);
+    x.fillStyle = C.panel; x.fillRect(36, 36, W - 72, H - 72);
+    x.strokeStyle = C.line; x.lineWidth = 3; x.strokeRect(36, 36, W - 72, H - 72);
+    x.lineWidth = 1; x.strokeRect(52, 52, W - 104, H - 104);
+    try { x.letterSpacing = '6px'; } catch {}
+    text(kicker, 80, 118, '600 24px "IBM Plex Mono", monospace', C.muted);
+    try { x.letterSpacing = '0px'; } catch {}
+  };
+  // A specimen tile: photo (or name plate), rarity stars, italic genus name underneath
+  K.tile = (t, cx, cy, tw, th, photosOnly) => {
     x.fillStyle = C.panel2; x.fillRect(cx, cy, tw, th);
     const im = t && (photosOnly ? t.open : t.any);
     if (im) {
+      if (!t.open) K.tainted = true;
       const s = Math.max(tw / im.width, th / im.height), sw = tw / s, sh = th / s;
       x.drawImage(im, (im.width - sw) / 2, (im.height - sh) / 2, sw, sh, cx, cy, tw, th);
-    } else if (t) {
-      text(t.g.name[0], cx + tw / 2, cy + th / 2 + 40, 'italic 400 140px Fraunces, Georgia, serif', C.line, 'center');
-    } else {
-      text('???', cx + tw / 2, cy + th / 2 + 18, '400 52px "Special Elite", monospace', C.dim, 'center');
-    }
+    } else if (t) text(t.g.name[0], cx + tw / 2, cy + th / 2 + 40, 'italic 400 140px Fraunces, Georgia, serif', C.line, 'center');
+    else text('???', cx + tw / 2, cy + th / 2 + 18, '400 52px "Special Elite", monospace', C.dim, 'center');
     x.strokeStyle = C.line; x.lineWidth = 2; x.strokeRect(cx, cy, tw, th);
     if (t) {
-      const st = starsFor(t.g.id, 'g');
       if (im) { x.shadowColor = 'rgba(0,0,0,.8)'; x.shadowBlur = 6; }
-      text('★'.repeat(st), cx + tw - 12, cy + 34, '600 26px "IBM Plex Mono", monospace', im ? '#e2bf7a' : C.accent, 'right');
+      text('★'.repeat(starsFor(t.g.id, 'g')), cx + tw - 12, cy + 34, '600 26px "IBM Plex Mono", monospace', im ? '#e2bf7a' : C.accent, 'right');
       x.shadowBlur = 0;
       text(t.g.name, cx + tw / 2, cy + th + 44, 'italic 400 34px Fraunces, Georgia, serif', C.ink, 'center', tw - 10);
     } else text('not yet found', cx + tw / 2, cy + th + 42, '400 22px "IBM Plex Mono", monospace', C.muted, 'center', tw);
-  }
-  // Stats band
-  const st = myStanding('state') || myStanding('country');
-  const stats = [[fmt(M.G.size), M.G.size === 1 ? 'GENUS' : 'GENERA'], [fmt(M.S.size), 'SPECIES'], [fmt(prestige(M)), 'PRESTIGE ✦']];
-  if (st) stats.push([`#${st.rank}`, `OF ${st.of} · ${st.where.toUpperCase()}`]);
-  const by = 1040, cw = 920 / stats.length;
-  x.strokeStyle = C.line; x.lineWidth = 1; x.beginPath(); x.moveTo(80, by); x.lineTo(1000, by); x.stroke();
-  stats.forEach(([n, l], i) => {
-    const cx = 80 + cw * i + cw / 2;
-    text(n, cx, by + 86, '600 66px Fraunces, Georgia, serif', C.accent, 'center', cw - 10);
-    text(l, cx, by + 124, '400 20px "IBM Plex Mono", monospace', C.muted, 'center', cw - 10);
-  });
-  x.beginPath(); x.moveTo(80, by + 152); x.lineTo(1000, by + 152); x.stroke();
+  };
+  K.stats = (stats, y) => {
+    const cw = 920 / stats.length;
+    stats.forEach(([n, l], i) => {
+      const cx = 80 + cw * i + cw / 2;
+      text(n, cx, y + 60, '600 64px Fraunces, Georgia, serif', C.accent, 'center', cw - 10);
+      text(l, cx, y + 98, '400 20px "IBM Plex Mono", monospace', C.muted, 'center', cw - 10);
+    });
+  };
   // Credits: photos belong to the naturalist who took them
-  const scopeW = scopeLabel(S.prefs.scope);
-  text(`Photos © ${who()} via iNaturalist`, 80, by + 190, '400 19px "IBM Plex Mono", monospace', C.muted, 'left', 920);
-  text(`★ = few iNat records in ${scopeW} (record frequency, not conservation status)`, 80, by + 218, '400 19px "IBM Plex Mono", monospace', C.muted, 'left', 920);
-  const link = location.host + location.pathname.replace(/(index|spoodex)\.html$/, '') + (isGuest() ? '' : '?u=' + S.login);
-  text(link, 80, by + 246, '600 19px "IBM Plex Mono", monospace', C.ink, 'left', 920);
-  return tiles.some(t => t && !t.open && t.any);   // true = canvas is tainted
+  K.footer = y => {
+    text(`Photos © ${who()} via iNaturalist`, 80, y, '400 19px "IBM Plex Mono", monospace', C.muted);
+    text(`★ = few iNat records in ${scopeLabel(S.prefs.scope)} (record frequency, not conservation status)`, 80, y + 28, '400 19px "IBM Plex Mono", monospace', C.muted);
+    const link = location.host + location.pathname.replace(/(index|spoodex)\.html$/, '') + (isGuest() ? '' : '?u=' + S.login);
+    text(link, 80, y + 56, '600 19px "IBM Plex Mono", monospace', C.ink);
+  };
+  return K;
 }
-async function openTitleCard() {
-  const M = S.M;
-  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(640px,100%)"><button class="x" data-close="1">✕</button><div class="body">
-    <h2>Title card</h2><div id="cardOut"><p class="muted">Developing the print…</p></div></div></div></div>`;
-  try { await Promise.all(['600 72px Fraunces', 'italic 400 34px Fraunces', '600 48px Caveat', '400 20px "IBM Plex Mono"', '600 20px "IBM Plex Mono"', '400 52px "Special Elite"'].map(f => document.fonts.load(f))); } catch {}
-  const pick = [...M.genera].filter(g => g.cover)
-    .sort((a,b) => starsFor(b.id) - starsFor(a.id) || (refCount(a.id) ?? -1) - (refCount(b.id) ?? -1) || b.obs.length - a.obs.length).slice(0, 6);
-  const tiles = await cardPhotos(pick);
-  const out = $('#cardOut'); if (!out) return;
+const CARD_FONTS = ['600 72px Fraunces', 'italic 400 34px Fraunces', '600 48px Caveat', '400 20px "IBM Plex Mono"', '600 20px "IBM Plex Mono"', '400 52px "Special Elite"'];
+// Mounts a finished card (canvas + download/share) into el; draw(cv, photosOnly) returns true if it used non-CORS photos
+async function mountCard(el, draw, name) {
+  try { await Promise.all(CARD_FONTS.map(f => document.fonts.load(f))); } catch {}
   const cv = document.createElement('canvas'); cv.className = 'cardcanvas';
-  const tainted = drawTitleCard(cv, tiles, false);
-  const plates = tiles.filter(t => !t.open).length;
-  out.innerHTML = `<div class="row" style="margin-bottom:10px">
+  const tainted = draw(cv, false);
+  S.card = { draw, name };
+  el.innerHTML = `<div class="row" style="margin-bottom:10px;justify-content:center">
       <button class="primary" data-act="cardPng">⬇ Download PNG</button>
       ${navigator.canShare ? '<button data-act="cardShare">📤 Share…</button>' : ''}
       <button data-act="share">🔗 Copy link</button></div>
-    ${tainted ? `<p class="small muted">iNaturalist doesn't allow ${plates === tiles.length ? 'these photos' : `${plates} of these photos`} to be copied into a downloaded image, so the PNG shows name plates in their place. For the version with every photo, screenshot the card above.</p>` : ''}`;
-  out.prepend(cv);
-  S.cardTiles = tiles;
+    ${tainted ? `<p class="small muted">iNaturalist doesn't allow some of these photos to be copied into a downloaded image, so the PNG shows name plates in their place. For the version with every photo, screenshot the card above.</p>` : ''}`;
+  el.prepend(cv);
 }
-// PNG export: redraw using only photos iNat serves with CORS so the canvas stays exportable
 function cardBlob() {
   const cv = document.createElement('canvas');
-  drawTitleCard(cv, S.cardTiles || [], true);
+  S.card.draw(cv, true);   // redraw with CORS-safe photos only, so the canvas stays exportable
   return new Promise(res => cv.toBlob(res, 'image/png'));
 }
 async function cardExport(share) {
+  if (!S.card) return;
   const blob = await cardBlob(); if (!blob) return toast('Could not create the image.');
-  const file = new File([blob], `spoodex-${isGuest() ? 'guest' : S.login}.png`, { type:'image/png' });
+  const file = new File([blob], `${S.card.name}.png`, { type:'image/png' });
   if (share && navigator.canShare?.({ files:[file] })) {
     try { await navigator.share({ files:[file], title:'My SPOODEX' }); } catch {}
     return;
   }
   const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+const rarestFirst = (a,b) => starsFor(b.id) - starsFor(a.id) || (refCount(a.id) ?? -1) - (refCount(b.id) ?? -1) || b.obs.length - a.obs.length;
+
+/* ---------------- title card: a shareable picture of your collection ---------------- */
+function drawTitleCard(cv, tiles, photosOnly) {
+  const M = S.M, K = cardKit(cv), { C, text } = K;
+  K.frame(`SPOODEX · ${TIERS[M.tier].name.toUpperCase()}`);
+  text(who(), 80, 200, '600 72px Fraunces, Georgia, serif', C.ink);
+  text(generatedTitle(M), 80, 260, '600 48px Caveat, cursive', C.accent);
+  for (let i = 0; i < 6; i++) K.tile(tiles[i], 80 + (i % 3) * 313, 300 + Math.floor(i / 3) * 371, 293, 293, photosOnly);
+  const st = myStanding('state') || myStanding('country');
+  const stats = [[fmt(M.G.size), M.G.size === 1 ? 'GENUS' : 'GENERA'], [fmt(M.S.size), 'SPECIES'], [fmt(prestige(M)), 'PRESTIGE ✦']];
+  if (st) stats.push([`#${st.rank}`, `OF ${st.of} · ${st.where.toUpperCase()}`]);
+  K.rule(1040); K.stats(stats, 1066); K.rule(1192);
+  K.footer(1230);
+  return K.tainted;
+}
+async function openTitleCard() {
+  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(640px,100%)"><button class="x" data-close="1">✕</button><div class="body">
+    <h2>Title card</h2><div id="cardOut"><p class="muted">Developing the print…</p></div></div></div></div>`;
+  const tiles = await cardPhotos([...S.M.genera].filter(g => g.cover).sort(rarestFirst).slice(0, 6));
+  const out = $('#cardOut'); if (!out) return;
+  await mountCard(out, (cv, po) => drawTitleCard(cv, tiles, po), `spoodex-${S.login}`);
+}
+
+/* ---------------- wrapped: a year in spoods ---------------- */
+function wrappedData(Y) {
+  const M = S.M, ys = String(Y), obs = M.obs.filter(o => (o.d || '').startsWith(ys));
+  const gen = new Map();
+  obs.forEach(o => { const gid = genusOf(o.anc); if (gid) gen.set(gid, (gen.get(gid) || 0) + 1); });
+  const newG = M.genera.filter(g => (g.first.d || '').startsWith(ys));
+  const newS = [...M.S.values()].filter(s => (s.first.d || '').startsWith(ys)).sort((a,b) => starsFor(b.id, 's') - starsFor(a.id, 's'));
+  const months = Array(12).fill(0); obs.forEach(o => months[+o.d.slice(5, 7) - 1]++);
+  const days = [...new Set(obs.map(o => o.d))].sort();
+  const locals = {}; obs.forEach(o => o.pl.forEach(p => { if (S.places[p]?.l === 20) locals[p] = (locals[p] || 0) + 1; }));
+  const topLocal = Object.entries(locals).sort((a,b) => b[1] - a[1]).slice(0, 3).map(([p, c]) => ({ n:S.places[p].n, c }));
+  const firstCell = new Map();
+  M.obs.forEach(o => { if (o.lat == null) return; const k = cellKey(o.lat, o.lng, .25); if (!firstCell.has(k)) firstCell.set(k, o.d); });
+  let run = 0, best = 0;
+  days.forEach(d => { if (M.dayDisc.has(d)) { run++; best = Math.max(best, run); } else run = 0; });
+  const busiest = months.indexOf(Math.max(...months));
+  const topG = [...gen].sort((a,b) => b[1] - a[1]).map(([id, c]) => ({ g:M.G.get(id), c })).filter(x => x.g);
+  return { Y, obs, gen, newG:[...newG].sort(rarestFirst), newS, months, days:days.length, topLocal, busiest, topG,
+    newCells:[...firstCell.values()].filter(d => (d || '').startsWith(ys)).length, best,
+    beh:obs.filter(o => o.beh.length).length, pioneers:myPioneers().filter(p => (p.d || '').startsWith(ys)), fav:undefined, share:undefined };
+}
+async function wrappedExtras(W) {
+  const pid = S.M.home.state || S.M.home.country;
+  try {
+    const f = await api('/observations', { taxon_id:SALTICIDAE, user_login:S.login, year:W.Y, photos:true, order_by:'votes', order:'desc', per_page:1 });
+    const o = f.results[0];
+    W.fav = o && o.faves_count ? { id:o.id, f:o.faves_count, n:o.taxon?.name || 'Salticidae', r:o.taxon?.rank || '', ph:o.photos?.[0]?.url || '' } : null;
+    if (pid) {
+      const t = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, place_id:pid, verifiable:true, year:W.Y });
+      const root = t.results.find(x => x.id === SALTICIDAE), mine = W.obs.filter(o => inPlace(o, pid)).length;
+      W.share = { total:Math.max(mine, root?.descendant_obs_count || 0), mine, where:S.places[pid]?.n || 'your region' };
+    }
+  } catch (e) { console.warn(e); W.fav = W.fav ?? null; W.share = W.share ?? null; }
+}
+const WR_SLIDES = 6;
+function wrappedYears() { return [...new Set(S.M.fieldDays.map(d => d.slice(0, 4)))].sort().reverse(); }
+async function openWrapped(Y) {
+  const years = wrappedYears(); if (!years.length) return toast('No records yet: Wrapped needs at least one year of spooding.');
+  Y = String(Y || years[0]);
+  const W = S.wr = { ...wrappedData(Y), i:0 };
+  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(640px,100%)"><button class="x" data-close="1">✕</button><div class="body">
+    <div class="row small" style="gap:6px">${years.map(y => `<span class="chip ${y === Y ? 'on' : ''}" data-act="wrYear" data-v="${y}" style="cursor:pointer">${y}</span>`).join('')}</div>
+    <div id="wrSlide"></div>
+    <div class="row" style="justify-content:space-between"><button data-act="wrPrev">← Back</button><div class="wdots" id="wrDots"></div><button class="primary" data-act="wrNext">Next →</button></div>
+  </div></div></div>`;
+  showWrapped();
+  await wrappedExtras(W);
+  if (S.wr === W) showWrapped();
+}
+function showWrapped() {
+  const W = S.wr, el = $('#wrSlide'); if (!W || !el) return;
+  $('#wrDots').innerHTML = Array.from({ length:WR_SLIDES }, (_, i) => `<i class="${i === W.i ? 'on' : ''}"></i>`).join('');
+  const prev = document.querySelector('[data-act="wrPrev"]'), next = document.querySelector('[data-act="wrNext"]');
+  prev.disabled = W.i === 0; next.disabled = W.i === WR_SLIDES - 1;
+  const cover = g => `<i style="background-image:url('${esc(photoSize(g.cover, 'small'))}')"></i>`;
+  const s = (kick, big, lines) => `<div class="wslide"><div class="kick">${kick}</div><div class="huge">${big}</div>${lines}</div>`;
+  const loading = '<p class="small muted">Asking iNaturalist…</p>';
+  if (!W.obs.length) { el.innerHTML = s(`SPOODEX WRAPPED · ${W.Y}`, '0', '<p class="line">No salticid records this year. Next year is wide open.</p>'); return; }
+  const slides = [
+    () => s('SPOODEX WRAPPED', esc(W.Y), `<p class="line"><b>${esc(who())}</b>'s year in jumping spiders</p>
+      <p class="line">${fmt(W.obs.length)} records · ${fmt(W.days)} field days · ${W.gen.size} genera</p>
+      <p class="hand">Let's see what you found.</p>`),
+    () => s('NEW TO YOUR SPOODEX', `${W.newG.length} <span class="unit">new ${W.newG.length === 1 ? 'genus' : 'genera'}</span>`,
+      W.newG.length ? `<div class="mosaic wide">${W.newG.filter(g => g.cover).slice(0, 6).map(cover).join('')}</div>
+        <p class="line">${W.newG.slice(0, 8).map(g => gLink(g.id)).join(', ')}${W.newG.length > 8 ? ` and ${W.newG.length - 8} more` : ''}</p>
+        <p class="line">Rarest new find: ${gLink(W.newG[0].id)} <span class="stars">${'★'.repeat(starsFor(W.newG[0].id))}</span> <span class="small muted">${esc(rarityNote(W.newG[0].id))}</span></p>`
+      : `<p class="line">No new genera, but you revisited ${W.gen.size}. Most recorded: ${W.topG[0] ? `${gLink(W.topG[0].g.id)} (${W.topG[0].c})` : '—'}.</p>`)
+      + (W.newS.length ? `<p class="line">Plus <b>${W.newS.length}</b> new species: ${W.newS.slice(0, 5).map(x => `<i>${esc(x.name)}</i>`).join(', ')}${W.newS.length > 5 ? '…' : ''}</p>` : ''),
+    () => s('YOUR SEASON', esc(MONTHS[W.busiest]), `<p class="line">was your busiest month (${W.months[W.busiest]} records)</p>
+      <div class="pheno" style="margin:10px auto">${W.months.map((v, i) => `<div title="${MONTHS[i]}: ${v}"><i style="height:${Math.round(100 * v / Math.max(1, ...W.months))}%" class="${i === W.busiest ? 'now' : ''}"></i><span>${MONTHS[i][0]}</span></div>`).join('')}</div>
+      <p class="line">Best discovery streak: <b>${W.best}</b> field day${W.best === 1 ? '' : 's'} in a row with a new genus</p>
+      ${W.beh ? `<p class="line">${W.beh} behaviour record${W.beh === 1 ? '' : 's'}: feeding, courtship, silk & brood</p>` : ''}`),
+    () => s('WHERE YOU WENT', `${W.newCells} <span class="unit">new 25 km square${W.newCells === 1 ? '' : 's'}</span>`,
+      `${W.topLocal.length ? `<p class="line">Favourite patches:</p>${W.topLocal.map((l, i) => `<p class="line">${['🥇','🥈','🥉'][i]} ${esc(l.n)} <span class="small muted">${l.c} records</span></p>`).join('')}` : ''}
+      <p class="small muted">Local areas as iNat names them. No exact locations, ever.</p>`),
+    () => s('YOUR MARK ON THE RECORD', W.share === undefined ? '…' : W.share?.total ? pctTxt(W.share.mine / W.share.total) : '—',
+      `${W.share === undefined ? loading : W.share?.total ? `<p class="line">of all verifiable salticid records on iNat in ${esc(W.share.where)} in ${esc(W.Y)} were yours (${fmt(W.share.mine)} of ${fmt(W.share.total)})</p>` : ''}
+      ${W.pioneers.length ? `<p class="line">🏅 <b>${W.pioneers.length}</b> pioneer badge${W.pioneers.length === 1 ? '' : 's'}: ${W.pioneers.slice(0, 4).map(p => `${gLink(p.gid)} in ${esc(S.places[p.pid]?.n)}`).join(', ')}${W.pioneers.length > 4 ? '…' : ''}</p>` : ''}
+      ${W.fav === undefined ? '' : W.fav ? `<a class="jewel favpic" href="https://www.inaturalist.org/observations/${W.fav.id}" target="_blank" rel="noopener" style="background-image:url('${esc(photoSize(W.fav.ph, 'medium'))}')"><div class="lab"><div class="small">MOST-FAVED RECORD · ♥ ${W.fav.f}</div><div style="font-family:var(--head);font-size:18px;${['genus','species','subspecies'].includes(W.fav.r) ? 'font-style:italic' : ''}">${esc(W.fav.n)}</div></div></a>` : ''}`),
+    () => s('YOUR WRAPPED CARD', '', '<div id="wrCard"><p class="muted">Developing the print…</p></div>'),
+  ];
+  el.innerHTML = slides[W.i]();
+  if (W.i === WR_SLIDES - 1) wrappedCard(W);
+}
+async function wrappedCard(W) {
+  const pick = (W.newG.length ? W.newG : W.topG.map(x => x.g)).filter(g => g.cover).slice(0, 3);
+  const tiles = await cardPhotos(pick);
+  const out = $('#wrCard'); if (!out || S.wr !== W) return;
+  await mountCard(out, (cv, po) => drawWrappedCard(cv, W, tiles, po), `spoodex-wrapped-${W.Y}-${S.login}`);
+}
+function drawWrappedCard(cv, W, tiles, photosOnly) {
+  const K = cardKit(cv), { C, text } = K;
+  K.frame(`SPOODEX WRAPPED · ${W.Y}`);
+  text(who(), 80, 200, '600 72px Fraunces, Georgia, serif', C.ink);
+  text(`${W.Y} in jumping spiders`, 80, 260, '600 48px Caveat, cursive', C.accent);
+  K.rule(300);
+  K.stats([[fmt(W.obs.length), 'RECORDS'], [fmt(W.days), 'FIELD DAYS'], [fmt(W.gen.size), 'GENERA SEEN']], 318);
+  K.stats([[fmt(W.newG.length), W.newG.length === 1 ? 'NEW GENUS' : 'NEW GENERA'], [fmt(W.newS.length), 'NEW SPECIES'],
+    W.share?.total ? [pctTxt(W.share.mine / W.share.total), `OF ${W.share.where.toUpperCase()}'S RECORDS`] : [MONTHS[W.busiest], 'BUSIEST MONTH']], 460);
+  K.rule(592);
+  text(W.newG.length ? 'NEW THIS YEAR, RAREST FIRST' : 'MOST RECORDED THIS YEAR', 80, 640, '400 20px "IBM Plex Mono", monospace', C.muted);
+  for (let i = 0; i < 3; i++) K.tile(tiles[i], 80 + i * 313, 664, 293, 293, photosOnly);
+  const facts = [`Busiest month: ${MONTHS[W.busiest]} · best streak ${W.best} field day${W.best === 1 ? '' : 's'}`,
+    W.pioneers.length ? `${W.pioneers.length} pioneer badge${W.pioneers.length === 1 ? '' : 's'}: earliest iNat record in the region` : `${W.newCells} new 25 km square${W.newCells === 1 ? '' : 's'} explored`];
+  facts.forEach((f, i) => text(f, 80, 1060 + i * 40, '400 28px Fraunces, Georgia, serif', C.ink));
+  K.rule(1150);
+  K.footer(1200);
+  return K.tainted;
 }
 
 /* ---------------- boot / flows ---------------- */
@@ -1925,6 +2291,7 @@ async function doSync(full) {
     if (fresh.length) revealQueue(fresh); else if (!isGuest()) toast('Synced. No new genera this time, but the field awaits.');
   } catch (e) { toast(e.message); }
   btn.disabled = false; btn.textContent = '⟳ Sync';
+  if (S.crew.logins.length && !crewBusy && crewNeedsLoad()) loadCrew().then(() => { if (S.tab !== 'map') render(); });
 }
 async function onboard(login) {
   loadUser(login);
@@ -2007,6 +2374,11 @@ document.addEventListener('click', e => {
   if (a === 'crewDel') setCrew(S.crew.logins.filter(l => l !== val));
   if (a === 'crewRefresh') { crewErr = null; loadCrew(true); }
   if (a === 'card') openTitleCard();
+  if (a === 'wrapped') openWrapped();
+  if (a === 'wrYear') openWrapped(val);
+  if (a === 'wrNext' && S.wr) { S.wr.i = Math.min(WR_SLIDES - 1, S.wr.i + 1); showWrapped(); }
+  if (a === 'wrPrev' && S.wr) { S.wr.i = Math.max(0, S.wr.i - 1); showWrapped(); }
+  if (a === 'reportRefresh') { e.preventDefault(); reportErr = null; loadReport(true); }
   if (a === 'cardPng') cardExport(false);
   if (a === 'cardShare') cardExport(true);
   if (a === 'geo') geolocate();
