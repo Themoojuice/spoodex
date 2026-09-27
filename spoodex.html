@@ -68,6 +68,13 @@ table.cmp { width:100%; border-collapse:collapse; font-size:13px; }
 table.cmp td, table.cmp th { padding:4px 6px; border-bottom:1px solid var(--dim); text-align:left; }
 .card.gilded { border:2px solid #b08a45; box-shadow:inset 0 0 0 2px #e2bf7a; }
 .leaflet-popup-content button { font:13px var(--body); }
+.pheno { display:grid; grid-template-columns:repeat(12,1fr); gap:3px; height:80px; align-items:end; max-width:420px; }
+.pheno div { height:100%; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; }
+.pheno i { display:block; width:100%; min-height:2px; background:var(--dim); border-radius:2px 2px 0 0; }
+.pheno i.now { background:var(--accent); }
+.pheno span { font-size:10px; color:var(--muted); }
+.inseason { color:var(--lit); }
+.fix { margin:1px 0 4px 26px; }
 .card .rar { position:absolute; top:6px; right:6px; z-index:2; font-size:11px; color:#e2bf7a; text-shadow:0 1px 2px #000; letter-spacing:1px; }
 .sprow { display:flex; gap:10px; align-items:center; padding:4px 0; border-bottom:1px dashed var(--dim); }
 .sprow .thumb { width:42px; height:42px; flex:none; border-radius:var(--radius); background:var(--panel2) center/cover; }
@@ -330,6 +337,7 @@ const S = {
   info: store.get('info', {}),     // genus id -> {p:photo, s:summary, w:wiki url, a:attribution, c:obs count}
   ref: store.get('ref', {}),       // scopeKey -> {ts, g:{genusId: recordCount}}
   observers: store.get('observers', {}),
+  pheno: store.get('pheno', {}),       // `${genus}:${place}` -> {ts, m:[12 month counts]}
   prefs: store.get('prefs', { scope:'country', reveal:false, peek:false, chassis:'auto', filter:'all' }),
   tab: 'profile',
   M: null,       // derived model
@@ -719,6 +727,16 @@ function buildQuests(M) {
   const q = [];
   if (!M.G.size) q.push({ id:'first', kind:'first', icon:'🕷', title:'Your First Spood', text:'Find a jumping spider, photograph it and upload it to iNaturalist. Once it is identified to genus, sync SPOODEX and your first card unlocks.', reward:100 });
   if (!M.homeCell) q.push({ id:'base', kind:'base', icon:'🏠', title:'Pick a Home Base', text:'Tell SPOODEX where you usually spood and it will list the genera recorded around you.', reward:0 });
+  const act = M.homeCell && S.u.active?.[M.homeCell.k];
+  if (act) {
+    const miss = act.g.filter(x => !M.G.has(x.id)).sort((a,b) => b.c - a.c);
+    if (miss.length) q.push({ id:'active:'+M.homeCell.k+':'+act.d1, kind:'hunt', icon:'🔥', title:'Active Right Now',
+      text:`${miss.length} genera you haven't recorded have been found within 25 km of your home base in the last ${ACTIVE_DAYS} days. They're out there now.`,
+      targets:miss.slice(0,6).map(x => x.id), recent:Object.fromEntries(miss.map(x => [x.id, x.c])), reward:300 });
+    else if (act.g.length) q.push({ id:'active-mastery', kind:'info', icon:'🔥', title:'Everything Active Is Already Yours',
+      text:`All ${act.g.length} genera recorded near your home base in the last ${ACTIVE_DAYS} days are in your SPOODEX. Good time to chase mastery on them.`,
+      targets:act.g.slice(0,6).map(x => x.id), reward:0 });
+  }
   const scan = scanFor(M.homeCell);
   if (scan) {
     const missing = scan.g.filter(x => !M.G.has(x.id)).sort((a,b) => b.c - a.c);
@@ -1011,7 +1029,7 @@ function speciesSection(gid) {
   return `<h3 style="margin-top:12px">Species <span class="small muted">${have}/${list.length} recorded</span></h3>
     ${list.map(id => {
       const mine = M.S.get(id), theirs = cm?.S.get(id), c = refCount(id, 's');
-      const img = mine ? photoSize(mine.cover, 'square') : (S.info[id]?.p || '');
+      const img = mine ? photoSize(mine.cover, 'small') : (S.info[id]?.p || '');
       return `<div class="sprow ${mine ? 'have' : ''}"><span class="thumb ${mine ? '' : 'unknown'}" style="background-image:url('${esc(img)}')"></span>
         <span>${mine ? '☑' : '☐'} <i>${esc(S.nodes[id]?.n || mine?.name)}</i>
         <span class="small muted">${mine ? ` · ${mine.obs.length} obs, since ${(mine.first.d||'').slice(0,4)}` : ''}${c != null ? ` · ${fmt(c)} iNat records in ${esc(scopeLabel(S.prefs.scope))}` : ''}${theirs ? ` · ${esc(S.cmp.login)} ${mine ? 'has it too' : 'has it 😤'}` : ''}</span></span></div>`;
@@ -1121,6 +1139,7 @@ async function scanCell(k) {
     d.results.forEach(addNode);
     S.u.scans[k] = { ts:Date.now(), g:d.results.filter(r => r.rank === 'genus').map(r => ({ id:r.id, c:r.descendant_obs_count || r.count || 0 })) };
     saveUser(); saveShared();
+    try { await scanActive(k, true); } catch (e) { console.warn(e); }
     if (S.tab === 'map') showScan(k); else render();
   } catch (e) { if (out) out.innerHTML = `<p>${esc(e.message)}</p>`; }
 }
@@ -1128,23 +1147,148 @@ function showScan(k) {
   const sc = S.u.scans[k], target = $('#scanRes') || $('#scanOut'); if (!sc || !target) return;
   const M = S.M, missing = sc.g.filter(x => !M.G.has(x.id)).sort((a,b) => b.c - a.c), max = Math.max(1, ...sc.g.map(x => x.c));
   ensureInfo(missing.map(x => x.id));
+  ensurePheno(missing.map(x => x.id).slice(0, 25));
+  const recent = new Map((S.u.active?.[k]?.g || []).map(x => [x.id, x.c]));
   const tier = x => x.c / max > .2 ? 'Common nearby' : x.c / max > .05 ? 'Uncommon nearby' : 'Rare nearby';
-  target.innerHTML = `<h3 style="margin-top:14px">Nearby undiscovered genera</h3>
+  target.innerHTML = `${activeHtml(k)}<h3 style="margin-top:14px">Nearby undiscovered genera (all time)</h3>
     <p class="small">${sc.g.length} genera recorded within 25 km of ${cellLabel(pointFor(k))} · <b>${missing.length}</b> not in your SPOODEX.</p>
     ${missing.map(x => `<div class="row" style="gap:6px"><a href="#" data-genus="${x.id}" style="min-width:130px"><i>${esc(S.nodes[x.id]?.n)}</i></a>
-      <div class="bar"><i style="width:${pct(x.c,max)}%"></i></div><span class="small muted">${tier(x)}</span></div>`).join('') || (sc.g.length ? '<p>You have them all. Cheeky.</p>' : '<p>No public salticid records here yet. Be the first!</p>')}
+      <div class="bar"><i style="width:${pct(x.c,max)}%"></i></div><span class="small muted">${tier(x)}</span></div>
+      <div style="margin:0 0 6px 2px">${recent.has(x.id) ? `<span class="small">🔥 ${recent.get(x.id)} in the last ${ACTIVE_DAYS} days</span> ` : ''}${phenoTag(x.id)}</div>`).join('') || (sc.g.length ? '<p>You have them all. Cheeky.</p>' : '<p>No public salticid records here yet. Be the first!</p>')}
     <p class="small muted">Based on public records only; obscured observations contribute at coarse resolution.</p>`;
+}
+
+/* ---------------- active now: the same 25 km scan, limited to the last 30 days ---------------- */
+const ACTIVE_DAYS = 30, ACTIVE_TTL = 6 * 3600e3;
+async function scanActive(k, force = false) {
+  const c = pointFor(k); if (!c) return null;
+  S.u.active = S.u.active || {};
+  const cur = S.u.active[k];
+  if (cur && !force && Date.now() - cur.ts < ACTIVE_TTL) return cur;
+  const d1 = new Date(Date.now() - ACTIVE_DAYS * 864e5).toISOString().slice(0,10);
+  const d = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, lat:c.lat.toFixed(3), lng:c.lng.toFixed(3), radius:25, verifiable:true, d1 });
+  d.results.forEach(addNode);
+  S.u.active[k] = { ts:Date.now(), d1, g:d.results.filter(r => r.rank === 'genus').map(r => ({ id:r.id, c:r.descendant_obs_count || r.count || 0 })) };
+  saveUser(); saveShared();
+  return S.u.active[k];
+}
+function activeHtml(k) {
+  const act = S.u.active?.[k]; if (!act) return '';
+  const M = S.M, list = [...act.g].sort((a,b) => b.c - a.c);
+  const miss = list.filter(x => !M.G.has(x.id)), have = list.filter(x => M.G.has(x.id));
+  ensurePheno(miss.map(x => x.id).slice(0, 20));
+  return `<h3 style="margin-top:14px">🔥 Active in the last ${ACTIVE_DAYS} days</h3>
+    <p class="small">${list.length} genera recorded within 25 km since ${esc(act.d1)}${list.length ? ` · <b>${miss.length}</b> you're missing` : ''}.</p>
+    ${miss.map(x => `<div class="small">🎯 <a href="#" data-genus="${x.id}"><i>${esc(S.nodes[x.id]?.n)}</i></a> · ${x.c} recent record${x.c===1?'':'s'} ${phenoTag(x.id)}</div>`).join('')}
+    ${have.length ? `<div class="small muted" style="margin-top:4px">Also out now: ${have.map(x => `<a href="#" data-genus="${x.id}"><i>${esc(S.nodes[x.id]?.n)}</i></a> (${x.c})`).join(', ')}</div>` : ''}
+    ${list.length ? '' : '<p class="small muted">Quiet out there lately. Could be the season, or nobody has uploaded yet.</p>'}`;
+}
+
+/* ---------------- best months: iNat month-of-year histogram per genus, in your home state ---------------- */
+const PHENO_TTL = 30 * 864e5;
+const phenoPlace = () => S.M?.home.state || S.M?.home.country || null;
+const phenoKey = gid => `${gid}:${phenoPlace() || 'w'}`;
+const phenoQueue = new Set();
+let phenoBusy = false;
+function ensurePheno(ids) {
+  ids.forEach(id => { const p = S.pheno[phenoKey(id)]; if (!p || Date.now() - p.ts > PHENO_TTL) phenoQueue.add(id); });
+  if (!phenoBusy && phenoQueue.size) drainPheno();
+}
+async function drainPheno() {
+  phenoBusy = true;
+  while (phenoQueue.size) {
+    const id = phenoQueue.values().next().value; phenoQueue.delete(id);
+    try {
+      const d = await api('/observations/histogram', { taxon_id:id, place_id:phenoPlace(), interval:'month_of_year', verifiable:true });
+      const m = d.results?.month_of_year || {};
+      S.pheno[phenoKey(id)] = { ts:Date.now(), m:[...Array(12)].map((_, i) => m[i+1] || 0) };
+      store.set('pheno', S.pheno);
+      phenoUpdated();
+    } catch (e) { console.warn(e); break; }
+  }
+  phenoBusy = false;
+}
+// Peak = months with ≥60% of the busiest (smoothed) month's records, written as circular ranges ("Nov–Feb")
+function peakInfo(gid) {
+  const p = S.pheno[phenoKey(gid)]; if (!p) return null;
+  const tot = p.m.reduce((a,b) => a+b, 0), nowM = new Date().getMonth();
+  if (tot < 12) return { few:true, tot, m:p.m };
+  // smooth with neighbouring months (1-2-1) so sparse genera read as seasons, not noise
+  const sm = p.m.map((v, i) => (p.m[(i+11) % 12] + 2*v + p.m[(i+1) % 12]) / 4);
+  const max = Math.max(...sm), on = sm.map(v => v >= max * .6);
+  if (on.every(Boolean)) return { text:'year-round', now:true, tot, m:p.m };
+  const ranges = [];
+  for (let i = 0; i < 12; i++) {
+    if (!on[i] || on[(i+11) % 12]) continue;
+    let j = i; while (on[(j+1) % 12]) j = (j+1) % 12;
+    ranges.push(i === j ? MONTHS[i] : `${MONTHS[i]}–${MONTHS[j]}`);
+  }
+  return { text:ranges.join(', '), now:on[nowM], tot, m:p.m };
+}
+function phenoHtml(gid) {
+  const p = peakInfo(gid);
+  if (!p) return '<span class="muted">· checking season…</span>';
+  if (p.few) return '<span class="muted">· too few records to call a season</span>';
+  return `${p.now ? '<b class="inseason">🌡 in season now</b> · ' : ''}<span class="muted">peak ${esc(p.text)}</span>`;
+}
+const phenoTag = gid => `<span class="small" data-pheno="${gid}">${phenoHtml(gid)}</span>`;
+function phenoChart(gid) {
+  const p = peakInfo(gid), where = esc(S.places[phenoPlace()]?.n || 'the world');
+  if (!p) return '<p class="small muted">Checking when it turns up…</p>';
+  const max = Math.max(1, ...p.m), nowM = new Date().getMonth();
+  return `<div class="pheno">${p.m.map((v, i) => `<div title="${MONTHS[i]}: ${v} records"><i style="height:${Math.round(100 * v / max)}%" class="${i === nowM ? 'now' : ''}"></i><span>${MONTHS[i][0]}</span></div>`).join('')}</div>
+    <p class="small">${p.few ? 'Too few records to call a season yet.' : `${p.now ? '<b class="inseason">🌡 In season now.</b> ' : ''}Peak: <b>${esc(p.text)}</b>.`} <span class="muted">${fmt(p.tot)} verifiable iNat records in ${where}, by month observed.</span></p>`;
+}
+function phenoUpdated() {
+  document.querySelectorAll('[data-pheno]').forEach(el => el.innerHTML = phenoHtml(+el.dataset.pheno));
+  document.querySelectorAll('[data-phenochart]').forEach(el => el.innerHTML = phenoChart(+el.dataset.phenochart));
+}
+
+/* ---------------- mastery fix-it: point at the exact records that could tick a box ---------------- */
+function fixIt(g, k) {
+  if (isGuest()) return '';
+  const base = `https://www.inaturalist.org/observations?user_id=${encodeURIComponent(S.login)}&taxon_id=${g.id}&verifiable=any`;
+  const count = f => g.obs.filter(f).length, s = n => n === 1 ? '' : 's';
+  const has = (o, attr) => o.ann.some(a => a.startsWith(attr + '|'));
+  const link = (url, text) => `<div class="fix small">↳ <a href="${esc(url)}" target="_blank" rel="noopener">${text} ↗</a></div>`;
+  const tip = text => `<div class="fix small muted">↳ ${text}</div>`;
+  switch (k) {
+    case 'male': case 'female': {
+      const n = count(o => !has(o, '9'));
+      return n ? link(`${base}&without_term_id=9`, `${n} record${s(n)} with no sex annotation. Annotate any adults`) : tip('Every record is sexed. Go find the other one!');
+    }
+    case 'juv': {
+      const n = count(o => !has(o, '1'));
+      return n ? link(`${base}&without_term_id=1`, `${n} record${s(n)} with no life-stage annotation. Mark any juveniles`) : tip('Look for small, pale, often differently-patterned individuals.');
+    }
+    case 'feed':  return link(base, 'Photographed it with prey? Add "feeding" or "prey" to the description or a tag');
+    case 'court': return link(base, 'Caught a display? Add "courtship" or "display" to the description or a tag');
+    case 'egg':   return link(base, 'Got an egg sac, retreat or moult? Add an Evidence annotation or mention it in the description');
+    case 'supported': {
+      const n = count(o => !(o.ct && o.ct.includes(g.id)));
+      return n ? link(`${base}&quality_grade=needs_id`, `${n} record${s(n)} not yet community-supported. Add sharper photos or @mention an identifier`) : '';
+    }
+    case 'species': {
+      const n = count(o => o.t.l > 10);
+      return n ? link(`${base}&hrank=genus&lrank=genus`, `${n} record${s(n)} stuck at genus. Try keying one to species`) : '';
+    }
+    case 'places': return tip(`Fieldwork: record it somewhere ~10 km from your ${g.c01.size} existing localit${g.c01.size === 1 ? 'y' : 'ies'}.`);
+    case 'months': { const p = peakInfo(g.id); return tip(`Fieldwork: record it in a new month${p && !p.few ? ` (peak ${esc(p.text)})` : ''}.`); }
+    default: return '';
+  }
 }
 
 function viewQuests() {
   const M = S.M, qs = buildQuests(M);
+  ensurePheno(qs.flatMap(q => q.targets || []));
   const done = (S.u.completed || []).slice(-10).reverse();
   return `
   ${done.length ? `<div class="panel" style="margin-bottom:14px"><h2>Completed since you started</h2>${done.map(q => `<div>✅ <b>${esc(q.title)}</b> <span class="small muted">${esc(q.at)}</span> <span class="reward">+${q.reward} XP</span></div>`).join('')}</div>` : ''}
   <div class="grid2">${qs.map(q => `<div class="panel quest ${q.daily?'daily':''}">
     ${q.daily ? '<div class="small" style="letter-spacing:.2em">★ TODAY\'S FIELD QUEST</div>' : ''}
     <h3>${q.icon} ${esc(q.title)}</h3><p>${esc(q.text)}</p>
-    ${q.targets ? `<div class="small">${q.targets.map(id => `<a href="#" data-genus="${id}"><i>${esc(S.nodes[id]?.n)}</i></a>`).join(' · ')}</div>` : ''}
+    ${q.targets ? `<div class="small">${q.targets.map(id => `<div><a href="#" data-genus="${id}"><i>${esc(S.nodes[id]?.n)}</i></a>${q.recent?.[id] ? ` · 🔥 ${q.recent[id]} recent` : ''} ${phenoTag(id)}</div>`).join('')}</div>` : ''}
+    ${q.kind === 'master' && M.G.get(q.gid) ? fixIt(M.G.get(q.gid), q.crit) : ''}
     ${q.kind === 'scan' ? `<button class="primary" data-scan="${esc(M.homeCell.k)}">📡 Scan home base</button>` : ''}
     ${q.kind === 'first' ? '<a class="btnlink" href="https://www.inaturalist.org/observations/upload" target="_blank" rel="noopener">Upload to iNaturalist ↗</a>' : ''}
     ${q.kind === 'base' ? '<button class="primary" data-tab="map">Set home base</button>' : ''}
@@ -1174,7 +1318,8 @@ async function openGenus(id) {
         <dt>Best record</dt><dd>${g.f.rg ? 'Research Grade' : g.f.supported ? 'Community-supported genus' : 'Your ID (not yet community-supported)'}</dd>
         <dt>Your ${ordinal(g.discIndex)} genus</dt><dd></dd>
       </dl></div>
-      <div><h3>Mastery challenges</h3><ul class="checks">${CRITERIA.map(c => `<li class="${g.f[c.k]?'done':''}">${g.f[c.k]?'☑':'☐'} ${c.icon} ${esc(c.label)}</li>`).join('')}</ul>
+      <div><h3>Mastery challenges</h3><ul class="checks">${CRITERIA.map(c => `<li class="${g.f[c.k]?'done':''}">${g.f[c.k]?'☑':'☐'} ${c.icon} ${esc(c.label)}${g.f[c.k] ? '' : fixIt(g, c.k)}</li>`).join('')}</ul>
+        <p class="small muted">Added annotations on iNat? Press Sync. If a box doesn't tick, use ⚙ → Full resync.</p>
         <p class="small muted">Mastered at ${MASTERY_AT}/10. Sex & life stage come from iNat annotations; behaviour from your descriptions/tags/fields.</p></div>
     </div>
     <h3 style="margin-top:12px">Your gallery</h3>
@@ -1186,6 +1331,8 @@ async function openGenus(id) {
     <div class="muted">${esc(lin)}</div>
     <p>You haven't recorded this genus. ${rt ? `iNat has ${fmt(rt.count)} verifiable record${rt.count===1?'':'s'} of it in ${esc(scopeLabel(S.prefs.scope))}.` : ''}</p>
     <p><a href="https://www.inaturalist.org/observations?taxon_id=${id}${scopeP ? '&place_id='+scopeP : ''}" target="_blank" rel="noopener">See where others have found it ↗</a></p>`;
+  const when = `<h3 style="margin-top:12px">When to look</h3><div data-phenochart="${id}">${phenoChart(id)}</div>`;
+  ensurePheno([id]);
   const rarity = moduleOn(3) ? `
     <h3 style="margin-top:12px">Rarity telemetry</h3>
     <dl class="kv">
@@ -1203,7 +1350,7 @@ async function openGenus(id) {
   $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal">
     <button class="x" data-close="1">✕</button>
     <div class="hero ${g ? '' : 'unknown'}" style="background-image:url('${esc(hero||'')}')"></div>
-    <div class="body">${body}${speciesSection(id)}${theirs}${rarity}${hist}
+    <div class="body">${body}${when}${speciesSection(id)}${theirs}${rarity}${hist}
       <p class="small"><a href="https://www.inaturalist.org/taxa/${id}" target="_blank" rel="noopener">iNaturalist taxon page ↗</a>
       ${g ? ` · <a href="https://www.inaturalist.org/observations?user_id=${encodeURIComponent(S.login)}&taxon_id=${id}" target="_blank" rel="noopener">your records ↗</a>` : ''}
       ${!g && info.a ? ` · <span class="muted">Silhouette from photo ${esc(info.a)}</span>` : ''}</p>
@@ -1243,6 +1390,7 @@ function viewCompare() {
     ${C?.error ? `<p>${esc(C.error)}</p>` : ''}</div>`;
   if (!C || !C.M || C.loading) return form;
   const T = C.M, me = esc(who()), them = esc(C.login), where = esc(scopeLabel(S.prefs.scope));
+  ensurePheno([...T.G.keys()].filter(id => !M.G.has(id)).slice(0, 20));
   // exclusives, rarest first
   const byRarity = kind => (a,b) => starsFor(b.id, kind) - starsFor(a.id, kind) || (refCount(a.id, kind) ?? -1) - (refCount(b.id, kind) ?? -1) || b.obs.length - a.obs.length;
   const exG = (A,B) => [...A.G.values()].filter(g => !B.G.has(g.id)).sort(byRarity('g'));
@@ -1336,6 +1484,7 @@ function viewCompare() {
   <h2 style="margin-top:22px">Your hit list: only ${them} has these</h2>
   <p class="small muted">Their photos, so you know exactly what you're looking for.</p>
   <h3>Genera (${themG.length})</h3>${grid(themG, 'g', 'Nothing! You have every genus they have.')}
+  ${themG.length ? `<div class="panel small" style="margin-top:8px"><b>When to look for them</b>${themG.slice(0,20).map(g => `<div><a href="#" data-genus="${g.id}"><i>${esc(g.name)}</i></a> ${phenoTag(g.id)}</div>`).join('')}</div>` : ''}
   <h3 style="margin-top:12px">Species (${themS.length})</h3>${grid(themS, 's', 'Nothing! You have every species they have.')}
 
   <h2 style="margin-top:22px">Their envy list: only ${me} has these</h2>
@@ -1402,6 +1551,7 @@ async function doSync(full) {
   const prevSeen = new Set(S.u.seen);
   try {
     await sync({ full });
+    if (S.M.homeCell) try { await scanActive(S.M.homeCell.k); } catch (e) { console.warn(e); }
     // quests completed by this sync
     const at = new Date().toISOString().slice(0,10);
     for (const q of prevQuests) if (!['scan','base'].includes(q.kind) && questDone(q, S.M) && !S.u.completed.some(c => c.id === q.id && c.at === at)) S.u.completed.push({ id:q.id, title:q.title, reward:q.reward, at });
