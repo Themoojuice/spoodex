@@ -95,6 +95,25 @@ table.cmp td, table.cmp th { padding:4px 6px; border-bottom:1px solid var(--dim)
 .jewel .lab { position:absolute; left:0; right:0; bottom:0; padding:8px; background:linear-gradient(transparent, rgba(20,12,6,.88) 40%); color:#f6eedb; }
 .stars { color:#e2bf7a; letter-spacing:2px; }
 td.win { font-weight:700; color:var(--lit); }
+.tablewrap { overflow-x:auto; }
+table.ladder { width:100%; border-collapse:collapse; }
+table.ladder td, table.ladder th { padding:6px 8px; border-bottom:1px solid var(--dim); text-align:left; vertical-align:middle; }
+table.ladder th { font-weight:400; color:var(--muted); font-size:12px; white-space:nowrap; }
+table.ladder .n, table.cmp .n { text-align:right; font-variant-numeric:tabular-nums; }
+table.ladder th.sorted, table.ladder td.sorted { color:var(--accent); font-weight:600; }
+table.ladder td.rk { font:600 18px var(--head); width:3em; white-space:nowrap; }
+table.ladder td.who { white-space:nowrap; }
+table.ladder td.acts { white-space:nowrap; text-align:right; }
+table.ladder td.acts button { padding:3px 8px; font-size:12px; }
+table.ladder tr.me td { background:var(--panel2); font-weight:600; }
+table.ladder tr.me td:first-child { box-shadow:inset 4px 0 0 var(--accent); }
+table.ladder tr.pending td { color:var(--muted); }
+.avatar { width:28px; height:28px; border-radius:50%; background:var(--panel2) center/cover; display:inline-block; vertical-align:middle; margin-right:8px; border:1px solid var(--line); }
+table.matrix td.have, table.matrix th.have { text-align:center; color:var(--lit); white-space:nowrap; }
+table.matrix tr.solo td { background:var(--panel2); }
+table.matrix tr.solo td:last-child { color:var(--accent); font-weight:600; }
+table.matrix tr.all td:last-child { color:var(--lit); }
+.cardcanvas { width:100%; max-width:540px; height:auto; display:block; margin:0 auto 12px; border-radius:4px; box-shadow:0 6px 20px rgba(0,0,0,.25); }
 @media (max-width:600px) { .vs { grid-template-columns:1fr; } .vsmark { text-align:center; } .mosaic { max-width:150px; } }
 
 /* ---------- Header ---------- */
@@ -679,7 +698,7 @@ function rarityTier(id, scope = S.prefs.scope, kind = 'g') {
   return { count:table[id], label: rank < .33 ? 'Few records' : rank < .66 ? 'Moderate records' : 'Many records', stars: rank < .33 ? 3 : rank < .66 ? 2 : 1 };
 }
 // ★ 1–3 by iNat record scarcity in scope; a taxon absent from the regional reference counts as ★★★
-function starsFor(id, kind = 'g') { const r = rarityTier(id, S.prefs.scope, kind); return r ? r.stars : (refFor(S.prefs.scope)?.[kind] ? 3 : 1); }
+const starsFor = (id, kind = 'g') => starsIn(id, kind, S.prefs.scope);
 function rarityNote(id, kind = 'g') {
   const c = refCount(id, kind), where = scopeLabel(S.prefs.scope);
   if (c != null) return `${fmt(c)} iNat record${c === 1 ? '' : 's'} in ${where}`;
@@ -803,6 +822,8 @@ const TABS = [
   { k:'tree', label:'Lineage tree', tier:2 },
   { k:'map', label:'Map & scanner' },
   { k:'compare', label:'Compare' },
+  { k:'ladder', label:'Ladder' },
+  { k:'crew', label:'Crew' },
   { k:'quests', label:'Quests' },
 ];
 let renderPending = false;
@@ -820,7 +841,10 @@ function render() {
   const v = $('#view');
   const locked = TABS.find(t => t.k === S.tab)?.tier;
   if (locked && !moduleOn(locked)) { v.innerHTML = lockedPlate(locked); return; }
-  v.innerHTML = ({ profile:viewProfile, dex:viewDex, tree:viewTree, map:viewMapShell, quests:viewQuests, compare:viewCompare })[S.tab]();
+  // Ladder and crew fetch lazily when opened (errors stop the auto-retry until the player asks again)
+  if (S.tab === 'ladder' && !ladderBusy && !ladderErr && ladderKey() && ladderNeedsLoad(S.ladder[ladderKey()])) loadLadder();
+  if (S.tab === 'crew' && !crewBusy && !crewErr && crewNeedsLoad()) loadCrew();
+  v.innerHTML = ({ profile:viewProfile, dex:viewDex, tree:viewTree, map:viewMapShell, quests:viewQuests, compare:viewCompare, ladder:viewLadder, crew:viewCrew })[S.tab]();
   if (S.tab === 'map') initMap();
 }
 function lockedPlate(t) {
@@ -856,6 +880,7 @@ function viewProfile() {
       <div class="muted small">${esc(who().toUpperCase())}'S SPOODEX</div>
       <h1 style="font-size:34px;margin:4px 0">SPOOD NATURALIST — LEVEL ${M.G.size}</h1>
       <div class="hand">${esc(generatedTitle(M))}</div>
+      ${isGuest() ? '' : '<p><button data-act="card">🪪 Make my title card</button></p>'}
       <p><b>${M.G.size}</b> Salticidae genera recorded${sc.ref ? ` · <b>${sc.found} / ${sc.inScope.length}</b> of those on iNat in ${esc(scopeLabel(S.prefs.scope))}` : ''}</p>
       <div class="kv">
         <dt>Observations</dt><dd>${fmt(M.obs.length)}</dd>
@@ -1524,6 +1549,344 @@ async function loadCompare(login) {
   if (S.tab === 'compare') render();
 }
 
+/* ---------------- regional ladder: top salticid observers of a place, ranked by what they've recorded there ---------------- */
+const LADDER_TTL = 864e5, LADDER_N = 25, LADDER_KEEP = 4;
+S.ladder = store.get('ladder', {});   // 'p<placeId>' -> {ts, n:observers in place, icons{login:url}, queue:[logins still to read], rows:[{login, obs, g:[ids], s:[ids]}]}
+let ladderBusy = null, ladderErr = null;
+const ladderScope = () => S.prefs.ladderScope || 'state';
+const ladderKey = () => { const p = scopePlace(ladderScope()); return p ? 'p' + p : null; };
+const isMe = l => !isGuest() && String(l).toLowerCase() === String(S.login).toLowerCase();
+function starsIn(id, kind, scope) { const r = rarityTier(id, scope, kind); return r ? r.stars : (refFor(scope)?.[kind] ? 3 : 1); }
+const idPrestige = (g, s, scope) => g.reduce((n,id) => n + 10*starsIn(id,'g',scope), 0) + s.reduce((n,id) => n + 3*starsIn(id,'s',scope), 0);
+function ladderNeedsLoad(L) {
+  return !L || Date.now() - L.ts > LADDER_TTL || !L.queue || L.queue.length || (!isGuest() && S.login && !L.rows.some(r => isMe(r.login)));
+}
+async function loadLadder(force = false) {
+  const scope = ladderScope(), key = ladderKey();
+  if (!key || ladderBusy) return;
+  let L = S.ladder[key];
+  if (force || !L || Date.now() - L.ts > LADDER_TTL) {
+    L = S.ladder[key] = { ts:Date.now(), n:null, icons:{}, queue:null, rows:[] };
+    const old = Object.keys(S.ladder).sort((a,b) => S.ladder[b].ts - S.ladder[a].ts).slice(LADDER_KEEP);
+    old.forEach(k => delete S.ladder[k]);
+  }
+  ladderBusy = key; ladderErr = null;
+  const pid = +key.slice(1), redraw = () => { if (S.tab === 'ladder') render(); };
+  try {
+    await ensureRef(scope);
+    if (!L.queue) {
+      const d = await api('/observations/observers', { taxon_id:SALTICIDAE, place_id:pid, verifiable:true, per_page:LADDER_N });
+      L.n = d.total_results;
+      d.results.forEach(r => L.icons[r.user.login] = r.user.icon_url || '');
+      L.queue = d.results.map(r => r.user.login);
+    }
+    if (!isGuest() && S.login && ![...L.queue, ...L.rows.map(r => r.login)].some(isMe)) L.queue.push(S.login);
+    redraw();
+    // One taxonomy call per person gives every genus/species they've recorded in the place. Progress is saved, so it resumes.
+    while (L.queue.length && ladderKey() === key) {
+      const login = L.queue[0];
+      try {
+        const d = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, user_login:login, place_id:pid, verifiable:true });
+        const row = { login, obs:0, g:[], s:[] };
+        d.results.forEach(t => { addNode(t); if (t.rank === 'genus') row.g.push(t.id); else if (t.rank === 'species') row.s.push(t.id); else if (t.id === SALTICIDAE) row.obs = t.descendant_obs_count || 0; });
+        L.rows.push(row);
+      } catch (e) { if (!/returned 4\d\d/.test(e.message)) throw e; }   // account gone or renamed: skip it
+      L.queue.shift();
+      store.set('ladder', S.ladder);
+      redraw();
+    }
+    saveShared();
+  } catch (e) { ladderErr = e.message; }
+  ladderBusy = null;
+  redraw();
+}
+// Standard competition ranking (1, 2, 2, 4) on the chosen measure
+function ladderRows(L, sort, scope) {
+  const k = { species:'sn', prestige:'pr' }[sort] || 'gn';
+  const rows = L.rows.map(r => ({ ...r, gn:r.g.length, sn:r.s.length, pr:idPrestige(r.g, r.s, scope) }));
+  rows.sort((a,b) => b[k] - a[k] || b.gn - a.gn || b.sn - a.sn || b.obs - a.obs || a.login.localeCompare(b.login));
+  rows.forEach((r, i) => r.rank = i && rows[i-1][k] === r[k] ? rows[i-1].rank : i + 1);
+  return { rows, k };
+}
+// The player's ladder standing, if a finished ladder for this place is cached (used by the title card)
+function myStanding(scope = 'state') {
+  const pid = scopePlace(scope), L = pid && S.ladder['p' + pid];
+  if (!L || !L.queue || L.queue.length || isGuest()) return null;
+  const { rows } = ladderRows(L, 'genera', scope), me = rows.find(r => isMe(r.login));
+  return me ? { rank:me.rank, of:rows.length, where:S.places[pid]?.n || 'home region' } : null;
+}
+function viewLadder() {
+  const scope = ladderScope(), key = ladderKey();
+  if (!key) return `<div class="panel"><h2>Regional ladder</h2><p>The ladder needs to know your region. Record a salticid on iNaturalist, or set a home base on the map.</p><button class="primary" data-tab="map">🏠 Set a home base</button></div>`;
+  const pid = +key.slice(1), L = S.ladder[key], where = esc(S.places[pid]?.n || 'your region');
+  const sort = S.prefs.ladderSort || 'genera';
+  const chip = (act, v, cur, label) => `<span class="chip ${cur === v ? 'on' : ''}" data-act="${act}" data-v="${v}" style="cursor:pointer">${label}</span>`;
+  const sameArea = scopePlace('state') === scopePlace('country');
+  const head = `<div class="panel" style="margin-bottom:14px">
+    <h2>Regional ladder · ${where}</h2>
+    <div class="row small">
+      ${sameArea ? '' : `<span>Region ${chip('lscope','state',scope,esc(scopeLabel('state')))} ${chip('lscope','country',scope,esc(scopeLabel('country')))}</span>`}
+      <span>Rank by ${chip('lsort','genera',sort,'Genera')} ${chip('lsort','species',sort,'Species')} ${chip('lsort','prestige',sort,'Prestige ✦')}</span>
+      ${ladderBusy ? '' : `<button data-act="ladderRefresh">⟳ Refresh</button>`}
+    </div>
+    <p class="small muted" style="margin-bottom:0">The ${LADDER_N} people with the most salticid records in ${where} on iNaturalist${L?.n ? ` (of ${fmt(L.n)} observers)` : ''}${isGuest() ? '' : ', plus you'}, ranked by what each has recorded <b>in ${where}</b>, so it can differ from your overall level. Verifiable records only. Prestige ✦ weights each genus and species by how few iNat records it has in ${where}; that's record frequency, not conservation status.</p>
+    ${ladderBusy === key && L?.queue ? `<p class="small">Reading ${Math.min(L.rows.length + 1, L.rows.length + L.queue.length)} of ${L.rows.length + L.queue.length}… about ${Math.ceil(L.queue.length * 1.1)} s left. Rows appear as they arrive.</p>` : ''}
+    ${ladderBusy && ladderBusy !== key ? '<p class="small">Finishing the previous ladder first…</p>' : ''}
+    ${ladderErr ? `<p>${esc(ladderErr)} <button data-act="ladderRefresh">Try again</button></p>` : ''}
+    ${L && !ladderBusy && !L.queue?.length ? `<p class="small muted" style="margin-bottom:0">Updated ${esc(new Date(L.ts).toLocaleString())}.</p>` : ''}
+  </div>`;
+  if (!L) return head + (ladderBusy ? '<p class="muted">Finding the top observers…</p>' : '');
+  const { rows, k } = ladderRows(L, sort, scope);
+  const unit = n => k === 'pr' ? `${fmt(n)} ✦` : k === 'sn' ? `${n} species` : `${n} ${n === 1 ? 'genus' : 'genera'}`;
+  const meIdx = rows.findIndex(r => isMe(r.login)), me = rows[meIdx];
+  let standing = '';
+  if (me && !L.queue?.length) {
+    const above = rows.slice(0, meIdx).reverse().find(r => r[k] > me[k]);
+    const below = rows.slice(meIdx + 1).find(r => r[k] < me[k]);
+    const tied = rows.filter(r => r !== me && r[k] === me[k]);
+    standing = `<div class="panel envy" style="margin-bottom:14px">
+      <div class="big">You're <b>${ordinal(me.rank)}</b> of ${rows.length} on the ${where} ladder, with ${unit(me[k])}${k === 'pr' ? ' of prestige' : ''} recorded there.</div>
+      ${above ? `<div>${unit(above[k] - me[k])} behind #${above.rank} <b>${esc(above.login)}</b>.</div>` : '<div class="hand">Top of the ladder. Keep it that way.</div>'}
+      ${tied.length ? `<div>Level with ${tied.slice(0,3).map(r => `<b>${esc(r.login)}</b>`).join(', ')}${tied.length > 3 ? ` and ${tied.length - 3} more` : ''}.</div>` : ''}
+      ${below ? `<div>${unit(me[k] - below[k])} ahead of #${below.rank} <b>${esc(below.login)}</b>.</div>` : ''}
+    </div>`;
+  }
+  const medal = r => r.rank <= 3 ? `<span title="${ordinal(r.rank)}">${['🥇','🥈','🥉'][r.rank - 1]}</span>` : '#' + r.rank;
+  const cls = c => c === k ? 'n sorted' : 'n';
+  const tr = r => `<tr class="${isMe(r.login) ? 'me' : ''}"><td class="rk">${medal(r)}</td>
+    <td class="who"><span class="avatar" style="background-image:url('${esc(L.icons[r.login] || '')}')"></span><a href="https://www.inaturalist.org/people/${encodeURIComponent(r.login)}" target="_blank" rel="noopener">${esc(r.login)}</a>${isMe(r.login) ? ' <span class="small muted">(you)</span>' : ''}</td>
+    <td class="${cls('gn')}">${r.gn}</td><td class="${cls('sn')}">${r.sn}</td><td class="${cls('pr')}">${fmt(r.pr)}</td><td class="n muted">${fmt(r.obs)}</td>
+    <td class="acts">${isMe(r.login) ? '' : `<button data-act="vs" data-v="${esc(r.login)}">Compare</button> <button data-act="crewAdd" data-v="${esc(r.login)}" title="Add to your crew">+ Crew</button>`}</td></tr>`;
+  const pending = (L.queue || []).map(l => `<tr class="pending"><td class="rk">…</td><td class="who"><span class="avatar" style="background-image:url('${esc(L.icons[l] || '')}')"></span>${esc(l)}</td><td colspan="5" class="small">waiting to be read</td></tr>`).join('');
+  return head + standing + `<div class="panel tablewrap"><table class="ladder">
+    <tr><th></th><th>Naturalist</th><th class="${cls('gn')}">Genera</th><th class="${cls('sn')}">Species</th><th class="${cls('pr')}">Prestige ✦</th><th class="n">Records</th><th></th></tr>
+    ${rows.map(tr).join('')}${pending}</table></div>`;
+}
+
+/* ---------------- crew mode: you plus up to five others, genus by genus ---------------- */
+const CREW_MAX = 5, CREW_TTL = 864e5;
+S.crew = store.get('crew', { logins:[], data:{} });   // data: lowercased login -> {ts, login, obs, g:{genusId:obs}, s:{speciesId:obs}, err?}
+let crewBusy = false, crewErr = null;
+const saveCrew = () => store.set('crew', S.crew);
+function setCrew(list) {
+  const seen = new Set(), out = [];
+  for (let l of list) {
+    l = String(l).trim().replace(/^@/, '');
+    if (!l || isMe(l) || seen.has(l.toLowerCase())) continue;
+    seen.add(l.toLowerCase()); out.push(l);
+  }
+  if (out.length > CREW_MAX) toast(`A crew is you plus up to ${CREW_MAX} others, so the extra names were left out.`);
+  S.crew.logins = out.slice(0, CREW_MAX);
+  const keep = new Set(S.crew.logins.map(l => l.toLowerCase()));
+  Object.keys(S.crew.data).forEach(k => { if (!keep.has(k)) delete S.crew.data[k]; });
+  crewErr = null; saveCrew(); updateUrl();
+  if (S.tab === 'crew') render();
+  loadCrew();
+}
+const crewNeedsLoad = () => S.crew.logins.some(l => { const d = S.crew.data[l.toLowerCase()]; return !d || Date.now() - d.ts > CREW_TTL; });
+// One all-time taxonomy call per member: genus and species sets without importing (or storing) their observations
+async function loadCrew(force = false) {
+  if (crewBusy) return;
+  crewBusy = true; crewErr = null;
+  const redraw = () => { if (S.tab === 'crew') render(); };
+  try {
+    for (const l of [...S.crew.logins]) {
+      const k = l.toLowerCase(), cur = S.crew.data[k];
+      if (!force && cur && Date.now() - cur.ts < CREW_TTL) continue;
+      const row = { ts:Date.now(), login:l, obs:0, g:{}, s:{} };
+      try {
+        const d = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, user_login:l, captive:false });
+        d.results.forEach(t => { addNode(t); const c = t.descendant_obs_count || 0; if (t.rank === 'genus') row.g[t.id] = c; else if (t.rank === 'species') row.s[t.id] = c; else if (t.id === SALTICIDAE) row.obs = c; });
+      } catch (e) { if (!/returned 422/.test(e.message)) throw e; row.err = 'No iNaturalist user by that name.'; }
+      if (!S.crew.logins.includes(l)) continue;   // removed while loading
+      S.crew.data[k] = row; saveCrew(); redraw();
+    }
+    saveShared();
+  } catch (e) { crewErr = e.message; }
+  crewBusy = false; redraw();
+}
+function crewMembers() {
+  const M = S.M, out = [];
+  if (!isGuest()) out.push({ login:S.login, me:true, obs:M.obs.length,
+    g:Object.fromEntries([...M.G].map(([id, g]) => [id, g.obs.length])), s:Object.fromEntries([...M.S].map(([id, s]) => [id, s.obs.length])) });
+  S.crew.logins.forEach(l => out.push({ ...(S.crew.data[l.toLowerCase()] || { pending:true, g:{}, s:{}, obs:0 }), login:l }));
+  return out;
+}
+function viewCrew() {
+  const scope = S.prefs.scope, where = esc(scopeLabel(scope));
+  const members = crewMembers(), ready = members.filter(m => !m.pending && !m.err);
+  const form = `<div class="panel" style="margin-bottom:16px"><h2>Crew</h2>
+    <p class="muted small">Line up ${isGuest() ? '' : 'yourself and '}up to ${CREW_MAX} other naturalists: who has which genus, what only one of you has, and what none of you has found yet. Public iNaturalist records, all time and everywhere, captive/cultivated excluded.</p>
+    <form class="row" data-form="crew"><input name="logins" value="${esc(S.crew.logins.join(', '))}" placeholder="iNaturalist usernames, separated by commas" autocomplete="off" style="flex:1;min-width:220px"><button class="primary" ${crewBusy ? 'disabled' : ''}>Set crew</button></form>
+    ${S.crew.logins.length ? `<div class="row small" style="margin-top:8px;gap:6px">${S.crew.logins.map(l => `<span class="chip">${esc(l)} <span data-act="crewDel" data-v="${esc(l)}" title="Remove from crew" style="cursor:pointer">✕</span></span>`).join('')}
+      <button data-act="crewRefresh" ${crewBusy ? 'disabled' : ''}>⟳ Refresh</button><button data-act="share">🔗 Copy crew link</button></div>` : ''}
+    ${crewBusy ? `<p class="small">Reading crew records… (about a second per person)</p>` : ''}
+    ${crewErr ? `<p>${esc(crewErr)} <button data-act="crewRefresh">Try again</button></p>` : ''}
+    ${members.filter(m => m.err).map(m => `<p class="small">⚠ ${esc(m.login)}: ${esc(m.err)}</p>`).join('')}</div>`;
+  if (ready.length < 2) return form + (S.crew.logins.length ? '' : `<p class="muted">Add at least ${isGuest() ? 'two naturalists' : 'one other naturalist'}. Tip: the <a href="#" data-tab="ladder">Ladder</a> has a “+ Crew” button on every row.</p>`);
+
+  const holders = new Map(), sHolders = new Map();
+  ready.forEach(m => { Object.keys(m.g).forEach(id => (holders.get(+id) || holders.set(+id, []).get(+id)).push(m));
+                       Object.keys(m.s).forEach(id => (sHolders.get(+id) || sHolders.set(+id, []).get(+id)).push(m)); });
+  const solo = (map, m) => [...map].filter(([, ms]) => ms.length === 1 && ms[0] === m).map(([id]) => id);
+  const byStars = kind => (a,b) => starsIn(b, kind, scope) - starsIn(a, kind, scope) || (refCount(a, kind, scope) ?? -1) - (refCount(b, kind, scope) ?? -1);
+  const stats = ready.map(m => { const g = Object.keys(m.g).map(Number), s = Object.keys(m.s).map(Number);
+    return { m, gn:g.length, sn:s.length, pr:idPrestige(g, s, scope), og:solo(holders, m).sort(byStars('g')), os:solo(sHolders, m).length, obs:m.obs }; });
+  const name = m => m.me ? `${esc(m.login)} <span class="small muted">(you)</span>` : esc(m.login);
+  const statRow = (label, f, show = fmt) => { const best = Math.max(...stats.map(f));
+    return `<tr><td class="muted">${label}</td>${stats.map(x => { const v = f(x), w = best > 0 && v === best && stats.filter(y => f(y) === best).length === 1; return `<td class="n ${w ? 'win' : ''}">${w ? '👑 ' : ''}${show(v)}</td>`; }).join('')}</tr>`; };
+  const everyone = [...holders.values()].filter(ms => ms.length === ready.length).length;
+
+  const ref = refFor(scope);
+  const nobody = ref ? Object.keys(ref.g).map(Number).filter(id => !holders.has(id)).sort((a,b) => ref.g[b] - ref.g[a]) : [];
+  const order = taxonomicOrder([...holders.keys()]).order;
+  const tribeOf = id => { const L = lineage(id); return (L.find(n => n.r === 'tribe') || L.find(n => n.r === 'subfamily') || {}).n || ''; };
+  const matrix = order.map(id => { const ms = holders.get(id) || [], one = ms.length === 1, all = ms.length === ready.length;
+    return `<tr class="${one ? 'solo' : all ? 'all' : ''}"><td><a href="#" data-genus="${id}"><i>${esc(S.nodes[id]?.n || '?')}</i></a> <span class="small muted">${esc(tribeOf(id))}</span></td>
+      ${ready.map(m => `<td class="have">${m.g[id] ? `✓<span class="small muted"> ${fmt(m.g[id])}</span>` : ''}</td>`).join('')}
+      <td class="n small">${one ? `only ${esc(ms[0].login)}` : all ? 'everyone' : `${ms.length}/${ready.length}`}</td></tr>`; }).join('');
+
+  return form + `
+  <div class="panel tablewrap"><h3>The crew <span class="small muted">· ${holders.size} genera between you, ${everyone} shared by everyone</span></h3>
+    <table class="cmp"><tr><th></th>${stats.map(x => `<th class="n">${name(x.m)}</th>`).join('')}</tr>
+      ${statRow('Genera', x => x.gn)}${statRow('Species', x => x.sn)}${statRow('Prestige ✦', x => x.pr)}
+      ${statRow('Genera only they have', x => x.og.length)}${statRow('Species only they have', x => x.os)}${statRow('Observations', x => x.obs)}</table>
+    <p class="small muted">Prestige ✦ weights rarity in ${where} (iNat record frequency, not conservation status). Change the scope on the SPOODEX tab.</p></div>
+
+  <h2 style="margin-top:22px">Only one of you has these</h2>
+  <div class="grid2">${stats.map(x => `<div class="panel"><h3>${name(x.m)} <span class="small muted">${x.og.length} genera</span></h3>
+    ${x.og.map(id => `<div><span class="stars">${'★'.repeat(starsIn(id,'g',scope))}</span> <a href="#" data-genus="${id}"><i>${esc(S.nodes[id]?.n || '?')}</i></a> <span class="small muted">${fmt(x.m.g[id])} obs</span></div>`).join('') || '<p class="muted small">Nothing exclusive yet.</p>'}</div>`).join('')}</div>
+
+  <h2 style="margin-top:22px">Nobody in the crew has these</h2>
+  ${ref ? `<p class="small muted">${nobody.length} of the ${Object.keys(ref.g).length} genera on iNat in ${where} aren't in anyone's records. Most-recorded first: the crew's likeliest next finds.</p>
+    <div class="panel">${nobody.slice(0, 40).map(id => `<div class="row" style="gap:6px"><a href="#" data-genus="${id}" style="min-width:150px"><i>${esc(S.nodes[id]?.n || '?')}</i></a><span class="small muted">${fmt(ref.g[id])} iNat records in ${where}</span></div>`).join('') || '<p>The crew has every genus recorded in ' + where + '. Formidable.</p>'}
+    ${nobody.length > 40 ? `<p class="small muted">…and ${nobody.length - 40} more.</p>` : ''}</div>`
+    : '<p class="muted">Set a home base (Map tab) so SPOODEX knows which genera belong in your region.</p>'}
+
+  <h2 style="margin-top:22px">Genus by genus</h2>
+  <p class="small muted">Taxonomic order as used on iNaturalist. Numbers are each person's observation count for the genus.</p>
+  <div class="panel tablewrap"><table class="cmp matrix"><tr><th>Genus</th>${ready.map(m => `<th class="have">${esc(m.login)}</th>`).join('')}<th class="n"></th></tr>${matrix}</table></div>`;
+}
+
+/* ---------------- title card: a shareable picture of your collection ---------------- */
+// iNat serves most photos (all-rights-reserved ones) without CORS headers, so drawing them taints the canvas and blocks PNG export.
+// The card is drawn with every photo for on-screen viewing/screenshots; the PNG download falls back to name plates for those.
+function loadImg(url, cors) {
+  return new Promise(res => {
+    if (!url) return res(null);
+    const im = new Image();
+    if (cors) im.crossOrigin = 'anonymous';
+    im.onload = () => res(im); im.onerror = () => res(null);
+    im.src = url;
+  });
+}
+async function cardPhotos(list) {
+  return Promise.all(list.map(async g => {
+    const url = photoSize(g.cover, 'medium');
+    // separate URL for the CORS load, so a copy cached from a plain <img>/CSS load (no CORS headers) can't be reused.
+    // (Not '?cors': S3 treats that as a request for the bucket's CORS config.)
+    const open = url ? await loadImg(url + (url.includes('?') ? '&' : '?') + 'spoodex=card', true) : null;
+    return { g, open, any: open || await loadImg(url, false) };
+  }));
+}
+function drawTitleCard(cv, tiles, photosOnly) {
+  const M = S.M, W = 1080, H = 1350, x = cv.getContext('2d');
+  cv.width = W; cv.height = H;
+  const css = getComputedStyle(document.body), v = n => css.getPropertyValue(n).trim();
+  const C = { bg:v('--bg'), panel:v('--panel'), panel2:v('--panel2'), ink:v('--ink'), muted:v('--muted'), accent:v('--accent'), lit:v('--lit'), line:v('--line'), dim:v('--dim') };
+  const fit = (t, max) => { t = String(t); if (x.measureText(t).width <= max) return t; while (t.length > 1 && x.measureText(t + '…').width > max) t = t.slice(0, -1); return t + '…'; };
+  const text = (t, px, py, font, color, align = 'left', max = 920) => { x.font = font; x.fillStyle = color; x.textAlign = align; x.fillText(fit(t, max), px, py); };
+  // Frame and label card
+  x.fillStyle = C.bg; x.fillRect(0, 0, W, H);
+  x.fillStyle = C.panel; x.fillRect(36, 36, W - 72, H - 72);
+  x.strokeStyle = C.line; x.lineWidth = 3; x.strokeRect(36, 36, W - 72, H - 72);
+  x.lineWidth = 1; x.strokeRect(52, 52, W - 104, H - 104);
+  const tier = TIERS[M.tier];
+  try { x.letterSpacing = '6px'; } catch {}
+  text(`SPOODEX · ${tier.name.toUpperCase()}`, 80, 118, '600 24px "IBM Plex Mono", monospace', C.muted);
+  try { x.letterSpacing = '0px'; } catch {}
+  text(who(), 80, 200, '600 72px Fraunces, Georgia, serif', C.ink);
+  text(generatedTitle(M), 80, 260, '600 48px Caveat, cursive', C.accent);
+  // Six specimen tiles: rarest genera first
+  const tw = 293, th = 293, gap = 20, top = 300;
+  for (let i = 0; i < 6; i++) {
+    const t = tiles[i], cx = 80 + (i % 3) * (tw + gap), cy = top + Math.floor(i / 3) * (th + 78);
+    x.fillStyle = C.panel2; x.fillRect(cx, cy, tw, th);
+    const im = t && (photosOnly ? t.open : t.any);
+    if (im) {
+      const s = Math.max(tw / im.width, th / im.height), sw = tw / s, sh = th / s;
+      x.drawImage(im, (im.width - sw) / 2, (im.height - sh) / 2, sw, sh, cx, cy, tw, th);
+    } else if (t) {
+      text(t.g.name[0], cx + tw / 2, cy + th / 2 + 40, 'italic 400 140px Fraunces, Georgia, serif', C.line, 'center');
+    } else {
+      text('???', cx + tw / 2, cy + th / 2 + 18, '400 52px "Special Elite", monospace', C.dim, 'center');
+    }
+    x.strokeStyle = C.line; x.lineWidth = 2; x.strokeRect(cx, cy, tw, th);
+    if (t) {
+      const st = starsFor(t.g.id, 'g');
+      if (im) { x.shadowColor = 'rgba(0,0,0,.8)'; x.shadowBlur = 6; }
+      text('★'.repeat(st), cx + tw - 12, cy + 34, '600 26px "IBM Plex Mono", monospace', im ? '#e2bf7a' : C.accent, 'right');
+      x.shadowBlur = 0;
+      text(t.g.name, cx + tw / 2, cy + th + 44, 'italic 400 34px Fraunces, Georgia, serif', C.ink, 'center', tw - 10);
+    } else text('not yet found', cx + tw / 2, cy + th + 42, '400 22px "IBM Plex Mono", monospace', C.muted, 'center', tw);
+  }
+  // Stats band
+  const st = myStanding('state') || myStanding('country');
+  const stats = [[fmt(M.G.size), M.G.size === 1 ? 'GENUS' : 'GENERA'], [fmt(M.S.size), 'SPECIES'], [fmt(prestige(M)), 'PRESTIGE ✦']];
+  if (st) stats.push([`#${st.rank}`, `OF ${st.of} · ${st.where.toUpperCase()}`]);
+  const by = 1040, cw = 920 / stats.length;
+  x.strokeStyle = C.line; x.lineWidth = 1; x.beginPath(); x.moveTo(80, by); x.lineTo(1000, by); x.stroke();
+  stats.forEach(([n, l], i) => {
+    const cx = 80 + cw * i + cw / 2;
+    text(n, cx, by + 86, '600 66px Fraunces, Georgia, serif', C.accent, 'center', cw - 10);
+    text(l, cx, by + 124, '400 20px "IBM Plex Mono", monospace', C.muted, 'center', cw - 10);
+  });
+  x.beginPath(); x.moveTo(80, by + 152); x.lineTo(1000, by + 152); x.stroke();
+  // Credits: photos belong to the naturalist who took them
+  const scopeW = scopeLabel(S.prefs.scope);
+  text(`Photos © ${who()} via iNaturalist`, 80, by + 190, '400 19px "IBM Plex Mono", monospace', C.muted, 'left', 920);
+  text(`★ = few iNat records in ${scopeW} (record frequency, not conservation status)`, 80, by + 218, '400 19px "IBM Plex Mono", monospace', C.muted, 'left', 920);
+  const link = location.host + location.pathname.replace(/(index|spoodex)\.html$/, '') + (isGuest() ? '' : '?u=' + S.login);
+  text(link, 80, by + 246, '600 19px "IBM Plex Mono", monospace', C.ink, 'left', 920);
+  return tiles.some(t => t && !t.open && t.any);   // true = canvas is tainted
+}
+async function openTitleCard() {
+  const M = S.M;
+  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(640px,100%)"><button class="x" data-close="1">✕</button><div class="body">
+    <h2>Title card</h2><div id="cardOut"><p class="muted">Developing the print…</p></div></div></div></div>`;
+  try { await Promise.all(['600 72px Fraunces', 'italic 400 34px Fraunces', '600 48px Caveat', '400 20px "IBM Plex Mono"', '600 20px "IBM Plex Mono"', '400 52px "Special Elite"'].map(f => document.fonts.load(f))); } catch {}
+  const pick = [...M.genera].filter(g => g.cover)
+    .sort((a,b) => starsFor(b.id) - starsFor(a.id) || (refCount(a.id) ?? -1) - (refCount(b.id) ?? -1) || b.obs.length - a.obs.length).slice(0, 6);
+  const tiles = await cardPhotos(pick);
+  const out = $('#cardOut'); if (!out) return;
+  const cv = document.createElement('canvas'); cv.className = 'cardcanvas';
+  const tainted = drawTitleCard(cv, tiles, false);
+  const plates = tiles.filter(t => !t.open).length;
+  out.innerHTML = `<div class="row" style="margin-bottom:10px">
+      <button class="primary" data-act="cardPng">⬇ Download PNG</button>
+      ${navigator.canShare ? '<button data-act="cardShare">📤 Share…</button>' : ''}
+      <button data-act="share">🔗 Copy link</button></div>
+    ${tainted ? `<p class="small muted">iNaturalist doesn't allow ${plates === tiles.length ? 'these photos' : `${plates} of these photos`} to be copied into a downloaded image, so the PNG shows name plates in their place. For the version with every photo, screenshot the card above.</p>` : ''}`;
+  out.prepend(cv);
+  S.cardTiles = tiles;
+}
+// PNG export: redraw using only photos iNat serves with CORS so the canvas stays exportable
+function cardBlob() {
+  const cv = document.createElement('canvas');
+  drawTitleCard(cv, S.cardTiles || [], true);
+  return new Promise(res => cv.toBlob(res, 'image/png'));
+}
+async function cardExport(share) {
+  const blob = await cardBlob(); if (!blob) return toast('Could not create the image.');
+  const file = new File([blob], `spoodex-${isGuest() ? 'guest' : S.login}.png`, { type:'image/png' });
+  if (share && navigator.canShare?.({ files:[file] })) {
+    try { await navigator.share({ files:[file], title:'My SPOODEX' }); } catch {}
+    return;
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
 /* ---------------- boot / flows ---------------- */
 function loadUser(login) {
   S.login = login;
@@ -1531,11 +1894,12 @@ function loadUser(login) {
   S.u.scans = S.u.scans || {}; S.u.completed = S.u.completed || []; S.u.seen = S.u.seen || [];
   store.set('lastLogin', login);
 }
-// Shareable state lives in the URL: ?u=<login>&vs=<rival>. Locations never go in links.
+// Shareable state lives in the URL: ?u=<login>&vs=<rival>&crew=<a,b,…>. Locations never go in links.
 function updateUrl() {
   const p = new URLSearchParams();
   if (S.login && !isGuest()) p.set('u', S.login);
   if (S.cmp?.M && S.cmp.login) p.set('vs', S.cmp.login);
+  if (S.tab === 'crew' && S.crew.logins.length) p.set('crew', S.crew.logins.join(','));
   const qs = p.toString();
   try { history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '')); } catch {}
 }
@@ -1588,6 +1952,7 @@ function enterApp(tab) {
   S.tab = tab || (S.M.G.size ? 'profile' : 'map');
   updateUrl(); render();
   if (S.pendingVs) { const v = S.pendingVs; S.pendingVs = null; S.tab = 'compare'; render(); loadCompare(v); }
+  else if (S.pendingCrew) { const c = S.pendingCrew; S.pendingCrew = null; S.tab = 'crew'; setCrew(c); }
 }
 function startGuest() {
   loadUser(GUEST);
@@ -1620,7 +1985,7 @@ document.addEventListener('click', e => {
   if (t.dataset.close && e.target !== t && !e.target.closest('.x')) return;
   if (t.dataset.genus) { e.preventDefault(); openGenus(+t.dataset.genus); return; }
   if (t.dataset.close) { $('#modalRoot').innerHTML = ''; return; }
-  if (t.dataset.tab) { $('#modalRoot').innerHTML = ''; S.tab = t.dataset.tab; render(); return; }
+  if (t.dataset.tab) { e.preventDefault(); $('#modalRoot').innerHTML = ''; S.tab = t.dataset.tab; render(); return; }
   if (t.dataset.filter) { S.prefs.filter = t.dataset.filter; savePrefs(); render(); return; }
   if (t.dataset.layer) { S.prefs.layer = t.dataset.layer; savePrefs(); render(); return; }
   if (t.dataset.scan) { if (S.tab !== 'map') { S.tab = 'map'; render(); } showCell(t.dataset.scan); scanCell(t.dataset.scan); return; }
@@ -1629,6 +1994,21 @@ document.addEventListener('click', e => {
   if (a === 'peek') { S.prefs.peek = true; savePrefs(); render(); }
   if (a === 'full') { $('#modalRoot').innerHTML = ''; doSync(true); }
   if (a === 'share') copyLink();
+  const val = t.dataset.v;
+  if (a === 'lscope') { S.prefs.ladderScope = val; savePrefs(); ladderErr = null; render(); }
+  if (a === 'lsort') { S.prefs.ladderSort = val; savePrefs(); render(); }
+  if (a === 'ladderRefresh') { ladderErr = null; loadLadder(true); }
+  if (a === 'vs') { S.tab = 'compare'; render(); loadCompare(val); }
+  if (a === 'crewAdd') {
+    if (S.crew.logins.some(l => l.toLowerCase() === val.toLowerCase())) toast(`${val} is already in your crew.`);
+    else if (S.crew.logins.length >= CREW_MAX) toast(`Your crew is full (you plus ${CREW_MAX}). Remove someone on the Crew tab first.`);
+    else { setCrew([...S.crew.logins, val]); toast(`${val} added to your crew.`); }
+  }
+  if (a === 'crewDel') setCrew(S.crew.logins.filter(l => l !== val));
+  if (a === 'crewRefresh') { crewErr = null; loadCrew(true); }
+  if (a === 'card') openTitleCard();
+  if (a === 'cardPng') cardExport(false);
+  if (a === 'cardShare') cardExport(true);
   if (a === 'geo') geolocate();
   if (a === 'clearBase') { delete S.u.base; saveUser(); S.M = buildModel(); render(); }
   if (a === 'guest') startGuest();
@@ -1640,6 +2020,7 @@ document.addEventListener('submit', async e => {
   const f = e.target.dataset.form; if (!f) return;
   e.preventDefault();
   if (f === 'compare') loadCompare(e.target.login.value);
+  if (f === 'crew') setCrew(e.target.logins.value.split(/[\s,;]+/));
   if (f === 'placeSearch') {
     const q = e.target.q.value.trim(); if (!q) return;
     const out = $('#placeResults'); out.textContent = 'Searching…';
@@ -1671,6 +2052,7 @@ $('#openDex').addEventListener('click', () => enterApp());
   const q = new URLSearchParams(location.search);
   const u = (q.get('u') || '').trim().replace(/^@/, '');
   S.pendingVs = (q.get('vs') || '').trim() || null;
+  S.pendingCrew = q.get('crew') ? q.get('crew').split(',') : null;
   const target = u || store.get('lastLogin');
   if (target && store.get(ukey(target))) {
     loadUser(target);

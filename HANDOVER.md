@@ -1,4 +1,4 @@
-# SPOODEX — handover (as of 2026-09-27, v1.3)
+# SPOODEX — handover (as of 2026-09-27, v1.4)
 
 Read this before touching the code. It covers what exists, how it's wired, how to test and ship,
 the owner's preferences, and a spec for the next piece of work: the **regional ladder** and the
@@ -56,12 +56,15 @@ Search for `/* ---------------- <name>` to jump to a section. Line numbers drift
 | genus page | `openGenus(id)` | Modal in `#modalRoot` |
 | reveal ceremony | `revealQueue(genera)` | |
 | compare | `viewCompare`, `lineageRows`, `loadCompare(login)` | |
+| regional ladder | `loadLadder(force)`, `ladderRows`, `viewLadder`, `myStanding`, `starsIn`, `idPrestige` | One `observers` call + one in-place `taxonomy` call per person; streams rows, resumable, 24 h cache |
+| crew mode | `setCrew(list)`, `loadCrew(force)`, `crewMembers`, `viewCrew` | You + ≤5 others; one all-time `taxonomy` call (`captive=false`) each; "you" comes from local `S.M` |
+| title card | `openTitleCard`, `drawTitleCard(cv, tiles, photosOnly)`, `cardPhotos`, `cardExport` | 1080×1350 canvas; see §9 on CORS |
 | boot / flows | `loadUser`, `updateUrl`, `copyLink`, `doSync`, `onboard`, `enterApp`, `startGuest`, `settings`, global click/submit/change handlers, `boot()` | |
 
 **UI event wiring**: one delegated `click` listener on `document` dispatches on data attributes:
 `data-tab`, `data-genus` (opens genus modal), `data-close`, `data-filter`, `data-layer`, `data-scan`
-(a scan-point key), `data-base` (`lat|lng|label`), `data-act` (`peek|full|share|geo|clearBase|guest|sample|switch|wipe`).
-Forms use `data-form` (`compare`, `placeSearch`) on a delegated `submit`. Prefs use `data-pref` on `change`.
+(a scan-point key), `data-base` (`lat|lng|label`), `data-act` (`peek|full|share|geo|clearBase|guest|sample|switch|wipe|lscope|lsort|ladderRefresh|vs|crewAdd|crewDel|crewRefresh|card|cardPng|cardShare`, with the argument in `data-v`).
+Forms use `data-form` (`compare`, `placeSearch`, `crew`) on a delegated `submit`. Prefs use `data-pref` on `change`.
 **Exception**: Leaflet popups stop click propagation, so popup buttons get direct `onclick`s (see `initMap`).
 
 ## 4. State & storage
@@ -73,7 +76,7 @@ Forms use `data-form` (`compare`, `placeSearch`) on a delegated `submit`. Prefs 
 `tab`, `M` (model), `cmp` (`{login, save, M, loading, log, error}`), `pendingVs`.
 
 localStorage keys: `spoodex:u:<login lowercased>`, `nodes`, `places`, `info`, `ref`, `observers`,
-`pheno`, `prefs`, `cmp` (only the most recent rival is cached), `lastLogin`.
+`pheno`, `prefs` (now also `ladderScope`, `ladderSort`), `cmp` (only the most recent rival is cached), `ladder` (`'p<place>'` → `{ts, n, icons, queue, rows:[{login, obs, g:[ids], s:[ids]}]}`, ≤4 places), `crew` (`{logins, data:{login→{ts, obs, g:{id:obs}, s:{id:obs}, err?}}}`), `lastLogin`.
 
 Per-user save `S.u`: `obs` (id → trimmed obs, see `trimObs`), `meta {lastSync,lastFull}`, `seen` (genus
 ids already revealed), `scans` (point key → `{ts,g:[{id,c}]}`), `active` (same, last 30 days, with `d1`),
@@ -138,7 +141,7 @@ Always resolve with `pointFor(k)`.
 - **Honest labelling**: rarity = iNat record frequency, *never* "conservation status". Classification
   follows iNat; it's a taxonomy, not a phylogeny. Keep caveats short and visible.
 - **Privacy**: map uses ≥25 km squares only; never show exact coordinates; home base is rounded to ~0.01°,
-  stays in the browser, and **never goes in share links**. Share links carry only `?u=` and `?vs=`.
+  stays in the browser, and **never goes in share links**. Share links carry only `?u=`, `?vs=` and `?crew=a,b` (usernames only).
 - **No backend** so far. Everything is public read-only iNat data; no OAuth.
 - Keep it a single self-contained HTML file until it clearly outgrows that (then Vite + TS; see ARCHITECTURE.md).
 - Never help find or enter the owner's credentials. GitHub pushes use Git Credential Manager, where the owner
@@ -176,6 +179,13 @@ the session's system reminder. Commit only when the owner asks, or as part of a 
 - One Australian genus iNat hasn't placed in any tribe shows as "#001 · Salticinae"; *Frigga* sits in Aelurillini on iNat. That's iNat taxonomy, not a bug.
 - `ensureInfo` has a single `infoBusy` flag; concurrent requests are dropped, not queued (fine so far).
 - Behaviour detection is keyword-based (`BEH_RX`) and heuristic.
+- **Photo CORS (verified 2026-09-27)**: `static.inaturalist.org` (all-rights-reserved photos, which is most of them, including all of the owner's)
+  sends **no** `Access-Control-Allow-Origin`, so drawing them taints a canvas. `inaturalist-open-data.s3.amazonaws.com` (CC photos) sends `*`.
+  The title card draws every photo on screen (screenshot-able); the PNG download redraws with CORS-safe photos only and uses name plates
+  for the rest, and says so. A full-photo PNG would need a tiny image proxy (e.g. a Cloudflare Worker), which means adding a backend.
+- Don't cache-bust S3 URLs with `?cors=…`: S3 treats `?cors` as "return the bucket CORS config" (200 + XML). The card uses `?spoodex=card`.
+- Ladder = top 25 observers **by record count** in the place, re-ranked by genera; someone with many genera but few records can be missing.
+  Ladder rows count **verifiable** in-place records; crew counts **all** non-captive records (so crew ≠ ladder numbers, by design).
 
 ---
 
@@ -184,7 +194,7 @@ the session's system reminder. Commit only when the owner asks, or as part of a 
 Owner-approved roadmap order: **regional ladder**, then faster imports (v2 API `fields=`) + IndexedDB,
 then share cards, crew mode, and curated habitat sets / field notes.
 
-### 10a. Regional ladder (build this first)
+### 10a. Regional ladder — DONE in v1.4 (core only: no envy hooks, no ladder quest, no `&ladder=` link yet)
 
 Goal: "the single most envy-inducing feature". Rank the top salticid observers of a place by genus
 count (and prestige), with the current user slotted in.
@@ -213,11 +223,11 @@ Suggested design:
 
 ### 10b. Other envy-engine items (after the ladder)
 
-- **Share cards**: render the profile/compare summary to a PNG via `<canvas>`. Check CORS first:
+- **Share cards** — DONE in v1.4 as the profile "title card" (no VS card yet). Original spec: render the profile/compare summary to a PNG via `<canvas>`. Check CORS first:
   `inaturalist-open-data.s3.amazonaws.com` (CC-licensed) photos probably allow it;
   `static.inaturalist.org` (all-rights-reserved) photos may taint the canvas. Fall back to text-only cards
   or leave those photos out. Include the attribution.
-- **Crew mode**: compare 3–6 logins: a genus × person matrix, "only X has", and "nobody in the crew has"
+- **Crew mode** — DONE in v1.4. Original spec: compare 3–6 logins: a genus × person matrix, "only X has", and "nobody in the crew has"
   (from the scope reference). Reuse `importRecords` + `buildModel(save.obs, null)`. Storage: don't cache
   every rival's full obs; keep derived id sets.
 - **Faster imports**: iNat v2 `/v2/observations?fields=…` to fetch only the fields `trimObs` uses; render
