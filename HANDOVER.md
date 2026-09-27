@@ -1,4 +1,4 @@
-# SPOODEX — handover (as of 2026-09-28, v1.5)
+# SPOODEX — handover (as of 2026-09-28, v1.6)
 
 Read this before touching the code. It covers what exists, how it's wired, how to test and ship,
 the owner's preferences, and a spec for the next piece of work: the **regional ladder** and the
@@ -41,7 +41,7 @@ Search for `/* ---------------- <name>` to jump to a section. Line numbers drift
 |---|---|---|
 | constants (top of script) | `SALTICIDAE=48139`, `ANN`, `BEH_RX`, `TIERS`, `CRITERIA`, `MASTERY_AT=7` | |
 | utils | `$`, `esc`, `photoSize(url,size)`, `cellKey`, `cellLabel`, `store.get/set/del` | `store` wraps localStorage in try/catch; keys prefixed `spoodex:` |
-| api | `api(path, params)` | Global throttle ≈1 request / 1.1 s (iNat asks for ~1/s, ≤10k/day), with retry/backoff on 429/5xx. **All iNat calls must go through `api()`.** |
+| api | `api(path, params, base = API)` | Global throttle ≈1 request / 1.1 s (iNat asks for ~1/s, ≤10k/day). On 429/5xx **or a network error** it pushes back the whole queue (`nextSlot`), because iNat's 429s have no CORS header and reach the browser as network errors. Pass `API2` for v2. **All iNat calls must go through `api()`.** |
 | state | `S` | See §4 |
 | sync | `importRecords(login, save, {full,log})`, `sync()`, `loadRefs()`, `ensureRef(scope)`, `fetchPlaces()`, `resolveBasePlaces()`, `setBase()`, `geolocate()`, `ensureInfo(ids)` | `importRecords` is reusable for *any* login (used for rivals) |
 | model | `buildModel(obsMap, base)` → `M`; `genusOf`, `speciesOf`, `genusOfNode`, `lineage` | Pure derivation, no network |
@@ -64,6 +64,7 @@ Search for `/* ---------------- <name>` to jump to a section. Line numbers drift
 | cards (shared) | `cardKit(cv)`, `cardPhotos`, `mountCard(el, draw, name)`, `cardBlob`, `cardExport`, `rarestFirst` | 1080×1350 canvas kit; see §9 on CORS |
 | title card | `drawTitleCard`, `openTitleCard` | |
 | wrapped | `wrappedData(Y)`, `wrappedExtras` (most-faved obs + state total for the year), `openWrapped`, `showWrapped`, `drawWrappedCard` | 6-slide modal, last slide is a downloadable card |
+| most wanted | `wantedList()` (score), `loadWanted`, `viewWanted`, `ensureHaunts(gid)`, `hauntSummary`, `openCase(gid)`, `drawCaseMap` | Ideas 5+6 combined. Score = records-near-home × season this month × reach (distance to nearest record square) × log(state count). Posters for the top 6, a 12-month calendar for the top 40, case file with a Leaflet map of 25 km squares. Haunts use **v2** `/observations?fields=id,observed_on,obscured,geojson` (≈30 KB per 200 records), radius 150 km from home, falling back to the whole state; obscured records are skipped |
 | crew feed | in `loadCrew`: diff vs previous snapshot → `S.crew.feed`; `row.wk` = uploads in last 7 days (`created_d1`); `crewFeedHtml`, `crewUnseen` (tab dot) | Crew refreshes every 6 h, also in the background after each sync |
 | boot / flows | `loadUser`, `updateUrl`, `copyLink`, `doSync`, `onboard`, `enterApp`, `startGuest`, `settings`, global click/submit/change handlers, `boot()` | |
 
@@ -82,7 +83,7 @@ Forms use `data-form` (`compare`, `placeSearch`, `crew`) on a delegated `submit`
 `tab`, `M` (model), `cmp` (`{login, save, M, loading, log, error}`), `pendingVs`.
 
 localStorage keys: `spoodex:u:<login lowercased>`, `nodes`, `places`, `info`, `ref`, `observers`,
-`pheno`, `prefs` (now also `ladderScope`, `ladderSort`), `cmp` (only the most recent rival is cached), `ladder` (`'p<place>'` → `{ts, n, icons, queue, rows:[{login, obs, g:[ids], s:[ids]}]}`, ≤4 places), `crew` (`{logins, data:{login→{ts, obs, g:{id:obs}, s:{id:obs}, wk:{obs,g[]}, err?}}, feed:[{ts, since, login, g[], s[]}], seen}`), `pioneer` (`'gid:pid'` → `{ts, u, d, id}`), `report` (one cached report), `lastLogin`.
+`pheno`, `prefs` (now also `ladderScope`, `ladderSort`), `cmp` (only the most recent rival is cached), `ladder` (`'p<place>'` → `{ts, n, icons, queue, rows:[{login, obs, g:[ids], s:[ids]}]}`, ≤4 places), `crew` (`{logins, data:{login→{ts, obs, g:{id:obs}, s:{id:obs}, wk:{obs,g[]}, err?}}, feed:[{ts, since, login, g[], s[]}], seen}`), `pioneer` (`'gid:pid'` → `{ts, u, d, id}`), `haunts` (`'gid@lat,lng'` → `{ts, n, used, skipped, wide, cells:[[cellKey, n, last]]}`, ≤60), `report` (one cached report), `lastLogin`.
 
 Per-user save `S.u`: `obs` (id → trimmed obs, see `trimObs`), `meta {lastSync,lastFull}`, `seen` (genus
 ids already revealed), `scans` (point key → `{ts,g:[{id,c}]}`), `active` (same, last 30 days, with `d1`),
@@ -198,7 +199,8 @@ the session's system reminder. Commit only when the owner asks, or as part of a 
 ## 10. NEXT: regional ladder + the rest of the envy engine
 
 v1.5 added share of the record, pioneer badges, the weekly Spood Report, Wrapped and the crew feed (ideas 3, 4, 7, 8, 9 of the 2026-09-27 list;
-not yet built: 1 "often confused with" via `/identifications/similar_species` ✅, 2 identifier track ✅, 5 monthly forecast, 6 hotspots, 10 ID bounties).
+v1.6 added Most Wanted (5 + 6 combined). Not yet built: 1 "often confused with" via `/identifications/similar_species` ✅, 2 identifier track ✅, 10 ID bounties).
+- Testing burns API quota fast (ladder ≈26 calls, pioneer ≈180, Most Wanted ≈40 for a fresh region). If you see 429s, wait a few minutes; another local session sharing the IP counts too.
 
 Owner-approved roadmap order: **regional ladder**, then faster imports (v2 API `fields=`) + IndexedDB,
 then share cards, crew mode, and curated habitat sets / field notes.

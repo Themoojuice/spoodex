@@ -130,6 +130,29 @@ p.story { margin:0 0 8px; padding-bottom:8px; border-bottom:1px dashed var(--dim
 .wdots { display:flex; gap:6px; } .wdots i { width:8px; height:8px; border-radius:50%; background:var(--dim); } .wdots i.on { background:var(--accent); }
 .feed { padding:6px 0; border-bottom:1px dashed var(--dim); }
 nav.tabs button .news { color:var(--accent); font-size:10px; vertical-align:super; }
+.posters { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:18px; }
+.poster { background:#efe1bf; background-image:radial-gradient(circle at 20% 15%, rgba(255,255,255,.35), transparent 45%), radial-gradient(circle at 85% 90%, rgba(120,80,30,.18), transparent 50%);
+  color:#3a2a18; border:1px solid #b89f72; box-shadow:0 3px 12px rgba(0,0,0,.28); padding:14px 14px 12px; text-align:center; cursor:pointer; transform:rotate(-.6deg); transition:transform .15s; }
+.poster:nth-child(even) { transform:rotate(.7deg); }
+.poster:hover { transform:scale(1.02); }
+.poster .wtitle { font:400 44px/1 'Special Elite', 'Courier New', monospace; letter-spacing:.14em; border-bottom:3px double #6b5234; padding-bottom:4px; }
+.poster .wtier { font:600 11px 'IBM Plex Mono', monospace; letter-spacing:.18em; margin-top:6px; color:#8a3b22; }
+.poster .wph { aspect-ratio:1; background:#d9c7a0 center/cover; filter:sepia(.5) contrast(1.05); border:6px solid #f7eed8; box-shadow:0 1px 3px rgba(0,0,0,.3); margin:10px 0 2px; }
+.poster .wcredit { font:10px 'IBM Plex Mono', monospace; color:#7a6548; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.poster .wname { font:italic 600 26px Fraunces, Georgia, serif; margin-top:6px; }
+.poster .wtribe { font:12px 'IBM Plex Mono', monospace; color:#6d5a40; }
+.poster .wwhy { list-style:none; padding:0; margin:8px 0; font:12px/1.5 'IBM Plex Mono', monospace; text-align:left; }
+.poster .wwhy li { padding:2px 0; border-bottom:1px dotted rgba(107,82,52,.35); }
+.poster .wreward { font:14px 'Special Elite', 'Courier New', monospace; letter-spacing:.12em; border-top:2px solid #6b5234; padding-top:6px; }
+table.cal { border-collapse:collapse; width:100%; font-size:12px; }
+table.cal th { font-weight:400; color:var(--muted); }
+table.cal td, table.cal th { padding:3px 2px; text-align:center; }
+table.cal td.nm { text-align:left; white-space:nowrap; padding-right:8px; }
+table.cal td.m i { display:block; height:16px; border-radius:2px; background:var(--lit); }
+table.cal .now { box-shadow:inset 0 0 0 2px var(--accent); }
+table.cal tr[data-act] { cursor:pointer; }
+table.cal tr[data-act]:hover td { background:var(--panel2); }
+#caseMap { height:320px; border-radius:var(--radius); border:1px solid var(--line); margin-bottom:8px; }
 .cardcanvas { width:100%; max-width:540px; height:auto; display:block; margin:0 auto 12px; border-radius:4px; box-shadow:0 6px 20px rgba(0,0,0,.25); }
 @media (max-width:600px) { .vs { grid-template-columns:1fr; } .vsmark { text-align:center; } .mosaic { max-width:150px; } }
 
@@ -289,6 +312,7 @@ main { padding-top:18px; }
 
 const SALTICIDAE = 48139;               // iNat taxon id for Salticidae
 const API = 'https://api.inaturalist.org/v1';
+const API2 = 'https://api.inaturalist.org/v2';   // v2 lets us ask for only the fields we need
 const REF_TTL = 7 * 864e5;              // regional reference trees refresh weekly
 const FULL_RESYNC_AFTER = 14 * 864e5;   // periodic full resync catches deletions / re-IDs out of Salticidae
 
@@ -348,16 +372,19 @@ const store = {
 
 /* ---------------- api: throttled to ~1 req/s per iNat recommended practice ---------------- */
 let nextSlot = 0;
-async function api(path, params = {}) {
+async function api(path, params = {}, base = API) {
   const qs = new URLSearchParams(Object.entries(params).filter(([,v]) => v != null && v !== '')).toString();
-  const url = `${API}${path}${qs ? '?'+qs : ''}`;
-  for (let attempt = 0; attempt < 4; attempt++) {
+  const url = `${base}${path}${qs ? '?'+qs : ''}`;
+  for (let attempt = 0; attempt < 5; attempt++) {
     const now = Date.now(), slot = Math.max(now, nextSlot);
     nextSlot = slot + 1100;
     if (slot > now) await sleep(slot - now);
     let r;
-    try { r = await fetch(url); } catch (e) { await sleep(2000); continue; }
-    if (r.status === 429 || r.status >= 500) { await sleep(4000 * (attempt+1)); continue; }
+    // Back off the whole queue, not just this call, so queued requests don't keep hammering a rate-limited API.
+    // iNat's 429s carry no CORS header, so in a browser they surface as network errors rather than status 429.
+    const backoff = async () => { const wait = 5000 * (attempt+1); nextSlot = Math.max(nextSlot, Date.now() + wait); await sleep(wait); };
+    try { r = await fetch(url); } catch (e) { await backoff(); continue; }
+    if (r.status === 429 || r.status >= 500) { await backoff(); continue; }
     if (!r.ok) throw new Error(`iNaturalist returned ${r.status} for ${path}`);
     return r.json();
   }
@@ -841,6 +868,7 @@ const TABS = [
   { k:'tree', label:'Lineage tree', tier:2 },
   { k:'map', label:'Map & scanner' },
   { k:'report', label:'This week' },
+  { k:'wanted', label:'Most Wanted' },
   { k:'compare', label:'Compare' },
   { k:'ladder', label:'Ladder' },
   { k:'crew', label:'Crew' },
@@ -865,9 +893,10 @@ function render() {
   if (S.tab === 'ladder' && !ladderBusy && !ladderErr && ladderKey() && ladderNeedsLoad(S.ladder[ladderKey()])) loadLadder();
   if (S.tab === 'crew' && !crewBusy && !crewErr && crewNeedsLoad()) loadCrew();
   if (S.tab === 'report' && !reportBusy && !reportErr && reportNeedsLoad()) loadReport();
+  if (S.tab === 'wanted' && !wantedBusy && !wantedErr && Date.now() - wantedTs > WANTED_TTL) loadWanted();
   if (S.tab === 'profile' && !pioneerBusy && !isGuest()) setTimeout(drainPioneer, 0);
   if (S.tab === 'crew') { S.crew.seen = Date.now(); saveCrew(); }
-  v.innerHTML = ({ profile:viewProfile, dex:viewDex, tree:viewTree, map:viewMapShell, quests:viewQuests, compare:viewCompare, ladder:viewLadder, crew:viewCrew, report:viewReport })[S.tab]();
+  v.innerHTML = ({ profile:viewProfile, dex:viewDex, tree:viewTree, map:viewMapShell, quests:viewQuests, compare:viewCompare, ladder:viewLadder, crew:viewCrew, report:viewReport, wanted:viewWanted })[S.tab]();
   if (S.tab === 'map') initMap();
 }
 function lockedPlate(t) {
@@ -1187,13 +1216,17 @@ async function scanCell(k) {
   const out = $('#scanRes') || $('#scanOut');
   if (out) out.innerHTML = '<p class="muted">Scanning… (public iNat records, aggregated by genus)</p>';
   try {
-    const d = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, lat:c.lat.toFixed(3), lng:c.lng.toFixed(3), radius:25, verifiable:true });
-    d.results.forEach(addNode);
-    S.u.scans[k] = { ts:Date.now(), g:d.results.filter(r => r.rank === 'genus').map(r => ({ id:r.id, c:r.descendant_obs_count || r.count || 0 })) };
-    saveUser(); saveShared();
+    await fetchScan(k);
     try { await scanActive(k, true); } catch (e) { console.warn(e); }
     if (S.tab === 'map') showScan(k); else render();
   } catch (e) { if (out) out.innerHTML = `<p>${esc(e.message)}</p>`; }
+}
+async function fetchScan(k) {
+  const c = pointFor(k); if (!c) return;
+  const d = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, lat:c.lat.toFixed(3), lng:c.lng.toFixed(3), radius:25, verifiable:true });
+  d.results.forEach(addNode);
+  S.u.scans[k] = { ts:Date.now(), g:d.results.filter(r => r.rank === 'genus').map(r => ({ id:r.id, c:r.descendant_obs_count || r.count || 0 })) };
+  saveUser(); saveShared();
 }
 function showScan(k) {
   const sc = S.u.scans[k], target = $('#scanRes') || $('#scanOut'); if (!sc || !target) return;
@@ -1294,6 +1327,7 @@ function phenoChart(gid) {
 function phenoUpdated() {
   document.querySelectorAll('[data-pheno]').forEach(el => el.innerHTML = phenoHtml(+el.dataset.pheno));
   document.querySelectorAll('[data-phenochart]').forEach(el => el.innerHTML = phenoChart(+el.dataset.phenochart));
+  if (S.tab === 'wanted' && !$('#modalRoot').innerHTML) softRender();
 }
 
 /* ---------------- mastery fix-it: point at the exact records that could tick a box ---------------- */
@@ -2015,6 +2049,194 @@ function viewReport() {
     <p class="small muted">☑ in your SPOODEX · 🎯 not yet.</p></div>`;
 }
 
+/* ---------------- most wanted: this month's forecast of missing genera, wanted posters, and hotspot case files ---------------- */
+const WANTED_MAX = 40, WANTED_POSTERS = 6, WANTED_TTL = 3600e3, HAUNT_TTL = 7 * 864e5, HAUNT_KM = 150, HAUNT_KEEP = 60;
+S.haunts = store.get('haunts', {});   // `${genus}@${home rounded 0.1°}` -> {ts, n, used, skipped, wide, cells:[[cellKey, records, last date]]}
+let wantedBusy = false, wantedErr = null, wantedTs = 0, caseMap = null;
+const smooth12 = m => m.map((v, i) => (m[(i + 11) % 12] + 2 * v + m[(i + 1) % 12]) / 4);
+const cellCenter = k => { const [a, b] = k.split(':').map(Number); return { lat:(a + .5) * .25, lng:(b + .5) * .25 }; };
+function kmBetween(a, b) {
+  const r = Math.PI / 180, dLat = (b.lat - a.lat) * r, dLng = (b.lng - a.lng) * r;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLng / 2) ** 2;
+  return 12742 * Math.asin(Math.sqrt(h));
+}
+const kmTxt = d => `~${Math.max(5, Math.round(d / 5) * 5)} km away`;   // distance to a 25 km square's centre, so keep it rough
+function agoTxt(d) {
+  if (!d) return '';
+  const days = Math.round((Date.now() - Date.parse(d + 'T12:00:00')) / 864e5);
+  if (days <= 1) return days < 1 ? 'today' : 'yesterday';
+  if (days < 60) return `${days} days ago`;
+  return new Date(d + 'T12:00:00').toLocaleDateString(undefined, { month:'short', year:'numeric' });
+}
+// Rank every genus recorded in your state that you haven't recorded. Not a probability: a record-based "where to put your effort" score.
+function wantedList() {
+  const M = S.M, pid = M.home.state || M.home.country, ref = pid && S.ref['p' + pid];
+  if (!ref) return null;
+  const h = M.homeCell, scan = h && S.u.scans[h.k], act = h && S.u.active?.[h.k];
+  const near = new Map((scan?.g || []).map(x => [x.id, x.c])), recent = new Map((act?.g || []).map(x => [x.id, x.c]));
+  const m = new Date().getMonth();
+  const list = Object.keys(ref.g).map(Number).filter(id => !M.G.has(id)).map(id => {
+    const x = { id, state:ref.g[id], near:near.get(id) || 0, recent:recent.get(id) || 0 };
+    x.pre = (1 + 1.5 * Math.log10(1 + x.near) + (x.recent ? 2 : 0)) * Math.log10(10 + x.state);
+    return x;
+  }).sort((a,b) => b.pre - a.pre).slice(0, WANTED_MAX);
+  for (const x of list) {
+    const p = S.pheno[phenoKey(x.id)];
+    if (p) {
+      const sm = smooth12(p.m), mx = Math.max(...sm) || 1, tot = p.m.reduce((a,b) => a + b, 0);
+      x.curve = sm.map(v => v / mx); x.few = tot < 12; x.peak = peakInfo(x.id);
+      x.season = x.few ? .5 : x.curve[m];
+    }
+    // Reach: how far the nearest record square is from home (unknown until its haunts are fetched)
+    const hn = S.haunts[hauntKey(x.id)], hs = hauntSummary(hn);
+    x.dist = !hn ? null : hs?.nearest && !hn.wide ? hs.nearest.d : Infinity;
+    x.reach = !h ? 1 : x.dist == null ? .7 : x.dist === Infinity ? .15 : 1 / (1 + (x.dist / 100) ** 2);
+    x.score = x.pre * (.25 + (x.season ?? .5)) * x.reach;
+  }
+  list.sort((a,b) => b.score - a.score);
+  const top = list[0]?.score || 1;
+  list.forEach(x => x.tier = x.score >= .6 * top ? 'Prime suspect' : x.score >= .3 * top ? 'Worth a look' : 'Long shot');
+  return list;
+}
+const hauntKey = gid => { const h = S.M.homeCell; return h ? `${gid}@${h.lat.toFixed(1)},${h.lng.toFixed(1)}` : `${gid}@p${S.M.home.state || S.M.home.country}`; };
+// Recent records around home (v2 API with only the fields we need), binned into 25 km squares. Falls back to the whole state.
+async function ensureHaunts(gid) {
+  const key = hauntKey(gid), cur = S.haunts[key];
+  if (cur && Date.now() - cur.ts < HAUNT_TTL) return cur;
+  const h = S.M.homeCell, pid = S.M.home.state || S.M.home.country;
+  const q = { taxon_id:gid, verifiable:true, per_page:200, order_by:'observed_on', order:'desc', fields:'id,observed_on,obscured,geojson' };
+  let d = h ? await api('/observations', { ...q, lat:h.lat.toFixed(2), lng:h.lng.toFixed(2), radius:HAUNT_KM }, API2) : null, wide = false;
+  if ((!d || !d.results.length) && pid) { d = await api('/observations', { ...q, place_id:pid }, API2); wide = true; }
+  const cells = new Map(); let skipped = 0;
+  for (const o of d?.results || []) {
+    const c = o.geojson?.coordinates; if (!c) continue;
+    if (o.obscured) { skipped++; continue; }   // obscured points are deliberately displaced; they'd land in the wrong square
+    const k = cellKey(c[1], c[0], .25), e = cells.get(k) || [k, 0, ''];
+    e[1]++; if ((o.observed_on || '') > e[2]) e[2] = o.observed_on || '';
+    cells.set(k, e);
+  }
+  S.haunts[key] = { ts:Date.now(), n:d?.total_results || 0, used:d?.results.length || 0, skipped, wide, cells:[...cells.values()] };
+  Object.keys(S.haunts).sort((a,b) => S.haunts[b].ts - S.haunts[a].ts).slice(HAUNT_KEEP).forEach(k => delete S.haunts[k]);
+  store.set('haunts', S.haunts);
+  return S.haunts[key];
+}
+function hauntSummary(hn) {
+  const h = S.M.homeCell; if (!hn || !hn.cells.length) return null;
+  const last = hn.cells.reduce((a, c) => c[2] > a ? c[2] : a, '');
+  if (!h) return { last };
+  let best = null;
+  for (const [k, n, l] of hn.cells) { const d = kmBetween(h, cellCenter(k)); if (!best || d < best.d) best = { d, n, last:l, k }; }
+  return { last, nearest:best };
+}
+function wantedReasons(x, where) {
+  const hs = hauntSummary(S.haunts[hauntKey(x.id)]), out = [];
+  if (x.recent) out.push(`🔥 ${x.recent} record${x.recent === 1 ? '' : 's'} within 25 km in the last ${ACTIVE_DAYS} days`);
+  if (x.peak) out.push(x.few ? '🗓 Season unclear (few records)' : x.peak.now ? `🌡 In season now (peak ${esc(x.peak.text)})` : `🗓 Peak ${esc(x.peak.text)}`);
+  if (S.M.homeCell && x.near) out.push(`📍 ${fmt(x.near)} record${x.near === 1 ? '' : 's'} within 25 km of home, all time`);
+  else if (hs?.nearest) out.push(`🧭 Nearest record square ${kmTxt(hs.nearest.d)}, last record there ${esc(agoTxt(hs.nearest.last))}`);
+  else if (S.M.homeCell) out.push('📍 Not yet recorded within 25 km of home');
+  if (hs?.last && !S.haunts[hauntKey(x.id)].wide) out.push(`👁 Last seen within ${HAUNT_KM} km ${esc(agoTxt(hs.last))}`);
+  out.push(`📚 ${fmt(x.state)} iNat record${x.state === 1 ? '' : 's'} in ${where}`);
+  return out;
+}
+async function loadWanted() {
+  const pid = S.M.home.state || S.M.home.country;
+  if (wantedBusy || !pid) return;
+  wantedBusy = true; wantedErr = null;
+  const redraw = () => { if (S.tab === 'wanted') softRender(); };
+  try {
+    await ensureRef('state');
+    const h = S.M.homeCell;
+    if (h) { if (!S.u.scans[h.k]) await fetchScan(h.k); await scanActive(h.k); }
+    redraw();
+    let ids = wantedList().map(x => x.id);
+    ensureInfo(ids); ensurePheno(ids);
+    while (phenoBusy) await sleep(1000);   // ranking depends on the season curves
+    redraw();
+    // Distance re-ranks the list, so keep fetching haunts until the poster line-up has them all
+    for (let round = 0; round < 4; round++) {
+      const need = wantedList().slice(0, WANTED_POSTERS).filter(x => x.dist === null);
+      if (!need.length) break;
+      for (const x of need) { await ensureHaunts(x.id); redraw(); }
+    }
+    ensureInfo(wantedList().map(x => x.id));
+  } catch (e) { wantedErr = e.message; }
+  wantedBusy = false; wantedTs = Date.now();
+  redraw();
+}
+function viewWanted() {
+  const M = S.M, pid = M.home.state || M.home.country;
+  if (!pid) return `<div class="panel"><h2>Most Wanted</h2><p>Most Wanted needs to know your region. Record a salticid on iNaturalist, or set a home base on the map.</p><button class="primary" data-tab="map">🏠 Set a home base</button></div>`;
+  const list = wantedList(), where = esc(S.places[pid]?.n || 'your region'), m = new Date().getMonth();
+  const head = `<div class="panel" style="margin-bottom:16px"><h2>Most Wanted · ${MONTHS[m]} ${new Date().getFullYear()}</h2>
+    <p class="small muted" style="margin-bottom:0">Genera recorded in ${where} that aren't in your SPOODEX, ranked for <b>this month</b> by season, how close their nearest records are to your home base, recent local sightings, and how common they are in ${where}. It's a ranking of iNat records to guide your effort, not a probability.${M.homeCell ? '' : ' <b>Set a home base on the Map tab</b> to add distances and local sightings.'}</p>
+    ${wantedBusy ? '<p class="small">Consulting the records… posters sharpen as season data and sightings arrive.</p>' : ''}
+    ${wantedErr ? `<p>${esc(wantedErr)} <button data-act="wantedRetry">Try again</button></p>` : ''}</div>`;
+  if (!list) return head + '<p class="muted">Loading the regional reference…</p>';
+  if (!list.length) return head + `<div class="panel"><p class="hand">Nobody left on the list. You've recorded every genus iNat knows from ${where}.</p></div>`;
+  const tribe = id => { const L = lineage(id); return (L.find(n => n.r === 'tribe') || L.find(n => n.r === 'subfamily') || {}).n || 'Salticidae'; };
+  const poster = x => { const info = S.info[x.id] || {};
+    return `<div class="poster" data-act="wanted" data-v="${x.id}" title="Open the case file">
+      <div class="wtitle">WANTED</div><div class="wtier">${x.tier.toUpperCase()} · ${esc(where.toUpperCase())}</div>
+      <div class="wph" style="background-image:url('${esc(info.p || '')}')"></div>
+      ${info.a ? `<div class="wcredit">${esc(info.a)}</div>` : ''}
+      <div class="wname">${esc(S.nodes[x.id]?.n || '?')}</div><div class="wtribe">${esc(tribe(x.id))}</div>
+      <ul class="wwhy">${wantedReasons(x, where).map(r => `<li>${r}</li>`).join('')}</ul>
+      <div class="wreward">REWARD · LEVEL ${M.G.size + 1} · +100 XP</div></div>`; };
+  const cal = `<h2 style="margin-top:24px">The year ahead</h2>
+    <p class="small muted">When each of your ${list.length} most-wanted genera turns up in ${where}: darker = more records that month (smoothed). This month is outlined. Click a row for its case file.</p>
+    <div class="panel tablewrap"><table class="cal"><tr><th></th>${MONTHS.map((n, i) => `<th class="${i === m ? 'now' : ''}">${n[0]}</th>`).join('')}<th></th></tr>
+    ${list.map(x => `<tr data-act="wanted" data-v="${x.id}"><td class="nm"><i>${esc(S.nodes[x.id]?.n || '?')}</i></td>
+      ${Array.from({ length:12 }, (_, i) => `<td class="m ${i === m ? 'now' : ''}">${x.curve ? `<i style="opacity:${(.08 + .92 * x.curve[i]).toFixed(2)}"></i>` : '·'}</td>`).join('')}
+      <td class="small muted">${x.tier}</td></tr>`).join('')}</table></div>`;
+  return head + `<div class="posters">${list.slice(0, WANTED_POSTERS).map(poster).join('')}</div>` + cal;
+}
+async function openCase(gid) {
+  const M = S.M, pid = M.home.state || M.home.country, where = esc(S.places[pid]?.n || 'your region');
+  const x = (wantedList() || []).find(w => w.id === gid) || { id:gid, state:0, near:0, recent:0, tier:'' };
+  const name = esc(S.nodes[gid]?.n || '?');
+  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal"><button class="x" data-close="1">✕</button><div class="body">
+    <div class="small" style="letter-spacing:.2em">CASE FILE${x.tier ? ' · ' + x.tier.toUpperCase() : ''}</div>
+    <h1 style="font-size:34px;font-style:italic;margin:2px 0">${name}</h1><div class="muted">${esc(lineageText(gid))}</div>
+    <h3 style="margin-top:12px">Known haunts</h3><div id="caseMap"></div><div id="caseInfo"><p class="muted">Pulling recent records…</p></div>
+    <h3 style="margin-top:12px">When to look</h3><div data-phenochart="${gid}">${phenoChart(gid)}</div>
+    <h3 style="margin-top:12px">Why it's on the list</h3><ul class="checks">${wantedReasons(x, where).map(r => `<li>${r}</li>`).join('')}</ul>
+    <p class="row"><button data-genus="${gid}">Genus page</button>
+      <a class="btnlink" href="https://www.inaturalist.org/observations?taxon_id=${gid}${pid ? '&place_id=' + pid : ''}&verifiable=true" target="_blank" rel="noopener">Records on iNaturalist ↗</a></p>
+  </div></div></div>`;
+  ensurePheno([gid]);
+  let hn;
+  try { hn = await ensureHaunts(gid); } catch (e) { const el = $('#caseInfo'); if (el) el.innerHTML = `<p>${esc(e.message)}</p>`; return; }
+  const info = $('#caseInfo'); if (!info) return;
+  const hs = hauntSummary(hn), h = M.homeCell;
+  const ranked = hn.cells.map(([k, n, last]) => ({ k, n, last, d:h ? kmBetween(h, cellCenter(k)) : null }))
+    .sort((a,b) => (a.d ?? 0) - (b.d ?? 0) || b.n - a.n);
+  info.innerHTML = hn.cells.length ? `
+    <p class="small">${fmt(hn.used)}${hn.n > hn.used ? ` most recent of ${fmt(hn.n)}` : ''} verifiable record${hn.used === 1 ? '' : 's'} ${hn.wide ? `in ${where} (none within ${HAUNT_KM} km of home)` : `within ${HAUNT_KM} km of your home base`}, in ${hn.cells.length} square${hn.cells.length === 1 ? '' : 's'} of ~25 km.
+      ${hs?.nearest ? `Nearest: <b>${kmTxt(hs.nearest.d)}</b>.` : ''} ${hs?.last ? `Latest: ${esc(agoTxt(hs.last))}.` : ''}</p>
+    ${ranked.slice(0, 6).map(c => `<div class="small">${c.d != null ? `<b>${kmTxt(c.d)}</b> · ` : ''}${fmt(c.n)} record${c.n === 1 ? '' : 's'} · last ${esc(agoTxt(c.last))}</div>`).join('')}
+    <p class="small muted">Squares are ~25 km on purpose; ${hn.skipped ? `${hn.skipped} obscured record${hn.skipped === 1 ? ' was' : 's were'} left out because their points are deliberately displaced` : 'no exact locations are shown'}.</p>`
+    : `<p>No mappable records ${hn.wide ? `in ${where}` : `within ${HAUNT_KM} km`} yet${hn.skipped ? ` (${hn.skipped} obscured)` : ''}.</p>`;
+  drawCaseMap(hn, ranked);
+}
+function drawCaseMap(hn, ranked) {
+  const el = $('#caseMap'); if (!el || !window.L) return;
+  if (caseMap) { try { caseMap.remove(); } catch {} }
+  caseMap = L.map(el, { worldCopyJump:true, scrollWheelZoom:false });
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom:13, attribution:'Tiles © Esri — Esri, HERE, Garmin, USGS, NGA, and other contributors' }).addTo(caseMap);
+  const col = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#a8412a';
+  const max = Math.max(1, ...hn.cells.map(c => c[1])), bounds = [];
+  for (const [k, n, last] of hn.cells) {
+    const c = cellCenter(k), b = [[c.lat - .125, c.lng - .125], [c.lat + .125, c.lng + .125]];
+    L.rectangle(b, { color:col, weight:1, fillColor:col, fillOpacity:.2 + .6 * n / max }).bindTooltip(`${n} record${n === 1 ? '' : 's'} · last ${agoTxt(last)}`).addTo(caseMap);
+  }
+  // frame home plus the nearest few squares, so a far-flung record doesn't zoom the map out to the whole state
+  ranked.slice(0, 5).forEach(r => { const c = cellCenter(r.k); bounds.push([c.lat - .125, c.lng - .125], [c.lat + .125, c.lng + .125]); });
+  const h = S.M.homeCell;
+  if (h) { L.circle([h.lat, h.lng], { radius:25000, color:'#3f6b3a', weight:2, dashArray:'6 6', fill:false, interactive:false }).addTo(caseMap); bounds.push([h.lat - .25, h.lng - .25], [h.lat + .25, h.lng + .25]); }
+  setTimeout(() => { caseMap.invalidateSize(); if (bounds.length) caseMap.fitBounds(bounds, { padding:[16, 16], maxZoom:10 }); else caseMap.setView([-25, 134], 4); }, 60);
+}
+
 /* ---------------- cards: shared canvas kit for the title card and wrapped ---------------- */
 // iNat serves most photos (all-rights-reserved ones) without CORS headers, so drawing them taints the canvas and blocks PNG export.
 // Cards are drawn with every photo for on-screen viewing/screenshots; the PNG download falls back to name plates for those.
@@ -2374,6 +2596,8 @@ document.addEventListener('click', e => {
   if (a === 'crewDel') setCrew(S.crew.logins.filter(l => l !== val));
   if (a === 'crewRefresh') { crewErr = null; loadCrew(true); }
   if (a === 'card') openTitleCard();
+  if (a === 'wanted') openCase(+val);
+  if (a === 'wantedRetry') { wantedErr = null; wantedTs = 0; loadWanted(); }
   if (a === 'wrapped') openWrapped();
   if (a === 'wrYear') openWrapped(val);
   if (a === 'wrNext' && S.wr) { S.wr.i = Math.min(WR_SLIDES - 1, S.wr.i + 1); showWrapped(); }
