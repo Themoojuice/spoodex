@@ -37,7 +37,8 @@
 [data-chassis="cabinet"] nav.tabs button { color:#efe4cc; }
 [data-chassis="cabinet"] header.top .lvl button { color:var(--ink); }
 [data-chassis="cabinet"] nav.tabs button.on { color:var(--ink); }
-[data-chassis="cabinet"] #view > h2, [data-chassis="cabinet"] #view > p { color:#efe4cc; }
+[data-chassis="cabinet"] #view > h2, [data-chassis="cabinet"] #view > h3, [data-chassis="cabinet"] #view > p { color:#efe4cc; }
+[data-chassis="cabinet"] #view > h3 .muted { color:#c9b48f; }
 [data-chassis="cabinet"] .panel, [data-chassis="cabinet"] .card { box-shadow:0 2px 0 #1a120d, 0 6px 16px rgba(0,0,0,.35); }
 [data-chassis="cabinet"] .panel { border-top:3px solid #b08a45; }
 * { box-sizing:border-box; }
@@ -67,6 +68,27 @@ table.cmp { width:100%; border-collapse:collapse; font-size:13px; }
 table.cmp td, table.cmp th { padding:4px 6px; border-bottom:1px solid var(--dim); text-align:left; }
 .card.gilded { border:2px solid #b08a45; box-shadow:inset 0 0 0 2px #e2bf7a; }
 .leaflet-popup-content button { font:13px var(--body); }
+.card .rar { position:absolute; top:6px; right:6px; z-index:2; font-size:11px; color:#e2bf7a; text-shadow:0 1px 2px #000; letter-spacing:1px; }
+.sprow { display:flex; gap:10px; align-items:center; padding:4px 0; border-bottom:1px dashed var(--dim); }
+.sprow .thumb { width:42px; height:42px; flex:none; border-radius:var(--radius); background:var(--panel2) center/cover; }
+.sprow .thumb.unknown { filter:grayscale(1) sepia(.6) blur(3px) brightness(.6); }
+.sprow:not(.have) { color:var(--muted); }
+.vs { display:grid; grid-template-columns:1fr auto 1fr; gap:12px; align-items:stretch; }
+.vs .side { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:14px; text-align:center; }
+.vsmark { align-self:center; font:600 38px var(--head); color:#e2bf7a; text-shadow:0 2px 0 #8f6420; }
+.mosaic { display:grid; grid-template-columns:1fr 1fr; gap:3px; aspect-ratio:1; max-width:220px; margin:0 auto 10px; }
+.mosaic i { background:var(--panel2) center/cover; border-radius:2px; }
+.prestige { font:600 30px var(--head); color:var(--accent); margin-top:6px; }
+.envy .big { font-size:17px; margin:4px 0; }
+.envy .big b { font:600 30px var(--head); color:var(--accent); }
+.tug { display:flex; height:18px; border-radius:99px; overflow:hidden; border:1px solid var(--line); margin:12px 0 4px; }
+.tug i:first-child { background:var(--lit); } .tug i:last-child { background:var(--accent); }
+.jewels { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; }
+.jewel { position:relative; border-radius:var(--radius); overflow:hidden; aspect-ratio:4/5; background:var(--panel2) center/cover; border:2px solid #b08a45; box-shadow:inset 0 0 0 2px #e2bf7a; cursor:pointer; }
+.jewel .lab { position:absolute; left:0; right:0; bottom:0; padding:8px; background:linear-gradient(transparent, rgba(20,12,6,.88) 40%); color:#f6eedb; }
+.stars { color:#e2bf7a; letter-spacing:2px; }
+td.win { font-weight:700; color:var(--lit); }
+@media (max-width:600px) { .vs { grid-template-columns:1fr; } .vsmark { text-align:center; } .mosaic { max-width:150px; } }
 
 /* ---------- Header ---------- */
 header.top { position:sticky; top:0; z-index:500; background:var(--bg); border-bottom:2px solid var(--line); }
@@ -462,11 +484,16 @@ async function ensureRef(scope) {
   const pid = scopePlace(scope);
   const key = pid ? 'p' + pid : 'world';
   const cur = S.ref[key];
-  if (cur && Date.now() - cur.ts < REF_TTL) return cur;
+  if (cur && cur.s && Date.now() - cur.ts < REF_TTL) return cur;
   const d = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, place_id:pid, verifiable:true });
-  const g = {};
-  d.results.forEach(r => { addNode(r); if (r.rank === 'genus') g[r.id] = r.descendant_obs_count || r.count || 0; });
-  S.ref[key] = { ts:Date.now(), g };
+  const g = {}, s = {};
+  d.results.forEach(r => {
+    addNode(r);
+    const c = r.descendant_obs_count || r.count || 0;
+    if (r.rank === 'genus') g[r.id] = c;
+    if (r.rank === 'species') s[r.id] = c;
+  });
+  S.ref[key] = { ts:Date.now(), g, s };
   saveShared();
   return S.ref[key];
 }
@@ -498,6 +525,8 @@ async function ensureInfo(ids) {
 }
 
 /* ---------------- model: pure derivation from cached observations ---------------- */
+function speciesOf(anc) { for (const id of anc || []) if (S.nodes[id]?.r === 'species') return id; return null; }
+function genusOfNode(id) { let c = id, guard = 0; while (c && S.nodes[c]?.r !== 'genus' && guard++ < 10) c = S.nodes[c]?.p; return S.nodes[c]?.r === 'genus' ? c : null; }
 function genusOf(anc) { for (const id of anc || []) if (S.nodes[id]?.r === 'genus') return id; return null; }
 function lineage(id) {
   const out = []; let cur = S.nodes[id]?.p, guard = 0;
@@ -508,7 +537,7 @@ const lineageText = id => lineage(id).map(n => n.n).join(' › ') || 'Salticidae
 
 function buildModel(obsMap = S.u.obs, base = S.u.base) {
   const all = Object.values(obsMap).filter(o => !o.cap).sort((a,b) => (a.d||'').localeCompare(b.d||'') || a.id - b.id);
-  const G = new Map(), leads = new Map();
+  const G = new Map(), leads = new Map(), SP = new Map();
   let xpTotal = 0;
   const cells25 = new Map(), dayDisc = new Map(), fieldDays = new Set(), behObs = { feed:0, court:0, egg:0 };
   const monthsAll = new Set(), cellsAll01 = new Set();
@@ -538,6 +567,14 @@ function buildModel(obsMap = S.u.obs, base = S.u.base) {
       if (o.d) dayDisc.set(o.d, (dayDisc.get(o.d) || 0) + 1);
     }
     g.obs.push(o);
+    const sid = speciesOf(o.anc);
+    if (sid) {
+      let sp = SP.get(sid);
+      if (!sp) { sp = { id:sid, name:S.nodes[sid]?.n || o.t.n, gid, obs:[], first:o, photos:[] }; SP.set(sid, sp); }
+      sp.obs.push(o);
+      for (const p of o.ph) if (sp.photos.length < 8) sp.photos.push({ url:p, id:o.id });
+      (g.sp = g.sp || new Set()).add(sid);
+    }
     const f = g.f, mark = (k, label, xp) => { if (!f[k]) { f[k] = true; if (g.obs.length > 1) events.push([label, xp]); } };
     if (o.ann.includes(ANN.MALE)) mark('male', 'Male recorded', 40);
     if (o.ann.includes(ANN.FEMALE)) mark('female', 'Female recorded', 40);
@@ -575,6 +612,8 @@ function buildModel(obsMap = S.u.obs, base = S.u.base) {
     const rg = g.obs.find(o => o.q === 'research' && o.ph.length);
     g.cover = rg ? rg.ph[0] : (g.photos[0]?.url || '');
   }
+  for (const g of genera) g.sp = g.sp || new Set();
+  for (const sp of SP.values()) { const rgo = sp.obs.find(o => o.q === 'research' && o.ph.length); sp.cover = rgo ? rgo.ph[0] : (sp.photos[0]?.url || ''); }
   // Home region = most frequent country & state across records
   const cnt = {}; all.forEach(o => o.pl.forEach(p => cnt[p] = (cnt[p]||0) + 1));
   const best = lvl => Object.keys(cnt).filter(p => S.places[p]?.l === lvl).sort((a,b) => cnt[b]-cnt[a])[0];
@@ -591,7 +630,7 @@ function buildModel(obsMap = S.u.obs, base = S.u.base) {
     obs:all, G, genera, leads:[...leads.values()].sort((a,b) => b.obs.length - a.obs.length), xp:xpTotal,
     cells25, cellsAll01, fieldDays:days, dayDisc, streak:run, bestStreak:bestRun, home, homeCell, behObs, monthsAll,
     newThisYear: genera.filter(g => (g.first.d||'').startsWith(year)).length,
-    species: new Set(genera.flatMap(g => [...g.species])).size,
+    S: SP, species: SP.size,
     tier: tierIdx(G.size),
   };
 }
@@ -622,11 +661,28 @@ function taxonomicOrder(ids) {
   ids.forEach(id => { if (!out.includes(id)) out.push(id); });
   return { order:out, kids };
 }
-function rarityTier(gid, scope = S.prefs.scope) {
-  const ref = refFor(scope); if (!ref || ref.g[gid] == null) return null;
-  const counts = Object.values(ref.g).sort((a,b) => a-b);
-  const rank = counts.findIndex(c => c >= ref.g[gid]) / Math.max(1, counts.length - 1);
-  return { count:ref.g[gid], label: rank < .33 ? 'Few records' : rank < .66 ? 'Moderate records' : 'Many records', stars: rank < .33 ? 3 : rank < .66 ? 2 : 1 };
+const sortedCache = new WeakMap();
+function refCount(id, kind = 'g', scope = S.prefs.scope) { const t = refFor(scope)?.[kind]; return t && t[id] != null ? t[id] : null; }
+function rarityTier(id, scope = S.prefs.scope, kind = 'g') {
+  const table = refFor(scope)?.[kind]; if (!table || table[id] == null) return null;
+  let counts = sortedCache.get(table);
+  if (!counts) { counts = Object.values(table).sort((a,b) => a-b); sortedCache.set(table, counts); }
+  const rank = counts.findIndex(c => c >= table[id]) / Math.max(1, counts.length - 1);
+  return { count:table[id], label: rank < .33 ? 'Few records' : rank < .66 ? 'Moderate records' : 'Many records', stars: rank < .33 ? 3 : rank < .66 ? 2 : 1 };
+}
+// ★ 1–3 by iNat record scarcity in scope; a taxon absent from the regional reference counts as ★★★
+function starsFor(id, kind = 'g') { const r = rarityTier(id, S.prefs.scope, kind); return r ? r.stars : (refFor(S.prefs.scope)?.[kind] ? 3 : 1); }
+function rarityNote(id, kind = 'g') {
+  const c = refCount(id, kind), where = scopeLabel(S.prefs.scope);
+  if (c != null) return `${fmt(c)} iNat record${c === 1 ? '' : 's'} in ${where}`;
+  return refFor(S.prefs.scope)?.[kind] ? `none on iNat in ${where}` : '';
+}
+// Collection prestige: rarity-weighted collection size (genera ×10, species ×3)
+function prestige(M) {
+  let p = 0;
+  M.G.forEach((g, id) => p += 10 * starsFor(id, 'g'));
+  M.S.forEach((s, id) => p += 3 * starsFor(id, 's'));
+  return p;
 }
 const moduleOn = minTier => S.prefs.peek || S.M.tier >= minTier;
 
@@ -785,7 +841,8 @@ function viewProfile() {
       <p><b>${M.G.size}</b> Salticidae genera recorded${sc.ref ? ` · <b>${sc.found} / ${sc.inScope.length}</b> of those on iNat in ${esc(scopeLabel(S.prefs.scope))}` : ''}</p>
       <div class="kv">
         <dt>Observations</dt><dd>${fmt(M.obs.length)}</dd>
-        <dt>Species-level taxa</dt><dd>${fmt(M.species)}</dd>
+        <dt>Species (side collection)</dt><dd>${fmt(M.S.size)}${refFor(S.prefs.scope)?.s ? ` · ${speciesInScope().filter(id => M.S.has(id)).length} / ${speciesInScope().length} on iNat in ${esc(scopeLabel(S.prefs.scope))}` : ''}</dd>
+        <dt>Collection prestige</dt><dd>${fmt(prestige(M))} ✦ <span class="small muted">(rarity-weighted)</span></dd>
         <dt>Localities (~10 km)</dt><dd>${fmt(M.cellsAll01.size)}</dd>
         <dt>Field days</dt><dd>${fmt(M.fieldDays.length)}</dd>
         <dt>Behaviour records</dt><dd>${M.behObs.feed} feeding · ${M.behObs.court} courtship · ${M.behObs.egg} silk/brood</dd>
@@ -846,11 +903,12 @@ function cardHtml(id, num) {
   return `<div class="card ${g.state === 'MASTERED' && moduleOn(5) ? 'gilded' : ''}" data-genus="${id}"><span class="badge ${cls}">${g.state}</span>
     <div class="ph" style="background-image:url('${esc(photoSize(g.cover,'small') || info.p || '')}')"></div>
     <div class="meta"><div class="num">#${String(num).padStart(3,'0')} · ${esc(tribe)}</div><div class="nm">${esc(g.name)}</div>
-    <div class="small muted">${g.obs.length} obs · ${g.c01.size} loc.</div>
+    <div class="small muted">${g.obs.length} obs · ${g.c01.size} loc. · ${g.sp.size} sp.</div>
     <div class="pips">${CRITERIA.map(c => `<i class="${g.f[c.k]?'on':''}"></i>`).join('')}</div></div></div>`;
 }
 
 function viewDex() {
+  if (S.prefs.layer === 'species') return viewDexSpecies();
   const M = S.M, sc = scopeGenera(), P = S.prefs;
   const { order } = taxonomicOrder(sc.inScope);
   const num = new Map(order.map((id,i) => [id, i+1]));
@@ -867,6 +925,7 @@ function viewDex() {
   const chips = [['all','All'],['found','Recorded'],['missing','Missing'],['supported','Supported+'],['mastered','Mastered']];
   return `
   <div class="panel row" style="margin-bottom:14px">
+    ${layerSwitch()}
     <b style="font-family:var(--head);font-size:20px">${sc.found} / ${sc.inScope.length || '?'}</b>
     <span class="muted">genera on iNat in</span>
     <select data-pref="scope">${['country','state','world'].map(s => `<option value="${s}" ${P.scope===s?'selected':''}>${esc(s==='world'?'World':scopeLabel(s))}</option>`).join('')}</select>
@@ -882,6 +941,81 @@ function viewDex() {
     <p class="muted">Observations identified only above genus. Each could be a genus you haven't unlocked yet. Better photos, annotations or an ID request might crack them.</p>
     <div class="grid2">${M.leads.slice(0,12).map(l => `<div class="panel"><b>${esc(l.name)}</b> <span class="muted small">${esc(l.rank)}</span> — ${l.obs.length} obs
       <div class="gallery" style="margin-top:6px">${l.obs.slice(0,6).map(o => `<a href="https://www.inaturalist.org/observations/${o.id}" target="_blank" rel="noopener" style="background-image:url('${esc(o.ph[0]||'')}')"></a>`).join('')}</div></div>`).join('')}</div>` : ''}`;
+}
+
+/* ---------------- species layer: an optional side collection (level stays = genera) ---------------- */
+function speciesInScope(scope = S.prefs.scope) {
+  const ref = refFor(scope);
+  let ids = ref?.s ? Object.keys(ref.s).map(Number) : [];
+  // The world has thousands of salticid species; only list those in genera you've found
+  if (scope === 'world') ids = ids.filter(id => S.M.G.has(genusOfNode(id)));
+  return ids;
+}
+function speciesCard(id) {
+  const M = S.M, sp = M.S.get(id), gid = genusOfNode(id), info = S.info[id] || {};
+  if (!sp) {
+    const named = S.prefs.reveal || M.G.has(gid);
+    const c = refCount(id, 's');
+    return `<div class="card unknown" ${gid ? `data-genus="${gid}"` : ''}><div class="ph" style="background-image:url('${esc(info.p || '')}')"></div>
+      <div class="meta"><div class="nm">${named ? `<i>${esc(S.nodes[id]?.n)}</i>` : '???'}</div><div class="small muted">${c != null ? `${fmt(c)} iNat record${c === 1 ? '' : 's'}` : ''}</div></div></div>`;
+  }
+  return `<div class="card" data-genus="${gid}"><span class="rar">${'★'.repeat(starsFor(id,'s'))}</span>
+    <div class="ph" style="background-image:url('${esc(photoSize(sp.cover,'small'))}')"></div>
+    <div class="meta"><div class="nm">${esc(sp.name)}</div><div class="small muted">${sp.obs.length} obs · since ${(sp.first.d || '').slice(0,4)}</div></div></div>`;
+}
+function viewDexSpecies() {
+  const M = S.M, P = S.prefs;
+  const inScope = speciesInScope(), set = new Set(inScope);
+  const extras = [...M.S.keys()].filter(id => !set.has(id));
+  const found = inScope.filter(id => M.S.has(id)).length;
+  const keep = id => P.filter === 'missing' ? !M.S.has(id) : P.filter === 'all' ? true : M.S.has(id);
+  const byG = new Map();
+  for (const id of inScope) { const g = genusOfNode(id) || 0; if (!byG.has(g)) byG.set(g, []); byG.get(g).push(id); }
+  const gOrder = taxonomicOrder([...byG.keys()].filter(Boolean)).order;
+  if (byG.has(0)) gOrder.push(0);
+  const visible = gOrder.flatMap(g => byG.get(g).filter(keep));
+  ensureInfo(visible.filter(id => !M.S.has(id)).slice(0, 300));
+  const sections = gOrder.map(g => {
+    const ids = byG.get(g).filter(keep).sort((a,b) => (S.nodes[a]?.n||'').localeCompare(S.nodes[b]?.n||''));
+    if (!ids.length) return '';
+    const all = byG.get(g), have = all.filter(id => M.S.has(id)).length;
+    const gname = !g ? 'Unplaced' : (M.G.has(g) || P.reveal) ? `<i>${esc(S.nodes[g]?.n)}</i>` : '???';
+    return `<h3 style="margin-top:14px">${gname} <span class="small muted">${have}/${all.length}</span></h3>
+      <div class="dexgrid">${ids.map(speciesCard).join('')}</div>`;
+  }).join('');
+  return `
+  <div class="panel row" style="margin-bottom:14px">
+    ${layerSwitch()}
+    <b style="font-family:var(--head);font-size:20px">${found} / ${inScope.length || '?'}</b>
+    <span class="muted">species on iNat in</span>
+    <select data-pref="scope">${['country','state','world'].map(s => `<option value="${s}" ${P.scope===s?'selected':''}>${esc(s==='world'?'World (your genera)':scopeLabel(s))}</option>`).join('')}</select>
+    <div class="bar" style="max-width:220px"><i style="width:${pct(found, inScope.length)}%"></i></div>
+    <span>${[['all','All'],['found','Recorded'],['missing','Missing']].map(([k,l]) => `<span class="chip ${(P.filter===k || (k==='found' && ['supported','mastered'].includes(P.filter)))?'on':''}" data-filter="${k}" style="cursor:pointer">${l}</span>`).join(' ')}</span>
+    <label class="small"><input type="checkbox" data-pref="reveal" ${P.reveal?'checked':''}> reveal names</label>
+  </div>
+  <p class="small muted">The species layer is a side collection: your level is still your genus count. Species you haven't recorded show their names once you've unlocked the genus.</p>
+  ${inScope.length ? sections : '<p class="muted">Loading the species reference… (or set a home base on the Map tab)</p>'}
+  ${extras.length ? `<h2 style="margin-top:22px">Recorded outside ${esc(scopeLabel(P.scope))} (+${extras.length})</h2><div class="dexgrid">${extras.map(speciesCard).join('')}</div>` : ''}`;
+}
+const layerSwitch = () => `<span>${[['genus','Genera'],['species','Species']].map(([k,l]) => `<span class="chip ${(S.prefs.layer||'genus')===k?'on':''}" data-layer="${k}" style="cursor:pointer">${l}</span>`).join(' ')}</span>`;
+function speciesSection(gid) {
+  const M = S.M, ref = refFor(S.prefs.scope), cm = S.cmp?.M;
+  const ids = new Set();
+  if (ref?.s) Object.keys(ref.s).map(Number).filter(s => genusOfNode(s) === gid).forEach(s => ids.add(s));
+  M.S.forEach(s => { if (s.gid === gid) ids.add(s.id); });
+  cm?.S.forEach(s => { if (s.gid === gid) ids.add(s.id); });
+  if (!ids.size) return '';
+  const list = [...ids].sort((a,b) => (S.nodes[a]?.n||'').localeCompare(S.nodes[b]?.n||''));
+  ensureInfo(list.filter(id => !M.S.has(id)));
+  const have = list.filter(id => M.S.has(id)).length;
+  return `<h3 style="margin-top:12px">Species <span class="small muted">${have}/${list.length} recorded</span></h3>
+    ${list.map(id => {
+      const mine = M.S.get(id), theirs = cm?.S.get(id), c = refCount(id, 's');
+      const img = mine ? photoSize(mine.cover, 'square') : (S.info[id]?.p || '');
+      return `<div class="sprow ${mine ? 'have' : ''}"><span class="thumb ${mine ? '' : 'unknown'}" style="background-image:url('${esc(img)}')"></span>
+        <span>${mine ? '☑' : '☐'} <i>${esc(S.nodes[id]?.n || mine?.name)}</i>
+        <span class="small muted">${mine ? ` · ${mine.obs.length} obs, since ${(mine.first.d||'').slice(0,4)}` : ''}${c != null ? ` · ${fmt(c)} iNat records in ${esc(scopeLabel(S.prefs.scope))}` : ''}${theirs ? ` · ${esc(S.cmp.login)} ${mine ? 'has it too' : 'has it 😤'}` : ''}</span></span></div>`;
+    }).join('')}`;
 }
 
 function viewTree() {
@@ -1069,7 +1203,7 @@ async function openGenus(id) {
   $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal">
     <button class="x" data-close="1">✕</button>
     <div class="hero ${g ? '' : 'unknown'}" style="background-image:url('${esc(hero||'')}')"></div>
-    <div class="body">${body}${theirs}${rarity}${hist}
+    <div class="body">${body}${speciesSection(id)}${theirs}${rarity}${hist}
       <p class="small"><a href="https://www.inaturalist.org/taxa/${id}" target="_blank" rel="noopener">iNaturalist taxon page ↗</a>
       ${g ? ` · <a href="https://www.inaturalist.org/observations?user_id=${encodeURIComponent(S.login)}&taxon_id=${id}" target="_blank" rel="noopener">your records ↗</a>` : ''}
       ${!g && info.a ? ` · <span class="muted">Silhouette from photo ${esc(info.a)}</span>` : ''}</p>
@@ -1099,46 +1233,127 @@ function revealQueue(list) {
   document.body.appendChild(el);
 }
 
-/* ---------------- compare ---------------- */
+/* ---------------- compare: built to provoke envy ---------------- */
 function viewCompare() {
   const C = S.cmp, M = S.M;
   const form = `<div class="panel" style="margin-bottom:16px"><h2>Compare SPOODEXes</h2>
-    <p class="muted small">Enter another iNaturalist username to see which genera they've found that you haven't, and the other way round. Public records only.</p>
+    <p class="muted small">Enter another iNaturalist username to see what they've found that you haven't, and the other way round. Public records only.</p>
     <form class="row" data-form="compare"><input name="login" value="${esc(C?.login || '')}" placeholder="their iNaturalist username" autocomplete="off" style="flex:1;min-width:180px"><button class="primary" ${C?.loading ? 'disabled' : ''}>Compare</button></form>
     ${C?.loading ? `<div id="cmpLog" class="term" style="height:120px">${esc(C.log.slice(-6).join('\n'))}</div>` : ''}
     ${C?.error ? `<p>${esc(C.error)}</p>` : ''}</div>`;
   if (!C || !C.M || C.loading) return form;
-  const T = C.M, mine = M.G, theirs = T.G;
-  const byObs = (a,b) => b.obs.length - a.obs.length;
-  const onlyThem = [...theirs.values()].filter(g => !mine.has(g.id)).sort(byObs);
-  const onlyMe = [...mine.values()].filter(g => !theirs.has(g.id)).sort(byObs);
-  const both = [...mine.values()].filter(g => theirs.has(g.id)).sort((a,b) => a.name.localeCompare(b.name));
-  const mastered = X => X.genera.filter(g => g.state === 'MASTERED').length;
-  const stat = (label, a, b) => `<tr><td class="muted">${label}</td><td><b>${a}</b></td><td><b>${b}</b></td></tr>`;
-  const mini = (g, note) => `<div class="card" data-genus="${g.id}"><div class="ph" style="background-image:url('${esc(photoSize(g.cover,'small'))}')"></div>
-    <div class="meta"><div class="nm">${esc(g.name)}</div><div class="small muted">${note}</div></div></div>`;
-  const tribeOf = id => { const L = lineage(id); return (L.find(n => n.r === 'tribe') || L.find(n => n.r === 'subfamily') || { n:'(unplaced)' }).n; };
-  const tribes = {};
-  mine.forEach((g, id) => { const t = tribeOf(id); (tribes[t] = tribes[t] || { a:0, b:0 }).a++; });
-  theirs.forEach((g, id) => { const t = tribeOf(id); (tribes[t] = tribes[t] || { a:0, b:0 }).b++; });
-  const tr = Object.entries(tribes).sort((x,y) => (y[1].a + y[1].b) - (x[1].a + x[1].b));
-  const me = esc(who()), them = esc(C.login);
+  const T = C.M, me = esc(who()), them = esc(C.login), where = esc(scopeLabel(S.prefs.scope));
+  // exclusives, rarest first
+  const byRarity = kind => (a,b) => starsFor(b.id, kind) - starsFor(a.id, kind) || (refCount(a.id, kind) ?? -1) - (refCount(b.id, kind) ?? -1) || b.obs.length - a.obs.length;
+  const exG = (A,B) => [...A.G.values()].filter(g => !B.G.has(g.id)).sort(byRarity('g'));
+  const exS = (A,B) => [...A.S.values()].filter(s => !B.S.has(s.id)).sort(byRarity('s'));
+  const themG = exG(T,M), meG = exG(M,T), themS = exS(T,M), meS = exS(M,T);
+  const both = [...M.G.values()].filter(g => T.G.has(g.id)).sort((a,b) => a.name.localeCompare(b.name));
+  const envy = (gs, ss) => gs.reduce((n,g) => n + 10*starsFor(g.id,'g'), 0) + ss.reduce((n,s) => n + 3*starsFor(s.id,'s'), 0);
+  const envyThem = envy(themG, themS), envyMe = envy(meG, meS), tot = Math.max(1, envyThem + envyMe);
+  const verdict = envyThem > envyMe * 1.2 ? `${them}'s cabinet has the edge. Time to go spooding.`
+    : envyMe > envyThem * 1.2 ? `Bragging rights are yours. Send ${them} the link.` : 'Neck and neck. The next field trip decides it.';
+
+  // VS banner
+  const side = (X, name, cls) => {
+    const covers = [...X.G.values()].sort(byRarity('g')).filter(g => g.cover).slice(0,4);
+    return `<div class="side ${cls}"><div class="mosaic">${covers.map(g => `<i style="background-image:url('${esc(photoSize(g.cover,'small'))}')"></i>`).join('')}</div>
+      <div style="font-family:var(--head);font-size:20px">${name}</div>
+      <div class="hand">${esc(generatedTitle(X))}</div>
+      <div>LEVEL <b>${X.G.size}</b> · ${X.S.size} species</div>
+      <div class="prestige">${fmt(prestige(X))} ✦</div><div class="small muted">collection prestige</div></div>`;
+  };
+
+  // Crown jewels: each side's rarest exclusives (genera outrank species)
+  const jewels = (gs, ss) => [...gs.map(x => ({ x, kind:'g' })), ...ss.map(x => ({ x, kind:'s' }))]
+    .sort((a,b) => (starsFor(b.x.id,b.kind)*(b.kind==='g'?10:3)) - (starsFor(a.x.id,a.kind)*(a.kind==='g'?10:3)) || (refCount(a.x.id,a.kind) ?? -1) - (refCount(b.x.id,b.kind) ?? -1))
+    .slice(0,3);
+  const jewel = ({ x, kind }) => `<div class="jewel" data-genus="${kind==='g' ? x.id : x.gid}" style="background-image:url('${esc(photoSize(x.cover,'medium'))}')">
+    <div class="lab"><div class="stars">${'★'.repeat(starsFor(x.id,kind))}${'☆'.repeat(3-starsFor(x.id,kind))}</div>
+    <div style="font-family:var(--head);font-size:18px;font-style:italic">${esc(x.name)}</div>
+    <div class="small">${kind==='g' ? 'genus' : 'species'} · ${esc(rarityNote(x.id, kind))}</div></div></div>`;
+
+  // Head-to-head, crowns for the winner of each row
+  const yrs = X => new Set(X.fieldDays.map(d => d.slice(0,4))).size;
+  const rg = X => X.obs.length ? Math.round(100 * X.obs.filter(o => o.q === 'research').length / X.obs.length) : 0;
+  const beh = X => X.behObs.feed + X.behObs.court + X.behObs.egg;
+  const since = X => +(X.fieldDays[0] || '9999').slice(0,4);
+  const rows = [
+    ['Genera', X => X.G.size], ['Species', X => X.S.size], ['Collection prestige ✦', X => prestige(X)],
+    ['Mastered genera', X => X.genera.filter(g => g.state === 'MASTERED').length], ['Observations', X => X.obs.length],
+    ['Research Grade', X => rg(X), v => v + '%'], ['Localities (~10 km)', X => X.cellsAll01.size], ['Field days', X => X.fieldDays.length],
+    ['Lineages represented', X => favouriteLineages(X).length], ['Behaviour records', beh], ['Best discovery streak', X => X.bestStreak],
+    ['Spooding since', since, v => v === 9999 ? '—' : v, true],
+  ];
+  let winsM = 0, winsT = 0;
+  const h2h = rows.map(([label, f, show = fmt, lowerWins]) => {
+    const a = f(M), b = f(T), aw = lowerWins ? a < b : a > b, bw = lowerWins ? b < a : b > a;
+    winsM += aw; winsT += bw;
+    return `<tr><td class="muted">${label}</td><td class="${aw?'win':''}">${aw?'👑 ':''}${show(a)}</td><td class="${bw?'win':''}">${bw?'👑 ':''}${show(b)}</td></tr>`;
+  }).join('');
+
+  // Who got there first (shared genera)
+  const leads = both.filter(g => g.first.d && T.G.get(g.id).first.d)
+    .map(g => ({ g, days:(Date.parse(T.G.get(g.id).first.d) - Date.parse(g.first.d)) / 864e5 }));
+  const firstsM = leads.filter(l => l.days > 0).sort((a,b) => b.days - a.days), firstsT = leads.filter(l => l.days < 0).sort((a,b) => a.days - b.days);
+  const gap = d => { d = Math.abs(d); return d >= 365 ? `${(d/365).toFixed(1)} years` : d >= 60 ? `${Math.round(d/30)} months` : `${Math.round(d)} days`; };
+
+  const mini = (x, kind, note) => `<div class="card" data-genus="${kind==='g' ? x.id : x.gid}"><span class="rar">${'★'.repeat(starsFor(x.id,kind))}</span>
+    <div class="ph" style="background-image:url('${esc(photoSize(x.cover,'small'))}')"></div>
+    <div class="meta"><div class="nm">${esc(x.name)}</div><div class="small muted">${note}</div></div></div>`;
+  const grid = (list, kind, empty) => list.length ? `<div class="dexgrid">${list.slice(0,60).map(x => mini(x, kind, esc(rarityNote(x.id, kind)) || `${x.obs.length} obs`)).join('')}</div>${list.length > 60 ? `<p class="small muted">…and ${list.length - 60} more.</p>` : ''}` : `<p>${empty}</p>`;
+
   return form + `
-  <div class="grid2">
-    <div class="panel"><table class="cmp"><tr><th></th><th>${me}</th><th>${them}</th></tr>
-      ${stat('Genera', mine.size, theirs.size)}${stat('Mastered', mastered(M), mastered(T))}${stat('Species-level taxa', M.species, T.species)}${stat('Observations', fmt(M.obs.length), fmt(T.obs.length))}${stat('Localities (~10 km)', M.cellsAll01.size, T.cellsAll01.size)}</table>
-      <p style="margin-top:10px"><b>${both.length}</b> shared · <b>${onlyMe.length}</b> only ${me} · <b>${onlyThem.length}</b> only ${them}</p>
-      ${isGuest() ? '' : '<button data-act="share">🔗 Copy link to this comparison</button>'}</div>
-    <div class="panel"><h3>Lineage by lineage</h3><table class="cmp"><tr><th></th><th>${me}</th><th>${them}</th></tr>
-      ${tr.map(([n, v]) => `<tr><td>${esc(n)}</td><td>${v.a}</td><td>${v.b}</td></tr>`).join('')}</table></div>
+  <div class="vs">${side(M, me, 'me')}<div class="vsmark">VS</div>${side(T, them, 'them')}</div>
+
+  <div class="panel envy" style="margin-top:16px">
+    <div class="big">${them} has <b>${themG.length}</b> genera and <b>${themS.length}</b> species you've never recorded.</div>
+    <div class="big">You have <b>${meG.length}</b> genera and <b>${meS.length}</b> species ${them} has never recorded.</div>
+    <div class="tug" title="Envy meter: rarity-weighted exclusives"><i style="width:${pct(envyMe, tot)}%"></i><i style="width:${100 - pct(envyMe, tot)}%"></i></div>
+    <div class="row small" style="justify-content:space-between"><span>${me}: ${fmt(envyMe)} ✦ of exclusives</span><span>${them}: ${fmt(envyThem)} ✦ of exclusives</span></div>
+    <p class="hand" style="margin:8px 0 0">${verdict}</p>
+    ${isGuest() ? '' : `<p><button class="primary" data-act="share">😈 Copy link and send it to ${them}</button></p>`}
   </div>
-  <h2 style="margin-top:20px">Only ${them} has (${onlyThem.length})</h2><p class="small muted">Your hit list, with their photos so you know what you're looking for.</p>
-  <div class="dexgrid">${onlyThem.map(g => mini(g, `${g.obs.length} obs · since ${(g.first.d || '').slice(0,4)}`)).join('') || '<p>Nothing! You have everything they have.</p>'}</div>
-  <h2 style="margin-top:20px">Only ${me} has (${onlyMe.length})</h2>
-  <div class="dexgrid">${onlyMe.map(g => mini(g, `${g.obs.length} obs`)).join('') || '<p>Nothing yet.</p>'}</div>
-  <h2 style="margin-top:20px">Both (${both.length})</h2>
+
+  <h2 style="margin-top:22px">Crown jewels</h2>
+  <p class="small muted">Each side's rarest finds the other doesn't have. ★ = how few iNat records exist in ${where} (not conservation status).</p>
+  <div class="grid2">
+    <div><h3>${me}</h3><div class="jewels">${jewels(meG, meS).map(jewel).join('') || '<p>No exclusives yet.</p>'}</div></div>
+    <div><h3>${them}</h3><div class="jewels">${jewels(themG, themS).map(jewel).join('') || '<p>No exclusives. You have it all.</p>'}</div></div>
+  </div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="panel"><h3>Head to head <span class="small muted">· ${me} ${winsM}–${winsT} ${them}</span></h3>
+      <table class="cmp"><tr><th></th><th>${me}</th><th>${them}</th></tr>${h2h}</table></div>
+    <div class="panel"><h3>Who got there first</h3>
+      <p><b>${firstsM.length}</b> shared genera recorded first by ${me} · <b>${firstsT.length}</b> by ${them}</p>
+      ${firstsM.slice(0,3).map(l => `<div class="small">🏁 ${me} found <a href="#" data-genus="${l.g.id}"><i>${esc(l.g.name)}</i></a> ${gap(l.days)} before ${them}</div>`).join('')}
+      ${firstsT.slice(0,3).map(l => `<div class="small">🏁 ${them} found <a href="#" data-genus="${l.g.id}"><i>${esc(l.g.name)}</i></a> ${gap(l.days)} before ${me}</div>`).join('')}
+      <h3 style="margin-top:12px">Lineage by lineage</h3>
+      <table class="cmp"><tr><th></th><th>${me}</th><th>${them}</th></tr>${lineageRows(M, T)}</table></div>
+  </div>
+
+  <h2 style="margin-top:22px">Your hit list: only ${them} has these</h2>
+  <p class="small muted">Their photos, so you know exactly what you're looking for.</p>
+  <h3>Genera (${themG.length})</h3>${grid(themG, 'g', 'Nothing! You have every genus they have.')}
+  <h3 style="margin-top:12px">Species (${themS.length})</h3>${grid(themS, 's', 'Nothing! You have every species they have.')}
+
+  <h2 style="margin-top:22px">Their envy list: only ${me} has these</h2>
+  <h3>Genera (${meG.length})</h3>${grid(meG, 'g', 'Nothing yet.')}
+  <h3 style="margin-top:12px">Species (${meS.length})</h3>${grid(meS, 's', 'Nothing yet.')}
+
+  <h2 style="margin-top:22px">Shared genera (${both.length})</h2>
   <div class="panel"><table class="cmp"><tr><th>Genus</th><th>${me}</th><th>${them}</th></tr>
-    ${both.map(g => { const t = theirs.get(g.id); return `<tr><td><a href="#" data-genus="${g.id}"><i>${esc(g.name)}</i></a></td><td>L${g.level} · ${g.obs.length} obs</td><td>L${t.level} · ${t.obs.length} obs</td></tr>`; }).join('')}</table></div>`;
+    ${both.map(g => { const t = T.G.get(g.id), aw = g.level > t.level, bw = t.level > g.level;
+      return `<tr><td><a href="#" data-genus="${g.id}"><i>${esc(g.name)}</i></a></td><td class="${aw?'win':''}">L${g.level} · ${g.obs.length} obs · ${g.sp.size} sp.</td><td class="${bw?'win':''}">L${t.level} · ${t.obs.length} obs · ${t.sp.size} sp.</td></tr>`; }).join('')}</table></div>`;
+}
+function lineageRows(M, T) {
+  const tribeOf = id => { const L = lineage(id); return (L.find(n => n.r === 'tribe') || L.find(n => n.r === 'subfamily') || { n:'(unplaced)' }).n; };
+  const t = {};
+  M.G.forEach((g, id) => { const k = tribeOf(id); (t[k] = t[k] || { a:0, b:0 }).a++; });
+  T.G.forEach((g, id) => { const k = tribeOf(id); (t[k] = t[k] || { a:0, b:0 }).b++; });
+  return Object.entries(t).sort((x,y) => (y[1].a + y[1].b) - (x[1].a + x[1].b))
+    .map(([n, v]) => `<tr><td>${esc(n)}</td><td class="${v.a>v.b?'win':''}">${v.a}</td><td class="${v.b>v.a?'win':''}">${v.b}</td></tr>`).join('');
 }
 async function loadCompare(login) {
   login = String(login || '').trim().replace(/^@/, '');
@@ -1250,13 +1465,14 @@ function settings() {
 }
 
 document.addEventListener('click', e => {
-  const t = e.target.closest('[data-tab],[data-genus],[data-close],[data-filter],[data-scan],[data-act],[data-base]');
+  const t = e.target.closest('[data-tab],[data-genus],[data-close],[data-filter],[data-scan],[data-act],[data-base],[data-layer]');
   if (!t) return;
   if (t.dataset.close && e.target !== t && !e.target.closest('.x')) return;
   if (t.dataset.genus) { e.preventDefault(); openGenus(+t.dataset.genus); return; }
   if (t.dataset.close) { $('#modalRoot').innerHTML = ''; return; }
   if (t.dataset.tab) { $('#modalRoot').innerHTML = ''; S.tab = t.dataset.tab; render(); return; }
   if (t.dataset.filter) { S.prefs.filter = t.dataset.filter; savePrefs(); render(); return; }
+  if (t.dataset.layer) { S.prefs.layer = t.dataset.layer; savePrefs(); render(); return; }
   if (t.dataset.scan) { if (S.tab !== 'map') { S.tab = 'map'; render(); } showCell(t.dataset.scan); scanCell(t.dataset.scan); return; }
   if (t.dataset.base) { e.preventDefault(); const [lat, lng, ...rest] = t.dataset.base.split('|'); setBase(lat, lng, rest.join('|')); return; }
   const a = t.dataset.act;
