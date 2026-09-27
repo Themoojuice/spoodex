@@ -1,0 +1,1317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SPOODEX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=IBM+Plex+Mono:wght@400;600&family=Caveat:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+/* ---------- Chassis themes: the instrument evolves with the player ---------- */
+:root, [data-chassis="notebook"] {
+  --bg:#e7d8b9; --panel:#f5ecd6; --panel2:#efe2c3; --ink:#2b2419; --muted:#6d604a;
+  --accent:#a8412a; --lit:#2f6b3a; --line:#c4ad84; --dim:#cdbb96; --glow:none;
+  --head:'Special Elite', 'Courier New', monospace; --body:'IBM Plex Mono', ui-monospace, monospace;
+  --radius:4px; --paper:repeating-linear-gradient(0deg, transparent 0 27px, rgba(80,60,30,.08) 27px 28px);
+}
+[data-chassis="kit"] {
+  /* Field guide: herbarium paper, eucalypt sage, ochre */
+  --bg:#e4e2d3; --panel:#faf7ee; --panel2:#efebdc; --ink:#23291f; --muted:#5f6a56;
+  --accent:#b5651d; --lit:#4f7a45; --line:#b9b89e; --dim:#d9d8c4; --glow:none;
+  --head:'Fraunces', Georgia, serif; --radius:8px;
+  --paper:radial-gradient(circle at 20% 10%, rgba(120,140,90,.08), transparent 40%), radial-gradient(circle at 90% 80%, rgba(180,120,40,.06), transparent 45%);
+}
+[data-chassis="cabinet"] {
+  /* Museum specimen cabinet: walnut, brass, cream labels */
+  --bg:#2e221a; --panel:#f6eedb; --panel2:#ebdfc2; --ink:#2a2118; --muted:#6e5c46;
+  --accent:#8f6420; --lit:#3f6b3a; --line:#b89f72; --dim:#dccfb0; --glow:none;
+  --head:'Fraunces', Georgia, serif; --radius:3px;
+  --paper:repeating-linear-gradient(95deg, rgba(0,0,0,.05) 0 3px, transparent 3px 9px, rgba(255,220,170,.025) 9px 11px, transparent 11px 17px);
+}
+[data-chassis="cabinet"] header.top { background:#1f1712; border-bottom-color:#8f6420; color:#efe4cc; }
+[data-chassis="cabinet"] header.top .muted, [data-chassis="cabinet"] .brand .sub { color:#c9b48f; }
+[data-chassis="cabinet"] header.top h1 { color:#e2bf7a; }
+[data-chassis="cabinet"] nav.tabs button { color:#efe4cc; }
+[data-chassis="cabinet"] header.top .lvl button { color:var(--ink); }
+[data-chassis="cabinet"] nav.tabs button.on { color:var(--ink); }
+[data-chassis="cabinet"] #view > h2, [data-chassis="cabinet"] #view > p { color:#efe4cc; }
+[data-chassis="cabinet"] .panel, [data-chassis="cabinet"] .card { box-shadow:0 2px 0 #1a120d, 0 6px 16px rgba(0,0,0,.35); }
+[data-chassis="cabinet"] .panel { border-top:3px solid #b08a45; }
+* { box-sizing:border-box; }
+html,body { margin:0; }
+body { background:var(--bg); background-image:var(--paper); color:var(--ink); font:14px/1.5 var(--body); min-height:100vh; }
+a { color:var(--accent); }
+button, select, input { font:inherit; color:inherit; }
+button { cursor:pointer; background:var(--panel2); border:1px solid var(--line); border-radius:var(--radius); padding:6px 12px; }
+button:hover { border-color:var(--accent); }
+button.primary { background:var(--accent); color:var(--panel); border-color:var(--accent); font-weight:600; }
+input, select { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:6px 10px; }
+h1,h2,h3 { font-family:var(--head); font-weight:400; margin:0 0 8px; letter-spacing:.02em; }
+.wrap { max-width:1180px; margin:0 auto; padding:0 16px 60px; }
+.muted { color:var(--muted); }
+.small { font-size:12px; }
+.panel { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px; }
+.row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+.grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px; }
+.bar { height:10px; background:var(--dim); border-radius:99px; overflow:hidden; min-width:80px; flex:1; }
+.bar > i { display:block; height:100%; background:var(--lit); box-shadow:var(--glow); }
+.chip { display:inline-block; padding:2px 8px; border:1px solid var(--line); border-radius:99px; font-size:12px; background:var(--panel2); }
+.chip.on { background:var(--accent); color:var(--panel); border-color:var(--accent); }
+.hand { font-family:'Caveat', cursive; font-size:20px; color:var(--accent); }
+.hidden { display:none !important; }
+.btnlink { display:inline-block; padding:6px 12px; border-radius:var(--radius); background:var(--accent); color:var(--panel); text-decoration:none; font-weight:600; border:1px solid var(--accent); }
+table.cmp { width:100%; border-collapse:collapse; font-size:13px; }
+table.cmp td, table.cmp th { padding:4px 6px; border-bottom:1px solid var(--dim); text-align:left; }
+.card.gilded { border:2px solid #b08a45; box-shadow:inset 0 0 0 2px #e2bf7a; }
+.leaflet-popup-content button { font:13px var(--body); }
+
+/* ---------- Header ---------- */
+header.top { position:sticky; top:0; z-index:500; background:var(--bg); border-bottom:2px solid var(--line); }
+header.top .wrap { padding-top:10px; padding-bottom:0; }
+.brand { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+.brand h1 { font-size:26px; margin:0; }
+.brand .sub { color:var(--muted); font-size:12px; }
+.lvl { margin-left:auto; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.lvl b { font-family:var(--head); font-size:18px; }
+nav.tabs { display:flex; gap:4px; margin-top:8px; overflow-x:auto; scrollbar-width:none; }
+nav.tabs button { border-bottom:none; border-radius:var(--radius) var(--radius) 0 0; background:transparent; white-space:nowrap; }
+nav.tabs button.on { background:var(--panel); border-color:var(--line); font-weight:600; }
+nav.tabs button .lock { opacity:.6; font-size:11px; }
+main { padding-top:18px; }
+
+/* ---------- Onboarding ---------- */
+#onboard { min-height:100vh; display:grid; place-items:center; padding:16px; }
+#onboard .box { width:min(620px,100%); }
+#onboard h1 { font-size:44px; }
+.term { background:#f9f3e3; color:#3a2f22; border:1px solid var(--line); font:12px/1.6 'Special Elite', 'Courier New', monospace; border-radius:6px; padding:12px; height:220px; overflow:auto; margin-top:14px; white-space:pre-wrap; }
+.cascade { display:flex; flex-wrap:wrap; gap:6px; margin-top:14px; min-height:40px; }
+.cascade span { font-family:var(--head); padding:3px 8px; border:1px solid var(--line); background:var(--panel); border-radius:var(--radius); animation:pop .4s ease-out both; }
+@keyframes pop { from { transform:scale(.3) rotate(-8deg); opacity:0; } to { transform:none; opacity:1; } }
+
+/* ---------- Dex grid ---------- */
+.dexgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
+.card { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; cursor:pointer; position:relative; transition:transform .12s; }
+.card:hover { transform:translateY(-2px); border-color:var(--accent); }
+.card .ph { aspect-ratio:1; background:var(--panel2) center/cover no-repeat; position:relative; }
+.card.unknown .ph, .modal .hero.unknown { filter:grayscale(1) sepia(.6) blur(7px) brightness(.6) contrast(1.2); }
+.card.unknown::after { content:'?'; position:absolute; top:0; left:0; right:0; aspect-ratio:1; display:grid; place-items:center; font:52px var(--head); color:var(--ink); opacity:.55; pointer-events:none; }
+.card .meta { padding:6px 8px 8px; }
+.card .num { font-size:11px; color:var(--muted); }
+.card .nm { font-family:var(--head); font-size:15px; font-style:italic; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.card.unknown .nm { font-style:normal; letter-spacing:.2em; color:var(--muted); }
+.card .badge { position:absolute; top:6px; left:6px; font-size:10px; padding:1px 6px; border-radius:99px; background:var(--panel); border:1px solid var(--line); z-index:2; }
+.b-disc { color:var(--ink); } .b-supp { color:var(--lit); border-color:var(--lit)!important; } .b-mast { background:var(--accent)!important; color:var(--panel)!important; border-color:var(--accent)!important; }
+.pips { display:flex; gap:2px; margin-top:4px; }
+.pips i { flex:1; height:4px; background:var(--dim); border-radius:2px; }
+.pips i.on { background:var(--lit); }
+
+/* ---------- Modal / reveal ---------- */
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:1000; display:flex; align-items:flex-start; justify-content:center; overflow:auto; padding:24px 12px; }
+.modal { width:min(880px,100%); background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:0; position:relative; }
+.modal .hero { height:280px; background:var(--panel2) center/cover no-repeat; position:relative; }
+.modal { overflow:hidden; }
+.modal .body { padding:18px; }
+.modal .x { position:absolute; top:10px; right:10px; z-index:3; }
+.gallery { display:grid; grid-template-columns:repeat(auto-fill,minmax(90px,1fr)); gap:6px; }
+.gallery a { aspect-ratio:1; background:var(--panel2) center/cover; border-radius:var(--radius); display:block; }
+.checks { list-style:none; padding:0; margin:0; }
+.checks li { padding:3px 0; }
+.checks li.done { color:var(--lit); }
+.kv { display:grid; grid-template-columns:auto 1fr; gap:2px 14px; }
+.kv dt { color:var(--muted); }
+.kv dd { margin:0; }
+#reveal { position:fixed; inset:0; z-index:2000; background:radial-gradient(circle at 50% 40%, #3a2c1f, #120d09 70%); color:#f3e9d2; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:16px; animation:fadein .6s; }
+#reveal .rph { width:min(420px,80vw); aspect-ratio:1; background:#111 center/cover; border-radius:8px; animation:zoom 1.4s cubic-bezier(.2,.8,.2,1) both; box-shadow:0 0 0 6px #f6eedb, 0 0 0 7px #8f6420, 0 20px 60px rgba(0,0,0,.6); }
+#reveal .k { letter-spacing:.35em; font-size:12px; color:#d9b56a; margin-top:18px; animation:fadein 1s .8s both; }
+#reveal h2 { font-family:'Fraunces', Georgia, serif; font-size:48px; color:#f6eedb; margin:6px 0; font-style:italic; animation:fadein 1s 1.1s both; text-shadow:none; }
+#reveal p { color:#cdbd9c; margin:2px; animation:fadein 1s 1.4s both; }
+@keyframes zoom { from { transform:scale(.2); filter:brightness(0); } 60% { filter:brightness(0); } to { transform:none; filter:none; } }
+@keyframes fadein { from { opacity:0; } to { opacity:1; } }
+
+/* ---------- Tree ---------- */
+.tree ul { list-style:none; margin:0; padding-left:22px; border-left:1px dashed var(--line); }
+.tree > ul { border-left:none; padding-left:0; }
+.tree li { margin:2px 0; }
+.tree summary { cursor:pointer; }
+.tree .rank { color:var(--muted); font-size:11px; }
+.tree .g { cursor:pointer; }
+.tree .g.lit { color:var(--lit); font-style:italic; font-weight:600; text-shadow:var(--glow); }
+.tree .g.dark { color:var(--muted); }
+.tree .unexplored { color:var(--accent); font-size:11px; }
+.tree .minibar { display:inline-block; width:70px; height:6px; background:var(--dim); border-radius:3px; vertical-align:middle; margin:0 6px; overflow:hidden; }
+.tree .minibar i { display:block; height:100%; background:var(--lit); }
+
+/* ---------- Map ---------- */
+#map { height:520px; border-radius:var(--radius); border:1px solid var(--line); }
+.maplayout { display:grid; grid-template-columns:2fr 1fr; gap:16px; }
+@media (max-width:820px) { .maplayout { grid-template-columns:1fr; } #map { height:380px; } }
+
+/* ---------- Quests ---------- */
+.quest { border-left:4px solid var(--accent); }
+.quest.daily { border-left-width:8px; }
+.quest h3 { margin-bottom:2px; }
+.reward { font-size:12px; color:var(--lit); }
+
+/* ---------- Locked module plate ---------- */
+.plate { text-align:center; padding:40px 16px; border:2px dashed var(--line); border-radius:var(--radius); }
+.plate h2 { font-size:22px; }
+
+@media (max-width:600px) {
+  .brand h1 { font-size:20px; }
+  .lvl { margin-left:0; }
+  .modal .hero { height:200px; }
+  #reveal h2 { font-size:30px; }
+}
+</style>
+</head>
+<body data-chassis="notebook">
+
+<!-- ================= ONBOARDING ================= -->
+<section id="onboard">
+  <div class="box panel">
+    <h1>SPOODEX</h1>
+    <p class="hand">a living field guide built from the jumping spiders you've actually found</p>
+    <p class="muted">Enter your iNaturalist username. SPOODEX reads your public Salticidae observations (read-only, no login), collapses them to genus, and builds your collection. Your iNat account is the save file.</p>
+    <form id="loginForm" class="row">
+      <input id="loginInput" placeholder="iNaturalist username" autocomplete="off" required style="flex:1;min-width:180px">
+      <button class="primary" type="submit">Scan records</button>
+    </form>
+    <div class="row" style="margin-top:10px">
+      <button type="button" data-act="sample">👀 Try a sample naturalist</button>
+      <button type="button" data-act="guest">🧭 No records yet? Explore near me</button>
+    </div>
+    <div id="scanLog" class="term hidden"></div>
+    <div id="cascade" class="cascade"></div>
+    <div id="initDone" class="hidden" style="margin-top:14px;text-align:center">
+      <h2 id="initTitle"></h2>
+      <button class="primary" id="openDex">Open SPOODEX</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= APP ================= -->
+<div id="app" class="hidden">
+  <header class="top"><div class="wrap">
+    <div class="row brand">
+      <h1 id="chassisName">SPOODEX</h1><span class="sub" id="chassisSub"></span>
+      <div class="lvl">
+        <span class="muted" id="whoami"></span>
+        <b id="lvlBadge"></b>
+        <button id="syncBtn" title="Fetch new/updated observations since last sync">⟳ Sync</button>
+        <button id="shareBtn" title="Copy a link to this SPOODEX">🔗 Share</button>
+        <button id="menuBtn" title="Settings">⚙</button>
+      </div>
+    </div>
+    <nav class="tabs" id="tabs"></nav>
+  </div></header>
+  <main class="wrap" id="view"></main>
+</div>
+
+<div id="modalRoot"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   SPOODEX — single-file prototype
+   Layers:  api (throttled iNat client) → sync (incremental import + cache)
+            → model (pure derivation: genera, states, mastery, XP, quests)
+            → views (render functions per screen)
+   All state lives in localStorage; iNaturalist is the source of truth.
+   ===================================================================== */
+
+const SALTICIDAE = 48139;               // iNat taxon id for Salticidae
+const API = 'https://api.inaturalist.org/v1';
+const REF_TTL = 7 * 864e5;              // regional reference trees refresh weekly
+const FULL_RESYNC_AFTER = 14 * 864e5;   // periodic full resync catches deletions / re-IDs out of Salticidae
+
+// iNat controlled terms (verified against /v1/controlled_terms)
+const ANN = { MALE:'9|11', FEMALE:'9|10', ADULT:'1|2', JUV:'1|8', NYMPH:'1|5', EGG:'22|30', MOLT:'22|28', CONSTRUCTION:'22|35' };
+
+// Heuristic behaviour detection from description / tags / observation fields
+const BEH_RX = {
+  feed:  /\b(feed\w*|fed|prey|eating|meal|caught|captur\w*|kill\w*)\b/i,
+  court: /\b(court\w*|mating|mated|copulat\w*|display\w*|danc\w*)\b/i,
+  egg:   /\b(egg ?sacs?|eggs|brood\w*|guard\w*|spiderlings?|retreat|nest|moult\w*|molt\w*|exuvi\w*)\b/i,
+};
+
+const TIERS = [
+  { min:0,   name:'SPOODEX Mk 0',          sub:'A slightly suspicious digital notebook', chassis:'notebook', module:'Genus records & nearby scanner' },
+  { min:5,   name:'Field Notebook',        sub:'Now with a pencil. Region statistics installed.', chassis:'notebook', module:'Region statistics' },
+  { min:15,  name:'SPOODEX Mk II',         sub:'Laminated. Mostly waterproof. Lineage tree installed.', chassis:'kit', module:'Lineage tree' },
+  { min:30,  name:'SPOODEX Mk III',        sub:'Rarity ledgers installed.', chassis:'kit', module:'Rarity ledgers' },
+  { min:50,  name:'Naturalist Cabinet',    sub:'Brass fittings. Mastery ledgers installed.', chassis:'cabinet', module:'Mastery XP ledger' },
+  { min:75,  name:'Arachnologist Rig',     sub:'Gilt edges on everything you have mastered.', chassis:'cabinet', module:'Gilded labels for mastered genera' },
+  { min:100, name:'Spood Research Station',sub:'Please wipe your boots.', chassis:'cabinet', module:'Everything, plus smugness' },
+];
+const tierIdx = n => TIERS.reduce((a,t,i)=> n>=t.min ? i : a, 0);
+
+const CRITERIA = [
+  { k:'male',      icon:'♂', label:'Photograph a male' },
+  { k:'female',    icon:'♀', label:'Photograph a female' },
+  { k:'juv',       icon:'◦', label:'Photograph a juvenile' },
+  { k:'feed',      icon:'🍴', label:'Record feeding / prey capture' },
+  { k:'court',     icon:'💃', label:'Record courtship or display' },
+  { k:'egg',       icon:'🕸', label:'Silk & brood: egg sac, retreat, nest or moult' },
+  { k:'places',    icon:'📍', label:'Record at 3+ localities (~10 km apart)' },
+  { k:'months',    icon:'🗓', label:'Record in 3+ different months' },
+  { k:'supported', icon:'🤝', label:'Community-supported genus ID' },
+  { k:'species',   icon:'🔬', label:'An observation identified to species' },
+];
+const MASTERY_AT = 7;
+
+/* ---------------- utils ---------------- */
+const $ = (s, r=document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const fmt = n => (n ?? 0).toLocaleString();
+const pct = (a,b) => b ? Math.min(100, Math.round(100*a/b)) : 0;
+const ordinal = n => n + (['th','st','nd','rd'][(n%100-20)%10] || ['th','st','nd','rd'][n%100] || 'th');
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const photoSize = (url, size) => url ? url.replace(/\/(square|thumb|small|medium|large|original)\./, `/${size}.`) : '';
+const stripHtml = s => { const d = document.createElement('div'); d.innerHTML = s || ''; return d.textContent; };
+const cellLabel = c => c && c.label ? esc(c.label + (c.near ? ` (near ${c.near})` : '')) : c ? `${Math.abs(c.lat).toFixed(2)}°${c.lat<0?'S':'N'} ${Math.abs(c.lng).toFixed(2)}°${c.lng<0?'W':'E'}` : '';
+const cellKey = (lat, lng, deg) => `${Math.floor(lat/deg)}:${Math.floor(lng/deg)}`;
+
+const store = {
+  get(k, d=null) { try { const v = localStorage.getItem('spoodex:'+k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('spoodex:'+k, JSON.stringify(v)); return true; } catch (e) { console.warn('SPOODEX storage write failed', e); return false; } },
+  del(k) { try { localStorage.removeItem('spoodex:'+k); } catch {} },
+};
+
+/* ---------------- api: throttled to ~1 req/s per iNat recommended practice ---------------- */
+let nextSlot = 0;
+async function api(path, params = {}) {
+  const qs = new URLSearchParams(Object.entries(params).filter(([,v]) => v != null && v !== '')).toString();
+  const url = `${API}${path}${qs ? '?'+qs : ''}`;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const now = Date.now(), slot = Math.max(now, nextSlot);
+    nextSlot = slot + 1100;
+    if (slot > now) await sleep(slot - now);
+    let r;
+    try { r = await fetch(url); } catch (e) { await sleep(2000); continue; }
+    if (r.status === 429 || r.status >= 500) { await sleep(4000 * (attempt+1)); continue; }
+    if (!r.ok) throw new Error(`iNaturalist returned ${r.status} for ${path}`);
+    return r.json();
+  }
+  throw new Error('iNaturalist is busy or rate-limiting; try again in a minute.');
+}
+
+/* ---------------- state ---------------- */
+const S = {
+  login: null,
+  u: null,       // per-user save: {obs, meta, seen, scans, completed, lastQuests}
+  nodes: store.get('nodes', {}),   // taxon id -> {n:name, r:rank, l:rank_level, p:parent}
+  places: store.get('places', {}), // place id -> {n, l:admin_level}
+  info: store.get('info', {}),     // genus id -> {p:photo, s:summary, w:wiki url, a:attribution, c:obs count}
+  ref: store.get('ref', {}),       // scopeKey -> {ts, g:{genusId: recordCount}}
+  observers: store.get('observers', {}),
+  prefs: store.get('prefs', { scope:'country', reveal:false, peek:false, chassis:'auto', filter:'all' }),
+  tab: 'profile',
+  M: null,       // derived model
+};
+const ukey = l => 'u:' + String(l).toLowerCase();
+function saveUser() { if (!store.set(ukey(S.login), S.u)) toast('Local storage is full; progress will re-import next time.'); }
+function saveShared() { store.set('nodes', S.nodes); store.set('places', S.places); store.set('info', S.info); store.set('ref', S.ref); store.set('observers', S.observers); }
+function savePrefs() { store.set('prefs', S.prefs); }
+if (S.prefs.chassis === 'console') S.prefs.chassis = 'auto';
+
+function addNode(t) {
+  if (!t || !t.id || !t.rank) return;
+  S.nodes[t.id] = { n:t.name, r:t.rank, l:t.rank_level, p:t.parent_id };
+}
+
+/* ---------------- sync: full import, then incremental via updated_since ---------------- */
+function trimObs(o) {
+  const t = o.taxon || {};
+  addNode(t);
+  const anc = [...(t.ancestor_ids || [])];
+  if (t.id && !anc.includes(t.id)) anc.push(t.id);
+  let ct = null;
+  if (o.community_taxon_id) {
+    if (o.community_taxon_id === t.id) ct = anc;
+    else {
+      const idn = (o.identifications || []).find(i => i.taxon && i.taxon.id === o.community_taxon_id);
+      if (idn) { addNode(idn.taxon); ct = [...(idn.taxon.ancestor_ids || []), idn.taxon.id]; }
+    }
+  }
+  const ann = (o.annotations || [])
+    .filter(a => (a.votes || []).reduce((s,v) => s + (v.vote_flag === false ? -1 : 1), 0) >= 0)
+    .map(a => a.controlled_attribute_id + '|' + a.controlled_value_id);
+  const text = [o.description || '', ...(o.tags || []), ...(o.ofvs || []).map(f => `${f.name} ${f.value}`)].join(' ');
+  const beh = Object.keys(BEH_RX).filter(k => BEH_RX[k].test(text));
+  const c = o.geojson && o.geojson.coordinates;
+  return {
+    id:o.id, d:o.observed_on || (o.created_at || '').slice(0,10), q:o.quality_grade, cap:!!o.captive,
+    t:{ id:t.id, n:t.name, r:t.rank, l:t.rank_level }, anc, ct,
+    lat: c ? c[1] : null, lng: c ? c[0] : null, ob: !!o.obscured, pg:o.place_guess || '',
+    pl:o.place_ids || [], ph:(o.photos || []).slice(0,3).map(p => p.url), ann, beh,
+  };
+}
+
+const GUEST = '__guest';
+const SAMPLE_LOGIN = 'themoojuice';   // "Try a sample naturalist": any public account with plenty of salticids
+const isGuest = () => S.login === GUEST;
+const who = () => isGuest() ? 'Guest naturalist' : S.login;
+
+async function fetchPlaces(ids, log = () => {}) {
+  const need = [...new Set(ids)].filter(id => !S.places[id]);
+  if (need.length) log(`Mapping ${need.length} places…`);
+  for (let i = 0; i < need.length; i += 100) {
+    const batch = need.slice(i, i+100);
+    const d = await api('/places/' + batch.join(','));
+    batch.forEach(id => S.places[id] = { n:null, l:null });
+    d.results.forEach(p => S.places[p.id] = { n:p.name, l:p.admin_level });
+  }
+}
+
+// Import (or incrementally refresh) one naturalist's salticid records into a save object {obs, meta}.
+// Used for the player and for whoever they are comparing against.
+async function importRecords(login, save, { full=false, log=()=>{} } = {}) {
+  const t0 = new Date().toISOString();
+  save.meta = save.meta || {};
+  if (!full && save.meta.lastFull && Date.now() - Date.parse(save.meta.lastFull) > FULL_RESYNC_AFTER) full = true;
+  if (!save.meta.lastSync) full = true;
+  const since = full ? null : save.meta.lastSync;
+  const obs = full ? {} : (save.obs || {});
+  let idAbove = 0, got = 0, total = null;
+  log(full ? `Scanning naturalist records for ${login}…` : `Checking ${login} for records updated since ${since.slice(0,16).replace('T',' ')}…`);
+  while (true) {
+    const d = await api('/observations', { taxon_id:SALTICIDAE, user_login:login, per_page:200, order_by:'id', order:'asc', id_above:idAbove || null, updated_since:since });
+    if (total == null) { total = d.total_results; log(`${fmt(total)} Salticidae observation${total===1?'':'s'} ${full?'found':'updated'}.`); }
+    for (const o of d.results) obs[o.id] = trimObs(o);
+    got += d.results.length;
+    if (d.results.length) log(`  …received ${fmt(got)} / ${fmt(total)}`);
+    if (d.results.length < 200) break;
+    idAbove = d.results[d.results.length - 1].id;
+  }
+  save.obs = obs;
+  if (full && !Object.keys(obs).length) log(`No public Salticidae observations for "${login}". Check the spelling, or go find a spood!`);
+  // Taxonomy tree of these records gives names/ranks for every ancestor (tribes, subfamilies, genera).
+  log('Resolving lineages…');
+  const tree = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, user_login:login });
+  tree.results.forEach(addNode);
+  await fetchPlaces(Object.values(obs).flatMap(o => o.pl), log);
+  save.meta.lastSync = t0;
+  if (full) save.meta.lastFull = t0;
+  return total;
+}
+
+async function loadRefs(log = () => {}) {
+  log('Loading regional reference collections…');
+  for (const sc of new Set(['country', 'state', S.prefs.scope])) if (sc === 'world' || scopePlace(sc)) await ensureRef(sc);
+}
+async function sync({ full=false, log=()=>{} } = {}) {
+  if (!isGuest()) await importRecords(S.login, S.u, { full, log });
+  saveUser(); saveShared();
+  if (S.u.base && !S.u.base.places) await resolveBasePlaces(log);
+  S.M = buildModel();
+  await loadRefs(log);
+  S.M = buildModel();
+}
+
+// Home base: lets beginners and guests scan before they have recorded anything.
+// Country/state are borrowed from the nearest public observation's standard places.
+async function resolveBasePlaces(log = () => {}) {
+  const b = S.u.base; if (!b) return;
+  log('Locating home base…');
+  let d = await api('/observations', { lat:b.lat, lng:b.lng, radius:5, per_page:1, verifiable:true });
+  if (!d.results.length) d = await api('/observations', { lat:b.lat, lng:b.lng, radius:50, per_page:1, verifiable:true });
+  const pl = d.results[0]?.place_ids || [];
+  await fetchPlaces(pl);
+  const pick = lvl => pl.find(p => S.places[p]?.l === lvl) || null;
+  b.places = { country:pick(0), state:pick(10) };
+  // Only generic labels need a "near …" hint; searched place names already say where they are
+  b.near = ['Your location', 'Map point'].includes(b.label) ? (S.places[pick(20)]?.n || S.places[pick(10)]?.n || null) : null;
+  saveUser(); saveShared();
+}
+async function setBase(lat, lng, label) {
+  S.u.base = { lat:+(+lat).toFixed(2), lng:+(+lng).toFixed(2), label };
+  saveUser();
+  try {
+    await resolveBasePlaces();
+    S.M = buildModel();
+    await loadRefs();
+    S.M = buildModel();
+    toast(`Home base set: ${label}${S.u.base.near ? ' (near ' + S.u.base.near + ')' : ''}`);
+    S.tab = 'map'; render();
+    showCell(S.M.homeCell.k); scanCell(S.M.homeCell.k);
+  } catch (e) { toast(e.message); }
+}
+function geolocate() {
+  if (!navigator.geolocation) return toast('Location is not available in this browser.');
+  toast('Asking your browser for your location…');
+  navigator.geolocation.getCurrentPosition(
+    p => setBase(p.coords.latitude, p.coords.longitude, 'Your location'),
+    err => toast('Could not get your location: ' + err.message),
+    { timeout:15000, maximumAge:600000 });
+}
+
+function scopePlace(scope) {
+  const M = S.M;
+  if (scope === 'world') return null;
+  return scope === 'state' ? (M.home.state || M.home.country) : M.home.country;
+}
+function scopeLabel(scope) {
+  const id = scopePlace(scope);
+  return id ? (S.places[id]?.n || 'home region') : 'the world';
+}
+async function ensureRef(scope) {
+  const pid = scopePlace(scope);
+  const key = pid ? 'p' + pid : 'world';
+  const cur = S.ref[key];
+  if (cur && Date.now() - cur.ts < REF_TTL) return cur;
+  const d = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, place_id:pid, verifiable:true });
+  const g = {};
+  d.results.forEach(r => { addNode(r); if (r.rank === 'genus') g[r.id] = r.descendant_obs_count || r.count || 0; });
+  S.ref[key] = { ts:Date.now(), g };
+  saveShared();
+  return S.ref[key];
+}
+function refFor(scope) {
+  const pid = scopePlace(scope);
+  return S.ref[pid ? 'p'+pid : 'world'] || null;
+}
+
+// Background: genus portraits + natural history blurbs (default photo & Wikipedia summary via iNat)
+let infoBusy = false;
+async function ensureInfo(ids) {
+  const need = [...new Set(ids)].filter(id => !S.info[id]);
+  if (!need.length || infoBusy) return;
+  infoBusy = true;
+  try {
+    for (let i = 0; i < need.length; i += 30) {
+      const batch = need.slice(i, i+30);
+      const d = await api('/taxa/' + batch.join(','));
+      batch.forEach(id => S.info[id] = S.info[id] || {});
+      d.results.forEach(t => {
+        const dp = t.default_photo || {};
+        S.info[t.id] = { p:dp.medium_url || dp.url || '', a:dp.attribution || '', s:stripHtml(t.wikipedia_summary || ''), w:t.wikipedia_url || '', c:t.observations_count || 0 };
+      });
+      saveShared();
+      softRender();
+    }
+  } catch (e) { console.warn(e); }
+  infoBusy = false;
+}
+
+/* ---------------- model: pure derivation from cached observations ---------------- */
+function genusOf(anc) { for (const id of anc || []) if (S.nodes[id]?.r === 'genus') return id; return null; }
+function lineage(id) {
+  const out = []; let cur = S.nodes[id]?.p, guard = 0;
+  while (cur && cur !== SALTICIDAE && guard++ < 20) { if (S.nodes[cur]) out.unshift({ id:cur, ...S.nodes[cur] }); cur = S.nodes[cur]?.p; }
+  return out;
+}
+const lineageText = id => lineage(id).map(n => n.n).join(' › ') || 'Salticidae';
+
+function buildModel(obsMap = S.u.obs, base = S.u.base) {
+  const all = Object.values(obsMap).filter(o => !o.cap).sort((a,b) => (a.d||'').localeCompare(b.d||'') || a.id - b.id);
+  const G = new Map(), leads = new Map();
+  let xpTotal = 0;
+  const cells25 = new Map(), dayDisc = new Map(), fieldDays = new Set(), behObs = { feed:0, court:0, egg:0 };
+  const monthsAll = new Set(), cellsAll01 = new Set();
+  for (const o of all) {
+    if (o.d) { fieldDays.add(o.d); monthsAll.add(+o.d.slice(5,7)); }
+    o.beh.forEach(b => behObs[b]++);
+    if (o.ann.includes(ANN.EGG) || o.ann.includes(ANN.MOLT) || o.ann.includes(ANN.CONSTRUCTION)) { if (!o.beh.includes('egg')) behObs.egg++; }
+    if (o.lat != null) {
+      cellsAll01.add(cellKey(o.lat,o.lng,.1));
+      const k = cellKey(o.lat, o.lng, .25);
+      const c = cells25.get(k) || { k, lat:(Math.floor(o.lat/.25)+.5)*.25, lng:(Math.floor(o.lng/.25)+.5)*.25, n:0, g:new Set() };
+      c.n++; cells25.set(k, c);
+    }
+    const gid = genusOf(o.anc);
+    if (!gid) {
+      const L = leads.get(o.t.id) || { id:o.t.id, name:o.t.n || 'Unknown', rank:o.t.r, obs:[] };
+      L.obs.push(o); leads.set(o.t.id, L); continue;
+    }
+    if (o.lat != null) cells25.get(cellKey(o.lat,o.lng,.25)).g.add(gid);
+    let g = G.get(gid);
+    const events = [];
+    if (!g) {
+      g = { id:gid, name:S.nodes[gid]?.n || '?', obs:[], first:o, species:new Set(), c01:new Set(), months:new Set(), years:new Set(),
+            f:{}, xp:0, xpLog:[], photos:[], places:new Set(), dup:0 };
+      G.set(gid, g);
+      events.push(['New genus', 100]);
+      if (o.d) dayDisc.set(o.d, (dayDisc.get(o.d) || 0) + 1);
+    }
+    g.obs.push(o);
+    const f = g.f, mark = (k, label, xp) => { if (!f[k]) { f[k] = true; if (g.obs.length > 1) events.push([label, xp]); } };
+    if (o.ann.includes(ANN.MALE)) mark('male', 'Male recorded', 40);
+    if (o.ann.includes(ANN.FEMALE)) mark('female', 'Female recorded', 40);
+    if (o.ann.includes(ANN.JUV) || o.ann.includes(ANN.NYMPH)) mark('juv', 'Juvenile recorded', 40);
+    if (o.beh.includes('feed')) mark('feed', 'Feeding behaviour', 80);
+    if (o.beh.includes('court')) mark('court', 'Courtship / display', 80);
+    if (o.beh.includes('egg') || o.ann.includes(ANN.EGG) || o.ann.includes(ANN.MOLT) || o.ann.includes(ANN.CONSTRUCTION)) mark('egg', 'Silk & brood evidence', 80);
+    if (o.ct && o.ct.includes(gid)) mark('supported', 'Community-supported ID', 50);
+    if (o.q === 'research') f.rg = true;
+    if (o.t.l != null && o.t.l <= 10) {
+      const sp = o.t.l === 10 ? o.t.n : o.t.n.split(' ').slice(0,2).join(' ');
+      if (!g.species.has(sp)) { g.species.add(sp); f.species = true; if (g.obs.length > 1) events.push(['New species in genus', 60]); }
+    }
+    if (o.lat != null) { const k = cellKey(o.lat,o.lng,.1); if (!g.c01.has(k)) { g.c01.add(k); if (g.obs.length > 1) events.push(['New locality', 40]); } }
+    if (o.d) {
+      const m = +o.d.slice(5,7); if (!g.months.has(m)) { g.months.add(m); if (g.obs.length > 1) events.push(['New month', 20]); }
+      g.years.add(o.d.slice(0,4));
+    }
+    o.pl.forEach(p => g.places.add(p));
+    if (!events.length) { g.dup++; events.push(['Duplicate record', Math.max(1, Math.round(10 / g.dup))]); }
+    for (const [label, xp] of events) { g.xp += xp; xpTotal += xp; g.xpLog.push({ d:o.d, label, xp, id:o.id }); }
+    for (const p of o.ph) if (g.photos.length < 24) g.photos.push({ url:p, id:o.id });
+  }
+  // Discovery states & levels
+  let order = 0;
+  const genera = [...G.values()].sort((a,b) => (a.first.d||'').localeCompare(b.first.d||'') || a.first.id - b.first.id);
+  for (const g of genera) {
+    g.discIndex = ++order;
+    g.f.places = g.c01.size >= 3;
+    g.f.months = g.months.size >= 3;
+    g.level = CRITERIA.filter(c => g.f[c.k]).length;
+    g.state = g.level >= MASTERY_AT ? 'MASTERED' : g.f.supported ? 'SUPPORTED' : 'DISCOVERED';
+    g.last = g.obs[g.obs.length-1];
+    // cover photo: prefer research-grade record photo
+    const rg = g.obs.find(o => o.q === 'research' && o.ph.length);
+    g.cover = rg ? rg.ph[0] : (g.photos[0]?.url || '');
+  }
+  // Home region = most frequent country & state across records
+  const cnt = {}; all.forEach(o => o.pl.forEach(p => cnt[p] = (cnt[p]||0) + 1));
+  const best = lvl => Object.keys(cnt).filter(p => S.places[p]?.l === lvl).sort((a,b) => cnt[b]-cnt[a])[0];
+  const bp = base?.places || {};
+  const home = { country: best(0) ? +best(0) : bp.country || null, state: best(10) ? +best(10) : bp.state || null };
+  const homeCell = base ? { ...pointFromKey(`pt:${base.lat},${base.lng}`), label:base.label, near:base.near }
+                        : ([...cells25.values()].sort((a,b) => b.n - a.n)[0] || null);
+  // Discovery streaks over field days
+  const days = [...fieldDays].sort();
+  let run = 0, bestRun = 0;
+  for (const d of days) { if (dayDisc.has(d)) { run++; bestRun = Math.max(bestRun, run); } else run = 0; }
+  const year = String(new Date().getFullYear());
+  return {
+    obs:all, G, genera, leads:[...leads.values()].sort((a,b) => b.obs.length - a.obs.length), xp:xpTotal,
+    cells25, cellsAll01, fieldDays:days, dayDisc, streak:run, bestStreak:bestRun, home, homeCell, behObs, monthsAll,
+    newThisYear: genera.filter(g => (g.first.d||'').startsWith(year)).length,
+    species: new Set(genera.flatMap(g => [...g.species])).size,
+    tier: tierIdx(G.size),
+  };
+}
+
+// Scan points: either a 25 km grid square you've recorded in, or an arbitrary "pt:lat,lng"
+function pointFromKey(k) {
+  const m = /^pt:(-?[\d.]+),(-?[\d.]+)$/.exec(k || ''); if (!m) return null;
+  return { k, lat:+m[1], lng:+m[2], n:0, g:new Set() };
+}
+function pointFor(k) { return S.M.cells25.get(k) || (S.M.homeCell?.k === k ? S.M.homeCell : pointFromKey(k)); }
+
+/* ---------------- scope helpers ---------------- */
+function scopeGenera(scope = S.prefs.scope) {
+  const ref = refFor(scope);
+  const inScope = ref ? Object.keys(ref.g).map(Number) : [];
+  const set = new Set(inScope);
+  const extras = S.M.genera.filter(g => !set.has(g.id)).map(g => g.id);
+  return { ref, inScope, extras, found: inScope.filter(id => S.M.G.has(id)).length };
+}
+// Taxonomic order: DFS through the merged tree, alphabetical within each node
+function taxonomicOrder(ids) {
+  const want = new Set(ids), kids = {};
+  const add = id => { const p = S.nodes[id]?.p; if (!p || id === SALTICIDAE) return; (kids[p] = kids[p] || new Set()).add(id); if (p !== SALTICIDAE) add(p); };
+  ids.forEach(add);
+  const out = [];
+  const walk = id => { const ch = [...(kids[id] || [])].sort((a,b) => (S.nodes[a]?.n||'').localeCompare(S.nodes[b]?.n||'')); ch.forEach(c => { if (want.has(c)) out.push(c); walk(c); }); };
+  walk(SALTICIDAE);
+  ids.forEach(id => { if (!out.includes(id)) out.push(id); });
+  return { order:out, kids };
+}
+function rarityTier(gid, scope = S.prefs.scope) {
+  const ref = refFor(scope); if (!ref || ref.g[gid] == null) return null;
+  const counts = Object.values(ref.g).sort((a,b) => a-b);
+  const rank = counts.findIndex(c => c >= ref.g[gid]) / Math.max(1, counts.length - 1);
+  return { count:ref.g[gid], label: rank < .33 ? 'Few records' : rank < .66 ? 'Moderate records' : 'Many records', stars: rank < .33 ? 3 : rank < .66 ? 2 : 1 };
+}
+const moduleOn = minTier => S.prefs.peek || S.M.tier >= minTier;
+
+/* ---------------- field style & titles ---------------- */
+function fieldStyle(M) {
+  const s = [];
+  if (M.cellsAll01.size >= 25) s.push(['🧭','Explorer', `${M.cellsAll01.size} localities`]);
+  const beh = M.behObs.feed + M.behObs.court + M.behObs.egg;
+  if (beh >= 5) s.push(['🕸','Behaviour observer', `${beh} behaviour records`]);
+  const lifeStage = M.genera.filter(g => g.f.male && g.f.female).length;
+  if (lifeStage >= 5) s.push(['⚥','Dimorphism detective', `${lifeStage} genera with both sexes`]);
+  if (M.monthsAll.size >= 10) s.push(['🗓','Year-round spooder', `${M.monthsAll.size} months of the year`]);
+  const mastered = M.genera.filter(g => g.state === 'MASTERED').length;
+  if (mastered) s.push(['🏅','Genus master', `${mastered} mastered`]);
+  return s;
+}
+function favouriteLineages(M) {
+  const c = {};
+  M.genera.forEach(g => { const L = lineage(g.id); const tribe = L.find(n => n.r === 'tribe') || L.find(n => n.r === 'subfamily'); if (tribe) { c[tribe.n] = c[tribe.n] || { n:tribe.n, g:0, o:0 }; c[tribe.n].g++; c[tribe.n].o += g.obs.length; } });
+  return Object.values(c).sort((a,b) => b.g - a.g || b.o - a.o);
+}
+function generatedTitle(M) {
+  const fav = favouriteLineages(M)[0];
+  const nouns = ['Notebook Scribbler','Spood Apprentice','Spood Naturalist','Spood Wrangler','Spood Wizard','Arachno-Sage','Station Chief'];
+  const noun = nouns[Math.min(M.tier, nouns.length-1)];
+  if (!fav) return 'Aspiring Spooder';
+  const adj = fav.n.replace(/ini$/, 'ine').replace(/inae$/, 'ine');
+  return `${adj} ${noun}`;
+}
+
+/* ---------------- quests: generated from genuine gaps ---------------- */
+function scanFor(cell) { return cell ? S.u.scans[cell.k] : null; }
+function buildQuests(M) {
+  const q = [];
+  if (!M.G.size) q.push({ id:'first', kind:'first', icon:'🕷', title:'Your First Spood', text:'Find a jumping spider, photograph it and upload it to iNaturalist. Once it is identified to genus, sync SPOODEX and your first card unlocks.', reward:100 });
+  if (!M.homeCell) q.push({ id:'base', kind:'base', icon:'🏠', title:'Pick a Home Base', text:'Tell SPOODEX where you usually spood and it will list the genera recorded around you.', reward:0 });
+  const scan = scanFor(M.homeCell);
+  if (scan) {
+    const missing = scan.g.filter(x => !M.G.has(x.id)).sort((a,b) => b.c - a.c);
+    if (missing.length) q.push({ id:'hunt:'+M.homeCell.k, kind:'hunt', icon:'🎯', title:'Genus Hunt',
+      text:`${missing.length} Salticidae genera recorded within 25 km of your home base aren't in your SPOODEX. Find one.`,
+      targets:missing.slice(0,6).map(x => x.id), reward:250 });
+  } else if (M.homeCell) {
+    q.push({ id:'scan-home', kind:'scan', icon:'📡', title:'Calibrate the scanner', text:'Scan the area around your home base to reveal nearby genera you have not recorded yet.', reward:0 });
+  }
+  const ref = refFor(S.prefs.scope);
+  if (ref && moduleOn(2)) {
+    const { kids } = taxonomicOrder(Object.keys(ref.g).map(Number));
+    const tribes = Object.keys(S.nodes).map(Number).filter(id => ['tribe','subfamily'].includes(S.nodes[id].r) && kids[id]);
+    const under = (id) => { const out = []; const w = x => (kids[x] ? [...kids[x]] : []).forEach(c => { if (S.nodes[c]?.r === 'genus') out.push(c); w(c); }); w(id); return out; };
+    const empty = tribes.map(id => ({ id, g:under(id) })).filter(t => t.g.length && !t.g.some(g => M.G.has(g)))
+      .sort((a,b) => b.g.reduce((s,x) => s + (ref.g[x]||0), 0) - a.g.reduce((s,x) => s + (ref.g[x]||0), 0));
+    if (empty[0]) q.push({ id:'lineage:'+empty[0].id, kind:'lineage', icon:'🌳', title:'Unexplored Lineage',
+      text:`You have nothing from ${S.nodes[empty[0].id].n} (${S.nodes[empty[0].id].r}). ${empty[0].g.length} ${empty[0].g.length===1?'genus':'genera'} from it ${empty[0].g.length===1?'is':'are'} recorded in ${scopeLabel(S.prefs.scope)}.`, node:empty[0].id, targets:empty[0].g, reward:300 });
+  }
+  if (M.leads.length) {
+    const n = M.leads.reduce((s,l) => s + l.obs.length, 0);
+    q.push({ id:'resolve', kind:'resolve', icon:'👁', title:'Something Is Lurking',
+      text:`${n} of your observations are stuck above genus (${M.leads.slice(0,3).map(l => l.name).join(', ')}…). Add better photos, annotate, or ask for IDs.`,
+      obs:M.leads.flatMap(l => l.obs.map(o => o.id)).slice(0,50), reward:100 });
+  }
+  const near = M.genera.filter(g => g.state !== 'MASTERED').sort((a,b) => b.level - a.level || b.obs.length - a.obs.length)[0];
+  if (near) {
+    const miss = CRITERIA.filter(c => !near.f[c.k]);
+    q.push({ id:'master:'+near.id, kind:'master', icon:'🏅', title:`Towards Mastery: ${near.name}`,
+      text:`${near.name} is at level ${near.level}/10. Still to do: ${miss.slice(0,3).map(c => c.label.toLowerCase()).join('; ')}.`, gid:near.id, crit:miss[0]?.k, reward:150 });
+  }
+  const behs = [['feed','Feeding frenzy','Photograph a salticid feeding or with prey'],['court','Dance floor','Record courtship or display'],['egg','Silk & brood','Find an egg sac, retreat, nest or moult']]
+    .sort((a,b) => M.behObs[a[0]] - M.behObs[b[0]]);
+  q.push({ id:'beh:'+behs[0][0], kind:'beh', icon:'🔍', title:`Behaviour: ${behs[0][1]}`, text:`${behs[0][2]}. You have ${M.behObs[behs[0][0]]} so far. Mention it in the description or tags so SPOODEX can see it.`, beh:behs[0][0], base:M.behObs[behs[0][0]], reward:80 });
+  const holeMonths = [...Array(12).keys()].map(i => i+1).filter(m => !M.monthsAll.has(m));
+  const thisMonth = new Date().getMonth() + 1;
+  if (holeMonths.includes(thisMonth)) q.push({ id:'month:'+thisMonth, kind:'month', icon:'🗓', title:'Off-Season Spooding', text:`You've never recorded a salticid in ${MONTHS[thisMonth-1]}. This month is your chance.`, m:thisMonth, reward:120 });
+  q.push({ id:'explore', kind:'explore', icon:'🧭', title:'Change of Scenery', text:`Record a salticid in a new 25 km grid square (you have ${M.cells25.size}). Bonus if it's a habitat you rarely visit.`, base:M.cells25.size, reward:150 });
+  const oneSex = M.genera.filter(g => (g.f.male ^ g.f.female)).sort((a,b) => b.obs.length - a.obs.length)[0];
+  if (oneSex) q.push({ id:'sex:'+oneSex.id, kind:'master', icon:oneSex.f.male ? '♀' : '♂', title:'The Other Half', text:`You've recorded a ${oneSex.f.male ? 'male' : 'female'} ${oneSex.name} but never a ${oneSex.f.male ? 'female' : 'male'}. Annotate sex on iNat when you do.`, gid:oneSex.id, crit:oneSex.f.male ? 'female' : 'male', reward:40 });
+  // Daily pick, seeded by date
+  const seed = new Date().toISOString().slice(0,10).split('-').reduce((a,b) => a*31 + +b, 7);
+  const pickable = q.filter(x => x.kind !== 'scan');
+  if (pickable.length) pickable[seed % pickable.length].daily = true;
+  return q;
+}
+function questDone(q, M) {
+  switch (q.kind) {
+    case 'hunt': case 'lineage': return (q.targets || []).some(id => M.G.has(id));
+    case 'resolve': return (q.obs || []).some(id => S.u.obs[id] && genusOf(S.u.obs[id].anc));
+    case 'master': return !!M.G.get(q.gid)?.f[q.crit];
+    case 'beh': return M.behObs[q.beh] > q.base;
+    case 'month': return M.monthsAll.has(q.m);
+    case 'explore': return M.cells25.size > q.base;
+    case 'first': return M.G.size > 0;
+    default: return false;
+  }
+}
+
+/* ---------------- views ---------------- */
+const TABS = [
+  { k:'profile', label:'Profile' },
+  { k:'dex', label:'SPOODEX' },
+  { k:'tree', label:'Lineage tree', tier:2 },
+  { k:'map', label:'Map & scanner' },
+  { k:'compare', label:'Compare' },
+  { k:'quests', label:'Quests' },
+];
+let renderPending = false;
+function softRender() { if (renderPending) return; renderPending = true; setTimeout(() => { renderPending = false; if (S.tab !== 'map') render(); }, 400); }
+
+function render() {
+  const M = S.M, tier = TIERS[M.tier];
+  document.body.dataset.chassis = S.prefs.chassis === 'auto' ? tier.chassis : S.prefs.chassis;
+  $('#chassisName').textContent = tier.name;
+  $('#chassisSub').textContent = tier.sub;
+  $('#whoami').textContent = who();
+  $('#shareBtn').classList.toggle('hidden', isGuest());
+  $('#lvlBadge').textContent = `LEVEL ${M.G.size}`;
+  $('#tabs').innerHTML = TABS.map(t => `<button data-tab="${t.k}" class="${S.tab===t.k?'on':''}">${t.label}${t.tier && !moduleOn(t.tier) ? ' <span class="lock">🔒</span>' : ''}</button>`).join('');
+  const v = $('#view');
+  const locked = TABS.find(t => t.k === S.tab)?.tier;
+  if (locked && !moduleOn(locked)) { v.innerHTML = lockedPlate(locked); return; }
+  v.innerHTML = ({ profile:viewProfile, dex:viewDex, tree:viewTree, map:viewMapShell, quests:viewQuests, compare:viewCompare })[S.tab]();
+  if (S.tab === 'map') initMap();
+}
+function lockedPlate(t) {
+  const need = TIERS[t].min - S.M.G.size;
+  return `<div class="plate panel"><h2>MODULE NOT INSTALLED</h2>
+    <p><b>${esc(TIERS[t].module)}</b> ships with the <b>${esc(TIERS[t].name)}</b> chassis.</p>
+    <p class="muted">Record ${need} more genera to upgrade. The only way to upgrade is to go outside.</p>
+    <button data-act="peek">Peek anyway (prototype)</button></div>`;
+}
+
+function viewProfile() {
+  const M = S.M, sc = scopeGenera(), tier = M.tier;
+  const regions = {};
+  M.genera.forEach(g => g.places.forEach(p => { const pl = S.places[p]; if (pl && pl.l != null && [0,10,20].includes(pl.l)) { (regions[p] = regions[p] || { id:p, n:pl.n, l:pl.l, g:0 }).g++; } }));
+  const regionRows = lvl => Object.values(regions).filter(r => r.l === lvl).sort((a,b) => b.g - a.g);
+  const refC = S.ref['p'+M.home.country], refS = S.ref['p'+M.home.state];
+  const bar = (a, b) => `<div class="bar"><i style="width:${pct(a,b)}%"></i></div>`;
+  const next = TIERS[tier+1];
+  const favs = favouriteLineages(M).slice(0,6), maxFav = favs[0]?.g || 1;
+  const style = fieldStyle(M);
+  const rare = M.genera.map(g => ({ g, r:rarityTier(g.id) })).filter(x => x.r).sort((a,b) => a.r.count - b.r.count).slice(0,5);
+  const years = {}; M.genera.forEach(g => { const y = (g.first.d||'????').slice(0,4); years[y] = (years[y]||0) + 1; });
+  const ys = Object.keys(years).sort(), maxY = Math.max(1, ...Object.values(years));
+  const starter = !M.G.size ? `<div class="panel" style="margin-bottom:16px"><h2>Your SPOODEX is empty, for now</h2>
+    <p>Every card is unlocked by a real jumping spider you have found:</p>
+    <p class="hand">explore → photograph → upload to iNaturalist → get an ID → sync → unlock</p>
+    <div class="row"><a class="btnlink" href="https://www.inaturalist.org/observations/upload" target="_blank" rel="noopener">Upload to iNaturalist ↗</a>
+    <button data-tab="map">${M.homeCell ? '📡 See what lives near your home base' : '🏠 Set a home base'}</button>
+    ${isGuest() ? '<button data-act="switch">I have an iNaturalist account</button>' : ''}</div></div>` : '';
+  return `${starter}
+  <div class="grid2">
+    <div class="panel">
+      <div class="muted small">${esc(who().toUpperCase())}'S SPOODEX</div>
+      <h1 style="font-size:34px;margin:4px 0">SPOOD NATURALIST — LEVEL ${M.G.size}</h1>
+      <div class="hand">${esc(generatedTitle(M))}</div>
+      <p><b>${M.G.size}</b> Salticidae genera recorded${sc.ref ? ` · <b>${sc.found} / ${sc.inScope.length}</b> of those on iNat in ${esc(scopeLabel(S.prefs.scope))}` : ''}</p>
+      <div class="kv">
+        <dt>Observations</dt><dd>${fmt(M.obs.length)}</dd>
+        <dt>Species-level taxa</dt><dd>${fmt(M.species)}</dd>
+        <dt>Localities (~10 km)</dt><dd>${fmt(M.cellsAll01.size)}</dd>
+        <dt>Field days</dt><dd>${fmt(M.fieldDays.length)}</dd>
+        <dt>Behaviour records</dt><dd>${M.behObs.feed} feeding · ${M.behObs.court} courtship · ${M.behObs.egg} silk/brood</dd>
+        <dt>New genera ${new Date().getFullYear()}</dt><dd>${M.newThisYear}</dd>
+        <dt>Naturalist XP</dt><dd>${fmt(M.xp)}</dd>
+        <dt>Unresolved leads</dt><dd>${fmt(M.leads.reduce((s,l)=>s+l.obs.length,0))} obs above genus</dd>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Chassis</h2>
+      <p><b>${esc(TIERS[tier].name)}</b> — <span class="muted">${esc(TIERS[tier].sub)}</span></p>
+      ${next ? `<div class="row"><span class="small">Next: ${esc(next.name)} at ${next.min} genera</span>${bar(M.G.size - TIERS[tier].min, next.min - TIERS[tier].min)}<span class="small">${next.min - M.G.size} to go</span></div>` : '<p>Fully upgraded. Remarkable. Slightly concerning.</p>'}
+      <ul class="checks" style="margin-top:10px">${TIERS.map((t,i) => `<li class="${i<=tier?'done':''}">${i<=tier?'☑':'☐'} ${esc(t.module)} <span class="muted small">(${t.min}+)</span></li>`).join('')}</ul>
+      <h3 style="margin-top:14px">Discovery streak</h3>
+      <p>${'🔥'.repeat(Math.min(M.streak,10)) || '—'} <b>${M.streak}</b> consecutive field day${M.streak===1?'':'s'} with a new genus <span class="muted">(best ${M.bestStreak})</span></p>
+      <p class="muted small">Streaks count field days, not calendar days. Nature does not owe you a spider every Tuesday.</p>
+    </div>
+  </div>
+  <div class="grid2" style="margin-top:16px">
+    <div class="panel">
+      <h2>Regions</h2>
+      ${moduleOn(1) ? `
+      ${refC ? `<div class="row"><span style="min-width:150px">${esc(S.places[M.home.country]?.n)}</span>${bar(Object.keys(refC.g).filter(id => M.G.has(+id)).length, Object.keys(refC.g).length)}<span class="small">${Object.keys(refC.g).filter(id => M.G.has(+id)).length}/${Object.keys(refC.g).length}</span></div>` : ''}
+      ${refS && M.home.state !== M.home.country ? `<div class="row"><span style="min-width:150px">${esc(S.places[M.home.state]?.n)}</span>${bar(Object.keys(refS.g).filter(id => M.G.has(+id)).length, Object.keys(refS.g).length)}<span class="small">${Object.keys(refS.g).filter(id => M.G.has(+id)).length}/${Object.keys(refS.g).length}</span></div>` : ''}
+      ${!refC || !refS ? `<p class="small muted">Switch the SPOODEX scope to country/state once to load regional totals.</p>` : ''}
+      <h3 style="margin-top:10px">Countries</h3>${regionRows(0).map(r => `<div class="small">${esc(r.n)}: <b>${r.g}</b> genera</div>`).join('') || '<div class="muted small">—</div>'}
+      <h3 style="margin-top:10px">States / provinces</h3>${regionRows(10).slice(0,8).map(r => `<div class="small">${esc(r.n)}: <b>${r.g}</b> genera</div>`).join('') || '<div class="muted small">—</div>'}
+      <h3 style="margin-top:10px">Local areas</h3>${regionRows(20).slice(0,10).map(r => `<div class="small">${esc(r.n)}: <b>${r.g}</b> genera</div>`).join('') || '<div class="muted small">—</div>'}
+      ` : `<p class="muted">Region statistics install with SPOODEX Mk II (15 genera).</p>`}
+    </div>
+    <div class="panel">
+      <h2>Favourite lineages</h2>
+      ${favs.map(f => `<div class="row"><span style="min-width:140px">${esc(f.n)}</span><div class="bar"><i style="width:${pct(f.g,maxFav)}%"></i></div><span class="small">${f.g} gen.</span></div>`).join('') || '<p class="muted">None yet.</p>'}
+      <h2 style="margin-top:14px">Field style</h2>
+      ${style.map(s => `<div>${s[0]} <b>${esc(s[1])}</b> <span class="muted small">${esc(s[2])}</span></div>`).join('') || '<p class="muted">Still developing a style. Keep spooding.</p>'}
+      ${moduleOn(3) ? `<h2 style="margin-top:14px">Rarest discoveries</h2>
+        <p class="small muted">Fewest iNat records in ${esc(scopeLabel(S.prefs.scope))}. A record-frequency measure, not conservation status.</p>
+        ${rare.map(x => `<div><a href="#" data-genus="${x.g.id}"><i>${esc(x.g.name)}</i></a> <span class="small muted">${fmt(x.r.count)} records</span></div>`).join('')}` : ''}
+    </div>
+  </div>
+  <div class="panel" style="margin-top:16px">
+    <h2>New genera per year</h2>
+    <div class="row" style="align-items:flex-end;gap:6px;height:120px">
+      ${ys.map(y => `<div style="text-align:center;flex:1;min-width:28px"><div class="small">${years[y]}</div><div style="height:${Math.round(80*years[y]/maxY)}px;background:var(--lit);border-radius:3px 3px 0 0;box-shadow:var(--glow)"></div><div class="small muted">${y}</div></div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function cardHtml(id, num) {
+  const M = S.M, g = M.G.get(id), info = S.info[id] || {};
+  const lin = lineage(id), tribe = (lin.find(n => n.r === 'tribe') || lin.find(n => n.r === 'subfamily') || {}).n || 'Salticidae';
+  if (!g) {
+    const name = S.prefs.reveal ? `<i>${esc(S.nodes[id]?.n)}</i>` : '???';
+    return `<div class="card unknown" data-genus="${id}"><div class="ph" style="background-image:url('${esc(info.p||'')}')"></div>
+      <div class="meta"><div class="num">#${String(num).padStart(3,'0')} · ${esc(tribe)}</div><div class="nm">${name}</div><div class="pips">${'<i></i>'.repeat(10)}</div></div></div>`;
+  }
+  const cls = g.state === 'MASTERED' ? 'b-mast' : g.state === 'SUPPORTED' ? 'b-supp' : 'b-disc';
+  return `<div class="card ${g.state === 'MASTERED' && moduleOn(5) ? 'gilded' : ''}" data-genus="${id}"><span class="badge ${cls}">${g.state}</span>
+    <div class="ph" style="background-image:url('${esc(photoSize(g.cover,'small') || info.p || '')}')"></div>
+    <div class="meta"><div class="num">#${String(num).padStart(3,'0')} · ${esc(tribe)}</div><div class="nm">${esc(g.name)}</div>
+    <div class="small muted">${g.obs.length} obs · ${g.c01.size} loc.</div>
+    <div class="pips">${CRITERIA.map(c => `<i class="${g.f[c.k]?'on':''}"></i>`).join('')}</div></div></div>`;
+}
+
+function viewDex() {
+  const M = S.M, sc = scopeGenera(), P = S.prefs;
+  const { order } = taxonomicOrder(sc.inScope);
+  const num = new Map(order.map((id,i) => [id, i+1]));
+  const filt = id => {
+    const g = M.G.get(id);
+    if (P.filter === 'found') return !!g;
+    if (P.filter === 'missing') return !g;
+    if (P.filter === 'supported') return g && g.state !== 'DISCOVERED';
+    if (P.filter === 'mastered') return g && g.state === 'MASTERED';
+    return true;
+  };
+  const shown = order.filter(filt);
+  ensureInfo([...order, ...sc.extras]);
+  const chips = [['all','All'],['found','Recorded'],['missing','Missing'],['supported','Supported+'],['mastered','Mastered']];
+  return `
+  <div class="panel row" style="margin-bottom:14px">
+    <b style="font-family:var(--head);font-size:20px">${sc.found} / ${sc.inScope.length || '?'}</b>
+    <span class="muted">genera on iNat in</span>
+    <select data-pref="scope">${['country','state','world'].map(s => `<option value="${s}" ${P.scope===s?'selected':''}>${esc(s==='world'?'World':scopeLabel(s))}</option>`).join('')}</select>
+    <div class="bar" style="max-width:220px"><i style="width:${pct(sc.found, sc.inScope.length)}%"></i></div>
+    <span>${chips.map(([k,l]) => `<span class="chip ${P.filter===k?'on':''}" data-filter="${k}" style="cursor:pointer">${l}</span>`).join(' ')}</span>
+    <label class="small"><input type="checkbox" data-pref="reveal" ${P.reveal?'checked':''}> reveal names</label>
+  </div>
+  ${sc.ref ? '' : M.home.country || P.scope === 'world' ? '<p class="muted">Loading reference collection…</p>' : '<div class="panel"><p>Set a home base so SPOODEX knows which genera belong in your region.</p><button class="primary" data-tab="map">Set home base</button></div>'}
+  <div class="dexgrid">${shown.map(id => cardHtml(id, num.get(id))).join('')}</div>
+  ${sc.extras.length ? `<h2 style="margin-top:22px">Recorded outside ${esc(scopeLabel(P.scope))} (+${sc.extras.length})</h2>
+    <div class="dexgrid">${sc.extras.map(id => cardHtml(id, 0)).join('')}</div>` : ''}
+  ${M.leads.length ? `<h2 style="margin-top:22px">👁 Glimpsed — something is lurking</h2>
+    <p class="muted">Observations identified only above genus. Each could be a genus you haven't unlocked yet. Better photos, annotations or an ID request might crack them.</p>
+    <div class="grid2">${M.leads.slice(0,12).map(l => `<div class="panel"><b>${esc(l.name)}</b> <span class="muted small">${esc(l.rank)}</span> — ${l.obs.length} obs
+      <div class="gallery" style="margin-top:6px">${l.obs.slice(0,6).map(o => `<a href="https://www.inaturalist.org/observations/${o.id}" target="_blank" rel="noopener" style="background-image:url('${esc(o.ph[0]||'')}')"></a>`).join('')}</div></div>`).join('')}</div>` : ''}`;
+}
+
+function viewTree() {
+  const M = S.M, sc = scopeGenera();
+  const ids = [...sc.inScope, ...sc.extras];
+  const { kids } = taxonomicOrder(ids);
+  const leadAt = new Map(M.leads.map(l => [l.id, l.obs.length]));
+  const under = {};
+  const count = id => { if (under[id]) return under[id]; let t = 0, f = 0; for (const c of kids[id] || []) { if (S.nodes[c]?.r === 'genus') { t++; if (M.G.has(c)) f++; } const r = count(c); t += r.t; f += r.f; } return under[id] = { t, f }; };
+  const node = id => {
+    const n = S.nodes[id] || { n:'?', r:'?' };
+    if (n.r === 'genus') {
+      const g = M.G.get(id);
+      return `<li><span class="g ${g ? 'lit' : 'dark'}" data-genus="${id}">${g ? '★ ' + esc(n.n) : (S.prefs.reveal ? '· ' + esc(n.n) : '· ???')}</span>${g ? ` <span class="small muted">${g.obs.length} obs · ${g.state.toLowerCase()}</span>` : ''}</li>`;
+    }
+    const c = count(id), ch = [...(kids[id] || [])].sort((a,b) => (S.nodes[a]?.n||'').localeCompare(S.nodes[b]?.n||''));
+    const lead = leadAt.get(id);
+    return `<li><details ${['subfamily','family'].includes(n.r) || c.f ? 'open' : ''}><summary><b>${esc(n.n)}</b> <span class="rank">${esc(n.r)}</span>
+      <span class="minibar"><i style="width:${pct(c.f,c.t)}%"></i></span><span class="small">${c.f}/${c.t}</span>
+      ${c.f === 0 ? ' <span class="unexplored">unexplored lineage</span>' : ''}${lead ? ` <span class="small">👁 ${lead} glimpsed</span>` : ''}</summary>
+      <ul>${ch.map(node).join('')}</ul></details></li>`;
+  };
+  const top = count(SALTICIDAE);
+  return `<div class="panel tree">
+    <div class="row" style="margin-bottom:8px"><h2 style="margin:0">Salticidae</h2><span class="small">${top.f}/${top.t} genera lit · scope: ${esc(scopeLabel(S.prefs.scope))}</span>
+      <label class="small"><input type="checkbox" data-pref="reveal" ${S.prefs.reveal?'checked':''}> reveal names</label></div>
+    <p class="muted small">Classification as used on iNaturalist (subfamily › tribe › subtribe › genus). A taxonomy, not a dated phylogeny, but lineages you've never touched stand out.</p>
+    <ul>${[...(kids[SALTICIDAE] || [])].sort((a,b) => (S.nodes[a]?.n||'').localeCompare(S.nodes[b]?.n||'')).map(node).join('')}</ul></div>`;
+}
+
+let map = null, mapLayer = null;
+function baseWidget() {
+  const b = S.u.base, M = S.M;
+  return `<div style="margin-top:14px"><h3>Home base</h3>
+    <p class="small">${b ? `Set to <b>${cellLabel(M.homeCell)}</b>.` : M.homeCell ? 'Using your busiest 25 km square. You can set one manually instead.' : '<b>Set a home base</b> so the scanner knows where to look, even before you have any records.'}</p>
+    <div class="row"><button type="button" data-act="geo">📍 Use my location</button>${b && M.cells25.size ? '<button type="button" data-act="clearBase">Use my records instead</button>' : ''}</div>
+    <form class="row" data-form="placeSearch" style="margin-top:8px"><input name="q" placeholder="…or search a town, park or region" style="flex:1;min-width:140px"><button>Search</button></form>
+    <div id="placeResults" class="small" style="margin-top:6px"></div>
+    <p class="small muted">Your location is only stored in this browser (rounded to ~1 km) and never put in share links.</p></div>`;
+}
+function viewMapShell() {
+  const M = S.M;
+  return `<div class="maplayout"><div id="map"></div><div class="panel" id="mapSide">
+    <h2>Locality grid</h2><p class="muted small">Each square is ~25 km, coloured by how many genera you've recorded there. Coarse on purpose: SPOODEX never shows exact coordinates.</p>
+    <p class="small">Click a square, or anywhere on the map, to scan the surrounding 25 km for genera others have recorded that you're missing.</p>
+    ${M.homeCell ? `<button class="primary" data-scan="${esc(M.homeCell.k)}">📡 Scan home base</button>` : ''}
+    <div id="scanOut"></div>
+    ${baseWidget()}</div></div>`;
+}
+function initMap() {
+  if (!window.L) { $('#map').innerHTML = '<p style="padding:16px">Map library failed to load (offline?).</p>'; return; }
+  const M = S.M;
+  if (map) map.remove();
+  map = L.map('map', { worldCopyJump:true });
+  // OSM's volunteer tile servers block apps like this (tile usage policy); Esri tiles are keyless. Imagery helps judge habitat.
+  const base = {
+    'Terrain': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom:13, attribution:'Tiles © Esri — Esri, HERE, Garmin, USGS, NGA, and other contributors' }),
+    'Satellite (habitat)': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom:13, attribution:'Imagery © Esri, Maxar, Earthstar Geographics' }),
+  };
+  base['Terrain'].addTo(map);
+  L.control.layers(base, null, { position:'topright' }).addTo(map);
+  mapLayer = L.layerGroup().addTo(map);
+  const cells = [...M.cells25.values()], max = Math.max(1, ...cells.map(c => c.g.size));
+  const col = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#a8412a';
+  const bounds = [];
+  for (const c of cells) {
+    const b = [[c.lat - .125, c.lng - .125], [c.lat + .125, c.lng + .125]];
+    // frame the home-base cluster; far-flung trips are still drawn, just not zoomed to
+    if (!M.homeCell || (Math.abs(c.lat - M.homeCell.lat) < 12 && Math.abs(c.lng - M.homeCell.lng) < 12)) bounds.push(...b);
+    L.rectangle(b, { color:col, weight:1, fillColor:col, fillOpacity:.15 + .6 * c.g.size / max })
+      .on('click', e => { L.DomEvent.stopPropagation(e); showCell(c.k); }).addTo(mapLayer);
+  }
+  if (M.homeCell && S.u.base) L.circle([M.homeCell.lat, M.homeCell.lng], { radius:25000, color:'#3f6b3a', weight:2, dashArray:'6 6', fill:false, interactive:false }).addTo(mapLayer);
+  // Click anywhere: scan here / make home base. Leaflet popups swallow document clicks, so wire buttons directly.
+  map.on('click', e => {
+    const lat = e.latlng.lat, lng = L.Util.wrapNum(e.latlng.lng, [-180, 180], true);
+    const k = `pt:${lat.toFixed(2)},${lng.toFixed(2)}`;
+    const el = document.createElement('div');
+    el.innerHTML = '<button class="primary">📡 Scan 25 km here</button><br><button style="margin-top:6px">🏠 Make this my home base</button>';
+    const [scan, home] = el.querySelectorAll('button');
+    scan.onclick = () => { map.closePopup(); showCell(k); scanCell(k); };
+    home.onclick = () => { map.closePopup(); setBase(lat, lng, 'Map point'); };
+    L.popup().setLatLng(e.latlng).setContent(el).openOn(map);
+  });
+  if (M.homeCell) map.setView([M.homeCell.lat, M.homeCell.lng], 9); else map.setView([0, 135], 2);
+  setTimeout(() => { map.invalidateSize(); if (bounds.length && !S.u.base) map.fitBounds(bounds, { padding:[20,20], maxZoom:9 }); }, 80);
+  if (M.homeCell && S.u.scans[M.homeCell.k]) showCell(M.homeCell.k);
+}
+function showCell(k) {
+  const c = pointFor(k), out = $('#scanOut'); if (!c || !out) return;
+  const gs = [...c.g].map(id => S.M.G.get(id)).filter(Boolean).sort((a,b) => a.name.localeCompare(b.name));
+  out.innerHTML = `<h3 style="margin-top:14px">${c.k.startsWith('pt:') ? '📍 ' : 'Square '}${cellLabel(c)}</h3>
+    ${c.n ? `<p>${c.n} obs · ${gs.length} genera</p><div class="small">${gs.map(g => `<a href="#" data-genus="${g.id}"><i>${esc(g.name)}</i></a>`).join(', ')}</div>` : ''}
+    <p><button class="primary" data-scan="${esc(k)}">📡 Scan 25 km for missing genera</button></p><div id="scanRes"></div>`;
+  if (S.u.scans[k]) showScan(k);
+}
+async function scanCell(k) {
+  const c = pointFor(k); if (!c) return;
+  const out = $('#scanRes') || $('#scanOut');
+  if (out) out.innerHTML = '<p class="muted">Scanning… (public iNat records, aggregated by genus)</p>';
+  try {
+    const d = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, lat:c.lat.toFixed(3), lng:c.lng.toFixed(3), radius:25, verifiable:true });
+    d.results.forEach(addNode);
+    S.u.scans[k] = { ts:Date.now(), g:d.results.filter(r => r.rank === 'genus').map(r => ({ id:r.id, c:r.descendant_obs_count || r.count || 0 })) };
+    saveUser(); saveShared();
+    if (S.tab === 'map') showScan(k); else render();
+  } catch (e) { if (out) out.innerHTML = `<p>${esc(e.message)}</p>`; }
+}
+function showScan(k) {
+  const sc = S.u.scans[k], target = $('#scanRes') || $('#scanOut'); if (!sc || !target) return;
+  const M = S.M, missing = sc.g.filter(x => !M.G.has(x.id)).sort((a,b) => b.c - a.c), max = Math.max(1, ...sc.g.map(x => x.c));
+  ensureInfo(missing.map(x => x.id));
+  const tier = x => x.c / max > .2 ? 'Common nearby' : x.c / max > .05 ? 'Uncommon nearby' : 'Rare nearby';
+  target.innerHTML = `<h3 style="margin-top:14px">Nearby undiscovered genera</h3>
+    <p class="small">${sc.g.length} genera recorded within 25 km of ${cellLabel(pointFor(k))} · <b>${missing.length}</b> not in your SPOODEX.</p>
+    ${missing.map(x => `<div class="row" style="gap:6px"><a href="#" data-genus="${x.id}" style="min-width:130px"><i>${esc(S.nodes[x.id]?.n)}</i></a>
+      <div class="bar"><i style="width:${pct(x.c,max)}%"></i></div><span class="small muted">${tier(x)}</span></div>`).join('') || (sc.g.length ? '<p>You have them all. Cheeky.</p>' : '<p>No public salticid records here yet. Be the first!</p>')}
+    <p class="small muted">Based on public records only; obscured observations contribute at coarse resolution.</p>`;
+}
+
+function viewQuests() {
+  const M = S.M, qs = buildQuests(M);
+  const done = (S.u.completed || []).slice(-10).reverse();
+  return `
+  ${done.length ? `<div class="panel" style="margin-bottom:14px"><h2>Completed since you started</h2>${done.map(q => `<div>✅ <b>${esc(q.title)}</b> <span class="small muted">${esc(q.at)}</span> <span class="reward">+${q.reward} XP</span></div>`).join('')}</div>` : ''}
+  <div class="grid2">${qs.map(q => `<div class="panel quest ${q.daily?'daily':''}">
+    ${q.daily ? '<div class="small" style="letter-spacing:.2em">★ TODAY\'S FIELD QUEST</div>' : ''}
+    <h3>${q.icon} ${esc(q.title)}</h3><p>${esc(q.text)}</p>
+    ${q.targets ? `<div class="small">${q.targets.map(id => `<a href="#" data-genus="${id}"><i>${esc(S.nodes[id]?.n)}</i></a>`).join(' · ')}</div>` : ''}
+    ${q.kind === 'scan' ? `<button class="primary" data-scan="${esc(M.homeCell.k)}">📡 Scan home base</button>` : ''}
+    ${q.kind === 'first' ? '<a class="btnlink" href="https://www.inaturalist.org/observations/upload" target="_blank" rel="noopener">Upload to iNaturalist ↗</a>' : ''}
+    ${q.kind === 'base' ? '<button class="primary" data-tab="map">Set home base</button>' : ''}
+    ${q.kind === 'resolve' ? `<a href="https://www.inaturalist.org/observations?user_id=${encodeURIComponent(S.login)}&taxon_id=${SALTICIDAE}&hrank=family&lrank=subtribe" target="_blank" rel="noopener">Open these on iNaturalist ↗</a>` : ''}
+    ${q.reward ? `<div class="reward">Reward: +${q.reward} Naturalist XP</div>` : ''}</div>`).join('')}</div>
+  <p class="muted small" style="margin-top:14px">Quests are generated from real gaps in your records and check themselves on every sync. None of them can be completed indoors.</p>`;
+}
+
+/* ---------------- genus page ---------------- */
+async function openGenus(id) {
+  const M = S.M, g = M.G.get(id), info = S.info[id] || {}, name = S.nodes[id]?.n || '?';
+  const rt = rarityTier(id), scopeP = scopePlace(S.prefs.scope);
+  const lin = lineageText(id);
+  const firstPlace = g ? (g.first.pg || '') : '';
+  const body = g ? `
+    <div class="small" style="letter-spacing:.2em">DISCOVERY LEVEL ${g.level} · ${g.state}</div>
+    <h1 style="font-size:36px;font-style:italic;margin:2px 0">${esc(name)}</h1>
+    <div class="muted">${esc(lin)}</div>
+    <div class="pips" style="max-width:320px;margin:8px 0">${CRITERIA.map(c => `<i class="${g.f[c.k]?'on':''}"></i>`).join('')}</div>
+    <div class="grid2">
+      <div><h3>Your records</h3><dl class="kv">
+        <dt>Observations</dt><dd>${g.obs.length}</dd>
+        <dt>Localities</dt><dd>${g.c01.size}</dd>
+        <dt>Species-level taxa</dt><dd>${g.species.size ? [...g.species].map(s => `<i>${esc(s)}</i>`).join(', ') : '—'}</dd>
+        <dt>First recorded</dt><dd>${esc(g.first.d)}${firstPlace ? ' · ' + esc(firstPlace) : ''}</dd>
+        <dt>Latest</dt><dd>${esc(g.last.d)}</dd>
+        <dt>Best record</dt><dd>${g.f.rg ? 'Research Grade' : g.f.supported ? 'Community-supported genus' : 'Your ID (not yet community-supported)'}</dd>
+        <dt>Your ${ordinal(g.discIndex)} genus</dt><dd></dd>
+      </dl></div>
+      <div><h3>Mastery challenges</h3><ul class="checks">${CRITERIA.map(c => `<li class="${g.f[c.k]?'done':''}">${g.f[c.k]?'☑':'☐'} ${c.icon} ${esc(c.label)}</li>`).join('')}</ul>
+        <p class="small muted">Mastered at ${MASTERY_AT}/10. Sex & life stage come from iNat annotations; behaviour from your descriptions/tags/fields.</p></div>
+    </div>
+    <h3 style="margin-top:12px">Your gallery</h3>
+    <div class="gallery">${g.photos.map(p => `<a href="https://www.inaturalist.org/observations/${p.id}" target="_blank" rel="noopener" style="background-image:url('${esc(photoSize(p.url,'small'))}')"></a>`).join('')}</div>
+    ${moduleOn(4) ? `<h3 style="margin-top:12px">XP ledger (${fmt(g.xp)} XP)</h3><div class="small" style="max-height:140px;overflow:auto">${g.xpLog.slice().reverse().map(e => `<div>${esc(e.d)} · ${esc(e.label)} <span class="reward">+${e.xp}</span></div>`).join('')}</div>` : ''}
+  ` : `
+    <div class="small" style="letter-spacing:.2em">UNKNOWN</div>
+    <h1 style="font-size:36px;font-style:italic;margin:2px 0">${esc(name)}</h1>
+    <div class="muted">${esc(lin)}</div>
+    <p>You haven't recorded this genus. ${rt ? `iNat has ${fmt(rt.count)} verifiable record${rt.count===1?'':'s'} of it in ${esc(scopeLabel(S.prefs.scope))}.` : ''}</p>
+    <p><a href="https://www.inaturalist.org/observations?taxon_id=${id}${scopeP ? '&place_id='+scopeP : ''}" target="_blank" rel="noopener">See where others have found it ↗</a></p>`;
+  const rarity = moduleOn(3) ? `
+    <h3 style="margin-top:12px">Rarity telemetry</h3>
+    <dl class="kv">
+      ${g ? `<dt>Your encounter rate</dt><dd>${g.obs.length} of your ${fmt(M.obs.length)} salticid observations</dd>` : ''}
+      <dt>iNat record frequency</dt><dd>${rt ? `${esc(rt.label)} in ${esc(scopeLabel(S.prefs.scope))} (${fmt(rt.count)})` : '—'}</dd>
+      <dt>Observers</dt><dd id="obsvrs">…</dd>
+    </dl>
+    <p class="small muted">Record-frequency measures, not conservation status. Observer counts resist one enthusiast with 900 photos of the same genus.</p>` : '';
+  const hist = info.s ? `<h3 style="margin-top:12px">Natural history</h3><p>${esc(info.s)}</p><p class="small muted">Summary via iNaturalist / Wikipedia${info.w ? ` · <a href="${esc(info.w)}" target="_blank" rel="noopener">more</a>` : ''}</p>` : '';
+  const cg = S.cmp?.M?.G.get(id);
+  const theirs = cg ? `<h3 style="margin-top:12px">${esc(S.cmp.login)}'s records</h3>
+    <p class="small">${cg.obs.length} obs · level ${cg.level}/10 · ${cg.state.toLowerCase()} · first ${esc(cg.first.d)}</p>
+    <div class="gallery">${cg.photos.slice(0,8).map(p => `<a href="https://www.inaturalist.org/observations/${p.id}" target="_blank" rel="noopener" style="background-image:url('${esc(photoSize(p.url,'small'))}')"></a>`).join('')}</div>` : '';
+  const hero = g ? photoSize(g.cover, 'large') : info.p;
+  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal">
+    <button class="x" data-close="1">✕</button>
+    <div class="hero ${g ? '' : 'unknown'}" style="background-image:url('${esc(hero||'')}')"></div>
+    <div class="body">${body}${theirs}${rarity}${hist}
+      <p class="small"><a href="https://www.inaturalist.org/taxa/${id}" target="_blank" rel="noopener">iNaturalist taxon page ↗</a>
+      ${g ? ` · <a href="https://www.inaturalist.org/observations?user_id=${encodeURIComponent(S.login)}&taxon_id=${id}" target="_blank" rel="noopener">your records ↗</a>` : ''}
+      ${!g && info.a ? ` · <span class="muted">Silhouette from photo ${esc(info.a)}</span>` : ''}</p>
+    </div></div></div>`;
+  if (!info.s && !info.p) ensureInfo([id]).then(() => { if ($('#modalRoot').innerHTML && S.info[id]?.s) openGenus(id); });
+  if (moduleOn(3)) {
+    const key = `${id}:${scopeP || 'w'}`;
+    let n = S.observers[key];
+    if (n == null) {
+      try { const d = await api('/observations/observers', { taxon_id:id, place_id:scopeP, verifiable:true, per_page:1 }); n = S.observers[key] = d.total_results; saveShared(); } catch { n = '?'; }
+    }
+    const el = $('#obsvrs'); if (el) el.textContent = `${fmt(n)} iNat observer${n===1?'':'s'} have recorded it in ${scopeLabel(S.prefs.scope)}`;
+  }
+}
+
+/* ---------------- reveal ceremony ---------------- */
+function revealQueue(list) {
+  if (!list.length) return;
+  const g = list.shift();
+  const el = document.createElement('div');
+  el.id = 'reveal';
+  el.innerHTML = `<div class="rph" style="background-image:url('${esc(photoSize(g.cover,'large'))}')"></div>
+    <div class="k">NEW GENUS RECORDED</div><h2>${esc(g.name.toUpperCase())}</h2>
+    <p>Your ${ordinal(g.discIndex)} Salticidae genus</p><p>First observed ${esc(g.first.d)}${g.first.pg ? ' · ' + esc(g.first.pg) : ''}</p>
+    <p style="margin-top:18px;font-size:12px">${list.length ? `${list.length} more… ` : ''}tap to continue</p>`;
+  el.addEventListener('click', () => { el.remove(); revealQueue(list); });
+  document.body.appendChild(el);
+}
+
+/* ---------------- compare ---------------- */
+function viewCompare() {
+  const C = S.cmp, M = S.M;
+  const form = `<div class="panel" style="margin-bottom:16px"><h2>Compare SPOODEXes</h2>
+    <p class="muted small">Enter another iNaturalist username to see which genera they've found that you haven't, and the other way round. Public records only.</p>
+    <form class="row" data-form="compare"><input name="login" value="${esc(C?.login || '')}" placeholder="their iNaturalist username" autocomplete="off" style="flex:1;min-width:180px"><button class="primary" ${C?.loading ? 'disabled' : ''}>Compare</button></form>
+    ${C?.loading ? `<div id="cmpLog" class="term" style="height:120px">${esc(C.log.slice(-6).join('\n'))}</div>` : ''}
+    ${C?.error ? `<p>${esc(C.error)}</p>` : ''}</div>`;
+  if (!C || !C.M || C.loading) return form;
+  const T = C.M, mine = M.G, theirs = T.G;
+  const byObs = (a,b) => b.obs.length - a.obs.length;
+  const onlyThem = [...theirs.values()].filter(g => !mine.has(g.id)).sort(byObs);
+  const onlyMe = [...mine.values()].filter(g => !theirs.has(g.id)).sort(byObs);
+  const both = [...mine.values()].filter(g => theirs.has(g.id)).sort((a,b) => a.name.localeCompare(b.name));
+  const mastered = X => X.genera.filter(g => g.state === 'MASTERED').length;
+  const stat = (label, a, b) => `<tr><td class="muted">${label}</td><td><b>${a}</b></td><td><b>${b}</b></td></tr>`;
+  const mini = (g, note) => `<div class="card" data-genus="${g.id}"><div class="ph" style="background-image:url('${esc(photoSize(g.cover,'small'))}')"></div>
+    <div class="meta"><div class="nm">${esc(g.name)}</div><div class="small muted">${note}</div></div></div>`;
+  const tribeOf = id => { const L = lineage(id); return (L.find(n => n.r === 'tribe') || L.find(n => n.r === 'subfamily') || { n:'(unplaced)' }).n; };
+  const tribes = {};
+  mine.forEach((g, id) => { const t = tribeOf(id); (tribes[t] = tribes[t] || { a:0, b:0 }).a++; });
+  theirs.forEach((g, id) => { const t = tribeOf(id); (tribes[t] = tribes[t] || { a:0, b:0 }).b++; });
+  const tr = Object.entries(tribes).sort((x,y) => (y[1].a + y[1].b) - (x[1].a + x[1].b));
+  const me = esc(who()), them = esc(C.login);
+  return form + `
+  <div class="grid2">
+    <div class="panel"><table class="cmp"><tr><th></th><th>${me}</th><th>${them}</th></tr>
+      ${stat('Genera', mine.size, theirs.size)}${stat('Mastered', mastered(M), mastered(T))}${stat('Species-level taxa', M.species, T.species)}${stat('Observations', fmt(M.obs.length), fmt(T.obs.length))}${stat('Localities (~10 km)', M.cellsAll01.size, T.cellsAll01.size)}</table>
+      <p style="margin-top:10px"><b>${both.length}</b> shared · <b>${onlyMe.length}</b> only ${me} · <b>${onlyThem.length}</b> only ${them}</p>
+      ${isGuest() ? '' : '<button data-act="share">🔗 Copy link to this comparison</button>'}</div>
+    <div class="panel"><h3>Lineage by lineage</h3><table class="cmp"><tr><th></th><th>${me}</th><th>${them}</th></tr>
+      ${tr.map(([n, v]) => `<tr><td>${esc(n)}</td><td>${v.a}</td><td>${v.b}</td></tr>`).join('')}</table></div>
+  </div>
+  <h2 style="margin-top:20px">Only ${them} has (${onlyThem.length})</h2><p class="small muted">Your hit list, with their photos so you know what you're looking for.</p>
+  <div class="dexgrid">${onlyThem.map(g => mini(g, `${g.obs.length} obs · since ${(g.first.d || '').slice(0,4)}`)).join('') || '<p>Nothing! You have everything they have.</p>'}</div>
+  <h2 style="margin-top:20px">Only ${me} has (${onlyMe.length})</h2>
+  <div class="dexgrid">${onlyMe.map(g => mini(g, `${g.obs.length} obs`)).join('') || '<p>Nothing yet.</p>'}</div>
+  <h2 style="margin-top:20px">Both (${both.length})</h2>
+  <div class="panel"><table class="cmp"><tr><th>Genus</th><th>${me}</th><th>${them}</th></tr>
+    ${both.map(g => { const t = theirs.get(g.id); return `<tr><td><a href="#" data-genus="${g.id}"><i>${esc(g.name)}</i></a></td><td>L${g.level} · ${g.obs.length} obs</td><td>L${t.level} · ${t.obs.length} obs</td></tr>`; }).join('')}</table></div>`;
+}
+async function loadCompare(login) {
+  login = String(login || '').trim().replace(/^@/, '');
+  if (!login || S.cmp?.loading) return;
+  if (login.toLowerCase() === String(S.login).toLowerCase()) { toast("That's you! Try someone else's username."); return; }
+  const cached = store.get('cmp');
+  const save = cached && cached.login.toLowerCase() === login.toLowerCase() ? cached.save : { obs:{}, meta:{} };
+  S.cmp = { login, save, loading:true, log:[] };
+  if (S.tab === 'compare') render();
+  const log = line => { S.cmp.log.push(line); const el = $('#cmpLog'); if (el) { el.textContent = S.cmp.log.slice(-6).join('\n'); el.scrollTop = el.scrollHeight; } };
+  try {
+    await importRecords(login, save, { log });
+    saveShared();
+    S.cmp.M = buildModel(save.obs, null);
+    if (!store.set('cmp', { login, save })) store.del('cmp');   // one cached rival at a time
+  } catch (e) { S.cmp.error = e.message; }
+  S.cmp.loading = false;
+  updateUrl();
+  if (S.tab === 'compare') render();
+}
+
+/* ---------------- boot / flows ---------------- */
+function loadUser(login) {
+  S.login = login;
+  S.u = store.get(ukey(login), null) || { obs:{}, meta:{}, seen:[], scans:{}, completed:[] };
+  S.u.scans = S.u.scans || {}; S.u.completed = S.u.completed || []; S.u.seen = S.u.seen || [];
+  store.set('lastLogin', login);
+}
+// Shareable state lives in the URL: ?u=<login>&vs=<rival>. Locations never go in links.
+function updateUrl() {
+  const p = new URLSearchParams();
+  if (S.login && !isGuest()) p.set('u', S.login);
+  if (S.cmp?.M && S.cmp.login) p.set('vs', S.cmp.login);
+  const qs = p.toString();
+  try { history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '')); } catch {}
+}
+async function copyLink() {
+  updateUrl();
+  const url = location.href;
+  try { await navigator.clipboard.writeText(url); toast('Link copied. Anyone with it sees this SPOODEX (public iNat data only).'); }
+  catch { window.prompt('Copy this link:', url); }
+}
+async function doSync(full) {
+  const btn = $('#syncBtn'); btn.disabled = true; btn.textContent = '⟳ Syncing…';
+  const prevQuests = S.M ? buildQuests(S.M) : [];
+  const prevSeen = new Set(S.u.seen);
+  try {
+    await sync({ full });
+    // quests completed by this sync
+    const at = new Date().toISOString().slice(0,10);
+    for (const q of prevQuests) if (!['scan','base'].includes(q.kind) && questDone(q, S.M) && !S.u.completed.some(c => c.id === q.id && c.at === at)) S.u.completed.push({ id:q.id, title:q.title, reward:q.reward, at });
+    const fresh = S.M.genera.filter(g => !prevSeen.has(g.id));
+    S.u.seen = S.M.genera.map(g => g.id); saveUser();
+    if (S.tab !== 'map') render();
+    if (fresh.length) revealQueue(fresh); else if (!isGuest()) toast('Synced. No new genera this time, but the field awaits.');
+  } catch (e) { toast(e.message); }
+  btn.disabled = false; btn.textContent = '⟳ Sync';
+}
+async function onboard(login) {
+  loadUser(login);
+  const log = $('#scanLog'); log.classList.remove('hidden'); log.textContent = '';
+  const w = s => { log.textContent += s + '\n'; log.scrollTop = log.scrollHeight; };
+  w('beep.'); w('SPOODEX Mk 0 booting…');
+  document.querySelectorAll('#onboard button').forEach(b => b.disabled = true);
+  try {
+    await sync({ full:!S.u.meta.lastSync, log:w });
+    const M = S.M;
+    w(`Identifying unique genera… ${M.G.size} found.`);
+    const cas = $('#cascade'); cas.innerHTML = '';
+    for (const [i, g] of M.genera.entries()) {
+      const s = document.createElement('span'); s.innerHTML = `<i>${esc(g.name)}</i>`; s.style.animationDelay = (i * 60) + 'ms'; cas.appendChild(s);
+    }
+    await sleep(Math.min(4000, M.genera.length * 60 + 600));
+    S.u.seen = M.genera.map(g => g.id); saveUser();
+    $('#initTitle').textContent = M.G.size ? `SPOODEX INITIALISED — ${M.G.size} GENERA DISCOVERED` : 'SPOODEX INITIALISED — NO GENERA YET. LET\'S FIX THAT.';
+    $('#initDone').classList.remove('hidden');
+  } catch (e) { w('ERROR: ' + e.message); }
+  document.querySelectorAll('#onboard button').forEach(b => b.disabled = false);
+}
+function enterApp(tab) {
+  $('#onboard').classList.add('hidden'); $('#app').classList.remove('hidden');
+  S.tab = tab || (S.M.G.size ? 'profile' : 'map');
+  updateUrl(); render();
+  if (S.pendingVs) { const v = S.pendingVs; S.pendingVs = null; S.tab = 'compare'; render(); loadCompare(v); }
+}
+function startGuest() {
+  loadUser(GUEST);
+  S.M = buildModel();
+  enterApp('map');
+  if (S.u.base) loadRefs().then(() => { S.M = buildModel(); }).catch(() => {});
+}
+function toast(msg) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:6px;z-index:3000;max-width:90vw';
+  document.body.appendChild(t); setTimeout(() => t.remove(), 4000);
+}
+function settings() {
+  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal"><button class="x" data-close="1">✕</button><div class="body">
+    <h2>Settings</h2>
+    <p>${isGuest() ? 'Browsing as a guest.' : `Viewing <b>${esc(S.login)}</b> (public data only). Last sync ${esc((S.u.meta.lastSync||'').slice(0,16).replace('T',' '))}.`}</p>
+    <div class="row"><label>Chassis skin <select data-pref="chassis">${['auto','notebook','kit','cabinet'].map(c => `<option ${S.prefs.chassis===c?'selected':''}>${c}</option>`).join('')}</select></label>
+    <label><input type="checkbox" data-pref="peek" ${S.prefs.peek?'checked':''}> Unlock all modules (prototype peek)</label></div>
+    <div class="row" style="margin-top:14px">
+      ${isGuest() ? '' : '<button data-act="share">🔗 Copy share link</button><button data-act="full">Full resync</button>'}
+      <button data-act="switch">Switch user</button>
+      <button data-act="wipe">Forget this user's cache</button>
+    </div></div></div></div>`;
+}
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-tab],[data-genus],[data-close],[data-filter],[data-scan],[data-act],[data-base]');
+  if (!t) return;
+  if (t.dataset.close && e.target !== t && !e.target.closest('.x')) return;
+  if (t.dataset.genus) { e.preventDefault(); openGenus(+t.dataset.genus); return; }
+  if (t.dataset.close) { $('#modalRoot').innerHTML = ''; return; }
+  if (t.dataset.tab) { $('#modalRoot').innerHTML = ''; S.tab = t.dataset.tab; render(); return; }
+  if (t.dataset.filter) { S.prefs.filter = t.dataset.filter; savePrefs(); render(); return; }
+  if (t.dataset.scan) { if (S.tab !== 'map') { S.tab = 'map'; render(); } showCell(t.dataset.scan); scanCell(t.dataset.scan); return; }
+  if (t.dataset.base) { e.preventDefault(); const [lat, lng, ...rest] = t.dataset.base.split('|'); setBase(lat, lng, rest.join('|')); return; }
+  const a = t.dataset.act;
+  if (a === 'peek') { S.prefs.peek = true; savePrefs(); render(); }
+  if (a === 'full') { $('#modalRoot').innerHTML = ''; doSync(true); }
+  if (a === 'share') copyLink();
+  if (a === 'geo') geolocate();
+  if (a === 'clearBase') { delete S.u.base; saveUser(); S.M = buildModel(); render(); }
+  if (a === 'guest') startGuest();
+  if (a === 'sample') { $('#loginInput').value = SAMPLE_LOGIN; onboard(SAMPLE_LOGIN); }
+  if (a === 'switch') { store.del('lastLogin'); location.href = location.pathname; }
+  if (a === 'wipe') { store.del(ukey(S.login)); store.del('lastLogin'); location.href = location.pathname; }
+});
+document.addEventListener('submit', async e => {
+  const f = e.target.dataset.form; if (!f) return;
+  e.preventDefault();
+  if (f === 'compare') loadCompare(e.target.login.value);
+  if (f === 'placeSearch') {
+    const q = e.target.q.value.trim(); if (!q) return;
+    const out = $('#placeResults'); out.textContent = 'Searching…';
+    try {
+      const d = await api('/places/autocomplete', { q, per_page:8 });
+      out.innerHTML = d.results.filter(p => p.location).map(p => {
+        const [lat, lng] = p.location.split(','), label = p.display_name || p.name;
+        return `<div><a href="#" data-base="${esc(`${lat}|${lng}|${label}`)}">${esc(label)}</a></div>`;
+      }).join('') || 'No places found.';
+    } catch (err) { out.textContent = err.message; }
+  }
+});
+document.addEventListener('change', async e => {
+  const p = e.target.dataset.pref; if (!p) return;
+  S.prefs[p] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; savePrefs();
+  if (p === 'scope') { try { await ensureRef(S.prefs.scope); } catch (err) { toast(err.message); } S.M = buildModel(); }
+  render();
+  if ($('#modalRoot').innerHTML && ['chassis','peek'].includes(p)) settings();
+});
+$('#syncBtn').addEventListener('click', () => doSync(false));
+$('#shareBtn').addEventListener('click', copyLink);
+$('#menuBtn').addEventListener('click', settings);
+$('#loginForm').addEventListener('submit', e => { e.preventDefault(); const v = $('#loginInput').value.trim().replace(/^@/, ''); if (v) onboard(v); });
+$('#openDex').addEventListener('click', () => enterApp());
+
+// ?u=<login> opens that SPOODEX (importing it if needed); ?vs=<login> jumps to Compare.
+// Otherwise a returning player opens straight from cache, then quietly syncs.
+(function boot() {
+  const q = new URLSearchParams(location.search);
+  const u = (q.get('u') || '').trim().replace(/^@/, '');
+  S.pendingVs = (q.get('vs') || '').trim() || null;
+  const target = u || store.get('lastLogin');
+  if (target && store.get(ukey(target))) {
+    loadUser(target);
+    try { S.M = buildModel(); enterApp(); doSync(false); return; } catch (e) { console.warn(e); }
+  }
+  if (u) { $('#loginInput').value = u; onboard(u); }
+})();
+</script>
+</body>
+</html>
