@@ -37,7 +37,8 @@
 [data-chassis="cabinet"] nav.tabs button { color:#efe4cc; }
 [data-chassis="cabinet"] header.top .lvl button { color:var(--ink); }
 [data-chassis="cabinet"] nav.tabs button.on { color:var(--ink); }
-[data-chassis="cabinet"] #view > h2, [data-chassis="cabinet"] #view > h3, [data-chassis="cabinet"] #view > p { color:#efe4cc; }
+[data-chassis="cabinet"] #view > h2, [data-chassis="cabinet"] #view > h3, [data-chassis="cabinet"] #view > p,
+[data-chassis="cabinet"] #tripPlan > h2, [data-chassis="cabinet"] #tripPlan > p { color:#efe4cc; }
 [data-chassis="cabinet"] #view > h3 .muted { color:#c9b48f; }
 [data-chassis="cabinet"] .panel, [data-chassis="cabinet"] .card { box-shadow:0 2px 0 #1a120d, 0 6px 16px rgba(0,0,0,.35); }
 [data-chassis="cabinet"] .panel { border-top:3px solid #b08a45; }
@@ -153,6 +154,9 @@ table.cal .now { box-shadow:inset 0 0 0 2px var(--accent); }
 table.cal tr[data-act] { cursor:pointer; }
 table.cal tr[data-act]:hover td { background:var(--panel2); }
 #caseMap { height:320px; border-radius:var(--radius); border:1px solid var(--line); margin-bottom:8px; }
+#tripMap { height:380px; border-radius:var(--radius); border:1px solid var(--line); isolation:isolate; }
+.tripstat { gap:28px; align-items:flex-start; }
+.tripstat b { display:block; font:600 30px var(--head); color:var(--accent); line-height:1.1; }
 .cardcanvas { width:100%; max-width:540px; height:auto; display:block; margin:0 auto 12px; border-radius:4px; box-shadow:0 6px 20px rgba(0,0,0,.25); }
 @media (max-width:600px) { .vs { grid-template-columns:1fr; } .vsmark { text-align:center; } .mosaic { max-width:150px; } }
 
@@ -233,7 +237,7 @@ main { padding-top:18px; }
 .tree .minibar i { display:block; height:100%; background:var(--lit); }
 
 /* ---------- Map ---------- */
-#map { height:520px; border-radius:var(--radius); border:1px solid var(--line); }
+#map { height:520px; border-radius:var(--radius); border:1px solid var(--line); isolation:isolate; }
 .maplayout { display:grid; grid-template-columns:2fr 1fr; gap:16px; }
 @media (max-width:820px) { .maplayout { grid-template-columns:1fr; } #map { height:380px; } }
 
@@ -307,7 +311,7 @@ main { padding-top:18px; }
    Layers:  api (throttled iNat client) → sync (incremental import + cache)
             → model (pure derivation: genera, states, mastery, XP, quests)
             → views (render functions per screen)
-   All state lives in localStorage; iNaturalist is the source of truth.
+   Saves live in IndexedDB (prefs in localStorage); iNaturalist is the source of truth.
    ===================================================================== */
 
 const SALTICIDAE = 48139;               // iNat taxon id for Salticidae
@@ -364,11 +368,74 @@ const stripHtml = s => { const d = document.createElement('div'); d.innerHTML = 
 const cellLabel = c => c && c.label ? esc(c.label + (c.near ? ` (near ${c.near})` : '')) : c ? `${Math.abs(c.lat).toFixed(2)}°${c.lat<0?'S':'N'} ${Math.abs(c.lng).toFixed(2)}°${c.lng<0?'W':'E'}` : '';
 const cellKey = (lat, lng, deg) => `${Math.floor(lat/deg)}:${Math.floor(lng/deg)}`;
 
+// Saves live in IndexedDB (localStorage caps out around 5 MB). Reads come from an in-memory copy loaded once at boot,
+// so store.get/set stay synchronous; writes are batched into IndexedDB in the background. Prefs and the last login
+// stay in localStorage. Where IndexedDB is unavailable, everything falls back to localStorage as before.
+const LS_ONLY = new Set(['prefs', 'lastLogin']);
 const store = {
-  get(k, d=null) { try { const v = localStorage.getItem('spoodex:'+k); return v == null ? d : JSON.parse(v); } catch { return d; } },
-  set(k, v) { try { localStorage.setItem('spoodex:'+k, JSON.stringify(v)); return true; } catch (e) { console.warn('SPOODEX storage write failed', e); return false; } },
-  del(k) { try { localStorage.removeItem('spoodex:'+k); } catch {} },
+  db: null, mem: new Map(), dirty: new Map(), timer: 0, warned: false,
+  idb(k) { return this.db && !LS_ONLY.has(k); },
+  async init() {
+    try {
+      this.db = await new Promise((res, rej) => {
+        const r = indexedDB.open('spoodex', 1);
+        r.onupgradeneeded = () => r.result.createObjectStore('kv');
+        r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); r.onblocked = () => rej(new Error('IndexedDB blocked'));
+      });
+      await new Promise((res, rej) => {
+        const tx = this.db.transaction('kv'), cur = tx.objectStore('kv').openCursor();
+        cur.onsuccess = () => { const c = cur.result; if (c) { this.mem.set(c.key, c.value); c.continue(); } };
+        tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+      });
+    } catch (e) { console.warn('SPOODEX: IndexedDB unavailable, using localStorage', e); this.db = null; return; }
+    // One-time move of older localStorage saves; they're only removed once IndexedDB has them
+    try {
+      const moved = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const lk = localStorage.key(i), k = lk.slice(8);
+        if (!lk.startsWith('spoodex:') || LS_ONLY.has(k)) continue;
+        if (!this.mem.has(k)) { const v = localStorage.getItem(lk); this.mem.set(k, v); this.dirty.set(k, v); }
+        moved.push(lk);
+      }
+      if (moved.length) { await this.flush(); moved.forEach(lk => localStorage.removeItem(lk)); }
+    } catch (e) { console.warn('SPOODEX: could not move old saves', e); }
+  },
+  get(k, d=null) {
+    try { const v = this.idb(k) ? this.mem.get(k) : localStorage.getItem('spoodex:'+k); return v == null ? d : JSON.parse(v); }
+    catch { return d; }
+  },
+  set(k, v) {
+    try {
+      const j = JSON.stringify(v);
+      if (this.idb(k)) { this.mem.set(k, j); this.dirty.set(k, j); this.later(); }
+      else localStorage.setItem('spoodex:'+k, j);
+      return true;
+    } catch (e) { console.warn('SPOODEX storage write failed', e); return false; }
+  },
+  del(k) {
+    if (this.idb(k)) { this.mem.delete(k); this.dirty.set(k, undefined); this.later(); }
+    else try { localStorage.removeItem('spoodex:'+k); } catch {}
+  },
+  later() { if (!this.timer) this.timer = setTimeout(() => this.flush().catch(() => {}), 300); },
+  flush() {
+    clearTimeout(this.timer); this.timer = 0;
+    if (!this.db || !this.dirty.size) return Promise.resolve();
+    const batch = [...this.dirty]; this.dirty.clear();
+    return new Promise((res, rej) => {
+      const tx = this.db.transaction('kv', 'readwrite'), os = tx.objectStore('kv');
+      for (const [k, v] of batch) v === undefined ? os.delete(k) : os.put(v, k);
+      tx.oncomplete = () => res();
+      tx.onabort = () => {
+        for (const [k, v] of batch) if (!this.dirty.has(k)) this.dirty.set(k, v);   // retried with the next write
+        if (!this.warned) { this.warned = true; toast('Browser storage is full; some progress may re-import next time.'); }
+        rej(tx.error);
+      };
+    });
+  },
+  async usage() { try { return (await navigator.storage.estimate()).usage || 0; } catch { return 0; } },
 };
+addEventListener('pagehide', () => store.flush().catch(() => {}));
+document.addEventListener('visibilitychange', () => { if (document.hidden) store.flush().catch(() => {}); });
 
 /* ---------------- api: throttled to ~1 req/s per iNat recommended practice ---------------- */
 let nextSlot = 0;
@@ -406,7 +473,7 @@ const S = {
   M: null,       // derived model
 };
 const ukey = l => 'u:' + String(l).toLowerCase();
-function saveUser() { if (!store.set(ukey(S.login), S.u)) toast('Local storage is full; progress will re-import next time.'); }
+function saveUser() { if (!store.set(ukey(S.login), S.u)) toast('Browser storage is full; progress will re-import next time.'); }
 function saveShared() { store.set('nodes', S.nodes); store.set('places', S.places); store.set('info', S.info); store.set('ref', S.ref); store.set('observers', S.observers); }
 function savePrefs() { store.set('prefs', S.prefs); }
 if (S.prefs.chassis === 'console') S.prefs.chassis = 'auto';
@@ -444,6 +511,10 @@ function trimObs(o) {
   };
 }
 
+// Exactly what trimObs reads. v2 returns only these: about 1.6 KB per record instead of about 60 KB from v1.
+const TAXON_FIELDS = '(id:!t,name:!t,rank:!t,rank_level:!t,parent_id:!t,ancestor_ids:!t)';
+const OBS_FIELDS = `(id:!t,observed_on:!t,created_at:!t,quality_grade:!t,captive:!t,obscured:!t,place_guess:!t,place_ids:!t,description:!t,tags:!t,geojson:!t,community_taxon_id:!t,taxon:${TAXON_FIELDS},identifications:(taxon:${TAXON_FIELDS}),annotations:(controlled_attribute_id:!t,controlled_value_id:!t,votes:(vote_flag:!t)),ofvs:(name:!t,value:!t),photos:(url:!t))`;
+
 const GUEST = '__guest';
 const SAMPLE_LOGIN = 'themoojuice';   // "Try a sample naturalist": any public account with plenty of salticids
 const isGuest = () => S.login === GUEST;
@@ -472,7 +543,7 @@ async function importRecords(login, save, { full=false, log=()=>{} } = {}) {
   let idAbove = 0, got = 0, total = null;
   log(full ? `Scanning naturalist records for ${login}…` : `Checking ${login} for records updated since ${since.slice(0,16).replace('T',' ')}…`);
   while (true) {
-    const d = await api('/observations', { taxon_id:SALTICIDAE, user_login:login, per_page:200, order_by:'id', order:'asc', id_above:idAbove || null, updated_since:since });
+    const d = await api('/observations', { taxon_id:SALTICIDAE, user_login:login, per_page:200, order_by:'id', order:'asc', id_above:idAbove || null, updated_since:since, fields:OBS_FIELDS }, API2);
     if (total == null) { total = d.total_results; log(`${fmt(total)} Salticidae observation${total===1?'':'s'} ${full?'found':'updated'}.`); }
     for (const o of d.results) obs[o.id] = trimObs(o);
     got += d.results.length;
@@ -505,19 +576,24 @@ async function sync({ full=false, log=()=>{} } = {}) {
   S.M = buildModel();
 }
 
-// Home base: lets beginners and guests scan before they have recorded anything.
-// Country/state are borrowed from the nearest public observation's standard places.
-async function resolveBasePlaces(log = () => {}) {
-  const b = S.u.base; if (!b) return;
-  log('Locating home base…');
-  let d = await api('/observations', { lat:b.lat, lng:b.lng, radius:5, per_page:1, verifiable:true });
-  if (!d.results.length) d = await api('/observations', { lat:b.lat, lng:b.lng, radius:50, per_page:1, verifiable:true });
+// Country/state/local area for a point, borrowed from the nearest public observation's standard places.
+async function placesNear(lat, lng, far = 50) {
+  const q = { lat, lng, per_page:1, verifiable:true, fields:'place_ids' };
+  let d = await api('/observations', { ...q, radius:5 }, API2);
+  if (!d.results.length) d = await api('/observations', { ...q, radius:far }, API2);
   const pl = d.results[0]?.place_ids || [];
   await fetchPlaces(pl);
   const pick = lvl => pl.find(p => S.places[p]?.l === lvl) || null;
-  b.places = { country:pick(0), state:pick(10) };
+  return { country:pick(0), state:pick(10), local:pick(20) };
+}
+// Home base: lets beginners and guests scan before they have recorded anything.
+async function resolveBasePlaces(log = () => {}) {
+  const b = S.u.base; if (!b) return;
+  log('Locating home base…');
+  const p = await placesNear(b.lat, b.lng);
+  b.places = { country:p.country, state:p.state };
   // Only generic labels need a "near …" hint; searched place names already say where they are
-  b.near = ['Your location', 'Map point'].includes(b.label) ? (S.places[pick(20)]?.n || S.places[pick(10)]?.n || null) : null;
+  b.near = ['Your location', 'Map point'].includes(b.label) ? (S.places[p.local]?.n || S.places[p.state]?.n || null) : null;
   saveUser(); saveShared();
 }
 async function setBase(lat, lng, label) {
@@ -551,8 +627,8 @@ function scopeLabel(scope) {
   const id = scopePlace(scope);
   return id ? (S.places[id]?.n || 'home region') : 'the world';
 }
-async function ensureRef(scope, force = false) {
-  const pid = scopePlace(scope);
+const ensureRef = (scope, force = false) => ensureRefPlace(scopePlace(scope), force);
+async function ensureRefPlace(pid, force = false) {
   const key = pid ? 'p' + pid : 'world';
   const cur = S.ref[key];
   if (!force && cur && cur.s && cur.t != null && Date.now() - cur.ts < REF_TTL) return cur;
@@ -869,6 +945,7 @@ const TABS = [
   { k:'map', label:'Map & scanner' },
   { k:'report', label:'This week' },
   { k:'wanted', label:'Most Wanted' },
+  { k:'trip', label:'Trip planner' },
   { k:'compare', label:'Compare' },
   { k:'ladder', label:'Ladder' },
   { k:'crew', label:'Crew' },
@@ -894,10 +971,14 @@ function render() {
   if (S.tab === 'crew' && !crewBusy && !crewErr && crewNeedsLoad()) loadCrew();
   if (S.tab === 'report' && !reportBusy && !reportErr && reportNeedsLoad()) loadReport();
   if (S.tab === 'wanted' && !wantedBusy && !wantedErr && Date.now() - wantedTs > WANTED_TTL) loadWanted();
+  if (S.tab === 'trip' && !tripBusy && !tripErr && tripNeedsLoad()) loadTrip();
   if (S.tab === 'profile' && !pioneerBusy && !isGuest()) setTimeout(drainPioneer, 0);
   if (S.tab === 'crew') { S.crew.seen = Date.now(); saveCrew(); }
-  v.innerHTML = ({ profile:viewProfile, dex:viewDex, tree:viewTree, map:viewMapShell, quests:viewQuests, compare:viewCompare, ladder:viewLadder, crew:viewCrew, report:viewReport, wanted:viewWanted })[S.tab]();
+  const plan = S.tab === 'trip' && $('#tripPlan');
+  if (plan) plan.innerHTML = viewTripPlan();
+  else v.innerHTML = ({ profile:viewProfile, dex:viewDex, tree:viewTree, map:viewMapShell, quests:viewQuests, compare:viewCompare, ladder:viewLadder, crew:viewCrew, report:viewReport, wanted:viewWanted, trip:viewTrip })[S.tab]();
   if (S.tab === 'map') initMap();
+  if (S.tab === 'trip') mountTripMap();
 }
 function lockedPlate(t) {
   const need = TIERS[t].min - S.M.G.size;
@@ -1272,21 +1353,21 @@ function activeHtml(k) {
 /* ---------------- best months: iNat month-of-year histogram per genus, in your home state ---------------- */
 const PHENO_TTL = 30 * 864e5;
 const phenoPlace = () => S.M?.home.state || S.M?.home.country || null;
-const phenoKey = gid => `${gid}:${phenoPlace() || 'w'}`;
-const phenoQueue = new Set();
+const phenoKey = (gid, pid = phenoPlace()) => `${gid}:${pid || 'w'}`;
+const phenoQueue = new Map();   // phenoKey -> [genus, place]
 let phenoBusy = false;
-function ensurePheno(ids) {
-  ids.forEach(id => { const p = S.pheno[phenoKey(id)]; if (!p || Date.now() - p.ts > PHENO_TTL) phenoQueue.add(id); });
+function ensurePheno(ids, pid = phenoPlace()) {
+  ids.forEach(id => { const k = phenoKey(id, pid), p = S.pheno[k]; if (!p || Date.now() - p.ts > PHENO_TTL) phenoQueue.set(k, [id, pid]); });
   if (!phenoBusy && phenoQueue.size) drainPheno();
 }
 async function drainPheno() {
   phenoBusy = true;
   while (phenoQueue.size) {
-    const id = phenoQueue.values().next().value; phenoQueue.delete(id);
+    const [k, [id, pid]] = phenoQueue.entries().next().value; phenoQueue.delete(k);
     try {
-      const d = await api('/observations/histogram', { taxon_id:id, place_id:phenoPlace(), interval:'month_of_year', verifiable:true });
+      const d = await api('/observations/histogram', { taxon_id:id, place_id:pid, interval:'month_of_year', verifiable:true });
       const m = d.results?.month_of_year || {};
-      S.pheno[phenoKey(id)] = { ts:Date.now(), m:[...Array(12)].map((_, i) => m[i+1] || 0) };
+      S.pheno[k] = { ts:Date.now(), m:[...Array(12)].map((_, i) => m[i+1] || 0) };
       store.set('pheno', S.pheno);
       phenoUpdated();
     } catch (e) { console.warn(e); break; }
@@ -1294,9 +1375,9 @@ async function drainPheno() {
   phenoBusy = false;
 }
 // Peak = months with ≥60% of the busiest (smoothed) month's records, written as circular ranges ("Nov–Feb")
-function peakInfo(gid) {
-  const p = S.pheno[phenoKey(gid)]; if (!p) return null;
-  const tot = p.m.reduce((a,b) => a+b, 0), nowM = new Date().getMonth();
+function peakInfo(gid, pid = phenoPlace(), nowM = new Date().getMonth()) {
+  const p = S.pheno[phenoKey(gid, pid)]; if (!p) return null;
+  const tot = p.m.reduce((a,b) => a+b, 0);
   if (tot < 12) return { few:true, tot, m:p.m };
   // smooth with neighbouring months (1-2-1) so sparse genera read as seasons, not noise
   const sm = p.m.map((v, i) => (p.m[(i+11) % 12] + 2*v + p.m[(i+1) % 12]) / 4);
@@ -1317,17 +1398,18 @@ function phenoHtml(gid) {
   return `${p.now ? '<b class="inseason">🌡 in season now</b> · ' : ''}<span class="muted">peak ${esc(p.text)}</span>`;
 }
 const phenoTag = gid => `<span class="small" data-pheno="${gid}">${phenoHtml(gid)}</span>`;
-function phenoChart(gid) {
-  const p = peakInfo(gid), where = esc(S.places[phenoPlace()]?.n || 'the world');
+function phenoChart(gid, pid = phenoPlace(), nowM = new Date().getMonth()) {
+  const p = peakInfo(gid, pid, nowM), where = esc(S.places[pid]?.n || 'the world');
   if (!p) return '<p class="small muted">Checking when it turns up…</p>';
-  const max = Math.max(1, ...p.m), nowM = new Date().getMonth();
+  const max = Math.max(1, ...p.m);
   return `<div class="pheno">${p.m.map((v, i) => `<div title="${MONTHS[i]}: ${v} records"><i style="height:${Math.round(100 * v / max)}%" class="${i === nowM ? 'now' : ''}"></i><span>${MONTHS[i][0]}</span></div>`).join('')}</div>
-    <p class="small">${p.few ? 'Too few records to call a season yet.' : `${p.now ? '<b class="inseason">🌡 In season now.</b> ' : ''}Peak: <b>${esc(p.text)}</b>.`} <span class="muted">${fmt(p.tot)} verifiable iNat records in ${where}, by month observed.</span></p>`;
+    <p class="small">${p.few ? 'Too few records to call a season yet.' : `${p.now ? `<b class="inseason">🌡 In season ${monthTxt(nowM)}.</b> ` : ''}Peak: <b>${esc(p.text)}</b>.`} <span class="muted">${fmt(p.tot)} verifiable iNat records in ${where}, by month observed.</span></p>`;
 }
 function phenoUpdated() {
   document.querySelectorAll('[data-pheno]').forEach(el => el.innerHTML = phenoHtml(+el.dataset.pheno));
-  document.querySelectorAll('[data-phenochart]').forEach(el => el.innerHTML = phenoChart(+el.dataset.phenochart));
-  if (S.tab === 'wanted' && !$('#modalRoot').innerHTML) softRender();
+  document.querySelectorAll('[data-phenochart]').forEach(el => { const d = el.dataset;
+    el.innerHTML = phenoChart(+d.phenochart, d.phenopid ? +d.phenopid : undefined, d.phenom ? +d.phenom : undefined); });
+  if (['wanted', 'trip'].includes(S.tab) && !$('#modalRoot').innerHTML) softRender();
 }
 
 /* ---------------- mastery fix-it: point at the exact records that could tick a box ---------------- */
@@ -2050,8 +2132,8 @@ function viewReport() {
 }
 
 /* ---------------- most wanted: this month's forecast of missing genera, wanted posters, and hotspot case files ---------------- */
-const WANTED_MAX = 40, WANTED_POSTERS = 6, WANTED_TTL = 3600e3, HAUNT_TTL = 7 * 864e5, HAUNT_KM = 150, HAUNT_KEEP = 60;
-S.haunts = store.get('haunts', {});   // `${genus}@${home rounded 0.1°}` -> {ts, n, used, skipped, wide, cells:[[cellKey, records, last date]]}
+const WANTED_MAX = 40, WANTED_POSTERS = 6, WANTED_TTL = 3600e3, HAUNT_TTL = 7 * 864e5, HAUNT_KM = 150, HAUNT_KEEP = 80;
+S.haunts = store.get('haunts', {});   // `${genus}@${centre rounded 0.1°}` or `${genus}@p${place}` -> {ts, n, used, skipped, wide, cells:[[cellKey, records, last date]]}
 let wantedBusy = false, wantedErr = null, wantedTs = 0, caseMap = null;
 const smooth12 = m => m.map((v, i) => (m[(i + 11) % 12] + 2 * v + m[(i + 1) % 12]) / 4);
 const cellCenter = k => { const [a, b] = k.split(':').map(Number); return { lat:(a + .5) * .25, lng:(b + .5) * .25 }; };
@@ -2061,6 +2143,11 @@ function kmBetween(a, b) {
   return 12742 * Math.asin(Math.sqrt(h));
 }
 const kmTxt = d => `~${Math.max(5, Math.round(d / 5) * 5)} km away`;   // distance to a 25 km square's centre, so keep it rough
+function bearingTxt(a, b) {
+  const r = Math.PI / 180, y = Math.sin((b.lng - a.lng) * r) * Math.cos(b.lat * r);
+  const x = Math.cos(a.lat * r) * Math.sin(b.lat * r) - Math.sin(a.lat * r) * Math.cos(b.lat * r) * Math.cos((b.lng - a.lng) * r);
+  return ['N','NE','E','SE','S','SW','W','NW'][Math.round(((Math.atan2(y, x) / r + 360) % 360) / 45) % 8];
+}
 function agoTxt(d) {
   if (!d) return '';
   const days = Math.round((Date.now() - Date.parse(d + 'T12:00:00')) / 864e5);
@@ -2068,29 +2155,37 @@ function agoTxt(d) {
   if (days < 60) return `${days} days ago`;
   return new Date(d + 'T12:00:00').toLocaleDateString(undefined, { month:'short', year:'numeric' });
 }
-// Rank every genus recorded in your state that you haven't recorded. Not a probability: a record-based "where to put your effort" score.
-function wantedList() {
-  const M = S.M, pid = M.home.state || M.home.country, ref = pid && S.ref['p' + pid];
+// A "where are we looking" context, so the same ranking serves home (Most Wanted) and any destination (Trip planner).
+// centre: point for distances (null = a whole region); near/recent: [{id,c}] genus counts around the centre; month: 0–11 to rank for.
+function homeCtx() {
+  const M = S.M, pid = M.home.state || M.home.country, h = M.homeCell;
+  return { kind:'home', pid, centre:h, km:25, month:new Date().getMonth(), at:'home', atLong:'your home base',
+    near:h && S.u.scans[h.k]?.g, recent:h && S.u.active?.[h.k]?.g, posters:WANTED_POSTERS };
+}
+const monthTxt = m => m === new Date().getMonth() ? 'now' : `in ${MONTHS[m]}`;
+// Rank every genus recorded in the region (or around the centre) that you haven't recorded. Not a probability: a record-based "where to put your effort" score.
+function wantedList(ctx = homeCtx()) {
+  const M = S.M, ref = ctx.pid && S.ref['p' + ctx.pid];
   if (!ref) return null;
-  const h = M.homeCell, scan = h && S.u.scans[h.k], act = h && S.u.active?.[h.k];
-  const near = new Map((scan?.g || []).map(x => [x.id, x.c])), recent = new Map((act?.g || []).map(x => [x.id, x.c]));
-  const m = new Date().getMonth();
-  const list = Object.keys(ref.g).map(Number).filter(id => !M.G.has(id)).map(id => {
-    const x = { id, state:ref.g[id], near:near.get(id) || 0, recent:recent.get(id) || 0 };
-    x.pre = (1 + 1.5 * Math.log10(1 + x.near) + (x.recent ? 2 : 0)) * Math.log10(10 + x.state);
+  const near = new Map((ctx.near || []).map(x => [x.id, x.c])), recent = new Map((ctx.recent || []).map(x => [x.id, x.c]));
+  const m = ctx.month;
+  const ids = new Set([...Object.keys(ref.g).map(Number), ...near.keys()]);
+  const list = [...ids].filter(id => !M.G.has(id)).map(id => {
+    const x = { id, state:ref.g[id] || 0, near:near.get(id) || 0, recent:recent.get(id) || 0 };
+    x.pre = (1 + 1.5 * Math.log10(1 + x.near) + (x.recent && !ctx.stale ? 2 : 0)) * Math.log10(10 + x.state);
     return x;
   }).sort((a,b) => b.pre - a.pre).slice(0, WANTED_MAX);
   for (const x of list) {
-    const p = S.pheno[phenoKey(x.id)];
+    const p = S.pheno[phenoKey(x.id, ctx.pid)];
     if (p) {
       const sm = smooth12(p.m), mx = Math.max(...sm) || 1, tot = p.m.reduce((a,b) => a + b, 0);
-      x.curve = sm.map(v => v / mx); x.few = tot < 12; x.peak = peakInfo(x.id);
+      x.curve = sm.map(v => v / mx); x.few = tot < 12; x.peak = peakInfo(x.id, ctx.pid, m);
       x.season = x.few ? .5 : x.curve[m];
     }
-    // Reach: how far the nearest record square is from home (unknown until its haunts are fetched)
-    const hn = S.haunts[hauntKey(x.id)], hs = hauntSummary(hn);
+    // Reach: how far the nearest record square is from the centre (unknown until its haunts are fetched)
+    const hn = S.haunts[hauntKey(x.id, ctx)], hs = hauntSummary(hn, ctx);
     x.dist = !hn ? null : hs?.nearest && !hn.wide ? hs.nearest.d : Infinity;
-    x.reach = !h ? 1 : x.dist == null ? .7 : x.dist === Infinity ? .15 : 1 / (1 + (x.dist / 100) ** 2);
+    x.reach = !ctx.centre ? 1 : x.dist == null ? .7 : x.dist === Infinity ? .15 : 1 / (1 + (x.dist / 100) ** 2);
     x.score = x.pre * (.25 + (x.season ?? .5)) * x.reach;
   }
   list.sort((a,b) => b.score - a.score);
@@ -2098,12 +2193,12 @@ function wantedList() {
   list.forEach(x => x.tier = x.score >= .6 * top ? 'Prime suspect' : x.score >= .3 * top ? 'Worth a look' : 'Long shot');
   return list;
 }
-const hauntKey = gid => { const h = S.M.homeCell; return h ? `${gid}@${h.lat.toFixed(1)},${h.lng.toFixed(1)}` : `${gid}@p${S.M.home.state || S.M.home.country}`; };
-// Recent records around home (v2 API with only the fields we need), binned into 25 km squares. Falls back to the whole state.
-async function ensureHaunts(gid) {
-  const key = hauntKey(gid), cur = S.haunts[key];
+const hauntKey = (gid, ctx = homeCtx()) => { const c = ctx.centre; return c ? `${gid}@${c.lat.toFixed(1)},${c.lng.toFixed(1)}` : `${gid}@p${ctx.pid}`; };
+// Recent records around the centre (v2 API with only the fields we need), binned into 25 km squares. Falls back to the whole region.
+async function ensureHaunts(gid, ctx = homeCtx()) {
+  const key = hauntKey(gid, ctx), cur = S.haunts[key];
   if (cur && Date.now() - cur.ts < HAUNT_TTL) return cur;
-  const h = S.M.homeCell, pid = S.M.home.state || S.M.home.country;
+  const h = ctx.centre, pid = ctx.pid;
   const q = { taxon_id:gid, verifiable:true, per_page:200, order_by:'observed_on', order:'desc', fields:'id,observed_on,obscured,geojson' };
   let d = h ? await api('/observations', { ...q, lat:h.lat.toFixed(2), lng:h.lng.toFixed(2), radius:HAUNT_KM }, API2) : null, wide = false;
   if ((!d || !d.results.length) && pid) { d = await api('/observations', { ...q, place_id:pid }, API2); wide = true; }
@@ -2120,24 +2215,39 @@ async function ensureHaunts(gid) {
   store.set('haunts', S.haunts);
   return S.haunts[key];
 }
-function hauntSummary(hn) {
-  const h = S.M.homeCell; if (!hn || !hn.cells.length) return null;
+function hauntSummary(hn, ctx = homeCtx()) {
+  const h = ctx.centre; if (!hn || !hn.cells.length) return null;
   const last = hn.cells.reduce((a, c) => c[2] > a ? c[2] : a, '');
   if (!h) return { last };
   let best = null;
   for (const [k, n, l] of hn.cells) { const d = kmBetween(h, cellCenter(k)); if (!best || d < best.d) best = { d, n, last:l, k }; }
   return { last, nearest:best };
 }
-function wantedReasons(x, where) {
-  const hs = hauntSummary(S.haunts[hauntKey(x.id)]), out = [];
-  if (x.recent) out.push(`🔥 ${x.recent} record${x.recent === 1 ? '' : 's'} within 25 km in the last ${ACTIVE_DAYS} days`);
-  if (x.peak) out.push(x.few ? '🗓 Season unclear (few records)' : x.peak.now ? `🌡 In season now (peak ${esc(x.peak.text)})` : `🗓 Peak ${esc(x.peak.text)}`);
-  if (S.M.homeCell && x.near) out.push(`📍 ${fmt(x.near)} record${x.near === 1 ? '' : 's'} within 25 km of home, all time`);
+const ctxWhere = ctx => esc(S.places[ctx.pid]?.n || 'your region');
+function wantedReasons(x, ctx = homeCtx()) {
+  const hn = S.haunts[hauntKey(x.id, ctx)], hs = hauntSummary(hn, ctx), out = [], at = esc(ctx.at);
+  if (x.recent) out.push(`🔥 ${x.recent} record${x.recent === 1 ? '' : 's'} ${ctx.centre ? `within ${ctx.km} km` : `in ${ctxWhere(ctx)}`} in the last ${ACTIVE_DAYS} days`);
+  if (x.peak) out.push(x.few ? '🗓 Season unclear (few records)' : x.peak.now ? `🌡 In season ${monthTxt(ctx.month)} (peak ${esc(x.peak.text)})` : `🗓 Peak ${esc(x.peak.text)}`);
+  if (ctx.centre && x.near) out.push(`📍 ${fmt(x.near)} record${x.near === 1 ? '' : 's'} within ${ctx.km} km of ${at}, all time`);
   else if (hs?.nearest) out.push(`🧭 Nearest record square ${kmTxt(hs.nearest.d)}, last record there ${esc(agoTxt(hs.nearest.last))}`);
-  else if (S.M.homeCell) out.push('📍 Not yet recorded within 25 km of home');
-  if (hs?.last && !S.haunts[hauntKey(x.id)].wide) out.push(`👁 Last seen within ${HAUNT_KM} km ${esc(agoTxt(hs.last))}`);
-  out.push(`📚 ${fmt(x.state)} iNat record${x.state === 1 ? '' : 's'} in ${where}`);
+  else if (ctx.centre) out.push(`📍 Not yet recorded within ${ctx.km} km of ${at}`);
+  if (hs?.last && !hn.wide) out.push(`👁 Last seen within ${HAUNT_KM} km ${esc(agoTxt(hs.last))}`);
+  out.push(x.state ? `📚 ${fmt(x.state)} iNat record${x.state === 1 ? '' : 's'} in ${ctxWhere(ctx)}` : `📚 Recorded nearby, but not yet in ${ctxWhere(ctx)}`);
   return out;
+}
+// Shared by Most Wanted and the Trip planner: season curves for the list, then haunts until the top line-up has distances.
+async function sharpenWanted(ctx, redraw) {
+  let ids = wantedList(ctx).map(x => x.id);
+  ensureInfo(ids); ensurePheno(ids, ctx.pid);
+  while (phenoBusy) await sleep(1000);   // ranking depends on the season curves
+  redraw();
+  // Distance re-ranks the list, so keep fetching haunts until the poster line-up has them all
+  for (let round = 0; round < 4; round++) {
+    const need = wantedList(ctx).slice(0, ctx.posters).filter(x => x.dist === null);
+    if (!need.length) break;
+    for (const x of need) { await ensureHaunts(x.id, ctx); redraw(); }
+  }
+  ensureInfo(wantedList(ctx).map(x => x.id));
 }
 async function loadWanted() {
   const pid = S.M.home.state || S.M.home.country;
@@ -2149,92 +2259,245 @@ async function loadWanted() {
     const h = S.M.homeCell;
     if (h) { if (!S.u.scans[h.k]) await fetchScan(h.k); await scanActive(h.k); }
     redraw();
-    let ids = wantedList().map(x => x.id);
-    ensureInfo(ids); ensurePheno(ids);
-    while (phenoBusy) await sleep(1000);   // ranking depends on the season curves
-    redraw();
-    // Distance re-ranks the list, so keep fetching haunts until the poster line-up has them all
-    for (let round = 0; round < 4; round++) {
-      const need = wantedList().slice(0, WANTED_POSTERS).filter(x => x.dist === null);
-      if (!need.length) break;
-      for (const x of need) { await ensureHaunts(x.id); redraw(); }
-    }
-    ensureInfo(wantedList().map(x => x.id));
+    await sharpenWanted(homeCtx(), redraw);
   } catch (e) { wantedErr = e.message; }
   wantedBusy = false; wantedTs = Date.now();
   redraw();
 }
+const tribeOf = id => { const L = lineage(id); return (L.find(n => n.r === 'tribe') || L.find(n => n.r === 'subfamily') || {}).n || 'Salticidae'; };
+function posterHtml(x, ctx, act) {
+  const info = S.info[x.id] || {}, tag = ctx.kind === 'trip' ? ctx.at : (S.places[ctx.pid]?.n || 'your region');
+  return `<div class="poster" data-act="${act}" data-v="${x.id}" title="Open the case file">
+    <div class="wtitle">WANTED</div><div class="wtier">${x.tier.toUpperCase()} · ${esc(tag.toUpperCase())}</div>
+    <div class="wph" style="background-image:url('${esc(info.p || '')}')"></div>
+    ${info.a ? `<div class="wcredit">${esc(info.a)}</div>` : ''}
+    <div class="wname">${esc(S.nodes[x.id]?.n || '?')}</div><div class="wtribe">${esc(tribeOf(x.id))}</div>
+    <ul class="wwhy">${wantedReasons(x, ctx).map(r => `<li>${r}</li>`).join('')}</ul>
+    <div class="wreward">REWARD · LEVEL ${S.M.G.size + 1} · +100 XP</div></div>`;
+}
+function calendarHtml(list, ctx, act) {
+  const m = ctx.month;
+  return `<div class="panel tablewrap"><table class="cal"><tr><th></th>${MONTHS.map((n, i) => `<th class="${i === m ? 'now' : ''}">${n[0]}</th>`).join('')}<th></th></tr>
+    ${list.map(x => `<tr data-act="${act}" data-v="${x.id}"><td class="nm"><i>${esc(S.nodes[x.id]?.n || '?')}</i></td>
+      ${Array.from({ length:12 }, (_, i) => `<td class="m ${i === m ? 'now' : ''}">${x.curve ? `<i style="opacity:${(.08 + .92 * x.curve[i]).toFixed(2)}"></i>` : '·'}</td>`).join('')}
+      <td class="small muted">${x.tier}</td></tr>`).join('')}</table></div>`;
+}
 function viewWanted() {
-  const M = S.M, pid = M.home.state || M.home.country;
-  if (!pid) return `<div class="panel"><h2>Most Wanted</h2><p>Most Wanted needs to know your region. Record a salticid on iNaturalist, or set a home base on the map.</p><button class="primary" data-tab="map">🏠 Set a home base</button></div>`;
-  const list = wantedList(), where = esc(S.places[pid]?.n || 'your region'), m = new Date().getMonth();
+  const M = S.M, ctx = homeCtx();
+  if (!ctx.pid) return `<div class="panel"><h2>Most Wanted</h2><p>Most Wanted needs to know your region. Record a salticid on iNaturalist, or set a home base on the map.</p><button class="primary" data-tab="map">🏠 Set a home base</button></div>`;
+  const list = wantedList(ctx), where = ctxWhere(ctx), m = ctx.month;
   const head = `<div class="panel" style="margin-bottom:16px"><h2>Most Wanted · ${MONTHS[m]} ${new Date().getFullYear()}</h2>
-    <p class="small muted" style="margin-bottom:0">Genera recorded in ${where} that aren't in your SPOODEX, ranked for <b>this month</b> by season, how close their nearest records are to your home base, recent local sightings, and how common they are in ${where}. It's a ranking of iNat records to guide your effort, not a probability.${M.homeCell ? '' : ' <b>Set a home base on the Map tab</b> to add distances and local sightings.'}</p>
+    <p class="small muted" style="margin-bottom:0">Genera recorded in ${where} that aren't in your SPOODEX, ranked for <b>this month</b> by season, how close their nearest records are to your home base, recent local sightings, and how common they are in ${where}. It's a ranking of iNat records to guide your effort, not a probability.${M.homeCell ? '' : ' <b>Set a home base on the Map tab</b> to add distances and local sightings.'}
+      Going somewhere? Try the <a href="#" data-tab="trip">Trip planner</a>.</p>
     ${wantedBusy ? '<p class="small">Consulting the records… posters sharpen as season data and sightings arrive.</p>' : ''}
     ${wantedErr ? `<p>${esc(wantedErr)} <button data-act="wantedRetry">Try again</button></p>` : ''}</div>`;
   if (!list) return head + '<p class="muted">Loading the regional reference…</p>';
   if (!list.length) return head + `<div class="panel"><p class="hand">Nobody left on the list. You've recorded every genus iNat knows from ${where}.</p></div>`;
-  const tribe = id => { const L = lineage(id); return (L.find(n => n.r === 'tribe') || L.find(n => n.r === 'subfamily') || {}).n || 'Salticidae'; };
-  const poster = x => { const info = S.info[x.id] || {};
-    return `<div class="poster" data-act="wanted" data-v="${x.id}" title="Open the case file">
-      <div class="wtitle">WANTED</div><div class="wtier">${x.tier.toUpperCase()} · ${esc(where.toUpperCase())}</div>
-      <div class="wph" style="background-image:url('${esc(info.p || '')}')"></div>
-      ${info.a ? `<div class="wcredit">${esc(info.a)}</div>` : ''}
-      <div class="wname">${esc(S.nodes[x.id]?.n || '?')}</div><div class="wtribe">${esc(tribe(x.id))}</div>
-      <ul class="wwhy">${wantedReasons(x, where).map(r => `<li>${r}</li>`).join('')}</ul>
-      <div class="wreward">REWARD · LEVEL ${M.G.size + 1} · +100 XP</div></div>`; };
-  const cal = `<h2 style="margin-top:24px">The year ahead</h2>
+  return head + `<div class="posters">${list.slice(0, WANTED_POSTERS).map(x => posterHtml(x, ctx, 'wanted')).join('')}</div>
+    <h2 style="margin-top:24px">The year ahead</h2>
     <p class="small muted">When each of your ${list.length} most-wanted genera turns up in ${where}: darker = more records that month (smoothed). This month is outlined. Click a row for its case file.</p>
-    <div class="panel tablewrap"><table class="cal"><tr><th></th>${MONTHS.map((n, i) => `<th class="${i === m ? 'now' : ''}">${n[0]}</th>`).join('')}<th></th></tr>
-    ${list.map(x => `<tr data-act="wanted" data-v="${x.id}"><td class="nm"><i>${esc(S.nodes[x.id]?.n || '?')}</i></td>
-      ${Array.from({ length:12 }, (_, i) => `<td class="m ${i === m ? 'now' : ''}">${x.curve ? `<i style="opacity:${(.08 + .92 * x.curve[i]).toFixed(2)}"></i>` : '·'}</td>`).join('')}
-      <td class="small muted">${x.tier}</td></tr>`).join('')}</table></div>`;
-  return head + `<div class="posters">${list.slice(0, WANTED_POSTERS).map(poster).join('')}</div>` + cal;
+    ${calendarHtml(list, ctx, 'wanted')}`;
 }
-async function openCase(gid) {
-  const M = S.M, pid = M.home.state || M.home.country, where = esc(S.places[pid]?.n || 'your region');
-  const x = (wantedList() || []).find(w => w.id === gid) || { id:gid, state:0, near:0, recent:0, tier:'' };
+async function openCase(gid, ctx = homeCtx()) {
+  const where = ctxWhere(ctx), pid = ctx.pid;
+  const x = (wantedList(ctx) || []).find(w => w.id === gid) || { id:gid, state:0, near:0, recent:0, tier:'' };
   const name = esc(S.nodes[gid]?.n || '?');
   $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal"><button class="x" data-close="1">✕</button><div class="body">
-    <div class="small" style="letter-spacing:.2em">CASE FILE${x.tier ? ' · ' + x.tier.toUpperCase() : ''}</div>
+    <div class="small" style="letter-spacing:.2em">CASE FILE${x.tier ? ' · ' + x.tier.toUpperCase() : ''}${ctx.kind === 'trip' ? ' · ' + esc(ctx.at.toUpperCase()) : ''}</div>
     <h1 style="font-size:34px;font-style:italic;margin:2px 0">${name}</h1><div class="muted">${esc(lineageText(gid))}</div>
     <h3 style="margin-top:12px">Known haunts</h3><div id="caseMap"></div><div id="caseInfo"><p class="muted">Pulling recent records…</p></div>
-    <h3 style="margin-top:12px">When to look</h3><div data-phenochart="${gid}">${phenoChart(gid)}</div>
-    <h3 style="margin-top:12px">Why it's on the list</h3><ul class="checks">${wantedReasons(x, where).map(r => `<li>${r}</li>`).join('')}</ul>
+    <h3 style="margin-top:12px">When to look</h3><div data-phenochart="${gid}" data-phenopid="${pid || ''}" data-phenom="${ctx.month}">${phenoChart(gid, pid, ctx.month)}</div>
+    <h3 style="margin-top:12px">Why it's on the list</h3><ul class="checks">${wantedReasons(x, ctx).map(r => `<li>${r}</li>`).join('')}</ul>
     <p class="row"><button data-genus="${gid}">Genus page</button>
       <a class="btnlink" href="https://www.inaturalist.org/observations?taxon_id=${gid}${pid ? '&place_id=' + pid : ''}&verifiable=true" target="_blank" rel="noopener">Records on iNaturalist ↗</a></p>
   </div></div></div>`;
-  ensurePheno([gid]);
+  ensurePheno([gid], pid);
   let hn;
-  try { hn = await ensureHaunts(gid); } catch (e) { const el = $('#caseInfo'); if (el) el.innerHTML = `<p>${esc(e.message)}</p>`; return; }
+  try { hn = await ensureHaunts(gid, ctx); } catch (e) { const el = $('#caseInfo'); if (el) el.innerHTML = `<p>${esc(e.message)}</p>`; return; }
   const info = $('#caseInfo'); if (!info) return;
-  const hs = hauntSummary(hn), h = M.homeCell;
+  const hs = hauntSummary(hn, ctx), h = ctx.centre;
   const ranked = hn.cells.map(([k, n, last]) => ({ k, n, last, d:h ? kmBetween(h, cellCenter(k)) : null }))
     .sort((a,b) => (a.d ?? 0) - (b.d ?? 0) || b.n - a.n);
   info.innerHTML = hn.cells.length ? `
-    <p class="small">${fmt(hn.used)}${hn.n > hn.used ? ` most recent of ${fmt(hn.n)}` : ''} verifiable record${hn.used === 1 ? '' : 's'} ${hn.wide ? `in ${where} (none within ${HAUNT_KM} km of home)` : `within ${HAUNT_KM} km of your home base`}, in ${hn.cells.length} square${hn.cells.length === 1 ? '' : 's'} of ~25 km.
+    <p class="small">${fmt(hn.used)}${hn.n > hn.used ? ` most recent of ${fmt(hn.n)}` : ''} verifiable record${hn.used === 1 ? '' : 's'} ${hn.wide ? `in ${where}${h ? ` (none within ${HAUNT_KM} km of ${esc(ctx.atLong)})` : ''}` : `within ${HAUNT_KM} km of ${esc(ctx.atLong)}`}, in ${hn.cells.length} square${hn.cells.length === 1 ? '' : 's'} of ~25 km.
       ${hs?.nearest ? `Nearest: <b>${kmTxt(hs.nearest.d)}</b>.` : ''} ${hs?.last ? `Latest: ${esc(agoTxt(hs.last))}.` : ''}</p>
     ${ranked.slice(0, 6).map(c => `<div class="small">${c.d != null ? `<b>${kmTxt(c.d)}</b> · ` : ''}${fmt(c.n)} record${c.n === 1 ? '' : 's'} · last ${esc(agoTxt(c.last))}</div>`).join('')}
     <p class="small muted">Squares are ~25 km on purpose; ${hn.skipped ? `${hn.skipped} obscured record${hn.skipped === 1 ? ' was' : 's were'} left out because their points are deliberately displaced` : 'no exact locations are shown'}.</p>`
     : `<p>No mappable records ${hn.wide ? `in ${where}` : `within ${HAUNT_KM} km`} yet${hn.skipped ? ` (${hn.skipped} obscured)` : ''}.</p>`;
-  drawCaseMap(hn, ranked);
+  drawCaseMap(hn, ranked, ctx);
 }
-function drawCaseMap(hn, ranked) {
+const esriTopo = () => L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom:13, attribution:'Tiles © Esri — Esri, HERE, Garmin, USGS, NGA, and other contributors' });
+function drawCaseMap(hn, ranked, ctx = homeCtx()) {
   const el = $('#caseMap'); if (!el || !window.L) return;
   if (caseMap) { try { caseMap.remove(); } catch {} }
   caseMap = L.map(el, { worldCopyJump:true, scrollWheelZoom:false });
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom:13, attribution:'Tiles © Esri — Esri, HERE, Garmin, USGS, NGA, and other contributors' }).addTo(caseMap);
+  esriTopo().addTo(caseMap);
   const col = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#a8412a';
   const max = Math.max(1, ...hn.cells.map(c => c[1])), bounds = [];
   for (const [k, n, last] of hn.cells) {
     const c = cellCenter(k), b = [[c.lat - .125, c.lng - .125], [c.lat + .125, c.lng + .125]];
     L.rectangle(b, { color:col, weight:1, fillColor:col, fillOpacity:.2 + .6 * n / max }).bindTooltip(`${n} record${n === 1 ? '' : 's'} · last ${agoTxt(last)}`).addTo(caseMap);
   }
-  // frame home plus the nearest few squares, so a far-flung record doesn't zoom the map out to the whole state
+  // frame the centre plus the nearest few squares, so a far-flung record doesn't zoom the map out to the whole state
   ranked.slice(0, 5).forEach(r => { const c = cellCenter(r.k); bounds.push([c.lat - .125, c.lng - .125], [c.lat + .125, c.lng + .125]); });
-  const h = S.M.homeCell;
-  if (h) { L.circle([h.lat, h.lng], { radius:25000, color:'#3f6b3a', weight:2, dashArray:'6 6', fill:false, interactive:false }).addTo(caseMap); bounds.push([h.lat - .25, h.lng - .25], [h.lat + .25, h.lng + .25]); }
+  const h = ctx.centre;
+  if (h) { L.circle([h.lat, h.lng], { radius:ctx.km * 1000, color:'#3f6b3a', weight:2, dashArray:'6 6', fill:false, interactive:false }).addTo(caseMap); bounds.push([h.lat - .25, h.lng - .25], [h.lat + .25, h.lng + .25]); }
   setTimeout(() => { caseMap.invalidateSize(); if (bounds.length) caseMap.fitBounds(bounds, { padding:[16, 16], maxZoom:10 }); else caseMap.setView([-25, 134], 4); }, 60);
+}
+
+/* ---------------- trip planner: Most Wanted for anywhere you're going ---------------- */
+const TRIP_KM = 50, TRIP_TTL = 24 * 3600e3, TRIP_POSTERS = 10, TRIP_RECENT = 6;
+// cur: {label, lat, lng, area (place id when the destination is a whole country/state, else null), pid (region for seasons and counts),
+//       m (month to plan for), ts, g:[{id,c}] genera within TRIP_KM (or in the area), s:[species ids], act:[{id,c}] last 30 days}
+// Kept in this browser only, never in share links.
+S.trip = store.get('trip', { cur:null, recent:[] });
+let tripBusy = false, tripErr = null, tripMap = null, tripMapEl = null, tripLayer = null, tripMapFor = '';
+const saveTrip = () => store.set('trip', S.trip);
+function tripCtx(t = S.trip.cur) {
+  if (!t) return null;
+  // Last-30-days sightings only help if you're going soon
+  const soon = (t.m - new Date().getMonth() + 12) % 12 <= 1;
+  return { kind:'trip', pid:t.pid, centre:t.area ? null : { lat:t.lat, lng:t.lng }, km:TRIP_KM, month:t.m, at:t.label, atLong:t.label,
+    near:t.area ? null : t.g, recent:t.act, stale:!soon, posters:TRIP_POSTERS };
+}
+const tripNeedsLoad = () => { const t = S.trip.cur; return t && (!t.pid || !t.g || Date.now() - t.ts > TRIP_TTL || !S.ref['p' + t.pid] || !S.places[t.pid]?.n); };
+function setTrip(lat, lng, label, area) {
+  const t = { label, lat:+(+lat).toFixed(2), lng:+(+lng).toFixed(2), area:area || null, m:new Date().getMonth(), ts:0 };
+  S.trip.cur = t;
+  S.trip.recent = [{ label, lat:t.lat, lng:t.lng, area:t.area }, ...(S.trip.recent || []).filter(r => r.label !== label)].slice(0, TRIP_RECENT);
+  saveTrip(); tripErr = null; tripMapFor = '';
+  S.tab = 'trip'; $('#view').innerHTML = ''; render();
+}
+async function loadTrip(force = false) {
+  const t = S.trip.cur; if (!t || tripBusy) return;
+  tripBusy = true; tripErr = null;
+  const redraw = () => { if (S.tab === 'trip' && S.trip.cur === t) softRender(); };
+  try {
+    if (!t.pid) {
+      if (t.area) t.pid = t.area;
+      else {
+        const p = await placesNear(t.lat, t.lng, TRIP_KM);
+        t.pid = p.state || p.country;
+        if (!t.pid) throw new Error(`No iNat records within ${TRIP_KM} km of ${t.label}, so SPOODEX can't tell which region it's in. Try a nearby town.`);
+      }
+    }
+    await fetchPlaces([t.pid]);   // a searched region may not be one of your record places yet
+    await ensureRefPlace(t.pid);
+    if (force || !t.g || Date.now() - t.ts > TRIP_TTL) {
+      const where = t.area ? { place_id:t.area } : { lat:t.lat.toFixed(2), lng:t.lng.toFixed(2), radius:TRIP_KM };
+      const d = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, verifiable:true, ...where });
+      d.results.forEach(addNode);
+      t.g = d.results.filter(r => r.rank === 'genus').map(r => ({ id:r.id, c:r.descendant_obs_count || r.count || 0 }));
+      t.s = d.results.filter(r => r.rank === 'species').map(r => r.id);
+      redraw();
+      const d1 = new Date(Date.now() - ACTIVE_DAYS * 864e5).toISOString().slice(0, 10);
+      const a = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, verifiable:true, d1, ...where });
+      a.results.forEach(addNode);
+      t.act = a.results.filter(r => r.rank === 'genus').map(r => ({ id:r.id, c:r.descendant_obs_count || r.count || 0 }));
+      t.ts = Date.now(); saveTrip(); saveShared();
+    }
+    redraw();
+    await sharpenWanted(tripCtx(t), redraw);
+  } catch (e) { tripErr = e.message; }
+  tripBusy = false;
+  redraw();
+}
+// Where the wanted genera cluster: every 25 km square holding records of the top suspects, best bets first
+function tripSpots(list, ctx) {
+  const cells = new Map();
+  for (const x of list) {
+    const hn = S.haunts[hauntKey(x.id, ctx)];
+    if (!hn || (hn.wide && ctx.centre)) continue;
+    for (const [k, n, last] of hn.cells) {
+      const e = cells.get(k) || { k, g:[], n:0, last:'' };
+      e.g.push(x.id); e.n += n; if (last > e.last) e.last = last;
+      cells.set(k, e);
+    }
+  }
+  // Same distance falloff as the Most Wanted reach, so a busy city square 100 km away doesn't outrank one next door
+  return [...cells.values()].map(e => { const d = ctx.centre ? kmBetween(ctx.centre, cellCenter(e.k)) : null;
+      return { ...e, d, w:e.g.length / (d == null ? 1 : 1 + (d / 100) ** 2) }; })
+    .sort((a,b) => b.w - a.w || b.n - a.n);
+}
+// The search panel sits outside #tripPlan so streamed updates (which only redraw the plan) never wipe what's being typed
+function viewTrip() {
+  const t = S.trip.cur;
+  const recent = (S.trip.recent || []).filter(r => !t || r.label !== t.label);
+  return `<div class="panel" style="margin-bottom:16px"><h2>Trip planner</h2>
+    <p class="small muted">Going somewhere? Search a town, park, state or country and get its Most Wanted: which genera you're missing that have been recorded there, what's in season for the month you're going, and which 25 km squares hold the records.</p>
+    <form class="row" data-form="tripSearch"><input name="q" placeholder="Destination, e.g. Lamington National Park" style="flex:1;min-width:160px"><button class="primary">Plan</button></form>
+    <div id="tripResults" class="small" style="margin-top:6px"></div>
+    ${recent.length ? `<div class="small" style="margin-top:8px">Recent: ${recent.map(r => `<a href="#" data-trip="${esc(`${r.lat}|${r.lng}|${r.area || ''}|${r.label}`)}">${esc(r.label)}</a>`).join(' · ')}</div>` : ''}
+    <p class="small muted" style="margin-bottom:0">Destinations are kept in this browser only and never go in share links.</p></div>
+    <div id="tripPlan">${viewTripPlan()}</div>`;
+}
+function viewTripPlan() {
+  const t = S.trip.cur, M = S.M;
+  if (!t) return '';
+  const ctx = tripCtx(t), list = t.pid ? wantedList(ctx) : null, where = ctxWhere(ctx), m = t.m, lbl = esc(t.label);
+  const monthSel = `<select data-tripm="1">${MONTHS.map((n, i) => `<option value="${i}" ${i === m ? 'selected' : ''}>${n}${i === new Date().getMonth() ? ' (now)' : ''}</option>`).join('')}</select>`;
+  let body = `<div class="panel" style="margin-bottom:16px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Most Wanted · ${lbl}</h2>
+      <label class="small">Going in ${monthSel}</label></div>
+    <p class="small muted">${t.area ? `Genera recorded anywhere in ${lbl}` : `Genera recorded within ${TRIP_KM} km of ${lbl}, and elsewhere in ${where}`}, that aren't in your SPOODEX, ranked for <b>${MONTHS[m]}</b> by season in ${where}, ${t.area ? '' : 'how close their record squares are, '}recent sightings${ctx.stale ? ' (only counted for trips this month or next)' : ''}, and how common they are. A ranking of iNat records, not a probability.</p>
+    ${tripBusy ? '<p class="small">Consulting the records… the plan sharpens as season data and record squares arrive.</p>' : ''}
+    ${tripErr ? `<p>${esc(tripErr)} <button data-act="tripRetry">Try again</button></p>` : ''}
+    ${t.g ? `<p class="small muted" style="margin-bottom:0">Area data from ${esc(new Date(t.ts || Date.now()).toLocaleString(undefined, { dateStyle:'medium', timeStyle:'short' }))} · <a href="#" data-act="tripRefresh">refresh</a> · <a href="#" data-act="tripClear">clear trip</a></p>` : ''}</div>`;
+  if (!t.g || !list) return body + (tripErr ? '' : '<p class="muted">Loading the area…</p>');
+  // What the trip could add to your collection
+  const newG = t.g.filter(x => !M.G.has(x.id)), newS = (t.s || []).filter(id => !M.S.has(id));
+  const inSeason = list.filter(x => x.peak && !x.few && x.peak.now);
+  const areaTxt = t.area ? `in ${lbl}` : `within ${TRIP_KM} km`;
+  body += `<div class="panel" style="margin-bottom:16px"><h3 style="margin-top:0">What this trip could add</h3>
+    <div class="row tripstat">
+      <div><b>+${newG.length}</b><div class="small">${newG.length === 1 ? 'genus' : 'genera'} new to you ${areaTxt}<br><span class="muted">of ${t.g.length} recorded there</span></div></div>
+      <div><b>+${newS.length}</b><div class="small">species for your side collection<br><span class="muted">of ${(t.s || []).length} recorded there</span></div></div>
+      <div><b>${inSeason.length}</b><div class="small">wanted ${inSeason.length === 1 ? 'genus' : 'genera'} in season in ${MONTHS[m]}<br><span class="muted">of the top ${list.length}${list.some(x => !x.curve) ? ', still checking' : ''}</span></div></div>
+    </div>
+    ${newG.length ? `<p class="small" style="margin-bottom:0">Find them all and you'd go from <b>level ${M.G.size}</b> to <b>level ${M.G.size + newG.length}</b>.</p>` : `<p class="small hand" style="margin-bottom:0">You've already recorded every genus iNat knows ${areaTxt}. Go for species, or be the first to find something new.</p>`}</div>`;
+  if (!list.length) return body;
+  const spots = tripSpots(list.slice(0, ctx.posters), ctx);
+  const gl = ids => ids.map(id => `<a href="#" data-act="tripCase" data-v="${id}"><i>${esc(S.nodes[id]?.n || '?')}</i></a>`).join(', ');
+  body += `<h2>Record squares</h2>
+    <p class="small muted">~25 km squares holding recent records of your top ${Math.min(ctx.posters, list.length)} suspects: darker = more of them recorded there. ${t.area ? '' : `The dashed circle is ${TRIP_KM} km around ${lbl}.`} Exact locations are never shown, and obscured records are left out.</p>
+    <div class="maplayout"><div id="tripMapSlot"></div><div class="panel">
+      ${spots.length ? spots.slice(0, 6).map(s => `<div class="feed"><b>${s.d != null ? `~${Math.max(5, Math.round(s.d / 5) * 5)} km ${bearingTxt(ctx.centre, cellCenter(s.k))}` : `Square ${cellLabel(cellCenter(s.k))}`}</b> · ${s.g.length} wanted ${s.g.length === 1 ? 'genus' : 'genera'} · last record ${esc(agoTxt(s.last))}<div class="small">${gl(s.g)}</div></div>`).join('')
+        : `<p class="small muted">${tripBusy ? 'Plotting record squares…' : 'No mappable recent records for the top suspects nearby.'}</p>`}
+    </div></div>
+    <h2 style="margin-top:24px">Wanted posters</h2>
+    <div class="posters">${list.slice(0, WANTED_POSTERS).map(x => posterHtml(x, ctx, 'tripCase')).join('')}</div>
+    <h2 style="margin-top:24px">The year at ${lbl}</h2>
+    <p class="small muted">When each wanted genus turns up in ${where}: darker = more records that month (smoothed). ${MONTHS[m]} is outlined. Click a row for its case file.</p>
+    ${calendarHtml(list, ctx, 'tripCase')}`;
+  return body;
+}
+// The trip map survives re-renders: its element is moved into each new slot rather than rebuilt, so tiles don't reload while data streams in
+function mountTripMap() {
+  const slot = $('#tripMapSlot'), t = S.trip.cur; if (!slot || !t || !window.L) return;
+  if (!tripMapEl) { tripMapEl = document.createElement('div'); tripMapEl.id = 'tripMap'; }
+  slot.replaceWith(tripMapEl);
+  if (!tripMap) { tripMap = L.map(tripMapEl, { worldCopyJump:true, scrollWheelZoom:false }); esriTopo().addTo(tripMap); tripLayer = L.layerGroup().addTo(tripMap); }
+  const ctx = tripCtx(t), list = wantedList(ctx) || [], spots = tripSpots(list.slice(0, ctx.posters), ctx);
+  const col = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#a8412a';
+  const max = Math.max(1, ...spots.map(s => s.g.length)), bounds = [];
+  tripLayer.clearLayers();
+  for (const s of spots) {
+    const c = cellCenter(s.k), b = [[c.lat - .125, c.lng - .125], [c.lat + .125, c.lng + .125]];
+    L.rectangle(b, { color:col, weight:1, fillColor:col, fillOpacity:.15 + .6 * s.g.length / max })
+      .bindTooltip(`${s.g.map(id => S.nodes[id]?.n || '?').join(', ')} · last record ${agoTxt(s.last)}`).addTo(tripLayer);
+  }
+  spots.slice(0, 8).forEach(s => { const c = cellCenter(s.k); bounds.push([c.lat - .125, c.lng - .125], [c.lat + .125, c.lng + .125]); });
+  if (ctx.centre) {
+    L.circle([t.lat, t.lng], { radius:TRIP_KM * 1000, color:'#3f6b3a', weight:2, dashArray:'6 6', fill:false, interactive:false }).addTo(tripLayer);
+    bounds.push([t.lat - .45, t.lng - .45], [t.lat + .45, t.lng + .45]);
+  }
+  // Re-frame only when the destination changes or the first squares arrive, not on every streamed update
+  const frame = `${t.label}|${t.lat}|${t.lng}|${spots.length ? 1 : 0}`;
+  setTimeout(() => {
+    tripMap.invalidateSize();
+    if (tripMapFor === frame) return;
+    tripMapFor = frame;
+    if (bounds.length) tripMap.fitBounds(bounds, { padding:[16, 16], maxZoom:10 }); else tripMap.setView([t.lat, t.lng], 6);
+  }, 60);
 }
 
 /* ---------------- cards: shared canvas kit for the title card and wrapped ---------------- */
@@ -2565,11 +2828,13 @@ function settings() {
       ${isGuest() ? '' : '<button data-act="share">🔗 Copy share link</button><button data-act="full">Full resync</button>'}
       <button data-act="switch">Switch user</button>
       <button data-act="wipe">Forget this user's cache</button>
-    </div></div></div></div>`;
+    </div>
+    <p class="small muted" id="storeInfo" style="margin-top:14px">Saved in this browser${store.db ? ' (IndexedDB)' : ' (localStorage, about 5 MB at most)'}.</p></div></div></div>`;
+  store.usage().then(b => { const el = $('#storeInfo'); if (el && b) el.textContent += ` This site is using about ${(b / 1048576).toFixed(1)} MB.`; });
 }
 
 document.addEventListener('click', e => {
-  const t = e.target.closest('[data-tab],[data-genus],[data-close],[data-filter],[data-scan],[data-act],[data-base],[data-layer]');
+  const t = e.target.closest('[data-tab],[data-genus],[data-close],[data-filter],[data-scan],[data-act],[data-base],[data-layer],[data-trip]');
   if (!t) return;
   if (t.dataset.close && e.target !== t && !e.target.closest('.x')) return;
   if (t.dataset.genus) { e.preventDefault(); openGenus(+t.dataset.genus); return; }
@@ -2579,6 +2844,7 @@ document.addEventListener('click', e => {
   if (t.dataset.layer) { S.prefs.layer = t.dataset.layer; savePrefs(); render(); return; }
   if (t.dataset.scan) { if (S.tab !== 'map') { S.tab = 'map'; render(); } showCell(t.dataset.scan); scanCell(t.dataset.scan); return; }
   if (t.dataset.base) { e.preventDefault(); const [lat, lng, ...rest] = t.dataset.base.split('|'); setBase(lat, lng, rest.join('|')); return; }
+  if (t.dataset.trip) { e.preventDefault(); const [lat, lng, area, ...rest] = t.dataset.trip.split('|'); setTrip(lat, lng, rest.join('|'), +area || null); return; }
   const a = t.dataset.act;
   if (a === 'peek') { S.prefs.peek = true; savePrefs(); render(); }
   if (a === 'full') { $('#modalRoot').innerHTML = ''; doSync(true); }
@@ -2598,6 +2864,10 @@ document.addEventListener('click', e => {
   if (a === 'card') openTitleCard();
   if (a === 'wanted') openCase(+val);
   if (a === 'wantedRetry') { wantedErr = null; wantedTs = 0; loadWanted(); }
+  if (a === 'tripCase') { e.preventDefault(); openCase(+val, tripCtx()); }
+  if (a === 'tripRetry') { tripErr = null; loadTrip(); }
+  if (a === 'tripRefresh') { e.preventDefault(); tripErr = null; loadTrip(true); }
+  if (a === 'tripClear') { e.preventDefault(); S.trip.cur = null; saveTrip(); tripErr = null; $('#view').innerHTML = ''; render(); }
   if (a === 'wrapped') openWrapped();
   if (a === 'wrYear') openWrapped(val);
   if (a === 'wrNext' && S.wr) { S.wr.i = Math.min(WR_SLIDES - 1, S.wr.i + 1); showWrapped(); }
@@ -2610,7 +2880,7 @@ document.addEventListener('click', e => {
   if (a === 'guest') startGuest();
   if (a === 'sample') { $('#loginInput').value = SAMPLE_LOGIN; onboard(SAMPLE_LOGIN); }
   if (a === 'switch') { store.del('lastLogin'); location.href = location.pathname; }
-  if (a === 'wipe') { store.del(ukey(S.login)); store.del('lastLogin'); location.href = location.pathname; }
+  if (a === 'wipe') { store.del(ukey(S.login)); store.del('lastLogin'); store.flush().finally(() => location.href = location.pathname); }
 });
 document.addEventListener('submit', async e => {
   const f = e.target.dataset.form; if (!f) return;
@@ -2628,8 +2898,22 @@ document.addEventListener('submit', async e => {
       }).join('') || 'No places found.';
     } catch (err) { out.textContent = err.message; }
   }
+  if (f === 'tripSearch') {
+    const q = e.target.q.value.trim(); if (!q) return;
+    const out = $('#tripResults'); out.textContent = 'Searching…';
+    try {
+      const d = await api('/places/autocomplete', { q, per_page:8 });
+      out.innerHTML = d.results.filter(p => p.location).map(p => {
+        const [lat, lng] = p.location.split(','), label = p.display_name || p.name;
+        // Countries, states and big regions are planned as a whole; towns and parks by what's within TRIP_KM
+        const area = [0, 10].includes(p.admin_level) || p.bbox_area > 4 ? p.id : '';
+        return `<div><a href="#" data-trip="${esc(`${lat}|${lng}|${area}|${label}`)}">${esc(label)}</a>${area ? ' <span class="muted">(whole region)</span>' : ''}</div>`;
+      }).join('') || 'No places found.';
+    } catch (err) { out.textContent = err.message; }
+  }
 });
 document.addEventListener('change', async e => {
+  if (e.target.dataset.tripm && S.trip.cur) { S.trip.cur.m = +e.target.value; saveTrip(); render(); return; }
   const p = e.target.dataset.pref; if (!p) return;
   S.prefs[p] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; savePrefs();
   if (p === 'scope') { try { await ensureRef(S.prefs.scope); } catch (err) { toast(err.message); } S.M = buildModel(); }
@@ -2644,7 +2928,11 @@ $('#openDex').addEventListener('click', () => enterApp());
 
 // ?u=<login> opens that SPOODEX (importing it if needed); ?vs=<login> jumps to Compare.
 // Otherwise a returning player opens straight from cache, then quietly syncs.
-(function boot() {
+// Shared caches get their defaults when the script loads, before IndexedDB is open; re-read them once it is.
+const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladder', 'crew', 'pioneer', 'report', 'haunts', 'trip'];
+(async function boot() {
+  await store.init();
+  for (const k of PERSISTED) S[k] = store.get(k, S[k]);
   const q = new URLSearchParams(location.search);
   const u = (q.get('u') || '').trim().replace(/^@/, '');
   S.pendingVs = (q.get('vs') || '').trim() || null;

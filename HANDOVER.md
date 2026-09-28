@@ -1,4 +1,4 @@
-# SPOODEX — handover (as of 2026-09-28, v1.6)
+# SPOODEX — handover (as of 2026-09-28, v1.7)
 
 Read this before touching the code. It covers what exists, how it's wired, how to test and ship,
 the owner's preferences, and a spec for the next piece of work: the **regional ladder** and the
@@ -22,7 +22,7 @@ and comparisons. Core principle from the owner: *the game should make you close 
 
 | File | What it is |
 |---|---|
-| `spoodex.html` | **The entire app**: HTML + CSS + JS in one file (~1,700 lines). No build step. |
+| `spoodex.html` | **The entire app**: HTML + CSS + JS in one file (~2,950 lines). No build step. |
 | `index.html` | Redirects to `spoodex.html`, keeping `?query` (so `/spoodex/?u=x` works). |
 | `ARCHITECTURE.md` | Original v1 design doc. Mostly still right, but **the tier table and roadmap there are stale**; trust this file and the code. |
 | `README.md` | Public blurb for the repo. |
@@ -40,10 +40,10 @@ Search for `/* ---------------- <name>` to jump to a section. Line numbers drift
 | Section | Key functions | Notes |
 |---|---|---|
 | constants (top of script) | `SALTICIDAE=48139`, `ANN`, `BEH_RX`, `TIERS`, `CRITERIA`, `MASTERY_AT=7` | |
-| utils | `$`, `esc`, `photoSize(url,size)`, `cellKey`, `cellLabel`, `store.get/set/del` | `store` wraps localStorage in try/catch; keys prefixed `spoodex:` |
+| utils | `$`, `esc`, `photoSize(url,size)`, `cellKey`, `cellLabel`, `store.init/get/set/del/flush/usage` | See §4 "Storage": IndexedDB behind a synchronous in-memory cache |
 | api | `api(path, params, base = API)` | Global throttle ≈1 request / 1.1 s (iNat asks for ~1/s, ≤10k/day). On 429/5xx **or a network error** it pushes back the whole queue (`nextSlot`), because iNat's 429s have no CORS header and reach the browser as network errors. Pass `API2` for v2. **All iNat calls must go through `api()`.** |
 | state | `S` | See §4 |
-| sync | `importRecords(login, save, {full,log})`, `sync()`, `loadRefs()`, `ensureRef(scope)`, `fetchPlaces()`, `resolveBasePlaces()`, `setBase()`, `geolocate()`, `ensureInfo(ids)` | `importRecords` is reusable for *any* login (used for rivals) |
+| sync | `importRecords(login, save, {full,log})`, `OBS_FIELDS`, `sync()`, `loadRefs()`, `ensureRef(scope)` → `ensureRefPlace(pid)`, `fetchPlaces()`, `placesNear(lat,lng)`, `resolveBasePlaces()`, `setBase()`, `geolocate()`, `ensureInfo(ids)` | `importRecords` is reusable for *any* login (used for rivals). Since v1.7 it uses **v2** `/observations` with `fields=OBS_FIELDS` (exactly what `trimObs` reads): ~29 KB gzipped per 200 records vs ~470 KB on v1, and verified to produce byte-identical trimmed obs (1,538/1,538 for the owner). **If `trimObs` starts reading a new field, add it to `OBS_FIELDS`**, or it will silently be missing |
 | model | `buildModel(obsMap, base)` → `M`; `genusOf`, `speciesOf`, `genusOfNode`, `lineage` | Pure derivation, no network |
 | scope helpers | `scopeGenera`, `taxonomicOrder`, `refCount`, `rarityTier(id,scope,kind)`, `starsFor(id,kind)`, `rarityNote`, `prestige(M)`, `moduleOn(tier)` | `kind` is `'g'` (genus) or `'s'` (species) |
 | field style & titles | `fieldStyle`, `favouriteLineages`, `generatedTitle` | |
@@ -64,7 +64,8 @@ Search for `/* ---------------- <name>` to jump to a section. Line numbers drift
 | cards (shared) | `cardKit(cv)`, `cardPhotos`, `mountCard(el, draw, name)`, `cardBlob`, `cardExport`, `rarestFirst` | 1080×1350 canvas kit; see §9 on CORS |
 | title card | `drawTitleCard`, `openTitleCard` | |
 | wrapped | `wrappedData(Y)`, `wrappedExtras` (most-faved obs + state total for the year), `openWrapped`, `showWrapped`, `drawWrappedCard` | 6-slide modal, last slide is a downloadable card |
-| most wanted | `wantedList()` (score), `loadWanted`, `viewWanted`, `ensureHaunts(gid)`, `hauntSummary`, `openCase(gid)`, `drawCaseMap` | Ideas 5+6 combined. Score = records-near-home × season this month × reach (distance to nearest record square) × log(state count). Posters for the top 6, a 12-month calendar for the top 40, case file with a Leaflet map of 25 km squares. Haunts use **v2** `/observations?fields=id,observed_on,obscured,geojson` (≈30 KB per 200 records), radius 150 km from home, falling back to the whole state; obscured records are skipped |
+| most wanted | `homeCtx()`, `wantedList(ctx)` (score), `sharpenWanted(ctx, redraw)`, `loadWanted`, `viewWanted`, `posterHtml`, `calendarHtml`, `ensureHaunts(gid, ctx)`, `hauntSummary(hn, ctx)`, `openCase(gid, ctx)`, `drawCaseMap` | Everything takes a **ctx** (`{kind, pid, centre, km, month, at, near, recent, stale, posters}`) so the same ranking serves home and trips; ctx defaults to `homeCtx()`. Ideas 5+6 combined. Score = records-near-home × season this month × reach (distance to nearest record square) × log(state count). Posters for the top 6, a 12-month calendar for the top 40, case file with a Leaflet map of 25 km squares. Haunts use **v2** `/observations?fields=id,observed_on,obscured,geojson` (≈30 KB per 200 records), radius 150 km from home, falling back to the whole state; obscured records are skipped |
+| trip planner | `S.trip {cur, recent}`, `tripCtx()`, `setTrip`, `loadTrip(force)`, `tripSpots`, `viewTrip` / `viewTripPlan`, `mountTripMap` | Most Wanted for any destination. Search via `/places/autocomplete`; countries, states and places with `bbox_area > 4` are planned as a whole region (`area` = place id), anything else by what's within `TRIP_KM` = 50 km. Region for seasons/counts = the point's state (via `placesNear`). Month selector re-ranks with no calls. Record squares = union of haunts for the top 10, weighted by distance. Streamed updates only redraw `#tripPlan` (so the search box isn't wiped), and the Leaflet map element is moved between renders rather than rebuilt. ≈55 calls for a fresh destination, then cached (area 24 h, pheno 30 d, haunts 7 d) |
 | crew feed | in `loadCrew`: diff vs previous snapshot → `S.crew.feed`; `row.wk` = uploads in last 7 days (`created_d1`); `crewFeedHtml`, `crewUnseen` (tab dot) | Crew refreshes every 6 h, also in the background after each sync |
 | boot / flows | `loadUser`, `updateUrl`, `copyLink`, `doSync`, `onboard`, `enterApp`, `startGuest`, `settings`, global click/submit/change handlers, `boot()` | |
 
@@ -82,8 +83,9 @@ Forms use `data-form` (`compare`, `placeSearch`, `crew`) on a delegated `submit`
 (`"gid:placeId"` → `{ts, m:[12]}`), `prefs` (`scope, reveal, peek, chassis, filter, layer`),
 `tab`, `M` (model), `cmp` (`{login, save, M, loading, log, error}`), `pendingVs`.
 
-localStorage keys: `spoodex:u:<login lowercased>`, `nodes`, `places`, `info`, `ref`, `observers`,
-`pheno`, `prefs` (now also `ladderScope`, `ladderSort`), `cmp` (only the most recent rival is cached), `ladder` (`'p<place>'` → `{ts, n, icons, queue, rows:[{login, obs, g:[ids], s:[ids]}]}`, ≤4 places), `crew` (`{logins, data:{login→{ts, obs, g:{id:obs}, s:{id:obs}, wk:{obs,g[]}, err?}}, feed:[{ts, since, login, g[], s[]}], seen}`), `pioneer` (`'gid:pid'` → `{ts, u, d, id}`), `haunts` (`'gid@lat,lng'` → `{ts, n, used, skipped, wide, cells:[[cellKey, n, last]]}`, ≤60), `report` (one cached report), `lastLogin`.
+Storage keys (IndexedDB since v1.7, see below): `u:<login lowercased>`, `nodes`, `places`, `info`, `ref`, `observers`,
+`pheno`, `prefs` (now also `ladderScope`, `ladderSort`), `cmp` (only the most recent rival is cached), `ladder` (`'p<place>'` → `{ts, n, icons, queue, rows:[{login, obs, g:[ids], s:[ids]}]}`, ≤4 places), `crew` (`{logins, data:{login→{ts, obs, g:{id:obs}, s:{id:obs}, wk:{obs,g[]}, err?}}, feed:[{ts, since, login, g[], s[]}], seen}`), `pioneer` (`'gid:pid'` → `{ts, u, d, id}`), `haunts` (`'gid@lat,lng'` or `'gid@p<place>'` → `{ts, n, used, skipped, wide, cells:[[cellKey, n, last]]}`, ≤80), `report` (one cached report), `trip` (`{cur:{label, lat, lng, area, pid, m, ts, g:[{id,c}], s:[ids], act:[{id,c}]}, recent:[≤6]}`, browser only, never in links). `pheno` keys are `'gid:place'` for any place (trips add other states).
+localStorage keys (`spoodex:` prefix): only `prefs` and `lastLogin`.
 
 Per-user save `S.u`: `obs` (id → trimmed obs, see `trimObs`), `meta {lastSync,lastFull}`, `seen` (genus
 ids already revealed), `scans` (point key → `{ts,g:[{id,c}]}`), `active` (same, last 30 days, with `d1`),
@@ -99,8 +101,13 @@ streak, bestStreak, home{country,state}, homeCell, behObs, monthsAll, newThisYea
 A genus `g` has: `obs, first, last, sp (Set species ids), species (Set names), c01, months, years, f
 (criteria flags), level 0–10, state DISCOVERED|SUPPORTED|MASTERED, xp, xpLog, photos, cover, discIndex, places`.
 
-**Storage risk**: roughly 1 MB per ~1,500 obs. localStorage is ~5 MB. Big users plus a cached rival will
-hit the limit. `store.set` returns false and the app toasts. Moving to IndexedDB is on the roadmap.
+**Storage (v1.7)**: everything except `prefs`/`lastLogin` lives in IndexedDB database `spoodex`, object store `kv`, as JSON strings
+(so `store.get` returns a fresh copy, exactly like the old localStorage behaviour). `boot()` awaits `store.init()`, which loads every
+key into `store.mem`; then it re-reads the shared caches (`PERSISTED` list) because their module-level `store.get` defaults ran before
+IndexedDB was open. **A new persisted `S.x = store.get('x', …)` at module level must be added to `PERSISTED`**, or it will always start empty.
+`store.set` is synchronous (updates memory) and batches writes to IndexedDB after 300 ms; `flush()` also runs on `pagehide`/hidden.
+On first run it moves old `spoodex:*` localStorage saves into IndexedDB and deletes them only once written (verified with the owner's save).
+Without IndexedDB (some private modes) it falls back to localStorage. Settings shows usage via `navigator.storage.estimate()`.
 
 **Scan-point keys**: a 0.25° grid cell key `"lat:lng"` (integers), or an arbitrary point `"pt:lat,lng"`.
 Always resolve with `pointFor(k)`.
@@ -158,9 +165,10 @@ Always resolve with `pointFor(k)`.
 
 **Run & test**: start the preview server `spoodex` (`.claude/launch.json`, port 8765) and open
 `http://localhost:8765/spoodex.html?u=themoojuice` (and `&vs=laz` for Compare). Don't test via `file://`
-or the pane's `data:` snapshot: localStorage is disabled there. In the browser pane you can drive state
+or the pane's `data:` snapshot: storage is disabled there. In the browser pane you can drive state
 from JS: `S`, `S.M`, `render()`, `openGenus(id)`, `loadCompare('laz')`, `S.tab='quests'; render()`.
-Resetting to a new user: `localStorage.removeItem('spoodex:lastLogin')`, then load without `?u`.
+Resetting to a new user: `localStorage.removeItem('spoodex:lastLogin')`, then load without `?u`. Inspect saves via `store.mem` (keys → JSON strings).
+The pane's screenshots can time out when it's in the background; `resize_window` preset `mobile` then back to `desktop` has helped.
 
 **Editing**: the file is large. What worked well:
 - Small edits via Edit tool or Python `str.replace` with `assert s.count(old) == 1`.
@@ -199,8 +207,8 @@ the session's system reminder. Commit only when the owner asks, or as part of a 
 ## 10. NEXT: regional ladder + the rest of the envy engine
 
 v1.5 added share of the record, pioneer badges, the weekly Spood Report, Wrapped and the crew feed (ideas 3, 4, 7, 8, 9 of the 2026-09-27 list;
-v1.6 added Most Wanted (5 + 6 combined). Not yet built: 1 "often confused with" via `/identifications/similar_species` ✅, 2 identifier track ✅, 10 ID bounties).
-- Testing burns API quota fast (ladder ≈26 calls, pioneer ≈180, Most Wanted ≈40 for a fresh region). If you see 429s, wait a few minutes; another local session sharing the IP counts too.
+v1.6 added Most Wanted (5 + 6 combined). v1.7 added IndexedDB storage, v2 imports and the Trip planner. Not yet built: 1 "often confused with" via `/identifications/similar_species` ✅, 2 identifier track ✅, 10 ID bounties).
+- Testing burns API quota fast (ladder ≈26 calls, pioneer ≈180, Most Wanted ≈40 for a fresh region, a trip ≈55). If you see 429s, wait a few minutes; another local session sharing the IP counts too.
 
 Owner-approved roadmap order: **regional ladder**, then faster imports (v2 API `fields=`) + IndexedDB,
 then share cards, crew mode, and curated habitat sets / field notes.
@@ -241,8 +249,9 @@ Suggested design:
 - **Crew mode** — DONE in v1.4. Original spec: compare 3–6 logins: a genus × person matrix, "only X has", and "nobody in the crew has"
   (from the scope reference). Reuse `importRecords` + `buildModel(save.obs, null)`. Storage: don't cache
   every rival's full obs; keep derived id sets.
-- **Faster imports**: iNat v2 `/v2/observations?fields=…` to fetch only the fields `trimObs` uses; render
-  cards progressively during import.
-- **IndexedDB** for `u:*` and `cmp`, keeping localStorage for prefs.
+- **Faster imports** — DONE in v1.7 (v2 + `fields=`). Not done: rendering cards progressively during a first import.
+- **IndexedDB** — DONE in v1.7 for every cache; localStorage keeps prefs and the last login.
+- Trip planner ideas not built: a shareable trip link (would need a place id only, never coordinates), multi-stop trips, and a
+  "packing list" card export via `cardKit`.
 - **Content (owner to supply)**: `guilds` (habitat sets) + per-genus field notes / "often confused with".
   Build the data format + UI; leave the taxonomic content to the owner.
