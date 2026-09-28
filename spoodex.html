@@ -1720,6 +1720,7 @@ async function loadCompare(login) {
   login = String(login || '').trim().replace(/^@/, '');
   if (!login || S.cmp?.loading) return;
   if (login.toLowerCase() === String(S.login).toLowerCase()) { toast("That's you! Try someone else's username."); return; }
+  track('compare');
   const cached = store.get('cmp');
   const save = cached && cached.login.toLowerCase() === login.toLowerCase() ? cached.save : { obs:{}, meta:{} };
   S.cmp = { login, save, loading:true, log:[] };
@@ -2155,8 +2156,14 @@ function viewReport() {
   if (!isGuest() && S.login && !rows.some(r => isMe(r.login)) && R.wk[S.login]) rows.push({ login:S.login, obs:null, g:R.wk[S.login] });
   const picks = (R.picks || []).filter(p => p.ph);
   const faved = picks.some(p => p.f);
+  // The photos lead: the week's best-looking records are the most fun part of the report
   return mast + `
-  <div class="grid2">
+  ${picks.length ? `<h2 style="margin-top:4px">${faved ? 'Picks of the week' : 'Fresh from the field'}</h2>
+    <p class="small muted">${faved ? 'Most-faved records observed this week.' : 'Recent records with photos.'} Photos © their observers; tap to see the record on iNaturalist.</p>
+    <div class="jewels">${picks.map(p => `<a class="jewel" href="https://www.inaturalist.org/observations/${p.id}" target="_blank" rel="noopener" style="background-image:url('${esc(photoSize(p.ph, 'medium'))}')">
+      <div class="lab"><div style="font-family:var(--head);font-size:17px;${['genus','species','subspecies'].includes(p.r) ? 'font-style:italic' : ''}">${esc(p.n)}</div>
+      <div class="small">© ${esc(p.u)}${p.f ? ` · ♥ ${p.f}` : ''}</div></div></a>`).join('')}</div>` : ''}
+  <div class="grid2" style="margin-top:22px">
     <div class="panel"><h2>Headlines</h2>${stories.map(s => `<p class="story">${s}</p>`).join('') || '<p class="muted">A quiet week in the field.</p>'}</div>
     <div class="panel"><h2>Top spooders this week</h2>
       <div class="tablewrap"><table class="ladder">${rows.map((r, i) => `<tr class="${isMe(r.login) ? 'me' : ''}"><td class="rk">${r.obs == null ? '–' : i < 3 ? ['🥇','🥈','🥉'][i] : '#' + (i + 1)}</td>
@@ -2164,11 +2171,6 @@ function viewReport() {
         <td class="n">${r.obs == null ? '' : fmt(r.obs) + ' rec.'}</td><td class="n">${r.g ? `${r.g.length} gen.` : '…'}</td></tr>`).join('')}</table></div>
       <p class="small muted">Ranked by records observed this week; genera counted as they load.</p></div>
   </div>
-  ${picks.length ? `<h2 style="margin-top:22px">${faved ? 'Picks of the week' : 'Fresh from the field'}</h2>
-    <p class="small muted">${faved ? 'Most-faved records observed this week.' : 'Recent records with photos.'} Photos © their observers; tap to see the record on iNaturalist.</p>
-    <div class="jewels">${picks.map(p => `<a class="jewel" href="https://www.inaturalist.org/observations/${p.id}" target="_blank" rel="noopener" style="background-image:url('${esc(photoSize(p.ph, 'medium'))}')">
-      <div class="lab"><div style="font-family:var(--head);font-size:17px;${['genus','species','subspecies'].includes(p.r) ? 'font-style:italic' : ''}">${esc(p.n)}</div>
-      <div class="small">© ${esc(p.u)}${p.f ? ` · ♥ ${p.f}` : ''}</div></div></a>`).join('')}</div>` : ''}
   <h2 style="margin-top:22px">Genera recorded this week (${wkG.length})</h2>
   <div class="panel">${wkG.map(x => `<div class="row" style="gap:6px"><span style="min-width:22px">${M.G.has(x.id) ? '☑' : '🎯'}</span><a href="#" data-genus="${x.id}" style="min-width:140px"><i>${esc(S.nodes[x.id]?.n || '?')}</i></a><span class="small muted">${x.c} this week${ref ? ` · ${fmt(x.all)} all time` : ''}</span></div>`).join('')}
     <p class="small muted">☑ in your SPOODEX · 🎯 not yet.</p></div>`;
@@ -2413,7 +2415,7 @@ function tripCtx(t = S.trip.cur) {
 const tripNeedsLoad = () => { const t = S.trip.cur; return t && (!t.pid || !t.g || Date.now() - t.ts > TRIP_TTL || !S.ref['p' + t.pid] || !S.places[t.pid]?.n); };
 function setTrip(lat, lng, label, area) {
   const t = { label, lat:+(+lat).toFixed(2), lng:+(+lng).toFixed(2), area:area || null, m:new Date().getMonth(), ts:0 };
-  S.trip.cur = t;
+  S.trip.cur = t; track('trip-planned');
   S.trip.recent = [{ label, lat:t.lat, lng:t.lng, area:t.area }, ...(S.trip.recent || []).filter(r => r.label !== label)].slice(0, TRIP_RECENT);
   saveTrip(); tripErr = null; tripMapFor = '';
   S.tab = 'trip'; $('#view').innerHTML = ''; render();
@@ -2923,6 +2925,7 @@ function cardBlob() {
 async function cardExport(share) {
   if (!S.card) return;
   const blob = await cardBlob(); if (!blob) return toast('Could not create the image.');
+  track(share ? 'card-share' : 'card-download');
   const file = new File([blob], `${S.card.name}.png`, { type:'image/png' });
   if (share && navigator.canShare?.({ files:[file] })) {
     try { await navigator.share({ files:[file], title:'My SPOODEX' }); } catch {}
@@ -3065,6 +3068,20 @@ function drawWrappedCard(cv, W, tiles, photosOnly) {
   return K.tainted;
 }
 
+/* ---------------- analytics: anonymous visit and event counts (GoatCounter) ---------------- */
+// Sent by hand rather than with GoatCounter's count.js, which always forwards location.search (our ?u=/?vs=/?crew= usernames).
+// Only the page path, screen width, a query-less referrer and a few event names leave the browser: no usernames, places or cookies.
+const GOATCOUNTER = 'https://themoojuice.goatcounter.com/count';
+function track(path, event = true) {
+  try {
+    if (!/^https?:$/.test(location.protocol) || /^(localhost|127\.|\[::1\]|0\.0\.0\.0)|\.(localhost|test)$/.test(location.hostname)) return;
+    const q = new URLSearchParams({ p:path, t:event ? path : 'SPOODEX', r:event ? '' : (document.referrer || '').split(/[?#]/)[0],
+      s:String(screen.width), e:String(event), rnd:Math.random().toString(36).slice(2, 7) });
+    const url = `${GOATCOUNTER}?${q}`;
+    if (!navigator.sendBeacon || !navigator.sendBeacon(url)) new Image().src = url;
+  } catch {}
+}
+
 /* ---------------- boot / flows ---------------- */
 function loadUser(login) {
   S.login = login;
@@ -3113,7 +3130,9 @@ async function onboard(login) {
   w('beep.'); w('SPOODEX Mk 0 booting…');
   document.querySelectorAll('#onboard button').forEach(b => b.disabled = true);
   try {
-    await sync({ full:!S.u.meta.lastSync, log:w });
+    const fresh = !S.u.meta.lastSync;
+    await sync({ full:fresh, log:w });
+    if (fresh) track('new-spoodex');
     const M = S.M;
     w(`Identifying unique genera… ${M.G.size} found.`);
     const cas = $('#cascade'); cas.innerHTML = '';
@@ -3136,6 +3155,7 @@ function enterApp(tab) {
   else if (S.pendingCrew) { const c = S.pendingCrew; S.pendingCrew = null; S.tab = 'crew'; setCrew(c); }
 }
 function startGuest() {
+  track('guest-mode');
   loadUser(GUEST);
   S.M = buildModel();
   enterApp('map');
@@ -3158,7 +3178,8 @@ function settings() {
       <button data-act="switch">Switch user</button>
       <button data-act="wipe">Forget this user's cache</button>
     </div>
-    <p class="small muted" id="storeInfo" style="margin-top:14px">Saved in this browser${store.db ? ' (IndexedDB)' : ' (localStorage, about 5 MB at most)'}.</p></div></div></div>`;
+    <p class="small muted" style="margin-top:14px">Anonymous visit counts via GoatCounter: no cookies, no usernames, no locations.</p>
+    <p class="small muted" id="storeInfo">Saved in this browser${store.db ? ' (IndexedDB)' : ' (localStorage, about 5 MB at most)'}.</p></div></div></div>`;
   store.usage().then(b => { const el = $('#storeInfo'); if (el && b) el.textContent += ` This site is using about ${(b / 1048576).toFixed(1)} MB.`; });
 }
 
@@ -3267,6 +3288,7 @@ $('#openDex').addEventListener('click', () => enterApp());
 // Shared caches get their defaults when the script loads, before IndexedDB is open; re-read them once it is.
 const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladder', 'crew', 'pioneer', 'report', 'haunts', 'trip'];
 (async function boot() {
+  track(location.pathname, false);
   await store.init();
   for (const k of PERSISTED) S[k] = store.get(k, S[k]);
   const q = new URLSearchParams(location.search);

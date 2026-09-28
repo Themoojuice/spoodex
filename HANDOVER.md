@@ -1,6 +1,6 @@
 # SPOODEX — handover
 
-**As of 2026-09-28 · v1.10 · live at https://themoojuice.github.io/spoodex/?u=themoojuice**
+**As of 2026-09-28 · v1.11 · live at https://themoojuice.github.io/spoodex/?u=themoojuice**
 
 This is the single source of truth for anyone (human or Claude) picking up the project. Read §0 first; it's enough
 to start safely. The rest is reference. When you change something, update this file in the same commit.
@@ -90,7 +90,7 @@ CARTO now needs a key, so don't switch back.
 | **SPOODEX** (`dex`) | Four views (`S.prefs.layer`): **Genera** (cards, scope country/state/world, filters) · **Species** (side collection) · **Sets** (themed sets, sets computed from records, complete-the-lineage, every-species-in-a-genus) · **🔎 Needs ID** (one photo tile per observation stuck above genus → iNat, filter chips, and "open these on iNaturalist") |
 | **Lineage tree** (`tree`, tier 2) | iNat classification tree, lit where you have genera |
 | **Map & scanner** (`map`) | 25 km squares you've recorded in; click anywhere to scan 25 km for genera you're missing; "active in the last 30 days"; home base (geolocate, search, or click the map) |
-| **This week** (`report`) | The Spood Report: state's week in salticids, headlines, weekly mini-ladder, picks |
+| **This week** (`report`) | The Spood Report: masthead, then **picks of the week (photos first, at the owner's request)**, then headlines, weekly mini-ladder and genera recorded |
 | **Bounty board** (`wanted`) | Two views (`S.prefs.wantedView`): **🔎 Bounties** (default: Needs ID records within 50 km, for genera you're missing and for "unnamed spoods", with a helper tally and ranks) · **🗞 Wanted posters** (this month's forecast of missing genera, posters, year calendar, case files with a map) |
 | **Trip planner** (`trip`) | Search any destination → its wanted list for a chosen month, "what this trip could add", map + list of record squares, posters, calendar, case files |
 | **Compare** (`compare`) | You vs one rival, built to provoke envy |
@@ -131,6 +131,7 @@ Search for `/* ---------------- <name>` to jump. Line numbers drift; names don't
 | sets | `THEMES`, `taxonByName`, `themeMembers`, `themeIds`, `themeGot`, `bothSexes`, `squaresOf`, `lineageSets`, `genusSpeciesSets`, `setStats(ref)`, `nearestSet(ref)`, `loadSetRefs`, `viewSets` | See §8 |
 | bounty board | `bountyWhere`, `loadBounties`, `trimBounty`, `viewBounty`, `bountyRank`, `BOUNTY_RANKS` | Two v2 queries within 50 km of home (or the state): Needs ID ranked family→subtribe (`hrank`/`lrank`), and Needs ID records of genera you're missing in your state. Own records dropped client-side. "Helped" = bounty records where you have an identification, accumulated in `S.u.bounty.helped`. 1 h cache |
 | since your last visit | `markVisit`, `loadNews`, `newsHtml`, `sinceTxt` | A new visit starts after 3 h away. After each sync: `taxonomy` with `created_d1=<previous visit, full ISO datetime>` within 25 km and for the state, plus a `per_page=0` count of new unnamed spoods. Dismissible until the next visit |
+| analytics | `GOATCOUNTER`, `track(path, event=true)` | Anonymous counts on https://themoojuice.goatcounter.com (owner's dashboard). **Deliberately not GoatCounter's `count.js`**: it always sends `location.search`, which holds `?u=`/`?vs=`/`?crew=` usernames. `track` sends only `p` (path or event name), `t`, `s` (screen width), `r` (referrer with query stripped, page views only), `e`, `rnd`, via `sendBeacon` or an image. Skips localhost/`.test`/`file:`. Page view in `boot()`; events: `new-spoodex` (first import), `guest-mode`, `trip-planned`, `compare`, `card-download`, `card-share`. Settings says so. **Never add usernames, places or coordinates to a tracked path** |
 | cards | `cardKit`, `cardPhotos`, `mountCard`, `cardBlob`, `cardExport`, `rarestFirst` | 1080×1350 canvas kit; see §11 on photo CORS |
 | title card / wrapped | `drawTitleCard`, `openTitleCard` / `wrappedData`, `wrappedExtras`, `openWrapped`, `showWrapped`, `drawWrappedCard` | |
 | boot / flows | `loadUser`, `updateUrl`, `copyLink`, `doSync`, `onboard`, `enterApp`, `startGuest`, `toast`, `settings`, event handlers, `PERSISTED`, `boot()` | `boot()` awaits `store.init()`, re-reads `PERSISTED`, then opens a cached user (and syncs quietly) or onboards `?u=` |
@@ -234,7 +235,7 @@ Scan-point keys: a 0.25° cell `"lat:lng"` (integers) or an arbitrary point `"pt
 - **Taxonomic care**: propose curated taxon lists to the owner; don't present them as settled. Check names against the live iNat tree.
 - **Privacy**: ≥25 km squares only, no exact coordinates (bounty distances rounded to 5 km), home base rounded to ~0.01° and kept in
   the browser, trips kept in the browser. Share links carry only `?u=`, `?vs=`, `?crew=` (usernames).
-- **No backend** yet; public read-only iNat data; no OAuth. Single file until it clearly outgrows that (then Vite + TS).
+- **No backend** yet; public read-only iNat data; no OAuth. The only third party is GoatCounter (anonymous counts, §5). Single file until it clearly outgrows that (then Vite + TS).
 - **Mobile matters**: most visitors will be on phones. No horizontal page scroll at 375 px.
 - Never help find or enter the owner's credentials.
 - Tone: playful but not twee ("Nature does not owe you a spider every Tuesday").
@@ -297,9 +298,7 @@ reminder) → `git push`. Confirm it's live: `curl -s "https://themoojuice.githu
 ## 12. Backlog and ideas (owner-approved or discussed; not built)
 
 **Before posting publicly (discussed 2026-09-28)**:
-- **Usage analytics**: recommended GoatCounter (free, cookieless). Waiting for the owner to create an account and share the site
-  code. When adding: strip `?u=`/`?vs=`/`?crew=` from recorded paths (don't collect usernames), and count a few anonymous events
-  (new SPOODEX created, trip planned, card downloaded).
+- **Usage analytics**: DONE in v1.11 (GoatCounter, see §5 "analytics"). Stats: https://themoojuice.goatcounter.com (owner signs in).
 - **Mobile navigation**: group the 11 tabs into ~4 sections (e.g. Collection / Explore / Social / Quests).
 - **Test outside Australia**; consider showing progress as a % of the regional total for low-diversity regions (e.g. the UK has ~20 genera).
 - **Full-photo share cards** via an image proxy (see §11).
@@ -325,4 +324,5 @@ cards progressively during a first import; generalising beyond jumping spiders (
 | v1.7 | IndexedDB storage (with migration), v2 imports with `fields=` (~6% of the download), Trip planner |
 | v1.8 | Sets (themed + complete-the-lineage), Bounty board, "since your last visit" |
 | v1.9 | Most Wanted tab renamed Bounty board (bounties first), SPOODEX › Needs ID layer, fixed-height quest tiles |
+| v1.11 | GoatCounter analytics (hand-rolled beacon, no usernames); Spood Report leads with picks of the week |
 | v1.10 | Sets: Local specialties, Ghost list, Every species in a genus, Couples, Wanderers, Celebrities; Needs ID "open these on iNaturalist" links (follow the filter); weekly ladder table fits phones; guest wording on Needs ID; this handover rewrite |
