@@ -156,6 +156,11 @@ table.cal tr[data-act]:hover td { background:var(--panel2); }
 #caseMap { height:320px; border-radius:var(--radius); border:1px solid var(--line); margin-bottom:8px; }
 #tripMap { height:380px; border-radius:var(--radius); border:1px solid var(--line); isolation:isolate; }
 .tripstat { gap:28px; align-items:flex-start; }
+.set.complete { border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent); }
+details.set > summary, .set details > summary { cursor:pointer; }
+.card.bounty { color:inherit; text-decoration:none; }
+.card.bounty .badge { z-index:1; }
+.news-panel { border-left:4px solid var(--accent); }
 .tripstat b { display:block; font:600 30px var(--head); color:var(--accent); line-height:1.1; }
 .cardcanvas { width:100%; max-width:540px; height:auto; display:block; margin:0 auto 12px; border-radius:4px; box-shadow:0 6px 20px rgba(0,0,0,.25); }
 @media (max-width:600px) { .vs { grid-template-columns:1fr; } .vsmark { text-align:center; } .mosaic { max-width:150px; } }
@@ -897,6 +902,10 @@ function buildQuests(M) {
     if (empty[0]) q.push({ id:'lineage:'+empty[0].id, kind:'lineage', icon:'🌳', title:'Unexplored Lineage',
       text:`You have nothing from ${S.nodes[empty[0].id].n} (${S.nodes[empty[0].id].r}). ${empty[0].g.length} ${empty[0].g.length===1?'genus':'genera'} from it ${empty[0].g.length===1?'is':'are'} recorded in ${scopeLabel(S.prefs.scope)}.`, node:empty[0].id, targets:empty[0].g, reward:300 });
   }
+  const ns = nearestSet(refFor(S.prefs.scope));
+  if (ns) q.push({ id:'set:' + ns.key + ':' + ns.have, kind:'hunt', icon:'🏆', title:`Complete the Set: ${ns.name}`,
+    text:`You have ${ns.have} of the ${ns.ids.length} genera in the ${ns.name} set that are recorded in ${scopeLabel(S.prefs.scope)}. ${ns.left} to go. See them under SPOODEX › Sets.`,
+    targets:ns.ids.filter(id => !M.G.has(id)), reward:200 });
   if (M.leads.length) {
     const n = M.leads.reduce((s,l) => s + l.obs.length, 0);
     q.push({ id:'resolve', kind:'resolve', icon:'👁', title:'Something Is Lurking',
@@ -970,7 +979,8 @@ function render() {
   if (S.tab === 'ladder' && !ladderBusy && !ladderErr && ladderKey() && ladderNeedsLoad(S.ladder[ladderKey()])) loadLadder();
   if (S.tab === 'crew' && !crewBusy && !crewErr && crewNeedsLoad()) loadCrew();
   if (S.tab === 'report' && !reportBusy && !reportErr && reportNeedsLoad()) loadReport();
-  if (S.tab === 'wanted' && !wantedBusy && !wantedErr && Date.now() - wantedTs > WANTED_TTL) loadWanted();
+  if (S.tab === 'wanted' && S.prefs.wantedView !== 'bounty' && !wantedBusy && !wantedErr && Date.now() - wantedTs > WANTED_TTL) loadWanted();
+  if (S.tab === 'wanted' && S.prefs.wantedView === 'bounty' && !bountyBusy && !bountyErr && bountyWhere() && bountyNeedsLoad()) loadBounties();
   if (S.tab === 'trip' && !tripBusy && !tripErr && tripNeedsLoad()) loadTrip();
   if (S.tab === 'profile' && !pioneerBusy && !isGuest()) setTimeout(drainPioneer, 0);
   if (S.tab === 'crew') { S.crew.seen = Date.now(); saveCrew(); }
@@ -1007,7 +1017,8 @@ function viewProfile() {
     <div class="row"><a class="btnlink" href="https://www.inaturalist.org/observations/upload" target="_blank" rel="noopener">Upload to iNaturalist ↗</a>
     <button data-tab="map">${M.homeCell ? '📡 See what lives near your home base' : '🏠 Set a home base'}</button>
     ${isGuest() ? '<button data-act="switch">I have an iNaturalist account</button>' : ''}</div></div>` : '';
-  return `${starter}
+  const setsAll = setStats(refFor(S.prefs.scope)), setsDone = setsAll.filter(x => !x.left);
+  return `${newsHtml()}${starter}
   <div class="grid2">
     <div class="panel">
       <div class="muted small">${esc(who().toUpperCase())}'S SPOODEX</div>
@@ -1018,6 +1029,7 @@ function viewProfile() {
       <div class="kv">
         <dt>Observations</dt><dd>${fmt(M.obs.length)}</dd>
         <dt>Species (side collection)</dt><dd>${fmt(M.S.size)}${refFor(S.prefs.scope)?.s ? ` · ${speciesInScope().filter(id => M.S.has(id)).length} / ${speciesInScope().length} on iNat in ${esc(scopeLabel(S.prefs.scope))}` : ''}</dd>
+        <dt>Sets complete</dt><dd>${setsDone.length} / ${setsAll.length} ${setsDone.length ? setsDone.slice(0, 4).map(x => x.icon || '🏆').join('') : ''} <a href="#" class="small" data-act="sets">view sets</a></dd>
         <dt>Collection prestige</dt><dd>${fmt(prestige(M))} ✦ <span class="small muted">(rarity-weighted)</span></dd>
         <dt>Localities (~10 km)</dt><dd>${fmt(M.cellsAll01.size)}</dd>
         <dt>Field days</dt><dd>${fmt(M.fieldDays.length)}</dd>
@@ -1089,6 +1101,7 @@ function cardHtml(id, num) {
 
 function viewDex() {
   if (S.prefs.layer === 'species') return viewDexSpecies();
+  if (S.prefs.layer === 'sets') return viewSets();
   const M = S.M, sc = scopeGenera(), P = S.prefs;
   const { order } = taxonomicOrder(sc.inScope);
   const num = new Map(order.map((id,i) => [id, i+1]));
@@ -1177,7 +1190,7 @@ function viewDexSpecies() {
   ${inScope.length ? sections : '<p class="muted">Loading the species reference… (or set a home base on the Map tab)</p>'}
   ${extras.length ? `<h2 style="margin-top:22px">Recorded outside ${esc(scopeLabel(P.scope))} (+${extras.length})</h2><div class="dexgrid">${extras.map(speciesCard).join('')}</div>` : ''}`;
 }
-const layerSwitch = () => `<span>${[['genus','Genera'],['species','Species']].map(([k,l]) => `<span class="chip ${(S.prefs.layer||'genus')===k?'on':''}" data-layer="${k}" style="cursor:pointer">${l}</span>`).join(' ')}</span>`;
+const layerSwitch = () => `<span>${[['genus','Genera'],['species','Species'],['sets','Sets']].map(([k,l]) => `<span class="chip ${(S.prefs.layer||'genus')===k?'on':''}" data-layer="${k}" style="cursor:pointer">${l}</span>`).join(' ')}</span>`;
 function speciesSection(gid) {
   const M = S.M, ref = refFor(S.prefs.scope), cm = S.cmp?.M;
   const ids = new Set();
@@ -2282,7 +2295,13 @@ function calendarHtml(list, ctx, act) {
       ${Array.from({ length:12 }, (_, i) => `<td class="m ${i === m ? 'now' : ''}">${x.curve ? `<i style="opacity:${(.08 + .92 * x.curve[i]).toFixed(2)}"></i>` : '·'}</td>`).join('')}
       <td class="small muted">${x.tier}</td></tr>`).join('')}</table></div>`;
 }
+const wantedSwitch = () => `<div class="row" style="margin-bottom:12px">${[['posters','🗞 Wanted posters'],['bounty','🔎 Bounty board']]
+  .map(([k, l]) => `<span class="chip ${(S.prefs.wantedView || 'posters') === k ? 'on' : ''}" data-act="wview" data-v="${k}" style="cursor:pointer;font-size:14px;padding:4px 12px">${l}</span>`).join(' ')}</div>`;
 function viewWanted() {
+  if (S.prefs.wantedView === 'bounty') return wantedSwitch() + viewBounty();
+  return wantedSwitch() + viewWantedPosters();
+}
+function viewWantedPosters() {
   const M = S.M, ctx = homeCtx();
   if (!ctx.pid) return `<div class="panel"><h2>Most Wanted</h2><p>Most Wanted needs to know your region. Record a salticid on iNaturalist, or set a home base on the map.</p><button class="primary" data-tab="map">🏠 Set a home base</button></div>`;
   const list = wantedList(ctx), where = ctxWhere(ctx), m = ctx.month;
@@ -2498,6 +2517,224 @@ function mountTripMap() {
     tripMapFor = frame;
     if (bounds.length) tripMap.fitBounds(bounds, { padding:[16, 16], maxZoom:10 }); else tripMap.setView([t.lat, t.lng], 6);
   }, 60);
+}
+
+/* ---------------- sets: themed collections and complete-the-lineage sets ---------------- */
+// Themed sets are iNat taxon names (any rank); members are every genus (unit 'g') or species (unit 's') under them.
+// Starter content for the owner to edit. Ant mimics is a hand-picked genus list, not a lineage.
+const THEMES = [
+  { k:'peacock', icon:'🦚', name:'Peacock spiders', unit:'s', taxa:['Maratus'],
+    blurb:'Every <i>Maratus</i> species on iNat. Males of many species court with a raised, brightly patterned fan.' },
+  { k:'antmimic', icon:'🐜', name:'Ant mimics', unit:'g',
+    taxa:['Myrmarachne','Myrmaplata','Toxeus','Myrmapana','Belippo','Bocus','Emertonius','Myrmage','Myrmele','Myrmatheca','Hermosa','Ligonipes','Rhombonotus','Synageles','Synemosyna','Sarinda','Zuniga','Peckhamia','Leptorchestes'],
+    blurb:'Jumping spiders that look and move like ants. A hand-picked list of genera, not a lineage.' },
+  { k:'spartaeine', icon:'🕸', name:'Portia & the spartaeines', unit:'g', taxa:['Spartaeinae'],
+    blurb:'The subfamily Spartaeinae. Many are specialist hunters of other spiders.' },
+  { k:'beyond', icon:'🌿', name:'Beyond Salticinae', unit:'g', taxa:['Lyssomaninae','Asemoneinae','Onomastinae','Spartaeinae','Hisponinae','Eupoinae'],
+    blurb:'Every genus outside the big subfamily Salticinae, which holds most jumping spiders.' },
+];
+let nameIdx = null, nameIdxN = 0;
+function taxonByName(name) {
+  const n = Object.keys(S.nodes).length;
+  if (!nameIdx || n !== nameIdxN) {
+    nameIdx = new Map(); nameIdxN = n;
+    // subgenera and complexes can share a genus's name; the real rank wins
+    for (const [id, t] of Object.entries(S.nodes)) if (!['subgenus', 'complex'].includes(t.r) || !nameIdx.has(t.n)) nameIdx.set(t.n, +id);
+  }
+  return nameIdx.get(name) || null;
+}
+const underAny = (id, roots) => { let c = id, g = 0; while (c && g++ < 25) { if (roots.has(c)) return true; c = S.nodes[c]?.p; } return false; };
+const hasIt = (id, unit) => unit === 's' ? S.M.S.has(id) : S.M.G.has(id);
+function themeMembers(th, ref) {
+  if (!ref) return [];
+  const roots = new Set(th.taxa.map(taxonByName).filter(Boolean));
+  return Object.keys(th.unit === 's' ? ref.s || {} : ref.g).map(Number).filter(id => underAny(id, roots));
+}
+// Every tribe (or subfamily, for genera with no tribe) with 2+ genera recorded in scope
+function lineageSets(ref) {
+  if (!ref) return [];
+  const groups = new Map();
+  for (const gid of Object.keys(ref.g).map(Number)) {
+    const L = lineage(gid), grp = L.find(n => n.r === 'tribe') || L.find(n => n.r === 'subfamily');
+    if (!grp) continue;
+    if (!groups.has(grp.id)) groups.set(grp.id, { key:'l' + grp.id, name:grp.n, rank:grp.r, unit:'g', ids:[] });
+    groups.get(grp.id).ids.push(gid);
+  }
+  return [...groups.values()].filter(x => x.ids.length >= 2);
+}
+function setStats(ref) {
+  const out = [...THEMES.map(th => ({ key:th.k, name:th.name, icon:th.icon, unit:th.unit, th, ids:themeMembers(th, ref) })), ...lineageSets(ref)];
+  out.forEach(x => { x.have = x.ids.filter(id => hasIt(id, x.unit)).length; x.left = x.ids.length - x.have; });
+  return out.filter(x => x.ids.length);
+}
+// The set you're closest to finishing (you've started it, and at most 3 to go)
+function nearestSet(ref) {
+  return setStats(ref).filter(x => x.unit === 'g' && x.have && x.left && x.left <= 3)
+    .sort((a,b) => a.left - b.left || b.have - a.have)[0] || null;
+}
+let setsBusy = false;
+async function loadSetRefs() {
+  if (setsBusy) return;
+  setsBusy = true;
+  try { await ensureRef('world'); if (S.prefs.scope !== 'world' && scopePlace(S.prefs.scope)) await ensureRef(S.prefs.scope); }
+  catch (e) { toast(e.message); }
+  setsBusy = false;
+  if (S.tab === 'dex' && S.prefs.layer === 'sets') softRender();
+}
+function viewSets() {
+  const M = S.M, P = S.prefs, ref = refFor(P.scope), world = S.ref.world, where = esc(scopeLabel(P.scope));
+  if ((!world || !ref) && !setsBusy) setTimeout(loadSetRefs, 0);
+  const all = setStats(ref), done = all.filter(x => !x.left);
+  const num = new Map(taxonomicOrder(ref ? Object.keys(ref.g).map(Number) : []).order.map((id, i) => [id, i + 1]));
+  const cards = (ids, unit) => `<div class="dexgrid" style="margin-top:10px">${[...ids].sort((a,b) => (hasIt(b, unit) - hasIt(a, unit)) || (S.nodes[a]?.n || '').localeCompare(S.nodes[b]?.n || ''))
+    .map(id => unit === 's' ? speciesCard(id) : cardHtml(id, num.get(id) || 0)).join('')}</div>`;
+  const bar = (a, b) => `<div class="bar" style="max-width:220px"><i style="width:${pct(a, b)}%"></i></div>`;
+  const theme = th => {
+    const x = all.find(s => s.key === th.k), wIds = themeMembers(th, world), wHave = wIds.filter(id => hasIt(id, th.unit)).length;
+    const unitW = n => th.unit === 's' ? `species` : n === 1 ? 'genus' : 'genera';
+    const show = x ? x.ids : wIds;
+    if (show.length <= 150) ensureInfo(show.filter(id => !hasIt(id, th.unit)));
+    return `<div class="panel set ${x && !x.left ? 'complete' : ''}"><div class="row" style="justify-content:space-between">
+        <h3 style="margin:0">${th.icon} ${esc(th.name)} ${x && !x.left ? '🏆' : ''}</h3>
+        <span class="small">${x ? `<b>${x.have} / ${x.ids.length}</b> ${unitW(x.ids.length)} in ${where}` : `none recorded in ${where} on iNat`}</span></div>
+      <p class="small muted" style="margin:4px 0">${th.blurb}</p>
+      ${x ? bar(x.have, x.ids.length) : ''}
+      <p class="small" style="margin:6px 0 0">Worldwide: ${world ? `<b>${wHave} / ${wIds.length}</b>` : '…'}</p>
+      ${show.length ? `<details><summary class="small">Show ${show.length} card${show.length === 1 ? '' : 's'}${x ? '' : ' (worldwide)'}</summary>${cards(show.slice(0, 200), th.unit)}</details>` : ''}</div>`;
+  };
+  const lin = all.filter(x => !x.th).sort((a,b) => (!a.left - !b.left) || (!a.have - !b.have) || a.left - b.left || b.have - a.have);
+  return `<div class="panel row" style="margin-bottom:14px">
+      ${layerSwitch()}
+      <b style="font-family:var(--head);font-size:20px">🏆 ${done.length} / ${all.length}</b><span class="muted">sets complete in</span>
+      <select data-pref="scope">${['country','state','world'].map(s => `<option value="${s}" ${P.scope===s?'selected':''}>${esc(s==='world'?'World':scopeLabel(s))}</option>`).join('')}</select>
+      <label class="small"><input type="checkbox" data-pref="reveal" ${P.reveal?'checked':''}> reveal names</label></div>
+    <p class="small muted">Sets follow iNat's taxonomy and count verifiable iNat records in ${where}. They're side goals: your level is still your genus count.</p>
+    <h2>Themed sets</h2><div class="grid2">${THEMES.map(theme).join('')}</div>
+    <h2 style="margin-top:22px">Complete the lineage</h2>
+    <p class="small muted">Every tribe with two or more genera recorded in ${where} (subfamily where iNat has no tribe). Nearest to complete first.</p>
+    ${!ref ? '<p class="muted">Loading the regional reference…</p>' : lin.map(x => `<details class="panel set ${!x.left ? 'complete' : ''}" style="margin-bottom:8px"><summary class="row" style="gap:10px">
+        <b style="min-width:150px">${esc(x.name)}</b><span class="small muted">${esc(x.rank)}</span>${bar(x.have, x.ids.length)}
+        <span class="small"><b>${x.have}/${x.ids.length}</b> ${!x.left ? '🏆 complete' : x.have && x.left <= 2 ? `· ${x.left} to go!` : ''}</span></summary>
+        ${cards(x.ids, 'g')}</details>`).join('')}`;
+}
+
+/* ---------------- bounty board: records near you waiting for an ID ---------------- */
+const BOUNTY_TTL = 3600e3, BOUNTY_KM = 50;
+const BOUNTY_FIELDS = '(id:!t,observed_on:!t,created_at:!t,obscured:!t,geojson:!t,taxon:(id:!t,name:!t,rank:!t,ancestor_ids:!t),user:(login:!t),photos:(url:!t),identifications:(current:!t,user:(login:!t)))';
+const BOUNTY_RANKS = [[1, 'Deputy'], [5, 'Bounty hunter'], [15, 'Marshal'], [40, 'Sheriff'], [100, 'Legend of the ID frontier']];
+let bountyBusy = false, bountyErr = null;
+const bountyWhere = () => { const h = S.M.homeCell, pid = S.M.home.state || S.M.home.country;
+  return h ? { lat:h.lat.toFixed(2), lng:h.lng.toFixed(2), radius:BOUNTY_KM } : pid ? { place_id:pid } : null; };
+const bountyNeedsLoad = () => { const b = S.u.bounty?.data; return !b || Date.now() - b.ts > BOUNTY_TTL || b.k !== JSON.stringify(bountyWhere()); };
+function trimBounty(o) {
+  const c = o.geojson?.coordinates, h = S.M.homeCell, me = String(S.login).toLowerCase(), t = o.taxon || {};
+  return { id:o.id, d:o.observed_on || '', up:(o.created_at || '').slice(0, 10), t:t.name || '?', r:t.rank || '', tid:t.id,
+    ph:photoSize(o.photos?.[0]?.url || '', 'small'), n:(o.identifications || []).filter(i => i.current).length,
+    mine:(o.identifications || []).some(i => i.user?.login?.toLowerCase() === me),
+    km:h && c && !o.obscured ? Math.max(5, Math.round(kmBetween(h, { lat:c[1], lng:c[0] }) / 5) * 5) : null };
+}
+async function loadBounties() {
+  const where = bountyWhere(); if (bountyBusy || !where) return;
+  bountyBusy = true; bountyErr = null;
+  const redraw = () => { if (S.tab === 'wanted' && S.prefs.wantedView === 'bounty') softRender(); };
+  try {
+    await ensureRef('state');
+    const me = String(S.login).toLowerCase(), notMine = o => o.user?.login?.toLowerCase() !== me;
+    const q = { taxon_id:SALTICIDAE, quality_grade:'needs_id', per_page:40, order_by:'created_at', order:'desc', fields:BOUNTY_FIELDS, ...where };
+    const a = await api('/observations', { ...q, hrank:'family', lrank:'subtribe' }, API2);
+    // Genera you're missing from your state, currently sitting at Needs ID nearby
+    const ref = S.ref['p' + (S.M.home.state || S.M.home.country)];
+    const miss = ref ? Object.keys(ref.g).map(Number).filter(id => !S.M.G.has(id)) : [];
+    const b = miss.length ? await api('/observations', { ...q, taxon_id:miss.slice(0, 80).join(',') }, API2) : { results:[], total_results:0 };
+    const bounty = S.u.bounty = S.u.bounty || { helped:[] };
+    const all = [...a.results, ...b.results].filter(notMine).map(trimBounty);
+    const helped = new Set(bounty.helped); all.filter(x => x.mine).forEach(x => helped.add(x.id));
+    bounty.helped = [...helped];
+    bounty.data = { ts:Date.now(), k:JSON.stringify(where), unk:a.results.filter(notMine).map(trimBounty), unkN:a.total_results,
+      conf:b.results.filter(notMine).map(trimBounty), confN:b.total_results };
+    saveUser();
+  } catch (e) { bountyErr = e.message; }
+  bountyBusy = false;
+  redraw();
+}
+function bountyRank(n) { let r = null; for (const x of BOUNTY_RANKS) if (n >= x[0]) r = x; return r; }
+function viewBounty() {
+  const M = S.M, b = S.u.bounty?.data, helped = S.u.bounty?.helped?.length || 0, rank = bountyRank(helped), next = BOUNTY_RANKS.find(x => x[0] > helped);
+  const where = M.homeCell ? `within ${BOUNTY_KM} km of your home base` : `in ${esc(S.places[M.home.state || M.home.country]?.n || 'your region')}`;
+  const card = x => `<a class="card bounty" href="https://www.inaturalist.org/observations/${x.id}" target="_blank" rel="noopener" title="Open on iNaturalist to add an ID">
+      ${x.mine ? '<span class="badge b-supp">✓ YOU IDed</span>' : ''}<div class="ph" style="background-image:url('${esc(x.ph)}')"></div>
+      <div class="meta"><div class="nm">${x.r === 'genus' || x.r === 'species' ? `<i>${esc(x.t)}</i>` : esc(x.t)}</div>
+      <div class="small muted">${x.km != null ? `~${x.km} km · ` : ''}uploaded ${esc(agoTxt(x.up))} · ${x.n} ID${x.n === 1 ? '' : 's'}</div></div></a>`;
+  const head = `<div class="panel" style="margin-bottom:16px"><h2>Bounty board</h2>
+    <p class="small muted">Salticid records ${where} still waiting for an identification. A careful ID from you helps them toward Research Grade, and an unnamed spood might be a genus nobody has recorded here. Cards open on iNaturalist; your own records are left out.</p>
+    <p style="margin-bottom:0">${rank ? `<b>${esc(rank[1])}</b> · ` : ''}You've added IDs to <b>${helped}</b> bounty record${helped === 1 ? '' : 's'}.${next ? ` <span class="small muted">${next[0] - helped} more for ${esc(next[1])}.</span>` : ''}
+      <a href="#" class="small" data-act="bountyRefresh">refresh</a></p>
+    ${bountyBusy ? '<p class="small">Checking the records…</p>' : ''}${bountyErr ? `<p>${esc(bountyErr)} <button data-act="bountyRefresh">Try again</button></p>` : ''}</div>`;
+  if (!bountyWhere()) return head + '<p class="muted">Set a home base on the Map tab so SPOODEX knows where to look.</p>';
+  if (!b) return head + '<p class="muted">Loading bounties…</p>';
+  return head + `<h2>Wanted, unconfirmed</h2>
+    <p class="small muted">Records of genera you're missing, still at Needs ID (${fmt(b.confN)} in all). Confirm or correct the ID, and you'll also learn where they turn up.</p>
+    ${b.conf.length ? `<div class="dexgrid">${b.conf.map(card).join('')}</div>` : '<p class="small">None right now.</p>'}
+    <h2 style="margin-top:22px">Unnamed spoods</h2>
+    <p class="small muted">Identified only to family, subfamily or tribe (${fmt(b.unkN)} in all, newest first). This is where an arachnologist's eye matters most.</p>
+    ${b.unk.length ? `<div class="dexgrid">${b.unk.map(card).join('')}</div>` : '<p class="small">None right now. Nicely done, locals.</p>'}`;
+}
+
+/* ---------------- since your last visit: what turned up near you while you were away ---------------- */
+const VISIT_GAP = 3 * 3600e3, NEWS_TTL = 3600e3;
+const sinceTxt = ts => { const h = Math.round((Date.now() - ts) / 3600e3); return h < 36 ? `${h} hour${h === 1 ? '' : 's'} ago` : agoTxt(new Date(ts).toISOString().slice(0, 10)); };
+// A new visit starts after 3 hours away; until then "since your last visit" keeps meaning the same moment
+function markVisit() {
+  const v = S.u.visit = S.u.visit || {}, now = Date.now();
+  if (v.last && now - v.last > VISIT_GAP) v.prev = v.last;
+  v.last = now; saveUser();
+}
+let newsBusy = false;
+async function loadNews() {
+  const since = S.u.visit?.prev, M = S.M, h = M.homeCell, pid = M.home.state || M.home.country;
+  if (!M) return;
+  if (newsBusy || !since || (!h && !pid)) return;
+  const cur = S.u.news;
+  if (cur && cur.since === since && Date.now() - cur.ts < NEWS_TTL) return;
+  newsBusy = true;
+  try {
+    const d1 = new Date(since).toISOString(), genera = d => d.results.filter(r => r.rank === 'genus').map(r => ({ id:r.id, c:r.descendant_obs_count || r.count || 0 }));
+    const total = d => d.results.find(r => r.id === SALTICIDAE)?.descendant_obs_count || 0;
+    const n = { since, ts:Date.now(), dismissed:cur?.since === since && cur.dismissed };
+    if (h) {
+      const d = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, verifiable:true, lat:h.lat.toFixed(3), lng:h.lng.toFixed(3), radius:25, created_d1:d1 });
+      d.results.forEach(addNode); n.near = genera(d); n.nearT = total(d);
+    }
+    if (pid) {
+      const d = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, verifiable:true, place_id:pid, created_d1:d1 });
+      d.results.forEach(addNode); n.st = genera(d); n.stT = total(d);
+    }
+    const where = bountyWhere();
+    if (where) n.unk = (await api('/observations', { taxon_id:SALTICIDAE, quality_grade:'needs_id', hrank:'family', lrank:'subtribe', created_d1:d1, per_page:0, ...where }, API2)).total_results;
+    S.u.news = n; saveUser(); saveShared();
+    const fresh = (n.near || []).filter(x => !M.G.has(x.id));
+    if (fresh.length) toast(`Since your last visit: ${fresh.length} ${fresh.length === 1 ? 'genus' : 'genera'} you're missing turned up near home.`);
+    if (S.tab === 'profile') softRender();
+  } catch (e) { console.warn(e); }
+  newsBusy = false;
+}
+function newsHtml() {
+  const n = S.u.news, M = S.M;
+  if (!n || n.dismissed || n.since !== S.u.visit?.prev) return '';
+  const miss = l => (l || []).filter(x => !M.G.has(x.id)).sort((a,b) => b.c - a.c);
+  const near = miss(n.near), st = miss(n.st), pname = esc(S.places[M.home.state || M.home.country]?.n || 'your region');
+  const link = x => `<a href="#" data-act="wanted" data-v="${x.id}"><i>${esc(S.nodes[x.id]?.n || '?')}</i></a> (${x.c})`;
+  const items = [];
+  if (near.length) items.push(`🎯 <b>${near.length} ${near.length === 1 ? 'genus' : 'genera'} you're missing</b> uploaded within 25 km of home: ${near.slice(0, 8).map(link).join(', ')}`);
+  else if (n.near) items.push(`📍 ${fmt(n.nearT)} new salticid record${n.nearT === 1 ? '' : 's'} within 25 km of home${n.nearT ? ', all genera you already have' : ''}.`);
+  if (n.st) items.push(`📚 In ${pname}: ${fmt(n.stT)} new record${n.stT === 1 ? '' : 's'} across ${n.st.length} genera${st.length ? `, including ${st.length} you're missing: ${st.slice(0, 6).map(link).join(', ')}${st.length > 6 ? '…' : ''}` : ''}.`);
+  if (n.unk) items.push(`🔎 ${fmt(n.unk)} new unnamed spood${n.unk === 1 ? '' : 's'} near you need${n.unk === 1 ? 's' : ''} an ID. <a href="#" data-act="bountyGo">Bounty board →</a>`);
+  if (S.crew.logins.length && crewUnseen()) items.push('👥 Your crew has been busy. <a href="#" data-tab="crew">Crew feed →</a>');
+  if (!items.length) return '';
+  return `<div class="panel news-panel" style="margin-bottom:16px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Since your last visit <span class="small muted">· ${esc(sinceTxt(n.since))}</span></h2>
+    <button class="small" data-act="newsDismiss">Got it</button></div>
+    <ul class="checks" style="margin-top:8px">${items.map(i => `<li>${i}</li>`).join('')}</ul>
+    <p class="small muted" style="margin:0">Counts are records uploaded to iNat since you were last here (verifiable only).</p></div>`;
 }
 
 /* ---------------- cards: shared canvas kit for the title card and wrapped ---------------- */
@@ -2776,6 +3013,7 @@ async function doSync(full) {
     if (fresh.length) revealQueue(fresh); else if (!isGuest()) toast('Synced. No new genera this time, but the field awaits.');
   } catch (e) { toast(e.message); }
   btn.disabled = false; btn.textContent = '⟳ Sync';
+  loadNews();
   if (S.crew.logins.length && !crewBusy && crewNeedsLoad()) loadCrew().then(() => { if (S.tab !== 'map') render(); });
 }
 async function onboard(login) {
@@ -2801,6 +3039,7 @@ async function onboard(login) {
 }
 function enterApp(tab) {
   $('#onboard').classList.add('hidden'); $('#app').classList.remove('hidden');
+  markVisit();
   S.tab = tab || (S.M.G.size ? 'profile' : 'map');
   updateUrl(); render();
   if (S.pendingVs) { const v = S.pendingVs; S.pendingVs = null; S.tab = 'compare'; render(); loadCompare(v); }
@@ -2810,7 +3049,7 @@ function startGuest() {
   loadUser(GUEST);
   S.M = buildModel();
   enterApp('map');
-  if (S.u.base) loadRefs().then(() => { S.M = buildModel(); }).catch(() => {});
+  if (S.u.base) loadRefs().then(() => { S.M = buildModel(); loadNews(); }).catch(() => {});
 }
 function toast(msg) {
   const t = document.createElement('div');
@@ -2864,6 +3103,11 @@ document.addEventListener('click', e => {
   if (a === 'card') openTitleCard();
   if (a === 'wanted') openCase(+val);
   if (a === 'wantedRetry') { wantedErr = null; wantedTs = 0; loadWanted(); }
+  if (a === 'sets') { e.preventDefault(); S.prefs.layer = 'sets'; savePrefs(); S.tab = 'dex'; render(); }
+  if (a === 'wview') { S.prefs.wantedView = val; savePrefs(); render(); }
+  if (a === 'bountyGo') { e.preventDefault(); S.prefs.wantedView = 'bounty'; savePrefs(); S.tab = 'wanted'; render(); }
+  if (a === 'bountyRefresh') { e.preventDefault(); bountyErr = null; loadBounties(); render(); }
+  if (a === 'newsDismiss') { S.u.news.dismissed = true; saveUser(); render(); }
   if (a === 'tripCase') { e.preventDefault(); openCase(+val, tripCtx()); }
   if (a === 'tripRetry') { tripErr = null; loadTrip(); }
   if (a === 'tripRefresh') { e.preventDefault(); tripErr = null; loadTrip(true); }
