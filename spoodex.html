@@ -158,7 +158,9 @@ table.cal tr[data-act]:hover td { background:var(--panel2); }
 .tripstat { gap:28px; align-items:flex-start; }
 .set.complete { border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent); }
 details.set > summary, .set details > summary { cursor:pointer; }
-.card.bounty { color:inherit; text-decoration:none; }
+.card.bounty, .card.lead { color:inherit; text-decoration:none; }
+.card.lead .nm { font-style:normal; }
+.card .nophoto { position:absolute; inset:0; display:grid; place-items:center; font-size:12px; color:var(--muted); }
 .card.bounty .badge { z-index:1; }
 .news-panel { border-left:4px solid var(--accent); }
 .tripstat b { display:block; font:600 30px var(--head); color:var(--accent); line-height:1.1; }
@@ -248,6 +250,10 @@ main { padding-top:18px; }
 
 /* ---------- Quests ---------- */
 .quest { border-left:4px solid var(--accent); }
+.questgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); grid-auto-rows:340px; gap:16px; }
+.questgrid .quest { display:flex; flex-direction:column; overflow:hidden; min-width:0; }
+.questgrid .qbody { flex:1 1 auto; min-height:0; overflow-y:auto; padding-right:4px; }
+.questgrid .reward { flex:none; margin-top:8px; }
 .quest.daily { border-left-width:8px; }
 .quest h3 { margin-bottom:2px; }
 .reward { font-size:12px; color:var(--lit); }
@@ -953,7 +959,7 @@ const TABS = [
   { k:'tree', label:'Lineage tree', tier:2 },
   { k:'map', label:'Map & scanner' },
   { k:'report', label:'This week' },
-  { k:'wanted', label:'Most Wanted' },
+  { k:'wanted', label:'Bounty board' },
   { k:'trip', label:'Trip planner' },
   { k:'compare', label:'Compare' },
   { k:'ladder', label:'Ladder' },
@@ -979,8 +985,8 @@ function render() {
   if (S.tab === 'ladder' && !ladderBusy && !ladderErr && ladderKey() && ladderNeedsLoad(S.ladder[ladderKey()])) loadLadder();
   if (S.tab === 'crew' && !crewBusy && !crewErr && crewNeedsLoad()) loadCrew();
   if (S.tab === 'report' && !reportBusy && !reportErr && reportNeedsLoad()) loadReport();
-  if (S.tab === 'wanted' && S.prefs.wantedView !== 'bounty' && !wantedBusy && !wantedErr && Date.now() - wantedTs > WANTED_TTL) loadWanted();
-  if (S.tab === 'wanted' && S.prefs.wantedView === 'bounty' && !bountyBusy && !bountyErr && bountyWhere() && bountyNeedsLoad()) loadBounties();
+  if (S.tab === 'wanted' && wView() === 'posters' && !wantedBusy && !wantedErr && Date.now() - wantedTs > WANTED_TTL) loadWanted();
+  if (S.tab === 'wanted' && wView() === 'bounty' && !bountyBusy && !bountyErr && bountyWhere() && bountyNeedsLoad()) loadBounties();
   if (S.tab === 'trip' && !tripBusy && !tripErr && tripNeedsLoad()) loadTrip();
   if (S.tab === 'profile' && !pioneerBusy && !isGuest()) setTimeout(drainPioneer, 0);
   if (S.tab === 'crew') { S.crew.seen = Date.now(); saveCrew(); }
@@ -1102,6 +1108,7 @@ function cardHtml(id, num) {
 function viewDex() {
   if (S.prefs.layer === 'species') return viewDexSpecies();
   if (S.prefs.layer === 'sets') return viewSets();
+  if (S.prefs.layer === 'needsid') return viewNeedsId();
   const M = S.M, sc = scopeGenera(), P = S.prefs;
   const { order } = taxonomicOrder(sc.inScope);
   const num = new Map(order.map((id,i) => [id, i+1]));
@@ -1130,10 +1137,8 @@ function viewDex() {
   <div class="dexgrid">${shown.map(id => cardHtml(id, num.get(id))).join('')}</div>
   ${sc.extras.length ? `<h2 style="margin-top:22px">Recorded outside ${esc(scopeLabel(P.scope))} (+${sc.extras.length})</h2>
     <div class="dexgrid">${sc.extras.map(id => cardHtml(id, 0)).join('')}</div>` : ''}
-  ${M.leads.length ? `<h2 style="margin-top:22px">👁 Glimpsed — something is lurking</h2>
-    <p class="muted">Observations identified only above genus. Each could be a genus you haven't unlocked yet. Better photos, annotations or an ID request might crack them.</p>
-    <div class="grid2">${M.leads.slice(0,12).map(l => `<div class="panel"><b>${esc(l.name)}</b> <span class="muted small">${esc(l.rank)}</span> — ${l.obs.length} obs
-      <div class="gallery" style="margin-top:6px">${l.obs.slice(0,6).map(o => `<a href="https://www.inaturalist.org/observations/${o.id}" target="_blank" rel="noopener" style="background-image:url('${esc(o.ph[0]||'')}')"></a>`).join('')}</div></div>`).join('')}</div>` : ''}`;
+  ${M.leads.length ? `<div class="panel" style="margin-top:22px">👁 <b>${fmt(M.leads.reduce((n, l) => n + l.obs.length, 0))}</b> of your observations are stuck above genus. Any of them could be a genus you haven't unlocked.
+    <a href="#" data-layer="needsid">See them under 🔎 Needs ID →</a></div>` : ''}`;
 }
 
 /* ---------------- species layer: an optional side collection (level stays = genera) ---------------- */
@@ -1190,7 +1195,23 @@ function viewDexSpecies() {
   ${inScope.length ? sections : '<p class="muted">Loading the species reference… (or set a home base on the Map tab)</p>'}
   ${extras.length ? `<h2 style="margin-top:22px">Recorded outside ${esc(scopeLabel(P.scope))} (+${extras.length})</h2><div class="dexgrid">${extras.map(speciesCard).join('')}</div>` : ''}`;
 }
-const layerSwitch = () => `<span>${[['genus','Genera'],['species','Species'],['sets','Sets']].map(([k,l]) => `<span class="chip ${(S.prefs.layer||'genus')===k?'on':''}" data-layer="${k}" style="cursor:pointer">${l}</span>`).join(' ')}</span>`;
+function viewNeedsId() {
+  const M = S.M, f = S.prefs.leadFilter, lead = M.leads.find(l => String(l.id) === String(f));
+  const all = M.leads.flatMap(l => l.obs), obs = (lead ? lead.obs : all).slice().sort((a,b) => (b.d || '').localeCompare(a.d || '') || b.id - a.id);
+  const tile = o => `<a class="card lead" href="https://www.inaturalist.org/observations/${o.id}" target="_blank" rel="noopener" title="Open on iNaturalist">
+      <div class="ph" style="background-image:url('${esc(photoSize(o.ph[0] || '', 'medium'))}')">${o.ph.length ? '' : '<span class="nophoto">no photo</span>'}</div>
+      <div class="meta"><div class="nm">${esc(o.t.n || 'Unknown')}</div>
+      <div class="small muted">${esc(o.t.r || '')} · ${esc(o.d || 'no date')}${o.q === 'casual' ? ' · casual' : ''}${o.ph.length > 1 ? ` · ${o.ph.length} photos` : ''}</div></div></a>`;
+  const chip = (k, label, n) => `<span class="chip ${String(f || 'all') === String(k) ? 'on' : ''}" data-act="leadFilter" data-v="${k}" style="cursor:pointer">${esc(label)} (${n})</span>`;
+  return `<div class="panel row" style="margin-bottom:14px">${layerSwitch()}</div>
+    <div class="panel" style="margin-bottom:14px"><h2>Needs further identification</h2>
+      <p class="small muted">Your salticid observations identified only above genus, newest first. Each could be a genus you haven't unlocked yet.
+        Click a tile to open it on iNaturalist: add sharper photos, annotate sex and life stage, or tag an identifier. Once it's identified to genus, sync and the card unlocks.</p>
+      ${M.leads.length ? `<div class="row" style="gap:6px">${chip('all', 'All', all.length)}${M.leads.map(l => chip(l.id, l.name, l.obs.length)).join('')}</div>` : ''}</div>
+    ${obs.length ? `<div class="dexgrid">${obs.map(tile).join('')}</div>`
+      : '<div class="panel"><p class="hand">Nothing stuck above genus. Every one of your spoods has a genus. Tidy work.</p></div>'}`;
+}
+const layerSwitch = () => `<span>${[['genus','Genera'],['species','Species'],['sets','Sets'],['needsid',`🔎 Needs ID (${S.M.leads.reduce((n, l) => n + l.obs.length, 0)})`]].map(([k,l]) => `<span class="chip ${(S.prefs.layer||'genus')===k?'on':''}" data-layer="${k}" style="cursor:pointer">${l}</span>`).join(' ')}</span>`;
 function speciesSection(gid) {
   const M = S.M, ref = refFor(S.prefs.scope), cm = S.cmp?.M;
   const ids = new Set();
@@ -1459,22 +1480,23 @@ function fixIt(g, k) {
   }
 }
 
+const QUEST_TARGETS = 8;
 function viewQuests() {
   const M = S.M, qs = buildQuests(M);
   ensurePheno(qs.flatMap(q => q.targets || []));
   const done = (S.u.completed || []).slice(-10).reverse();
   return `
   ${done.length ? `<div class="panel" style="margin-bottom:14px"><h2>Completed since you started</h2>${done.map(q => `<div>✅ <b>${esc(q.title)}</b> <span class="small muted">${esc(q.at)}</span> <span class="reward">+${q.reward} XP</span></div>`).join('')}</div>` : ''}
-  <div class="grid2">${qs.map(q => `<div class="panel quest ${q.daily?'daily':''}">
+  <div class="questgrid">${qs.map(q => `<div class="panel quest ${q.daily?'daily':''}"><div class="qbody">
     ${q.daily ? '<div class="small" style="letter-spacing:.2em">★ TODAY\'S FIELD QUEST</div>' : ''}
     <h3>${q.icon} ${esc(q.title)}</h3><p>${esc(q.text)}</p>
-    ${q.targets ? `<div class="small">${q.targets.map(id => `<div><a href="#" data-genus="${id}"><i>${esc(S.nodes[id]?.n)}</i></a>${q.recent?.[id] ? ` · 🔥 ${q.recent[id]} recent` : ''} ${phenoTag(id)}</div>`).join('')}</div>` : ''}
+    ${q.targets ? `<div class="small">${q.targets.slice(0, QUEST_TARGETS).map(id => `<div><a href="#" data-genus="${id}"><i>${esc(S.nodes[id]?.n)}</i></a>${q.recent?.[id] ? ` · 🔥 ${q.recent[id]} recent` : ''} ${phenoTag(id)}</div>`).join('')}${q.targets.length > QUEST_TARGETS ? `<div class="muted">+${q.targets.length - QUEST_TARGETS} more</div>` : ''}</div>` : ''}
     ${q.kind === 'master' && M.G.get(q.gid) ? fixIt(M.G.get(q.gid), q.crit) : ''}
     ${q.kind === 'scan' ? `<button class="primary" data-scan="${esc(M.homeCell.k)}">📡 Scan home base</button>` : ''}
     ${q.kind === 'first' ? '<a class="btnlink" href="https://www.inaturalist.org/observations/upload" target="_blank" rel="noopener">Upload to iNaturalist ↗</a>' : ''}
     ${q.kind === 'base' ? '<button class="primary" data-tab="map">Set home base</button>' : ''}
     ${q.kind === 'resolve' ? `<a href="https://www.inaturalist.org/observations?user_id=${encodeURIComponent(S.login)}&taxon_id=${SALTICIDAE}&hrank=family&lrank=subtribe" target="_blank" rel="noopener">Open these on iNaturalist ↗</a>` : ''}
-    ${q.reward ? `<div class="reward">Reward: +${q.reward} Naturalist XP</div>` : ''}</div>`).join('')}</div>
+    </div>${q.reward ? `<div class="reward">Reward: +${q.reward} Naturalist XP</div>` : ''}</div>`).join('')}</div>
   <p class="muted small" style="margin-top:14px">Quests are generated from real gaps in your records and check themselves on every sync. None of them can be completed indoors.</p>`;
 }
 
@@ -2266,7 +2288,7 @@ async function loadWanted() {
   const pid = S.M.home.state || S.M.home.country;
   if (wantedBusy || !pid) return;
   wantedBusy = true; wantedErr = null;
-  const redraw = () => { if (S.tab === 'wanted') softRender(); };
+  const redraw = () => { if (S.tab === 'wanted' && wView() === 'posters') softRender(); };
   try {
     await ensureRef('state');
     const h = S.M.homeCell;
@@ -2295,17 +2317,18 @@ function calendarHtml(list, ctx, act) {
       ${Array.from({ length:12 }, (_, i) => `<td class="m ${i === m ? 'now' : ''}">${x.curve ? `<i style="opacity:${(.08 + .92 * x.curve[i]).toFixed(2)}"></i>` : '·'}</td>`).join('')}
       <td class="small muted">${x.tier}</td></tr>`).join('')}</table></div>`;
 }
-const wantedSwitch = () => `<div class="row" style="margin-bottom:12px">${[['posters','🗞 Wanted posters'],['bounty','🔎 Bounty board']]
-  .map(([k, l]) => `<span class="chip ${(S.prefs.wantedView || 'posters') === k ? 'on' : ''}" data-act="wview" data-v="${k}" style="cursor:pointer;font-size:14px;padding:4px 12px">${l}</span>`).join(' ')}</div>`;
+const wView = () => S.prefs.wantedView || 'bounty';
+const wantedSwitch = () => `<div class="row" style="margin-bottom:12px">${[['bounty','🔎 Bounties'],['posters','🗞 Wanted posters']]
+  .map(([k, l]) => `<span class="chip ${wView() === k ? 'on' : ''}" data-act="wview" data-v="${k}" style="cursor:pointer;font-size:14px;padding:4px 12px">${l}</span>`).join(' ')}</div>`;
 function viewWanted() {
-  if (S.prefs.wantedView === 'bounty') return wantedSwitch() + viewBounty();
+  if (wView() === 'bounty') return wantedSwitch() + viewBounty();
   return wantedSwitch() + viewWantedPosters();
 }
 function viewWantedPosters() {
   const M = S.M, ctx = homeCtx();
-  if (!ctx.pid) return `<div class="panel"><h2>Most Wanted</h2><p>Most Wanted needs to know your region. Record a salticid on iNaturalist, or set a home base on the map.</p><button class="primary" data-tab="map">🏠 Set a home base</button></div>`;
+  if (!ctx.pid) return `<div class="panel"><h2>Wanted posters</h2><p>Wanted posters need to know your region. Record a salticid on iNaturalist, or set a home base on the map.</p><button class="primary" data-tab="map">🏠 Set a home base</button></div>`;
   const list = wantedList(ctx), where = ctxWhere(ctx), m = ctx.month;
-  const head = `<div class="panel" style="margin-bottom:16px"><h2>Most Wanted · ${MONTHS[m]} ${new Date().getFullYear()}</h2>
+  const head = `<div class="panel" style="margin-bottom:16px"><h2>Wanted posters · ${MONTHS[m]} ${new Date().getFullYear()}</h2>
     <p class="small muted" style="margin-bottom:0">Genera recorded in ${where} that aren't in your SPOODEX, ranked for <b>this month</b> by season, how close their nearest records are to your home base, recent local sightings, and how common they are in ${where}. It's a ranking of iNat records to guide your effort, not a probability.${M.homeCell ? '' : ' <b>Set a home base on the Map tab</b> to add distances and local sightings.'}
       Going somewhere? Try the <a href="#" data-tab="trip">Trip planner</a>.</p>
     ${wantedBusy ? '<p class="small">Consulting the records… posters sharpen as season data and sightings arrive.</p>' : ''}
@@ -2443,7 +2466,7 @@ function viewTrip() {
   const t = S.trip.cur;
   const recent = (S.trip.recent || []).filter(r => !t || r.label !== t.label);
   return `<div class="panel" style="margin-bottom:16px"><h2>Trip planner</h2>
-    <p class="small muted">Going somewhere? Search a town, park, state or country and get its Most Wanted: which genera you're missing that have been recorded there, what's in season for the month you're going, and which 25 km squares hold the records.</p>
+    <p class="small muted">Going somewhere? Search a town, park, state or country and get its wanted list: which genera you're missing that have been recorded there, what's in season for the month you're going, and which 25 km squares hold the records.</p>
     <form class="row" data-form="tripSearch"><input name="q" placeholder="Destination, e.g. Lamington National Park" style="flex:1;min-width:160px"><button class="primary">Plan</button></form>
     <div id="tripResults" class="small" style="margin-top:6px"></div>
     ${recent.length ? `<div class="small" style="margin-top:8px">Recent: ${recent.map(r => `<a href="#" data-trip="${esc(`${r.lat}|${r.lng}|${r.area || ''}|${r.label}`)}">${esc(r.label)}</a>`).join(' · ')}</div>` : ''}
@@ -2455,7 +2478,7 @@ function viewTripPlan() {
   if (!t) return '';
   const ctx = tripCtx(t), list = t.pid ? wantedList(ctx) : null, where = ctxWhere(ctx), m = t.m, lbl = esc(t.label);
   const monthSel = `<select data-tripm="1">${MONTHS.map((n, i) => `<option value="${i}" ${i === m ? 'selected' : ''}>${n}${i === new Date().getMonth() ? ' (now)' : ''}</option>`).join('')}</select>`;
-  let body = `<div class="panel" style="margin-bottom:16px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Most Wanted · ${lbl}</h2>
+  let body = `<div class="panel" style="margin-bottom:16px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Wanted · ${lbl}</h2>
       <label class="small">Going in ${monthSel}</label></div>
     <p class="small muted">${t.area ? `Genera recorded anywhere in ${lbl}` : `Genera recorded within ${TRIP_KM} km of ${lbl}, and elsewhere in ${where}`}, that aren't in your SPOODEX, ranked for <b>${MONTHS[m]}</b> by season in ${where}, ${t.area ? '' : 'how close their record squares are, '}recent sightings${ctx.stale ? ' (only counted for trips this month or next)' : ''}, and how common they are. A ranking of iNat records, not a probability.</p>
     ${tripBusy ? '<p class="small">Consulting the records… the plan sharpens as season data and record squares arrive.</p>' : ''}
@@ -2636,7 +2659,7 @@ function trimBounty(o) {
 async function loadBounties() {
   const where = bountyWhere(); if (bountyBusy || !where) return;
   bountyBusy = true; bountyErr = null;
-  const redraw = () => { if (S.tab === 'wanted' && S.prefs.wantedView === 'bounty') softRender(); };
+  const redraw = () => { if (S.tab === 'wanted' && wView() === 'bounty') softRender(); };
   try {
     await ensureRef('state');
     const me = String(S.login).toLowerCase(), notMine = o => o.user?.login?.toLowerCase() !== me;
@@ -3101,8 +3124,9 @@ document.addEventListener('click', e => {
   if (a === 'crewDel') setCrew(S.crew.logins.filter(l => l !== val));
   if (a === 'crewRefresh') { crewErr = null; loadCrew(true); }
   if (a === 'card') openTitleCard();
-  if (a === 'wanted') openCase(+val);
+  if (a === 'wanted') { e.preventDefault(); openCase(+val); }
   if (a === 'wantedRetry') { wantedErr = null; wantedTs = 0; loadWanted(); }
+  if (a === 'leadFilter') { S.prefs.leadFilter = val === 'all' ? null : val; savePrefs(); render(); }
   if (a === 'sets') { e.preventDefault(); S.prefs.layer = 'sets'; savePrefs(); S.tab = 'dex'; render(); }
   if (a === 'wview') { S.prefs.wantedView = val; savePrefs(); render(); }
   if (a === 'bountyGo') { e.preventDefault(); S.prefs.wantedView = 'bounty'; savePrefs(); S.tab = 'wanted'; render(); }
