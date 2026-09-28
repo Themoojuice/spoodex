@@ -1,6 +1,6 @@
 # SPOODEX — handover
 
-**As of 2026-09-28 · v1.12 · live at https://themoojuice.github.io/spoodex/?u=themoojuice**
+**As of 2026-09-28 · v1.13 · live at https://themoojuice.github.io/spoodex/?u=themoojuice**
 
 This is the single source of truth for anyone (human or Claude) picking up the project. Read §0 first; it's enough
 to start safely. The rest is reference. When you change something, update this file in the same commit.
@@ -77,6 +77,7 @@ python -m http.server 8765        # any static server works
 | `CLAUDE.md` | Short rules Claude Code loads automatically; points here |
 | `README.md` | Public blurb |
 | `ARCHITECTURE.md` | The original v1 design doc. Historical: its tier table and roadmap are stale |
+| (linked, not copied) | The **Identification aid** (owner's interactive key to Australian salticid genera) lives in its own repo, https://github.com/Themoojuice/Identification-aid, and its own Pages site, https://themoojuice.github.io/Identification-aid/ (React/Vite, deployed by that repo's Actions workflow). SPOODEX only links to it via the `ID_AID` constant and `idAidBtn()`. Don't copy its build in here: it has its own service worker and offline package tied to `/Identification-aid/`, and a copy would go stale |
 | `.gitignore` | Ignores `.claude/` and `site/` |
 
 External dependencies (CDN): Leaflet 1.9.4 (cdnjs), Google Fonts (Special Elite, Fraunces, IBM Plex Mono, Caveat).
@@ -88,11 +89,11 @@ CARTO now needs a key, so don't switch back.
 | Tab (key) | What the user sees |
 |---|---|
 | **Profile** (`profile`) | "Since your last visit" panel (after 3+ h away); level, title, stats incl. sets complete; chassis/tier progress; regions; favourite lineages; field style; rarest finds; share of the record; pioneer badges; new genera per year. Title card 🪪 and Wrapped 🎁 buttons |
-| **SPOODEX** (`dex`) | Four views (`S.prefs.layer`): **Genera** (cards, scope country/state/world, filters) · **Species** (side collection) · **Sets** (themed sets, sets computed from records, complete-the-lineage, every-species-in-a-genus) · **🔎 Needs ID** (one photo tile per observation stuck above genus → iNat, filter chips, and "open these on iNaturalist") |
+| **SPOODEX** (`dex`) | Four views (`S.prefs.layer`): **Genera** (cards, scope country/state/world, filters) · **Species** (side collection) · **Sets** (themed sets, sets computed from records, complete-the-lineage, every-species-in-a-genus) · **🔎 Needs ID** (one photo tile per observation stuck above genus → iNat, filter chips, "open these on iNaturalist" and 🔑 Identification aid) |
 | **Lineage tree** (`tree`, tier 2) | iNat classification tree, lit where you have genera |
 | **Map & scanner** (`map`) | 25 km squares you've recorded in; click anywhere to scan 25 km for genera you're missing; "active in the last 30 days"; home base (geolocate, search, or click the map) |
 | **This week** (`report`) | The Spood Report: masthead, then **picks of the week (photos first, at the owner's request)**, then headlines, weekly mini-ladder and genera recorded |
-| **Bounty board** (`wanted`) | Two views (`S.prefs.wantedView`): **🔎 Bounties** (default: Needs ID records within 50 km, for genera you're missing and for "unnamed spoods", with a helper tally and ranks) · **🗞 Wanted posters** (this month's forecast of missing genera, posters, year calendar, case files with a map) |
+| **Bounty board** (`wanted`) | Two views (`S.prefs.wantedView`): **🔎 Bounties** (default: Needs ID records within 50 km, for genera you're missing and for "unnamed spoods", with a helper tally, ranks and 🔑 Identification aid) · **🗞 Wanted posters** (this month's forecast of missing genera, posters, year calendar, case files with a map) |
 | **Trip planner** (`trip`) | Search any destination → its wanted list for a chosen month, "what this trip could add", map + list of record squares, posters, calendar, case files |
 | **Compare** (`compare`) | You vs one rival, built to provoke envy |
 | **Ladder** (`ladder`) | Top observers of your state/country re-ranked by genera recorded there |
@@ -331,6 +332,7 @@ cards progressively during a first import; generalising beyond jumping spiders (
 | v1.7 | IndexedDB storage (with migration), v2 imports with `fields=` (~6% of the download), Trip planner |
 | v1.8 | Sets (themed + complete-the-lineage), Bounty board, "since your last visit" |
 | v1.9 | Most Wanted tab renamed Bounty board (bounties first), SPOODEX › Needs ID layer, fixed-height quest tiles |
+| v1.13 | 🔑 Identification aid button (Needs ID view, Bounty board) opens the owner's genus key in one reused popup window |
 | v1.12 | Removed ~50 filler captions, disclaimers and quips across the app |
 | v1.11 | GoatCounter analytics (hand-rolled beacon, no usernames); Spood Report leads with picks of the week |
 | v1.10 | Sets: Local specialties, Ghost list, Every species in a genus, Couples, Wanderers, Celebrities; Needs ID "open these on iNaturalist" links (follow the filter); weekly ladder table fits phones; guest wording on Needs ID; this handover rewrite |

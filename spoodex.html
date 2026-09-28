@@ -327,6 +327,7 @@ main { padding-top:18px; }
 
 const SALTICIDAE = 48139;               // iNat taxon id for Salticidae
 const API = 'https://api.inaturalist.org/v1';
+const ID_AID = 'https://themoojuice.github.io/Identification-aid/';   // owner's genus key (separate repo, own Pages site)
 const API2 = 'https://api.inaturalist.org/v2';   // v2 lets us ask for only the fields we need
 const REF_TTL = 7 * 864e5;              // regional reference trees refresh weekly
 const FULL_RESYNC_AFTER = 14 * 864e5;   // periodic full resync catches deletions / re-IDs out of Salticidae
@@ -1212,11 +1213,13 @@ function viewNeedsId() {
       <p class="small muted">Your salticid observations identified only above genus, newest first.
         Click a tile to open it on iNaturalist: add sharper photos, annotate sex and life stage, or tag an identifier. Once it's identified to genus, sync and the card unlocks.</p>
       ${M.leads.length ? `<div class="row" style="gap:6px">${chip('all', 'All', all.length)}${M.leads.map(l => chip(l.id, l.name, l.obs.length)).join('')}</div>` : ''}
-      ${M.leads.length && !isGuest() ? `<p style="margin:10px 0 0"><a class="btnlink" href="${esc(leadsUrl(lead))}" target="_blank" rel="noopener">Open ${lead ? `these ${fmt(obs.length)}` : `all ${fmt(obs.length)}`} on iNaturalist ↗</a></p>` : ''}</div>
+      <p class="row" style="margin:10px 0 0;gap:8px">${M.leads.length && !isGuest() ? `<a class="btnlink" href="${esc(leadsUrl(lead))}" target="_blank" rel="noopener">Open ${lead ? `these ${fmt(obs.length)}` : `all ${fmt(obs.length)}`} on iNaturalist ↗</a>` : ''}${idAidBtn()}</p></div>
     ${isGuest() ? '<div class="panel"><p>Guests have no records yet. Open SPOODEX with your iNaturalist username to see yours here.</p><button data-act="switch">I have an iNaturalist account</button></div>'
       : obs.length ? `<div class="dexgrid">${obs.map(tile).join('')}</div>`
       : '<div class="panel"><p>Nothing stuck above genus.</p></div>'}`;
 }
+// Opens the Identification aid in one reused popup window (a tab on phones, or if popups are blocked)
+const idAidBtn = () => `<a class="btnlink" href="${ID_AID}" target="spoodex-idaid" data-act="idaid">🔑 Identification aid ↗</a>`;
 const layerSwitch = () => `<span>${[['genus','Genera'],['species','Species'],['sets','Sets'],['needsid',`🔎 Needs ID (${S.M.leads.reduce((n, l) => n + l.obs.length, 0)})`]].map(([k,l]) => `<span class="chip ${(S.prefs.layer||'genus')===k?'on':''}" data-layer="${k}" style="cursor:pointer">${l}</span>`).join(' ')}</span>`;
 function speciesSection(gid) {
   const M = S.M, ref = refFor(S.prefs.scope), cm = S.cmp?.M;
@@ -2754,6 +2757,7 @@ function viewBounty() {
     <p class="small muted">Salticid records ${where} still waiting for an identification. Cards open on iNaturalist; your own records are left out.</p>
     <p style="margin-bottom:0">${rank ? `<b>${esc(rank[1])}</b> · ` : ''}You've added IDs to <b>${helped}</b> bounty record${helped === 1 ? '' : 's'}.${next ? ` <span class="small muted">${next[0] - helped} more for ${esc(next[1])}.</span>` : ''}
       <a href="#" class="small" data-act="bountyRefresh">refresh</a></p>
+    <p style="margin:10px 0 0">${idAidBtn()}</p>
     ${bountyBusy ? '<p class="small">Checking the records…</p>' : ''}${bountyErr ? `<p>${esc(bountyErr)} <button data-act="bountyRefresh">Try again</button></p>` : ''}</div>`;
   if (!bountyWhere()) return head + '<p class="muted">Set a home base on the Map tab so SPOODEX knows where to look.</p>';
   if (!b) return head + '<p class="muted">Loading bounties…</p>';
@@ -3204,6 +3208,10 @@ document.addEventListener('click', e => {
   if (a === 'card') openTitleCard();
   if (a === 'wanted') { e.preventDefault(); openCase(+val); }
   if (a === 'wantedRetry') { wantedErr = null; wantedTs = 0; loadWanted(); }
+  if (a === 'idaid' && !matchMedia('(pointer:coarse)').matches) {
+    const w = window.open(ID_AID, 'spoodex-idaid', 'popup,width=1280,height=880');
+    if (w) { e.preventDefault(); w.focus(); }
+  }
   if (a === 'needsid') { e.preventDefault(); S.prefs.layer = 'needsid'; savePrefs(); S.tab = 'dex'; render(); }
   if (a === 'leadFilter') { S.prefs.leadFilter = val === 'all' ? null : val; savePrefs(); render(); }
   if (a === 'sets') { e.preventDefault(); S.prefs.layer = 'sets'; savePrefs(); S.tab = 'dex'; render(); }
