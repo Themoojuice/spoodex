@@ -9,7 +9,8 @@ Quick rules:
 - Keep it one self-contained HTML file; all iNat calls go through the throttled `api()` helper.
 - `esc()` every interpolated string; syntax-check the script with `node --check` after edits (command in HANDOVER.md §10).
 - New field read by `trimObs` → add it to `OBS_FIELDS`. New persisted module-level `store.get` → add the key to `PERSISTED`.
-- Naturalist aesthetic (no terminal/matrix look); honest rarity labels (never "conservation status", say "on iNat" not "endemic");
+- Naturalist aesthetic (no terminal/matrix look); rarity is "few iNat records" (never "conservation status"), say "on iNat" not "endemic";
+  **no filler captions**: no quips, disclaimers or reassurances that don't help the user act (owner's explicit request);
   no exact coordinates, and never put locations in share links. Propose hand-picked taxon lists to the owner rather than asserting them.
 - Test via the `spoodex` preview server (port 8765; recreate `.claude/launch.json` from HANDOVER.md §2 if missing) with
   `?u=themoojuice` and `&vs=laz`. Check phone width (375 px) too.

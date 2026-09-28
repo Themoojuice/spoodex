@@ -1,6 +1,6 @@
 # SPOODEX — handover
 
-**As of 2026-09-28 · v1.11 · live at https://themoojuice.github.io/spoodex/?u=themoojuice**
+**As of 2026-09-28 · v1.12 · live at https://themoojuice.github.io/spoodex/?u=themoojuice**
 
 This is the single source of truth for anyone (human or Claude) picking up the project. Read §0 first; it's enough
 to start safely. The rest is reference. When you change something, update this file in the same commit.
@@ -19,7 +19,8 @@ to start safely. The rest is reference. When you change something, update this f
   1. Keep it one self-contained HTML file. Every iNat request goes through the throttled `api()` helper.
   2. `esc()` every interpolated string that came from iNat or a user.
   3. Naturalist look (kraft paper → herbarium → museum cabinet). Never a terminal/"matrix" look.
-  4. Honest labels: rarity is iNat record frequency, never conservation status. "On iNat", not "endemic".
+  4. Honest labels without disclaimers: call rarity "few iNat records" (never conservation status), say "on iNat" not "endemic".
+     **No filler captions**: no quips, caveats or reassurances that don't help the user do something (owner's explicit request).
   5. Privacy: ~25 km squares at finest, no exact coordinates, nothing location-based in share links.
   6. After every edit, syntax-check (§10). Before shipping, run the smoke test (§10).
 - **Ship**: `cp index.html spoodex.html site/` → `git commit` → `git push`. GitHub Pages updates in ~30 s.
@@ -230,15 +231,21 @@ Scan-point keys: a 0.25° cell `"lat:lng"` (integers) or an arbitrary point `"pt
 - **Aesthetic**: natural-history. The owner rejected a green-on-black terminal look. Keep kraft → herbarium → cabinet. On the dark
   cabinet skin, headings sitting directly on the wood need the light colour rule (`[data-chassis="cabinet"] #view > h2`; extend it
   if you nest content in a wrapper like `#tripPlan`).
-- **Honest labelling**: rarity = record frequency, never conservation status. Classification follows iNat and is a taxonomy, not a
-  phylogeny. Say "on iNat" rather than "endemic". Keep caveats short and visible. Label hand-picked lists as hand-picked.
+- **Honest labelling**: rarity = record frequency, never conservation status. Classification follows iNat. Say "on iNat" rather
+  than "endemic". Get this right through the wording itself, not by adding disclaimers.
+- **No filler text** (owner, v1.12): he called lines like "Nature does not owe you a spider every Tuesday", "A record-frequency
+  measure, not conservation status" and "It's about iNat's record, not who discovered it" AI slop, and ~50 were removed. Don't add
+  short qualifying statements, jokes, pep talks ("Cheeky.", "Be the first!", "Keep it that way") or reassurances that give the user
+  nothing to act on. Captions should explain what a number means or what to do next, and nothing else. Kept deliberately: the
+  location privacy note by the home-base controls, the GoatCounter disclosure in Settings, photo attribution, and the chassis tier
+  names and subtitles (game flavour).
 - **Taxonomic care**: propose curated taxon lists to the owner; don't present them as settled. Check names against the live iNat tree.
 - **Privacy**: ≥25 km squares only, no exact coordinates (bounty distances rounded to 5 km), home base rounded to ~0.01° and kept in
   the browser, trips kept in the browser. Share links carry only `?u=`, `?vs=`, `?crew=` (usernames).
 - **No backend** yet; public read-only iNat data; no OAuth. The only third party is GoatCounter (anonymous counts, §5). Single file until it clearly outgrows that (then Vite + TS).
 - **Mobile matters**: most visitors will be on phones. No horizontal page scroll at 375 px.
 - Never help find or enter the owner's credentials.
-- Tone: playful but not twee ("Nature does not owe you a spider every Tuesday").
+- Tone: plain and useful. Playfulness lives in names (tiers, quests, sets, bounty ranks), not in extra sentences.
 
 ## 10. How to work on it
 
@@ -324,5 +331,6 @@ cards progressively during a first import; generalising beyond jumping spiders (
 | v1.7 | IndexedDB storage (with migration), v2 imports with `fields=` (~6% of the download), Trip planner |
 | v1.8 | Sets (themed + complete-the-lineage), Bounty board, "since your last visit" |
 | v1.9 | Most Wanted tab renamed Bounty board (bounties first), SPOODEX › Needs ID layer, fixed-height quest tiles |
+| v1.12 | Removed ~50 filler captions, disclaimers and quips across the app |
 | v1.11 | GoatCounter analytics (hand-rolled beacon, no usernames); Spood Report leads with picks of the week |
 | v1.10 | Sets: Local specialties, Ghost list, Every species in a genus, Couples, Wanderers, Celebrities; Needs ID "open these on iNaturalist" links (follow the filter); weekly ladder table fits phones; guest wording on Needs ID; this handover rewrite |

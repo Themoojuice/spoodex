@@ -883,10 +883,10 @@ function buildQuests(M) {
   if (act) {
     const miss = act.g.filter(x => !M.G.has(x.id)).sort((a,b) => b.c - a.c);
     if (miss.length) q.push({ id:'active:'+M.homeCell.k+':'+act.d1, kind:'hunt', icon:'🔥', title:'Active Right Now',
-      text:`${miss.length} genera you haven't recorded have been found within 25 km of your home base in the last ${ACTIVE_DAYS} days. They're out there now.`,
+      text:`${miss.length} genera you haven't recorded have been found within 25 km of your home base in the last ${ACTIVE_DAYS} days.`,
       targets:miss.slice(0,6).map(x => x.id), recent:Object.fromEntries(miss.map(x => [x.id, x.c])), reward:300 });
     else if (act.g.length) q.push({ id:'active-mastery', kind:'info', icon:'🔥', title:'Everything Active Is Already Yours',
-      text:`All ${act.g.length} genera recorded near your home base in the last ${ACTIVE_DAYS} days are in your SPOODEX. Good time to chase mastery on them.`,
+      text:`All ${act.g.length} genera recorded near your home base in the last ${ACTIVE_DAYS} days are in your SPOODEX.`,
       targets:act.g.slice(0,6).map(x => x.id), reward:0 });
   }
   const scan = scanFor(M.homeCell);
@@ -929,8 +929,8 @@ function buildQuests(M) {
   q.push({ id:'beh:'+behs[0][0], kind:'beh', icon:'🔍', title:`Behaviour: ${behs[0][1]}`, text:`${behs[0][2]}. You have ${M.behObs[behs[0][0]]} so far. Mention it in the description or tags so SPOODEX can see it.`, beh:behs[0][0], base:M.behObs[behs[0][0]], reward:80 });
   const holeMonths = [...Array(12).keys()].map(i => i+1).filter(m => !M.monthsAll.has(m));
   const thisMonth = new Date().getMonth() + 1;
-  if (holeMonths.includes(thisMonth)) q.push({ id:'month:'+thisMonth, kind:'month', icon:'🗓', title:'Off-Season Spooding', text:`You've never recorded a salticid in ${MONTHS[thisMonth-1]}. This month is your chance.`, m:thisMonth, reward:120 });
-  q.push({ id:'explore', kind:'explore', icon:'🧭', title:'Change of Scenery', text:`Record a salticid in a new 25 km grid square (you have ${M.cells25.size}). Bonus if it's a habitat you rarely visit.`, base:M.cells25.size, reward:150 });
+  if (holeMonths.includes(thisMonth)) q.push({ id:'month:'+thisMonth, kind:'month', icon:'🗓', title:'Off-Season Spooding', text:`You've never recorded a salticid in ${MONTHS[thisMonth-1]}.`, m:thisMonth, reward:120 });
+  q.push({ id:'explore', kind:'explore', icon:'🧭', title:'Change of Scenery', text:`Record a salticid in a new 25 km grid square (you have ${M.cells25.size}).`, base:M.cells25.size, reward:150 });
   const oneSex = M.genera.filter(g => (g.f.male ^ g.f.female)).sort((a,b) => b.obs.length - a.obs.length)[0];
   if (oneSex) q.push({ id:'sex:'+oneSex.id, kind:'master', icon:oneSex.f.male ? '♀' : '♂', title:'The Other Half', text:`You've recorded a ${oneSex.f.male ? 'male' : 'female'} ${oneSex.name} but never a ${oneSex.f.male ? 'female' : 'male'}. Annotate sex on iNat when you do.`, gid:oneSex.id, crit:oneSex.f.male ? 'female' : 'male', reward:40 });
   // Daily pick, seeded by date
@@ -1000,7 +1000,7 @@ function lockedPlate(t) {
   const need = TIERS[t].min - S.M.G.size;
   return `<div class="plate panel"><h2>MODULE NOT INSTALLED</h2>
     <p><b>${esc(TIERS[t].module)}</b> ships with the <b>${esc(TIERS[t].name)}</b> chassis.</p>
-    <p class="muted">Record ${need} more genera to upgrade. The only way to upgrade is to go outside.</p>
+    <p class="muted">Record ${need} more genera to upgrade.</p>
     <button data-act="peek">Peek anyway (prototype)</button></div>`;
 }
 
@@ -1048,11 +1048,10 @@ function viewProfile() {
     <div class="panel">
       <h2>Chassis</h2>
       <p><b>${esc(TIERS[tier].name)}</b> — <span class="muted">${esc(TIERS[tier].sub)}</span></p>
-      ${next ? `<div class="row"><span class="small">Next: ${esc(next.name)} at ${next.min} genera</span>${bar(M.G.size - TIERS[tier].min, next.min - TIERS[tier].min)}<span class="small">${next.min - M.G.size} to go</span></div>` : '<p>Fully upgraded. Remarkable. Slightly concerning.</p>'}
+      ${next ? `<div class="row"><span class="small">Next: ${esc(next.name)} at ${next.min} genera</span>${bar(M.G.size - TIERS[tier].min, next.min - TIERS[tier].min)}<span class="small">${next.min - M.G.size} to go</span></div>` : '<p>Fully upgraded.</p>'}
       <ul class="checks" style="margin-top:10px">${TIERS.map((t,i) => `<li class="${i<=tier?'done':''}">${i<=tier?'☑':'☐'} ${esc(t.module)} <span class="muted small">(${t.min}+)</span></li>`).join('')}</ul>
       <h3 style="margin-top:14px">Discovery streak</h3>
       <p>${'🔥'.repeat(Math.min(M.streak,10)) || '—'} <b>${M.streak}</b> consecutive field day${M.streak===1?'':'s'} with a new genus <span class="muted">(best ${M.bestStreak})</span></p>
-      <p class="muted small">Streaks count field days, not calendar days. Nature does not owe you a spider every Tuesday.</p>
     </div>
   </div>
   <div class="grid2" style="margin-top:16px">
@@ -1073,7 +1072,7 @@ function viewProfile() {
       <h2 style="margin-top:14px">Field style</h2>
       ${style.map(s => `<div>${s[0]} <b>${esc(s[1])}</b> <span class="muted small">${esc(s[2])}</span></div>`).join('') || '<p class="muted">Still developing a style. Keep spooding.</p>'}
       ${moduleOn(3) ? `<h2 style="margin-top:14px">Rarest discoveries</h2>
-        <p class="small muted">Fewest iNat records in ${esc(scopeLabel(S.prefs.scope))}. A record-frequency measure, not conservation status.</p>
+        <p class="small muted">Fewest iNat records in ${esc(scopeLabel(S.prefs.scope))}.</p>
         ${rare.map(x => `<div><a href="#" data-genus="${x.g.id}"><i>${esc(x.g.name)}</i></a> <span class="small muted">${fmt(x.r.count)} records</span></div>`).join('')}` : ''}
     </div>
   </div>
@@ -1191,7 +1190,7 @@ function viewDexSpecies() {
     <span>${[['all','All'],['found','Recorded'],['missing','Missing']].map(([k,l]) => `<span class="chip ${(P.filter===k || (k==='found' && ['supported','mastered'].includes(P.filter)))?'on':''}" data-filter="${k}" style="cursor:pointer">${l}</span>`).join(' ')}</span>
     <label class="small"><input type="checkbox" data-pref="reveal" ${P.reveal?'checked':''}> reveal names</label>
   </div>
-  <p class="small muted">The species layer is a side collection: your level is still your genus count. Species you haven't recorded show their names once you've unlocked the genus.</p>
+  <p class="small muted">Species you haven't recorded show their names once you've unlocked the genus.</p>
   ${inScope.length ? sections : '<p class="muted">Loading the species reference… (or set a home base on the Map tab)</p>'}
   ${extras.length ? `<h2 style="margin-top:22px">Recorded outside ${esc(scopeLabel(P.scope))} (+${extras.length})</h2><div class="dexgrid">${extras.map(speciesCard).join('')}</div>` : ''}`;
 }
@@ -1210,14 +1209,13 @@ function viewNeedsId() {
   const chip = (k, label, n) => `<span class="chip ${String(f || 'all') === String(k) ? 'on' : ''}" data-act="leadFilter" data-v="${k}" style="cursor:pointer">${esc(label)} (${n})</span>`;
   return `<div class="panel row" style="margin-bottom:14px">${layerSwitch()}</div>
     <div class="panel" style="margin-bottom:14px"><h2>Needs further identification</h2>
-      <p class="small muted">Your salticid observations identified only above genus, newest first. Each could be a genus you haven't unlocked yet.
+      <p class="small muted">Your salticid observations identified only above genus, newest first.
         Click a tile to open it on iNaturalist: add sharper photos, annotate sex and life stage, or tag an identifier. Once it's identified to genus, sync and the card unlocks.</p>
       ${M.leads.length ? `<div class="row" style="gap:6px">${chip('all', 'All', all.length)}${M.leads.map(l => chip(l.id, l.name, l.obs.length)).join('')}</div>` : ''}
-      ${M.leads.length && !isGuest() ? `<p style="margin:10px 0 0"><a class="btnlink" href="${esc(leadsUrl(lead))}" target="_blank" rel="noopener">Open ${lead ? `these ${fmt(obs.length)}` : `all ${fmt(obs.length)}`} on iNaturalist ↗</a>
-        <span class="small muted">Same records in iNat's Explore, if you'd rather sort them there.</span></p>` : ''}</div>
+      ${M.leads.length && !isGuest() ? `<p style="margin:10px 0 0"><a class="btnlink" href="${esc(leadsUrl(lead))}" target="_blank" rel="noopener">Open ${lead ? `these ${fmt(obs.length)}` : `all ${fmt(obs.length)}`} on iNaturalist ↗</a></p>` : ''}</div>
     ${isGuest() ? '<div class="panel"><p>Guests have no records yet. Open SPOODEX with your iNaturalist username to see yours here.</p><button data-act="switch">I have an iNaturalist account</button></div>'
       : obs.length ? `<div class="dexgrid">${obs.map(tile).join('')}</div>`
-      : '<div class="panel"><p class="hand">Nothing stuck above genus. Every one of your spoods has a genus. Tidy work.</p></div>'}`;
+      : '<div class="panel"><p>Nothing stuck above genus.</p></div>'}`;
 }
 const layerSwitch = () => `<span>${[['genus','Genera'],['species','Species'],['sets','Sets'],['needsid',`🔎 Needs ID (${S.M.leads.reduce((n, l) => n + l.obs.length, 0)})`]].map(([k,l]) => `<span class="chip ${(S.prefs.layer||'genus')===k?'on':''}" data-layer="${k}" style="cursor:pointer">${l}</span>`).join(' ')}</span>`;
 function speciesSection(gid) {
@@ -1264,7 +1262,7 @@ function viewTree() {
   return `<div class="panel tree">
     <div class="row" style="margin-bottom:8px"><h2 style="margin:0">Salticidae</h2><span class="small">${top.f}/${top.t} genera lit · scope: ${esc(scopeLabel(S.prefs.scope))}</span>
       <label class="small"><input type="checkbox" data-pref="reveal" ${S.prefs.reveal?'checked':''}> reveal names</label></div>
-    <p class="muted small">Classification as used on iNaturalist (subfamily › tribe › subtribe › genus). A taxonomy, not a dated phylogeny, but lineages you've never touched stand out.</p>
+    <p class="muted small">Classification as used on iNaturalist (subfamily › tribe › subtribe › genus).</p>
     <ul>${[...(kids[SALTICIDAE] || [])].sort((a,b) => (S.nodes[a]?.n||'').localeCompare(S.nodes[b]?.n||'')).map(node).join('')}</ul></div>`;
 }
 
@@ -1281,7 +1279,7 @@ function baseWidget() {
 function viewMapShell() {
   const M = S.M;
   return `<div class="maplayout"><div id="map"></div><div class="panel" id="mapSide">
-    <h2>Locality grid</h2><p class="muted small">Each square is ~25 km, coloured by how many genera you've recorded there. Coarse on purpose: SPOODEX never shows exact coordinates.</p>
+    <h2>Locality grid</h2><p class="muted small">Each square is ~25 km, coloured by how many genera you've recorded there.</p>
     <p class="small">Click a square, or anywhere on the map, to scan the surrounding 25 km for genera others have recorded that you're missing.</p>
     ${M.homeCell ? `<button class="primary" data-scan="${esc(M.homeCell.k)}">📡 Scan home base</button>` : ''}
     <div id="scanOut"></div>
@@ -1337,7 +1335,7 @@ function showCell(k) {
 async function scanCell(k) {
   const c = pointFor(k); if (!c) return;
   const out = $('#scanRes') || $('#scanOut');
-  if (out) out.innerHTML = '<p class="muted">Scanning… (public iNat records, aggregated by genus)</p>';
+  if (out) out.innerHTML = '<p class="muted">Scanning…</p>';
   try {
     await fetchScan(k);
     try { await scanActive(k, true); } catch (e) { console.warn(e); }
@@ -1362,8 +1360,7 @@ function showScan(k) {
     <p class="small">${sc.g.length} genera recorded within 25 km of ${cellLabel(pointFor(k))} · <b>${missing.length}</b> not in your SPOODEX.</p>
     ${missing.map(x => `<div class="row" style="gap:6px"><a href="#" data-genus="${x.id}" style="min-width:130px"><i>${esc(S.nodes[x.id]?.n)}</i></a>
       <div class="bar"><i style="width:${pct(x.c,max)}%"></i></div><span class="small muted">${tier(x)}</span></div>
-      <div style="margin:0 0 6px 2px">${recent.has(x.id) ? `<span class="small">🔥 ${recent.get(x.id)} in the last ${ACTIVE_DAYS} days</span> ` : ''}${phenoTag(x.id)}</div>`).join('') || (sc.g.length ? '<p>You have them all. Cheeky.</p>' : '<p>No public salticid records here yet. Be the first!</p>')}
-    <p class="small muted">Based on public records only; obscured observations contribute at coarse resolution.</p>`;
+      <div style="margin:0 0 6px 2px">${recent.has(x.id) ? `<span class="small">🔥 ${recent.get(x.id)} in the last ${ACTIVE_DAYS} days</span> ` : ''}${phenoTag(x.id)}</div>`).join('') || (sc.g.length ? '<p>You have every genus recorded here.</p>' : '<p>No public salticid records here yet.</p>')}`;
 }
 
 /* ---------------- active now: the same 25 km scan, limited to the last 30 days ---------------- */
@@ -1389,7 +1386,7 @@ function activeHtml(k) {
     <p class="small">${list.length} genera recorded within 25 km since ${esc(act.d1)}${list.length ? ` · <b>${miss.length}</b> you're missing` : ''}.</p>
     ${miss.map(x => `<div class="small">🎯 <a href="#" data-genus="${x.id}"><i>${esc(S.nodes[x.id]?.n)}</i></a> · ${x.c} recent record${x.c===1?'':'s'} ${phenoTag(x.id)}</div>`).join('')}
     ${have.length ? `<div class="small muted" style="margin-top:4px">Also out now: ${have.map(x => `<a href="#" data-genus="${x.id}"><i>${esc(S.nodes[x.id]?.n)}</i></a> (${x.c})`).join(', ')}</div>` : ''}
-    ${list.length ? '' : '<p class="small muted">Quiet out there lately. Could be the season, or nobody has uploaded yet.</p>'}`;
+    ${list.length ? '' : '<p class="small muted">No records here in that time.</p>'}`;
 }
 
 /* ---------------- best months: iNat month-of-year histogram per genus, in your home state ---------------- */
@@ -1505,7 +1502,7 @@ function viewQuests() {
     ${q.kind === 'base' ? '<button class="primary" data-tab="map">Set home base</button>' : ''}
     ${q.kind === 'resolve' ? `<a href="${esc(leadsUrl())}" target="_blank" rel="noopener">Open these on iNaturalist ↗</a> · <a href="#" data-act="needsid">see them in SPOODEX</a>` : ''}
     </div>${q.reward ? `<div class="reward">Reward: +${q.reward} Naturalist XP</div>` : ''}</div>`).join('')}</div>
-  <p class="muted small" style="margin-top:14px">Quests are generated from real gaps in your records and check themselves on every sync. None of them can be completed indoors.</p>`;
+  <p class="muted small" style="margin-top:14px">Quests check themselves each time you sync.</p>`;
 }
 
 /* ---------------- genus page ---------------- */
@@ -1551,8 +1548,7 @@ async function openGenus(id) {
       ${g ? `<dt>Your encounter rate</dt><dd>${g.obs.length} of your ${fmt(M.obs.length)} salticid observations</dd>` : ''}
       <dt>iNat record frequency</dt><dd>${rt ? `${esc(rt.label)} in ${esc(scopeLabel(S.prefs.scope))} (${fmt(rt.count)})` : '—'}</dd>
       <dt>Observers</dt><dd id="obsvrs">…</dd>
-    </dl>
-    <p class="small muted">Record-frequency measures, not conservation status. Observer counts resist one enthusiast with 900 photos of the same genus.</p>` : '';
+    </dl>` : '';
   const hist = info.s ? `<h3 style="margin-top:12px">Natural history</h3><p>${esc(info.s)}</p><p class="small muted">Summary via iNaturalist / Wikipedia${info.w ? ` · <a href="${esc(info.w)}" target="_blank" rel="noopener">more</a>` : ''}</p>` : '';
   const cg = S.cmp?.M?.G.get(id);
   const theirs = cg ? `<h3 style="margin-top:12px">${esc(S.cmp.login)}'s records</h3>
@@ -1596,7 +1592,7 @@ function revealQueue(list) {
 function viewCompare() {
   const C = S.cmp, M = S.M;
   const form = `<div class="panel" style="margin-bottom:16px"><h2>Compare SPOODEXes</h2>
-    <p class="muted small">Enter another iNaturalist username to see what they've found that you haven't, and the other way round. Public records only.</p>
+    <p class="muted small">Enter another iNaturalist username to see what they've found that you haven't, and the other way round.</p>
     <form class="row" data-form="compare"><input name="login" value="${esc(C?.login || '')}" placeholder="their iNaturalist username" autocomplete="off" style="flex:1;min-width:180px"><button class="primary" ${C?.loading ? 'disabled' : ''}>Compare</button></form>
     ${C?.loading ? `<div id="cmpLog" class="term" style="height:120px">${esc(C.log.slice(-6).join('\n'))}</div>` : ''}
     ${C?.error ? `<p>${esc(C.error)}</p>` : ''}</div>`;
@@ -1676,7 +1672,7 @@ function viewCompare() {
   </div>
 
   <h2 style="margin-top:22px">Crown jewels</h2>
-  <p class="small muted">Each side's rarest finds the other doesn't have. ★ = how few iNat records exist in ${where} (not conservation status).</p>
+  <p class="small muted">Each side's rarest finds the other doesn't have. ★ = how few iNat records exist in ${where}.</p>
   <div class="grid2">
     <div><h3>${me}</h3><div class="jewels">${jewels(meG, meS).map(jewel).join('') || '<p>No exclusives yet.</p>'}</div></div>
     <div><h3>${them}</h3><div class="jewels">${jewels(themG, themS).map(jewel).join('') || '<p>No exclusives. You have it all.</p>'}</div></div>
@@ -1694,7 +1690,6 @@ function viewCompare() {
   </div>
 
   <h2 style="margin-top:22px">Your hit list: only ${them} has these</h2>
-  <p class="small muted">Their photos, so you know exactly what you're looking for.</p>
   <h3>Genera (${themG.length})</h3>${grid(themG, 'g', 'Nothing! You have every genus they have.')}
   ${themG.length ? `<div class="panel small" style="margin-top:8px"><b>When to look for them</b>${themG.slice(0,20).map(g => `<div><a href="#" data-genus="${g.id}"><i>${esc(g.name)}</i></a> ${phenoTag(g.id)}</div>`).join('')}</div>` : ''}
   <h3 style="margin-top:12px">Species (${themS.length})</h3>${grid(themS, 's', 'Nothing! You have every species they have.')}
@@ -1817,7 +1812,7 @@ function viewLadder() {
       <span>Rank by ${chip('lsort','genera',sort,'Genera')} ${chip('lsort','species',sort,'Species')} ${chip('lsort','prestige',sort,'Prestige ✦')}</span>
       ${ladderBusy ? '' : `<button data-act="ladderRefresh">⟳ Refresh</button>`}
     </div>
-    <p class="small muted" style="margin-bottom:0">The ${LADDER_N} people with the most salticid records in ${where} on iNaturalist${L?.n ? ` (of ${fmt(L.n)} observers)` : ''}${isGuest() ? '' : ', plus you'}, ranked by what each has recorded <b>in ${where}</b>, so it can differ from your overall level. Verifiable records only. Prestige ✦ weights each genus and species by how few iNat records it has in ${where}; that's record frequency, not conservation status.</p>
+    <p class="small muted" style="margin-bottom:0">The ${LADDER_N} people with the most salticid records in ${where} on iNaturalist${L?.n ? ` (of ${fmt(L.n)} observers)` : ''}${isGuest() ? '' : ', plus you'}, ranked by what each has recorded <b>in ${where}</b>, so it can differ from your overall level. Prestige ✦ weights each genus and species by how few iNat records it has in ${where}.</p>
     ${ladderBusy === key && L?.queue ? `<p class="small">Reading ${Math.min(L.rows.length + 1, L.rows.length + L.queue.length)} of ${L.rows.length + L.queue.length}… about ${Math.ceil(L.queue.length * 1.1)} s left. Rows appear as they arrive.</p>` : ''}
     ${ladderBusy && ladderBusy !== key ? '<p class="small">Finishing the previous ladder first…</p>' : ''}
     ${ladderErr ? `<p>${esc(ladderErr)} <button data-act="ladderRefresh">Try again</button></p>` : ''}
@@ -1834,7 +1829,7 @@ function viewLadder() {
     const tied = rows.filter(r => r !== me && r[k] === me[k]);
     standing = `<div class="panel envy" style="margin-bottom:14px">
       <div class="big">You're <b>${ordinal(me.rank)}</b> of ${rows.length} on the ${where} ladder, with ${unit(me[k])}${k === 'pr' ? ' of prestige' : ''} recorded there.</div>
-      ${above ? `<div>${unit(above[k] - me[k])} behind #${above.rank} <b>${esc(above.login)}</b>.</div>` : '<div class="hand">Top of the ladder. Keep it that way.</div>'}
+      ${above ? `<div>${unit(above[k] - me[k])} behind #${above.rank} <b>${esc(above.login)}</b>.</div>` : '<div class="hand">Top of the ladder.</div>'}
       ${tied.length ? `<div>Level with ${tied.slice(0,3).map(r => `<b>${esc(r.login)}</b>`).join(', ')}${tied.length > 3 ? ` and ${tied.length - 3} more` : ''}.</div>` : ''}
       ${below ? `<div>${unit(me[k] - below[k])} ahead of #${below.rank} <b>${esc(below.login)}</b>.</div>` : ''}
     </div>`;
@@ -1966,7 +1961,7 @@ function viewCrew() {
     <table class="cmp"><tr><th></th>${stats.map(x => `<th class="n">${name(x.m)}</th>`).join('')}</tr>
       ${statRow('Genera', x => x.gn)}${statRow('Species', x => x.sn)}${statRow('Prestige ✦', x => x.pr)}
       ${statRow('Genera only they have', x => x.og.length)}${statRow('Species only they have', x => x.os)}${statRow('Observations', x => x.obs)}</table>
-    <p class="small muted">Prestige ✦ weights rarity in ${where} (iNat record frequency, not conservation status). Change the scope on the SPOODEX tab.</p></div>
+    <p class="small muted">Prestige ✦ weights rarity in ${where}. Change the scope on the SPOODEX tab.</p></div>
 
   <h2 style="margin-top:22px">Only one of you has these</h2>
   <div class="grid2">${stats.map(x => `<div class="panel"><h3>${name(x.m)} <span class="small muted">${x.og.length} genera</span></h3>
@@ -2011,7 +2006,7 @@ function shareHtml() {
     ${A.spSole ? `<p class="small">…plus ${A.spSole} species where every ${where} record is yours.</p>` : ''}
     ${partial.length ? `<h3 style="margin-top:10px">Biggest shares in ${where}</h3>
       ${partial.map(r => `<div class="row" style="gap:8px"><a href="#" data-genus="${r.g.id}" style="min-width:130px"><i>${esc(r.g.name)}</i></a><div class="bar"><i style="width:${Math.round(r.pc * 100)}%"></i></div><span class="small">${pctTxt(r.pc)} <span class="muted">(${r.mine} of ${fmt(r.all)})</span></span></div>`).join('')}` : ''}
-    <p class="small muted">Your verifiable records as a share of every verifiable iNaturalist record in the region. Regional totals refresh weekly.</p>`;
+    <p class="small muted">Your verifiable records as a share of every verifiable iNaturalist record in the region.</p>`;
 }
 function shareLine(g) {
   const pid = S.M.home.state || S.M.home.country, ref = pid && S.ref['p' + pid]; if (!ref) return '';
@@ -2065,8 +2060,8 @@ function pioneerHtml() {
     ${mine.length ? `<div class="envy"><div class="big"><b>${mine.length}</b> pioneer badge${mine.length === 1 ? '' : 's'}</div></div>` : ''}
     ${levels.map(([l, icon, label]) => { const xs = mine.filter(p => p.lvl === l).sort((a,b) => (a.d || '').localeCompare(b.d || ''));
       return xs.length ? `<h3 style="margin-top:10px">${icon} ${label} (${xs.length})</h3>${xs.map(p => `<div class="small">${gLink(p.gid)} in ${where(p)} · <a href="https://www.inaturalist.org/observations/${p.id}" target="_blank" rel="noopener">${esc(p.d)} ↗</a></div>`).join('')}` : ''; }).join('')}
-    ${!mine.length && done ? '<p class="muted">No firsts so far. Somewhere nearby is a genus nobody has put on iNat yet.</p>' : ''}
-    <p class="small muted">A pioneer badge means your record is the earliest verifiable iNaturalist record of that genus in the place, by date observed. It's about iNat's record, not who first discovered it.</p>`;
+    ${!mine.length && done ? '<p class="muted">No firsts so far.</p>' : ''}
+    <p class="small muted">A pioneer badge means your record is the earliest verifiable iNaturalist record of that genus in the place, by date observed.</p>`;
 }
 function pioneerLine(gid) {
   const xs = pioneerTargets().filter(k => k.startsWith(gid + ':')).map(k => ({ pid:+k.split(':')[1], p:S.pioneer[k] })).filter(x => x.p && x.p.u);
@@ -2149,7 +2144,7 @@ function viewReport() {
   rare.forEach(x => stories.push(`★★★ <b>Rare sighting:</b> ${gLink(x.id)}, only ${fmt(x.all)} ${where} record${x.all === 1 ? '' : 's'} ever, ${x.c} of them this week.`));
   if (!isGuest()) {
     if (newToMe.length) stories.push(`🎉 <b>You unlocked</b> ${newToMe.map(g => gLink(g.id)).join(', ')} this week.`);
-    if (mine) stories.push(mine.length ? `🕷 <b>Your week:</b> ${mine.length} ${mine.length === 1 ? 'genus' : 'genera'} recorded in ${where}.` : `🕷 <b>Your week:</b> no ${where} records yet. There's still time.`);
+    if (mine) stories.push(mine.length ? `🕷 <b>Your week:</b> ${mine.length} ${mine.length === 1 ? 'genus' : 'genera'} recorded in ${where}.` : `🕷 <b>Your week:</b> no ${where} records yet.`);
   }
   const top = R.obsv?.top || [];
   const rows = top.map(r => ({ ...r, g:R.wk[r.login] }));
@@ -2339,7 +2334,7 @@ function viewWantedPosters() {
   if (!ctx.pid) return `<div class="panel"><h2>Wanted posters</h2><p>Wanted posters need to know your region. Record a salticid on iNaturalist, or set a home base on the map.</p><button class="primary" data-tab="map">🏠 Set a home base</button></div>`;
   const list = wantedList(ctx), where = ctxWhere(ctx), m = ctx.month;
   const head = `<div class="panel" style="margin-bottom:16px"><h2>Wanted posters · ${MONTHS[m]} ${new Date().getFullYear()}</h2>
-    <p class="small muted" style="margin-bottom:0">Genera recorded in ${where} that aren't in your SPOODEX, ranked for <b>this month</b> by season, how close their nearest records are to your home base, recent local sightings, and how common they are in ${where}. It's a ranking of iNat records to guide your effort, not a probability.${M.homeCell ? '' : ' <b>Set a home base on the Map tab</b> to add distances and local sightings.'}
+    <p class="small muted" style="margin-bottom:0">Genera recorded in ${where} that aren't in your SPOODEX, ranked for <b>this month</b> by season, how close their nearest records are to your home base, recent local sightings, and how common they are in ${where}.${M.homeCell ? '' : ' <b>Set a home base on the Map tab</b> to add distances and local sightings.'}
       Going somewhere? Try the <a href="#" data-tab="trip">Trip planner</a>.</p>
     ${wantedBusy ? '<p class="small">Consulting the records… posters sharpen as season data and sightings arrive.</p>' : ''}
     ${wantedErr ? `<p>${esc(wantedErr)} <button data-act="wantedRetry">Try again</button></p>` : ''}</div>`;
@@ -2374,7 +2369,7 @@ async function openCase(gid, ctx = homeCtx()) {
     <p class="small">${fmt(hn.used)}${hn.n > hn.used ? ` most recent of ${fmt(hn.n)}` : ''} verifiable record${hn.used === 1 ? '' : 's'} ${hn.wide ? `in ${where}${h ? ` (none within ${HAUNT_KM} km of ${esc(ctx.atLong)})` : ''}` : `within ${HAUNT_KM} km of ${esc(ctx.atLong)}`}, in ${hn.cells.length} square${hn.cells.length === 1 ? '' : 's'} of ~25 km.
       ${hs?.nearest ? `Nearest: <b>${kmTxt(hs.nearest.d)}</b>.` : ''} ${hs?.last ? `Latest: ${esc(agoTxt(hs.last))}.` : ''}</p>
     ${ranked.slice(0, 6).map(c => `<div class="small">${c.d != null ? `<b>${kmTxt(c.d)}</b> · ` : ''}${fmt(c.n)} record${c.n === 1 ? '' : 's'} · last ${esc(agoTxt(c.last))}</div>`).join('')}
-    <p class="small muted">Squares are ~25 km on purpose; ${hn.skipped ? `${hn.skipped} obscured record${hn.skipped === 1 ? ' was' : 's were'} left out because their points are deliberately displaced` : 'no exact locations are shown'}.</p>`
+    ${hn.skipped ? `<p class="small muted">${hn.skipped} obscured record${hn.skipped === 1 ? '' : 's'} not mapped.</p>` : ''}`
     : `<p>No mappable records ${hn.wide ? `in ${where}` : `within ${HAUNT_KM} km`} yet${hn.skipped ? ` (${hn.skipped} obscured)` : ''}.</p>`;
   drawCaseMap(hn, ranked, ctx);
 }
@@ -2479,8 +2474,7 @@ function viewTrip() {
     <p class="small muted">Going somewhere? Search a town, park, state or country and get its wanted list: which genera you're missing that have been recorded there, what's in season for the month you're going, and which 25 km squares hold the records.</p>
     <form class="row" data-form="tripSearch"><input name="q" placeholder="Destination, e.g. Lamington National Park" style="flex:1;min-width:160px"><button class="primary">Plan</button></form>
     <div id="tripResults" class="small" style="margin-top:6px"></div>
-    ${recent.length ? `<div class="small" style="margin-top:8px">Recent: ${recent.map(r => `<a href="#" data-trip="${esc(`${r.lat}|${r.lng}|${r.area || ''}|${r.label}`)}">${esc(r.label)}</a>`).join(' · ')}</div>` : ''}
-    <p class="small muted" style="margin-bottom:0">Destinations are kept in this browser only and never go in share links.</p></div>
+    ${recent.length ? `<div class="small" style="margin-top:8px">Recent: ${recent.map(r => `<a href="#" data-trip="${esc(`${r.lat}|${r.lng}|${r.area || ''}|${r.label}`)}">${esc(r.label)}</a>`).join(' · ')}</div>` : ''}</div>
     <div id="tripPlan">${viewTripPlan()}</div>`;
 }
 function viewTripPlan() {
@@ -2490,7 +2484,7 @@ function viewTripPlan() {
   const monthSel = `<select data-tripm="1">${MONTHS.map((n, i) => `<option value="${i}" ${i === m ? 'selected' : ''}>${n}${i === new Date().getMonth() ? ' (now)' : ''}</option>`).join('')}</select>`;
   let body = `<div class="panel" style="margin-bottom:16px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Wanted · ${lbl}</h2>
       <label class="small">Going in ${monthSel}</label></div>
-    <p class="small muted">${t.area ? `Genera recorded anywhere in ${lbl}` : `Genera recorded within ${TRIP_KM} km of ${lbl}, and elsewhere in ${where}`}, that aren't in your SPOODEX, ranked for <b>${MONTHS[m]}</b> by season in ${where}, ${t.area ? '' : 'how close their record squares are, '}recent sightings${ctx.stale ? ' (only counted for trips this month or next)' : ''}, and how common they are. A ranking of iNat records, not a probability.</p>
+    <p class="small muted">${t.area ? `Genera recorded anywhere in ${lbl}` : `Genera recorded within ${TRIP_KM} km of ${lbl}, and elsewhere in ${where}`}, that aren't in your SPOODEX, ranked for <b>${MONTHS[m]}</b> by season in ${where}, ${t.area ? '' : 'how close their record squares are, '}recent sightings, and how common they are.</p>
     ${tripBusy ? '<p class="small">Consulting the records… the plan sharpens as season data and record squares arrive.</p>' : ''}
     ${tripErr ? `<p>${esc(tripErr)} <button data-act="tripRetry">Try again</button></p>` : ''}
     ${t.g ? `<p class="small muted" style="margin-bottom:0">Area data from ${esc(new Date(t.ts || Date.now()).toLocaleString(undefined, { dateStyle:'medium', timeStyle:'short' }))} · <a href="#" data-act="tripRefresh">refresh</a> · <a href="#" data-act="tripClear">clear trip</a></p>` : ''}</div>`;
@@ -2562,20 +2556,20 @@ const THEMES = [
     blurb:'Every <i>Maratus</i> species on iNat. Males of many species court with a raised, brightly patterned fan.' },
   { k:'antmimic', icon:'🐜', name:'Ant mimics', unit:'g',
     taxa:['Myrmarachne','Myrmaplata','Toxeus','Myrmapana','Belippo','Bocus','Emertonius','Myrmage','Myrmele','Myrmatheca','Hermosa','Ligonipes','Rhombonotus','Synageles','Synemosyna','Sarinda','Zuniga','Peckhamia','Leptorchestes'],
-    blurb:'Jumping spiders that look and move like ants. A hand-picked list of genera, not a lineage.' },
+    blurb:'Jumping spiders that look and move like ants.' },
   { k:'spartaeine', icon:'🕸', name:'Portia & the spartaeines', unit:'g', taxa:['Spartaeinae'],
     blurb:'The subfamily Spartaeinae. Many are specialist hunters of other spiders.' },
   { k:'beyond', icon:'🌿', name:'Beyond Salticinae', unit:'g', taxa:['Lyssomaninae','Asemoneinae','Onomastinae','Spartaeinae','Hisponinae','Eupoinae'],
     blurb:'Every genus outside the big subfamily Salticinae, which holds most jumping spiders.' },
   { k:'celebs', icon:'⭐', name:'Celebrities', unit:'s', world:true,
     taxa:['Portia fimbriata','Portia labiata','Maratus volans','Maratus speciosus','Phidippus regius','Phidippus audax','Bagheera kiplingi','Evarcha culicivora','Toxeus magnus','Salticus scenicus','Mopsus mormon'],
-    blurb:'Famous jumping spiders from around the world, including the problem-solving <i>Portia</i>, the mostly vegetarian <i>Bagheera kiplingi</i>, the blood-fed-mosquito hunter <i>Evarcha culicivora</i> and the milk-feeding <i>Toxeus magnus</i>. A hand-picked worldwide list.' },
+    blurb:'Famous jumping spiders from around the world, including the problem-solving <i>Portia</i>, the mostly vegetarian <i>Bagheera kiplingi</i>, the blood-fed-mosquito hunter <i>Evarcha culicivora</i> and the milk-feeding <i>Toxeus magnus</i>.' },
   { k:'local', icon:'🏡', name:'Local specialties', unit:'g', computed:true,
     pick:(ref, world) => ref && world && ref !== world ? Object.keys(ref.g).map(Number).filter(id => (world.g[id] || 0) >= LOCAL_MIN && ref.g[id] / world.g[id] >= LOCAL_SHARE) : [],
-    blurb:w => `Genera with at least ${Math.round(LOCAL_SHARE * 100)}% of their verifiable iNat records from ${w}: on iNat, at least, they're found here or hardly anywhere else. (Pick a country or state as the scope.)` },
+    blurb:w => `Genera with at least ${Math.round(LOCAL_SHARE * 100)}% of their verifiable iNat records from ${w}.` },
   { k:'ghost', icon:'👻', name:'The ghost list', unit:'g', computed:true,
     pick:ref => ref ? Object.keys(ref.g).map(Number).filter(id => ref.g[id] <= GHOST_MAX) : [],
-    blurb:w => `Genera with ${GHOST_MAX} or fewer verifiable iNat records in ${w}. Rarely recorded, which can mean rare, tiny, cryptic, or simply overlooked.` },
+    blurb:w => `Genera with ${GHOST_MAX} or fewer verifiable iNat records in ${w}.` },
   { k:'couples', icon:'💞', name:'Couples', unit:'s', computed:true, mine:true,
     pick:() => [...S.M.S.keys()], got:id => bothSexes(id), gotLabel:'Both sexes photographed', missLabel:'Still missing a male or a female',
     of:'of your species with both a male and a female annotated',
@@ -2583,7 +2577,7 @@ const THEMES = [
   { k:'wander', icon:'🧭', name:'Wanderers', unit:'g', computed:true, mine:true,
     pick:() => [...S.M.G.keys()], got:id => squaresOf(id) >= WANDER_SQUARES, gotLabel:`Recorded in ${WANDER_SQUARES}+ squares`, missLabel:'Not yet',
     of:`of your genera recorded in ${WANDER_SQUARES}+ different ~25 km squares`,
-    blurb:() => `Genera you've recorded in at least ${WANDER_SQUARES} different ~25 km grid squares. Proof that you get around.` },
+    blurb:() => `Genera you've recorded in at least ${WANDER_SQUARES} different ~25 km grid squares.` },
 ];
 let nameIdx = null, nameIdxN = 0;
 function taxonByName(name) {
@@ -2697,10 +2691,9 @@ function viewSets() {
       <b style="font-family:var(--head);font-size:20px">🏆 ${done.length} / ${all.length}</b><span class="muted">sets complete in</span>
       <select data-pref="scope">${['country','state','world'].map(s => `<option value="${s}" ${P.scope===s?'selected':''}>${esc(s==='world'?'World':scopeLabel(s))}</option>`).join('')}</select>
       <label class="small"><input type="checkbox" data-pref="reveal" ${P.reveal?'checked':''}> reveal names</label></div>
-    <p class="small muted">Sets follow iNat's taxonomy and count verifiable iNat records in ${where}. They're side goals: your level is still your genus count.</p>
+    <p class="small muted">Sets follow iNat's taxonomy and count verifiable iNat records in ${where}.</p>
     <h2>Themed sets</h2><div class="grid2">${THEMES.filter(th => !th.computed).map(theme).join('')}</div>
     <h2 style="margin-top:22px">From the records</h2>
-    <p class="small muted">Sets worked out from iNat's record counts and from your own observations.</p>
     <div class="grid2">${THEMES.filter(th => th.computed).map(theme).join('')}</div>
     <h2 style="margin-top:22px">Complete the lineage</h2>
     <p class="small muted">Every tribe with two or more genera recorded in ${where} (subfamily where iNat has no tribe). Nearest to complete first.</p>
@@ -2758,18 +2751,18 @@ function viewBounty() {
       <div class="meta"><div class="nm">${x.r === 'genus' || x.r === 'species' ? `<i>${esc(x.t)}</i>` : esc(x.t)}</div>
       <div class="small muted">${x.km != null ? `~${x.km} km · ` : ''}uploaded ${esc(agoTxt(x.up))} · ${x.n} ID${x.n === 1 ? '' : 's'}</div></div></a>`;
   const head = `<div class="panel" style="margin-bottom:16px"><h2>Bounty board</h2>
-    <p class="small muted">Salticid records ${where} still waiting for an identification. A careful ID from you helps them toward Research Grade, and an unnamed spood might be a genus nobody has recorded here. Cards open on iNaturalist; your own records are left out.</p>
+    <p class="small muted">Salticid records ${where} still waiting for an identification. Cards open on iNaturalist; your own records are left out.</p>
     <p style="margin-bottom:0">${rank ? `<b>${esc(rank[1])}</b> · ` : ''}You've added IDs to <b>${helped}</b> bounty record${helped === 1 ? '' : 's'}.${next ? ` <span class="small muted">${next[0] - helped} more for ${esc(next[1])}.</span>` : ''}
       <a href="#" class="small" data-act="bountyRefresh">refresh</a></p>
     ${bountyBusy ? '<p class="small">Checking the records…</p>' : ''}${bountyErr ? `<p>${esc(bountyErr)} <button data-act="bountyRefresh">Try again</button></p>` : ''}</div>`;
   if (!bountyWhere()) return head + '<p class="muted">Set a home base on the Map tab so SPOODEX knows where to look.</p>';
   if (!b) return head + '<p class="muted">Loading bounties…</p>';
   return head + `<h2>Wanted, unconfirmed</h2>
-    <p class="small muted">Records of genera you're missing, still at Needs ID (${fmt(b.confN)} in all). Confirm or correct the ID, and you'll also learn where they turn up.</p>
+    <p class="small muted">Records of genera you're missing, still at Needs ID (${fmt(b.confN)} in all).</p>
     ${b.conf.length ? `<div class="dexgrid">${b.conf.map(card).join('')}</div>` : '<p class="small">None right now.</p>'}
     <h2 style="margin-top:22px">Unnamed spoods</h2>
-    <p class="small muted">Identified only to family, subfamily or tribe (${fmt(b.unkN)} in all, newest first). This is where an arachnologist's eye matters most.</p>
-    ${b.unk.length ? `<div class="dexgrid">${b.unk.map(card).join('')}</div>` : '<p class="small">None right now. Nicely done, locals.</p>'}`;
+    <p class="small muted">Identified only to family, subfamily or tribe (${fmt(b.unkN)} in all, newest first).</p>
+    ${b.unk.length ? `<div class="dexgrid">${b.unk.map(card).join('')}</div>` : '<p class="small">None right now.</p>'}`;
 }
 
 /* ---------------- since your last visit: what turned up near you while you were away ---------------- */
@@ -2825,8 +2818,7 @@ function newsHtml() {
   if (!items.length) return '';
   return `<div class="panel news-panel" style="margin-bottom:16px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Since your last visit <span class="small muted">· ${esc(sinceTxt(n.since))}</span></h2>
     <button class="small" data-act="newsDismiss">Got it</button></div>
-    <ul class="checks" style="margin-top:8px">${items.map(i => `<li>${i}</li>`).join('')}</ul>
-    <p class="small muted" style="margin:0">Counts are records uploaded to iNat since you were last here (verifiable only).</p></div>`;
+    <ul class="checks" style="margin-top:8px">${items.map(i => `<li>${i}</li>`).join('')}</ul></div>`;
 }
 
 /* ---------------- cards: shared canvas kit for the title card and wrapped ---------------- */
@@ -2897,7 +2889,7 @@ function cardKit(cv) {
   // Credits: photos belong to the naturalist who took them
   K.footer = y => {
     text(`Photos © ${who()} via iNaturalist`, 80, y, '400 19px "IBM Plex Mono", monospace', C.muted);
-    text(`★ = few iNat records in ${scopeLabel(S.prefs.scope)} (record frequency, not conservation status)`, 80, y + 28, '400 19px "IBM Plex Mono", monospace', C.muted);
+    text(`★ = few iNat records in ${scopeLabel(S.prefs.scope)}`, 80, y + 28, '400 19px "IBM Plex Mono", monospace', C.muted);
     const link = location.host + location.pathname.replace(/(index|spoodex)\.html$/, '') + (isGuest() ? '' : '?u=' + S.login);
     text(link, 80, y + 56, '600 19px "IBM Plex Mono", monospace', C.ink);
   };
@@ -3015,11 +3007,10 @@ function showWrapped() {
   const cover = g => `<i style="background-image:url('${esc(photoSize(g.cover, 'small'))}')"></i>`;
   const s = (kick, big, lines) => `<div class="wslide"><div class="kick">${kick}</div><div class="huge">${big}</div>${lines}</div>`;
   const loading = '<p class="small muted">Asking iNaturalist…</p>';
-  if (!W.obs.length) { el.innerHTML = s(`SPOODEX WRAPPED · ${W.Y}`, '0', '<p class="line">No salticid records this year. Next year is wide open.</p>'); return; }
+  if (!W.obs.length) { el.innerHTML = s(`SPOODEX WRAPPED · ${W.Y}`, '0', '<p class="line">No salticid records this year.</p>'); return; }
   const slides = [
     () => s('SPOODEX WRAPPED', esc(W.Y), `<p class="line"><b>${esc(who())}</b>'s year in jumping spiders</p>
-      <p class="line">${fmt(W.obs.length)} records · ${fmt(W.days)} field days · ${W.gen.size} genera</p>
-      <p class="hand">Let's see what you found.</p>`),
+      <p class="line">${fmt(W.obs.length)} records · ${fmt(W.days)} field days · ${W.gen.size} genera</p>`),
     () => s('NEW TO YOUR SPOODEX', `${W.newG.length} <span class="unit">new ${W.newG.length === 1 ? 'genus' : 'genera'}</span>`,
       W.newG.length ? `<div class="mosaic wide">${W.newG.filter(g => g.cover).slice(0, 6).map(cover).join('')}</div>
         <p class="line">${W.newG.slice(0, 8).map(g => gLink(g.id)).join(', ')}${W.newG.length > 8 ? ` and ${W.newG.length - 8} more` : ''}</p>
@@ -3031,8 +3022,7 @@ function showWrapped() {
       <p class="line">Best discovery streak: <b>${W.best}</b> field day${W.best === 1 ? '' : 's'} in a row with a new genus</p>
       ${W.beh ? `<p class="line">${W.beh} behaviour record${W.beh === 1 ? '' : 's'}: feeding, courtship, silk & brood</p>` : ''}`),
     () => s('WHERE YOU WENT', `${W.newCells} <span class="unit">new 25 km square${W.newCells === 1 ? '' : 's'}</span>`,
-      `${W.topLocal.length ? `<p class="line">Favourite patches:</p>${W.topLocal.map((l, i) => `<p class="line">${['🥇','🥈','🥉'][i]} ${esc(l.n)} <span class="small muted">${l.c} records</span></p>`).join('')}` : ''}
-      <p class="small muted">Local areas as iNat names them. No exact locations, ever.</p>`),
+      `${W.topLocal.length ? `<p class="line">Favourite patches:</p>${W.topLocal.map((l, i) => `<p class="line">${['🥇','🥈','🥉'][i]} ${esc(l.n)} <span class="small muted">${l.c} records</span></p>`).join('')}` : ''}`),
     () => s('YOUR MARK ON THE RECORD', W.share === undefined ? '…' : W.share?.total ? pctTxt(W.share.mine / W.share.total) : '—',
       `${W.share === undefined ? loading : W.share?.total ? `<p class="line">of all verifiable salticid records on iNat in ${esc(W.share.where)} in ${esc(W.Y)} were yours (${fmt(W.share.mine)} of ${fmt(W.share.total)})</p>` : ''}
       ${W.pioneers.length ? `<p class="line">🏅 <b>${W.pioneers.length}</b> pioneer badge${W.pioneers.length === 1 ? '' : 's'}: ${W.pioneers.slice(0, 4).map(p => `${gLink(p.gid)} in ${esc(S.places[p.pid]?.n)}`).join(', ')}${W.pioneers.length > 4 ? '…' : ''}</p>` : ''}
@@ -3101,7 +3091,7 @@ function updateUrl() {
 async function copyLink() {
   updateUrl();
   const url = location.href;
-  try { await navigator.clipboard.writeText(url); toast('Link copied. Anyone with it sees this SPOODEX (public iNat data only).'); }
+  try { await navigator.clipboard.writeText(url); toast('Link copied.'); }
   catch { window.prompt('Copy this link:', url); }
 }
 async function doSync(full) {
@@ -3117,7 +3107,7 @@ async function doSync(full) {
     const fresh = S.M.genera.filter(g => !prevSeen.has(g.id));
     S.u.seen = S.M.genera.map(g => g.id); saveUser();
     if (S.tab !== 'map') render();
-    if (fresh.length) revealQueue(fresh); else if (!isGuest()) toast('Synced. No new genera this time, but the field awaits.');
+    if (fresh.length) revealQueue(fresh); else if (!isGuest()) toast('Synced. No new genera this time.');
   } catch (e) { toast(e.message); }
   btn.disabled = false; btn.textContent = '⟳ Sync';
   loadNews();
