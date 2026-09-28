@@ -2,14 +2,15 @@
 
 Gamified iNaturalist Salticidae collection: a single-file web app (`spoodex.html`), live on GitHub Pages.
 
-**Before doing any work, read [HANDOVER.md](HANDOVER.md).** It has the code map, state/storage model,
-verified iNaturalist API facts, test accounts, the owner's design guardrails, and the spec for the
-next task (regional ladder + envy engine).
+**Before doing any work, read [HANDOVER.md](HANDOVER.md), at least §0.** It has setup from a fresh clone, the code map,
+the state/storage model, verified iNaturalist API facts, test accounts, the owner's guardrails, a smoke test and the backlog.
 
 Quick rules:
 - Keep it one self-contained HTML file; all iNat calls go through the throttled `api()` helper.
-- `esc()` every interpolated string; syntax-check the script with `node --check` after edits (command in HANDOVER.md §8).
-- Naturalist aesthetic (no terminal/matrix look); honest rarity labels (never "conservation status");
-  no exact coordinates, and never put locations in share links.
-- Test via the `spoodex` preview server (port 8765) with `?u=themoojuice` and `&vs=laz`.
-- Ship: `cp index.html spoodex.html site/`, then `git commit`, then `git push` (Pages updates in ~30 s).
+- `esc()` every interpolated string; syntax-check the script with `node --check` after edits (command in HANDOVER.md §10).
+- New field read by `trimObs` → add it to `OBS_FIELDS`. New persisted module-level `store.get` → add the key to `PERSISTED`.
+- Naturalist aesthetic (no terminal/matrix look); honest rarity labels (never "conservation status", say "on iNat" not "endemic");
+  no exact coordinates, and never put locations in share links. Propose hand-picked taxon lists to the owner rather than asserting them.
+- Test via the `spoodex` preview server (port 8765; recreate `.claude/launch.json` from HANDOVER.md §2 if missing) with
+  `?u=themoojuice` and `&vs=laz`. Check phone width (375 px) too.
+- Ship: `cp index.html spoodex.html site/`, then `git commit`, then `git push` (Pages updates in ~30 s). Update HANDOVER.md in the same commit.

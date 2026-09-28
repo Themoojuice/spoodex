@@ -1195,6 +1195,11 @@ function viewDexSpecies() {
   ${inScope.length ? sections : '<p class="muted">Loading the species reference… (or set a home base on the Map tab)</p>'}
   ${extras.length ? `<h2 style="margin-top:22px">Recorded outside ${esc(scopeLabel(P.scope))} (+${extras.length})</h2><div class="dexgrid">${extras.map(speciesCard).join('')}</div>` : ''}`;
 }
+// iNat Explore for your records stuck above genus: all of them, or exactly one current taxon (taxon_id + its rank)
+function leadsUrl(lead) {
+  const base = `https://www.inaturalist.org/observations?user_id=${encodeURIComponent(S.login)}&captive=false&verifiable=any`;
+  return lead ? `${base}&taxon_id=${lead.id}&rank=${encodeURIComponent(lead.rank)}` : `${base}&taxon_id=${SALTICIDAE}&hrank=family&lrank=subtribe`;
+}
 function viewNeedsId() {
   const M = S.M, f = S.prefs.leadFilter, lead = M.leads.find(l => String(l.id) === String(f));
   const all = M.leads.flatMap(l => l.obs), obs = (lead ? lead.obs : all).slice().sort((a,b) => (b.d || '').localeCompare(a.d || '') || b.id - a.id);
@@ -1207,8 +1212,11 @@ function viewNeedsId() {
     <div class="panel" style="margin-bottom:14px"><h2>Needs further identification</h2>
       <p class="small muted">Your salticid observations identified only above genus, newest first. Each could be a genus you haven't unlocked yet.
         Click a tile to open it on iNaturalist: add sharper photos, annotate sex and life stage, or tag an identifier. Once it's identified to genus, sync and the card unlocks.</p>
-      ${M.leads.length ? `<div class="row" style="gap:6px">${chip('all', 'All', all.length)}${M.leads.map(l => chip(l.id, l.name, l.obs.length)).join('')}</div>` : ''}</div>
-    ${obs.length ? `<div class="dexgrid">${obs.map(tile).join('')}</div>`
+      ${M.leads.length ? `<div class="row" style="gap:6px">${chip('all', 'All', all.length)}${M.leads.map(l => chip(l.id, l.name, l.obs.length)).join('')}</div>` : ''}
+      ${M.leads.length && !isGuest() ? `<p style="margin:10px 0 0"><a class="btnlink" href="${esc(leadsUrl(lead))}" target="_blank" rel="noopener">Open ${lead ? `these ${fmt(obs.length)}` : `all ${fmt(obs.length)}`} on iNaturalist ↗</a>
+        <span class="small muted">Same records in iNat's Explore, if you'd rather sort them there.</span></p>` : ''}</div>
+    ${isGuest() ? '<div class="panel"><p>Guests have no records yet. Open SPOODEX with your iNaturalist username to see yours here.</p><button data-act="switch">I have an iNaturalist account</button></div>'
+      : obs.length ? `<div class="dexgrid">${obs.map(tile).join('')}</div>`
       : '<div class="panel"><p class="hand">Nothing stuck above genus. Every one of your spoods has a genus. Tidy work.</p></div>'}`;
 }
 const layerSwitch = () => `<span>${[['genus','Genera'],['species','Species'],['sets','Sets'],['needsid',`🔎 Needs ID (${S.M.leads.reduce((n, l) => n + l.obs.length, 0)})`]].map(([k,l]) => `<span class="chip ${(S.prefs.layer||'genus')===k?'on':''}" data-layer="${k}" style="cursor:pointer">${l}</span>`).join(' ')}</span>`;
@@ -1495,7 +1503,7 @@ function viewQuests() {
     ${q.kind === 'scan' ? `<button class="primary" data-scan="${esc(M.homeCell.k)}">📡 Scan home base</button>` : ''}
     ${q.kind === 'first' ? '<a class="btnlink" href="https://www.inaturalist.org/observations/upload" target="_blank" rel="noopener">Upload to iNaturalist ↗</a>' : ''}
     ${q.kind === 'base' ? '<button class="primary" data-tab="map">Set home base</button>' : ''}
-    ${q.kind === 'resolve' ? `<a href="https://www.inaturalist.org/observations?user_id=${encodeURIComponent(S.login)}&taxon_id=${SALTICIDAE}&hrank=family&lrank=subtribe" target="_blank" rel="noopener">Open these on iNaturalist ↗</a>` : ''}
+    ${q.kind === 'resolve' ? `<a href="${esc(leadsUrl())}" target="_blank" rel="noopener">Open these on iNaturalist ↗</a> · <a href="#" data-act="needsid">see them in SPOODEX</a>` : ''}
     </div>${q.reward ? `<div class="reward">Reward: +${q.reward} Naturalist XP</div>` : ''}</div>`).join('')}</div>
   <p class="muted small" style="margin-top:14px">Quests are generated from real gaps in your records and check themselves on every sync. None of them can be completed indoors.</p>`;
 }
@@ -2151,9 +2159,9 @@ function viewReport() {
   <div class="grid2">
     <div class="panel"><h2>Headlines</h2>${stories.map(s => `<p class="story">${s}</p>`).join('') || '<p class="muted">A quiet week in the field.</p>'}</div>
     <div class="panel"><h2>Top spooders this week</h2>
-      <table class="ladder">${rows.map((r, i) => `<tr class="${isMe(r.login) ? 'me' : ''}"><td class="rk">${r.obs == null ? '–' : i < 3 ? ['🥇','🥈','🥉'][i] : '#' + (i + 1)}</td>
+      <div class="tablewrap"><table class="ladder">${rows.map((r, i) => `<tr class="${isMe(r.login) ? 'me' : ''}"><td class="rk">${r.obs == null ? '–' : i < 3 ? ['🥇','🥈','🥉'][i] : '#' + (i + 1)}</td>
         <td class="who"><span class="avatar" style="background-image:url('${esc(r.icon || '')}')"></span>${esc(r.login)}</td>
-        <td class="n">${r.obs == null ? '' : fmt(r.obs) + ' rec.'}</td><td class="n">${r.g ? `${r.g.length} gen.` : '…'}</td></tr>`).join('')}</table>
+        <td class="n">${r.obs == null ? '' : fmt(r.obs) + ' rec.'}</td><td class="n">${r.g ? `${r.g.length} gen.` : '…'}</td></tr>`).join('')}</table></div>
       <p class="small muted">Ranked by records observed this week; genera counted as they load.</p></div>
   </div>
   ${picks.length ? `<h2 style="margin-top:22px">${faved ? 'Picks of the week' : 'Fresh from the field'}</h2>
@@ -2542,9 +2550,11 @@ function mountTripMap() {
   }, 60);
 }
 
-/* ---------------- sets: themed collections and complete-the-lineage sets ---------------- */
-// Themed sets are iNat taxon names (any rank); members are every genus (unit 'g') or species (unit 's') under them.
-// Starter content for the owner to edit. Ant mimics is a hand-picked genus list, not a lineage.
+/* ---------------- sets: themed collections, sets computed from the records, and complete-the-lineage sets ---------------- */
+const GHOST_MAX = 25, LOCAL_SHARE = .9, LOCAL_MIN = 5, WANDER_SQUARES = 5;
+// Curated sets are iNat taxon names (any rank); members are every genus (unit 'g') or species (unit 's') under them.
+// Starter content for the owner to edit. Ant mimics and Celebrities are hand-picked lists, not lineages.
+// Computed sets have pick(ref, world) -> member ids, and optionally got(id) when "collected" means more than "recorded".
 const THEMES = [
   { k:'peacock', icon:'🦚', name:'Peacock spiders', unit:'s', taxa:['Maratus'],
     blurb:'Every <i>Maratus</i> species on iNat. Males of many species court with a raised, brightly patterned fan.' },
@@ -2555,6 +2565,23 @@ const THEMES = [
     blurb:'The subfamily Spartaeinae. Many are specialist hunters of other spiders.' },
   { k:'beyond', icon:'🌿', name:'Beyond Salticinae', unit:'g', taxa:['Lyssomaninae','Asemoneinae','Onomastinae','Spartaeinae','Hisponinae','Eupoinae'],
     blurb:'Every genus outside the big subfamily Salticinae, which holds most jumping spiders.' },
+  { k:'celebs', icon:'⭐', name:'Celebrities', unit:'s', world:true,
+    taxa:['Portia fimbriata','Portia labiata','Maratus volans','Maratus speciosus','Phidippus regius','Phidippus audax','Bagheera kiplingi','Evarcha culicivora','Toxeus magnus','Salticus scenicus','Mopsus mormon'],
+    blurb:'Famous jumping spiders from around the world, including the problem-solving <i>Portia</i>, the mostly vegetarian <i>Bagheera kiplingi</i>, the blood-fed-mosquito hunter <i>Evarcha culicivora</i> and the milk-feeding <i>Toxeus magnus</i>. A hand-picked worldwide list.' },
+  { k:'local', icon:'🏡', name:'Local specialties', unit:'g', computed:true,
+    pick:(ref, world) => ref && world && ref !== world ? Object.keys(ref.g).map(Number).filter(id => (world.g[id] || 0) >= LOCAL_MIN && ref.g[id] / world.g[id] >= LOCAL_SHARE) : [],
+    blurb:w => `Genera with at least ${Math.round(LOCAL_SHARE * 100)}% of their verifiable iNat records from ${w}: on iNat, at least, they're found here or hardly anywhere else. (Pick a country or state as the scope.)` },
+  { k:'ghost', icon:'👻', name:'The ghost list', unit:'g', computed:true,
+    pick:ref => ref ? Object.keys(ref.g).map(Number).filter(id => ref.g[id] <= GHOST_MAX) : [],
+    blurb:w => `Genera with ${GHOST_MAX} or fewer verifiable iNat records in ${w}. Rarely recorded, which can mean rare, tiny, cryptic, or simply overlooked.` },
+  { k:'couples', icon:'💞', name:'Couples', unit:'s', computed:true, mine:true,
+    pick:() => [...S.M.S.keys()], got:id => bothSexes(id), gotLabel:'Both sexes photographed', missLabel:'Still missing a male or a female',
+    of:'of your species with both a male and a female annotated',
+    blurb:() => 'Species where you\'ve photographed a male and a female. Counts iNat\'s Sex annotation (Male / Female) on your records, so annotate them.' },
+  { k:'wander', icon:'🧭', name:'Wanderers', unit:'g', computed:true, mine:true,
+    pick:() => [...S.M.G.keys()], got:id => squaresOf(id) >= WANDER_SQUARES, gotLabel:`Recorded in ${WANDER_SQUARES}+ squares`, missLabel:'Not yet',
+    of:`of your genera recorded in ${WANDER_SQUARES}+ different ~25 km squares`,
+    blurb:() => `Genera you've recorded in at least ${WANDER_SQUARES} different ~25 km grid squares. Proof that you get around.` },
 ];
 let nameIdx = null, nameIdxN = 0;
 function taxonByName(name) {
@@ -2568,11 +2595,24 @@ function taxonByName(name) {
 }
 const underAny = (id, roots) => { let c = id, g = 0; while (c && g++ < 25) { if (roots.has(c)) return true; c = S.nodes[c]?.p; } return false; };
 const hasIt = (id, unit) => unit === 's' ? S.M.S.has(id) : S.M.G.has(id);
+function bothSexes(sid) {
+  const sp = S.M.S.get(sid); if (!sp) return false;
+  return sp.obs.some(o => o.ann.includes(ANN.MALE)) && sp.obs.some(o => o.ann.includes(ANN.FEMALE));
+}
+const squareCache = new WeakMap();
+function squaresOf(gid) {
+  const M = S.M; if (!squareCache.has(M)) squareCache.set(M, new Map());
+  const c = squareCache.get(M);
+  if (!c.has(gid)) c.set(gid, new Set((M.G.get(gid)?.obs || []).filter(o => o.lat != null).map(o => cellKey(o.lat, o.lng, .25))).size);
+  return c.get(gid);
+}
 function themeMembers(th, ref) {
   if (!ref) return [];
   const roots = new Set(th.taxa.map(taxonByName).filter(Boolean));
   return Object.keys(th.unit === 's' ? ref.s || {} : ref.g).map(Number).filter(id => underAny(id, roots));
 }
+const themeIds = (th, ref, world = S.ref.world) => th.pick ? th.pick(ref, world) : themeMembers(th, th.world ? world : ref);
+const themeGot = (th, id) => th.got ? th.got(id) : hasIt(id, th.unit);
 // Every tribe (or subfamily, for genera with no tribe) with 2+ genera recorded in scope
 function lineageSets(ref) {
   if (!ref) return [];
@@ -2580,19 +2620,29 @@ function lineageSets(ref) {
   for (const gid of Object.keys(ref.g).map(Number)) {
     const L = lineage(gid), grp = L.find(n => n.r === 'tribe') || L.find(n => n.r === 'subfamily');
     if (!grp) continue;
-    if (!groups.has(grp.id)) groups.set(grp.id, { key:'l' + grp.id, name:grp.n, rank:grp.r, unit:'g', ids:[] });
+    if (!groups.has(grp.id)) groups.set(grp.id, { key:'l' + grp.id, kind:'lineage', name:grp.n, rank:grp.r, unit:'g', ids:[] });
     groups.get(grp.id).ids.push(gid);
   }
   return [...groups.values()].filter(x => x.ids.length >= 2);
 }
+// Every species in a genus you've recorded, where 2+ species of it are recorded in scope
+function genusSpeciesSets(ref) {
+  if (!ref?.s) return [];
+  const by = new Map();
+  for (const sid of Object.keys(ref.s).map(Number)) {
+    const g = genusOfNode(sid);
+    if (g && S.M.G.has(g)) { if (!by.has(g)) by.set(g, []); by.get(g).push(sid); }
+  }
+  return [...by].filter(([, ids]) => ids.length >= 2).map(([g, ids]) => ({ key:'s' + g, kind:'species', gid:g, name:S.nodes[g]?.n || '?', unit:'s', ids }));
+}
 function setStats(ref) {
-  const out = [...THEMES.map(th => ({ key:th.k, name:th.name, icon:th.icon, unit:th.unit, th, ids:themeMembers(th, ref) })), ...lineageSets(ref)];
-  out.forEach(x => { x.have = x.ids.filter(id => hasIt(id, x.unit)).length; x.left = x.ids.length - x.have; });
+  const out = [...THEMES.map(th => ({ key:th.k, kind:'theme', name:th.name, icon:th.icon, unit:th.unit, th, ids:themeIds(th, ref) })), ...lineageSets(ref), ...genusSpeciesSets(ref)];
+  out.forEach(x => { x.have = x.ids.filter(id => x.th ? themeGot(x.th, id) : hasIt(id, x.unit)).length; x.left = x.ids.length - x.have; });
   return out.filter(x => x.ids.length);
 }
-// The set you're closest to finishing (you've started it, and at most 3 to go)
+// The set you're closest to finishing (you've started it, and at most 3 genera to go). Sets of your own records can't be hunted.
 function nearestSet(ref) {
-  return setStats(ref).filter(x => x.unit === 'g' && x.have && x.left && x.left <= 3)
+  return setStats(ref).filter(x => x.unit === 'g' && !x.th?.mine && x.have && x.left && x.left <= 3)
     .sort((a,b) => a.left - b.left || b.have - a.have)[0] || null;
 }
 let setsBusy = false;
@@ -2609,36 +2659,53 @@ function viewSets() {
   if ((!world || !ref) && !setsBusy) setTimeout(loadSetRefs, 0);
   const all = setStats(ref), done = all.filter(x => !x.left);
   const num = new Map(taxonomicOrder(ref ? Object.keys(ref.g).map(Number) : []).order.map((id, i) => [id, i + 1]));
-  const cards = (ids, unit) => `<div class="dexgrid" style="margin-top:10px">${[...ids].sort((a,b) => (hasIt(b, unit) - hasIt(a, unit)) || (S.nodes[a]?.n || '').localeCompare(S.nodes[b]?.n || ''))
-    .map(id => unit === 's' ? speciesCard(id) : cardHtml(id, num.get(id) || 0)).join('')}</div>`;
+  const byName = (a, b) => (S.nodes[a]?.n || '').localeCompare(S.nodes[b]?.n || '');
+  const card = (id, unit) => unit === 's' ? speciesCard(id) : cardHtml(id, num.get(id) || 0);
+  const cards = (ids, unit, got = id => hasIt(id, unit)) => `<div class="dexgrid" style="margin-top:10px">${[...ids].sort((a,b) => (got(b) - got(a)) || byName(a, b)).map(id => card(id, unit)).join('')}</div>`;
   const bar = (a, b) => `<div class="bar" style="max-width:220px"><i style="width:${pct(a, b)}%"></i></div>`;
+  const unitW = (unit, n) => unit === 's' ? 'species' : n === 1 ? 'genus' : 'genera';
   const theme = th => {
-    const x = all.find(s => s.key === th.k), wIds = themeMembers(th, world), wHave = wIds.filter(id => hasIt(id, th.unit)).length;
-    const unitW = n => th.unit === 's' ? `species` : n === 1 ? 'genus' : 'genera';
+    const x = all.find(s => s.key === th.k), blurb = typeof th.blurb === 'function' ? th.blurb(where) : th.blurb;
+    // Curated sets also show worldwide progress; when nothing is recorded in scope, their cards come from the world list
+    const wIds = th.pick || th.world ? [] : themeMembers(th, world), wHave = wIds.filter(id => hasIt(id, th.unit)).length;
     const show = x ? x.ids : wIds;
     if (show.length <= 150) ensureInfo(show.filter(id => !hasIt(id, th.unit)));
+    const count = x ? `<b>${x.have} / ${x.ids.length}</b> ${th.of || `${unitW(th.unit, x.ids.length)} ${th.world ? 'worldwide' : `in ${where}`}`}`
+      : th.mine ? 'nothing to count yet' : th.k === 'local' && P.scope === 'world' ? 'choose a country or state' : `none recorded in ${where} on iNat`;
+    const body = !show.length ? '' : th.got
+      ? `<details><summary class="small">Show ${show.length} card${show.length === 1 ? '' : 's'}</summary>
+          ${[[true, th.gotLabel], [false, th.missLabel]].map(([want, label]) => { const ids = show.filter(id => th.got(id) === want).sort(byName);
+            return ids.length ? `<h3 style="margin-top:12px">${esc(label)} <span class="small muted">${ids.length}</span></h3><div class="dexgrid">${ids.slice(0, 200).map(id => card(id, th.unit)).join('')}</div>` : ''; }).join('')}</details>`
+      : `<details><summary class="small">Show ${show.length} card${show.length === 1 ? '' : 's'}${x ? '' : ' (worldwide)'}</summary>${cards(show.slice(0, 200), th.unit)}</details>`;
     return `<div class="panel set ${x && !x.left ? 'complete' : ''}"><div class="row" style="justify-content:space-between">
-        <h3 style="margin:0">${th.icon} ${esc(th.name)} ${x && !x.left ? '🏆' : ''}</h3>
-        <span class="small">${x ? `<b>${x.have} / ${x.ids.length}</b> ${unitW(x.ids.length)} in ${where}` : `none recorded in ${where} on iNat`}</span></div>
-      <p class="small muted" style="margin:4px 0">${th.blurb}</p>
+        <h3 style="margin:0">${th.icon} ${esc(th.name)} ${x && !x.left ? '🏆' : ''}</h3><span class="small">${count}</span></div>
+      <p class="small muted" style="margin:4px 0">${blurb}</p>
       ${x ? bar(x.have, x.ids.length) : ''}
-      <p class="small" style="margin:6px 0 0">Worldwide: ${world ? `<b>${wHave} / ${wIds.length}</b>` : '…'}</p>
-      ${show.length ? `<details><summary class="small">Show ${show.length} card${show.length === 1 ? '' : 's'}${x ? '' : ' (worldwide)'}</summary>${cards(show.slice(0, 200), th.unit)}</details>` : ''}</div>`;
+      ${wIds.length || (!th.pick && !th.world) ? `<p class="small" style="margin:6px 0 0">Worldwide: ${world ? `<b>${wHave} / ${wIds.length}</b>` : '…'}</p>` : ''}
+      ${body}</div>`;
   };
-  const lin = all.filter(x => !x.th).sort((a,b) => (!a.left - !b.left) || (!a.have - !b.have) || a.left - b.left || b.have - a.have);
+  const order = (a,b) => (!a.left - !b.left) || (!a.have - !b.have) || a.left - b.left || b.have - a.have;
+  const row = (x, label, sub) => `<details class="panel set ${!x.left ? 'complete' : ''}" style="margin-bottom:8px"><summary class="row" style="gap:10px">
+      <b style="min-width:150px">${label}</b><span class="small muted">${esc(sub)}</span>${bar(x.have, x.ids.length)}
+      <span class="small"><b>${x.have}/${x.ids.length}</b> ${!x.left ? '🏆 complete' : x.have && x.left <= 2 ? `· ${x.left} to go!` : ''}</span></summary>
+      ${cards(x.ids, x.unit)}</details>`;
+  const lin = all.filter(x => x.kind === 'lineage').sort(order), sps = all.filter(x => x.kind === 'species').sort(order);
   return `<div class="panel row" style="margin-bottom:14px">
       ${layerSwitch()}
       <b style="font-family:var(--head);font-size:20px">🏆 ${done.length} / ${all.length}</b><span class="muted">sets complete in</span>
       <select data-pref="scope">${['country','state','world'].map(s => `<option value="${s}" ${P.scope===s?'selected':''}>${esc(s==='world'?'World':scopeLabel(s))}</option>`).join('')}</select>
       <label class="small"><input type="checkbox" data-pref="reveal" ${P.reveal?'checked':''}> reveal names</label></div>
     <p class="small muted">Sets follow iNat's taxonomy and count verifiable iNat records in ${where}. They're side goals: your level is still your genus count.</p>
-    <h2>Themed sets</h2><div class="grid2">${THEMES.map(theme).join('')}</div>
+    <h2>Themed sets</h2><div class="grid2">${THEMES.filter(th => !th.computed).map(theme).join('')}</div>
+    <h2 style="margin-top:22px">From the records</h2>
+    <p class="small muted">Sets worked out from iNat's record counts and from your own observations.</p>
+    <div class="grid2">${THEMES.filter(th => th.computed).map(theme).join('')}</div>
     <h2 style="margin-top:22px">Complete the lineage</h2>
     <p class="small muted">Every tribe with two or more genera recorded in ${where} (subfamily where iNat has no tribe). Nearest to complete first.</p>
-    ${!ref ? '<p class="muted">Loading the regional reference…</p>' : lin.map(x => `<details class="panel set ${!x.left ? 'complete' : ''}" style="margin-bottom:8px"><summary class="row" style="gap:10px">
-        <b style="min-width:150px">${esc(x.name)}</b><span class="small muted">${esc(x.rank)}</span>${bar(x.have, x.ids.length)}
-        <span class="small"><b>${x.have}/${x.ids.length}</b> ${!x.left ? '🏆 complete' : x.have && x.left <= 2 ? `· ${x.left} to go!` : ''}</span></summary>
-        ${cards(x.ids, 'g')}</details>`).join('')}`;
+    ${!ref ? '<p class="muted">Loading the regional reference…</p>' : lin.map(x => row(x, esc(x.name), x.rank)).join('')}
+    <h2 style="margin-top:22px">Every species in a genus</h2>
+    <p class="small muted">For each genus you've recorded that has two or more species recorded in ${where}: how many of those species you have.</p>
+    ${!ref ? '' : sps.map(x => row(x, `<i>${esc(x.name)}</i>`, 'species')).join('') || '<p class="small">None yet.</p>'}`;
 }
 
 /* ---------------- bounty board: records near you waiting for an ID ---------------- */
@@ -3126,6 +3193,7 @@ document.addEventListener('click', e => {
   if (a === 'card') openTitleCard();
   if (a === 'wanted') { e.preventDefault(); openCase(+val); }
   if (a === 'wantedRetry') { wantedErr = null; wantedTs = 0; loadWanted(); }
+  if (a === 'needsid') { e.preventDefault(); S.prefs.layer = 'needsid'; savePrefs(); S.tab = 'dex'; render(); }
   if (a === 'leadFilter') { S.prefs.leadFilter = val === 'all' ? null : val; savePrefs(); render(); }
   if (a === 'sets') { e.preventDefault(); S.prefs.layer = 'sets'; savePrefs(); S.tab = 'dex'; render(); }
   if (a === 'wview') { S.prefs.wantedView = val; savePrefs(); render(); }

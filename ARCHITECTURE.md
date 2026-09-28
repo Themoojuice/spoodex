@@ -1,5 +1,7 @@
 # SPOODEX — architecture
 
+> **Historical (v1 design doc).** The current state, code map and roadmap live in [HANDOVER.md](HANDOVER.md); the tier table and roadmap below are out of date.
+
 > A living Pokédex built from the jumping spiders you've actually found.
 > Your iNaturalist account is the save file. The game should make you close it and go spooding.
 
