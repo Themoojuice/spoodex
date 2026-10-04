@@ -11,7 +11,8 @@ Quick rules:
 - New field read by `trimObs` → add it to `OBS_FIELDS`. New persisted module-level `store.get` → add the key to `PERSISTED`.
 - Naturalist aesthetic (no terminal/matrix look); rarity is "few iNat records" (never "conservation status"), say "on iNat" not "endemic";
   **no filler captions**: no quips, disclaimers or reassurances that don't help the user act (owner's explicit request);
-  no exact coordinates, and never put locations in share links. Propose hand-picked taxon lists to the owner rather than asserting them.
+  no exact coordinates, and never put locations in share links (event links may carry an iNat place id, never coordinates; HANDOVER §9).
+  Propose hand-picked taxon lists to the owner rather than asserting them.
 - Test via the `spoodex` preview server (port 8765; recreate `.claude/launch.json` from HANDOVER.md §2 if missing) with
   `?u=themoojuice` and `&vs=laz`. Check phone width (375 px) too.
 - Ship: `cp index.html spoodex.html site/`, then `git commit`, then `git push` (Pages updates in ~30 s). Update HANDOVER.md in the same commit.

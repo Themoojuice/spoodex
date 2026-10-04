@@ -8,6 +8,7 @@ and turns them into a collection, a lineage tree, a nearby-genus scanner and que
 - **Share a comparison:** `spoodex.html?u=<you>&vs=<them>`
 - **No records yet?** Choose "Explore near me" and set a home base to see what lives around you.
 - **Going somewhere?** The Trip planner shows what you'd add at any destination, what's in season, and where the records are.
+- **Play with friends:** the Crew tab makes bioblitzes, Spood Bingo, turf wars, duels and dares. The link carries the rules, and everyone's browser scores the same public iNaturalist records, so there's no server and no sign-up.
 
 Single static file, no backend, public read-only iNaturalist API. Anonymous visit counts via [GoatCounter](https://www.goatcounter.com) (no cookies; usernames and locations are never sent). See [ARCHITECTURE.md](ARCHITECTURE.md).
 

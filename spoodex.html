@@ -262,6 +262,40 @@ main { padding-top:18px; }
 .plate { text-align:center; padding:40px 16px; border:2px dashed var(--line); border-radius:var(--radius); }
 .plate h2 { font-size:22px; }
 
+/* ---------- Events (crew games) ---------- */
+.evcards { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:10px; margin-top:10px; }
+.evcard { border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:var(--radius); padding:10px 12px; background:var(--panel2); cursor:pointer; }
+.evcard:hover { border-color:var(--accent); }
+.evicon { font-size:18px; }
+.evhead h2 { margin:2px 0 4px; font-size:28px; }
+.evbig b { font:600 44px var(--head); color:var(--accent); }
+.evgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; margin:12px 0; }
+.evgrid label { display:flex; flex-direction:column; gap:4px; }
+.evgrid input { width:100%; }
+.evtargets { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:2px 10px; max-height:240px; overflow:auto; border:1px solid var(--dim); padding:6px; margin-top:6px; }
+.bingos { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr)); gap:14px; }
+.bwrap { position:relative; }
+.bgrid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:3px; }
+.bsq { aspect-ratio:1; border:1px solid var(--line); border-radius:3px; background:var(--panel2); font-size:10px; line-height:1.15; display:flex; align-items:center; justify-content:center; text-align:center; padding:2px; overflow:hidden; overflow-wrap:break-word; hyphens:auto; }
+.bsq a { color:inherit; text-decoration:none; }
+.bsq.on { background:color-mix(in srgb, var(--lit) 32%, var(--panel)); border-color:var(--lit); font-weight:600; }
+.bsq.pen { border:1.5px dashed var(--accent); }
+.bsq.free { background:var(--accent); color:var(--panel); font-weight:600; letter-spacing:.1em; }
+.bsq.hit { box-shadow:inset 0 0 0 2px var(--accent); }
+.blines { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
+.blines line { stroke:var(--accent); stroke-width:3; stroke-linecap:round; opacity:.85; stroke-dasharray:160; stroke-dashoffset:160; animation:sweep .9s ease-out .2s forwards; }
+@keyframes sweep { to { stroke-dashoffset:0; } }
+.evturf { height:420px; border-radius:var(--radius); border:1px solid var(--line); isolation:isolate; }
+.swatch { display:inline-block; width:14px; height:14px; border-radius:3px; flex:none; }
+#reveal .podium { display:flex; align-items:flex-end; justify-content:center; gap:10px; margin:18px 0 6px; }
+#reveal .podium > div { width:min(110px, 28vw); text-align:center; animation:fadein 1s 1.2s both; }
+#reveal .podium i { display:block; background:linear-gradient(#e2bf7a, #8f6420); border-radius:4px 4px 0 0; margin-top:6px; }
+.counting { color:var(--lit); }
+.trophies { display:flex; flex-wrap:wrap; gap:8px; }
+.trophy { border:1px solid #b08a45; background:var(--panel2); border-radius:var(--radius); padding:6px 10px; font-size:13px; box-shadow:inset 0 0 0 1px #e2bf7a; }
+@media (max-width:820px) { .evturf { height:320px; } }
+@media (max-width:600px) { table.evboard td, table.evboard th { padding:5px 4px; } table.evboard td.who { white-space:normal; overflow-wrap:break-word; font-size:13px; } table.evboard td .small { display:block; } }
+
 @media (max-width:600px) {
   .brand h1 { font-size:20px; }
   .lvl { margin-left:0; }
@@ -991,11 +1025,14 @@ function render() {
   if (S.tab === 'trip' && !tripBusy && !tripErr && tripNeedsLoad()) loadTrip();
   if (S.tab === 'profile' && !pioneerBusy && !isGuest()) setTimeout(drainPioneer, 0);
   if (S.tab === 'crew') { S.crew.seen = Date.now(); saveCrew(); }
+  if (S.tab === 'crew' && S.evOpen && S.events[S.evOpen] && !evErr[S.evOpen]) loadEvent(S.evOpen);
+  if (S.tab === 'crew' && !S.evOpen && !S.evBroken && cupDue()) loadCups();
   const plan = S.tab === 'trip' && $('#tripPlan');
   if (plan) plan.innerHTML = viewTripPlan();
   else v.innerHTML = ({ profile:viewProfile, dex:viewDex, tree:viewTree, map:viewMapShell, quests:viewQuests, compare:viewCompare, ladder:viewLadder, crew:viewCrew, report:viewReport, wanted:viewWanted, trip:viewTrip })[S.tab]();
   if (S.tab === 'map') initMap();
   if (S.tab === 'trip') mountTripMap();
+  if (S.tab === 'crew') { mountEventMap(); evAnimate(); }
 }
 function lockedPlate(t) {
   const need = TIERS[t].min - S.M.G.size;
@@ -1081,6 +1118,7 @@ function viewProfile() {
     <div class="panel"><h2>Your share of the record</h2>${shareHtml()}</div>
     <div class="panel"><h2>Pioneer badges</h2><div data-pioneer>${pioneerHtml()}</div></div>
   </div>`}
+  ${trophyHtml()}
   <div class="panel" style="margin-top:16px">
     <h2>New genera per year</h2>
     <div class="row" style="align-items:flex-end;gap:6px;height:120px">
@@ -1901,12 +1939,13 @@ async function loadCrew(force = false) {
   } catch (e) { crewErr = e.message; }
   crewBusy = false; redraw();
 }
-const crewUnseen = () => (S.crew.feed || []).some(e => e.ts > (S.crew.seen || 0) && S.crew.logins.includes(e.login));
+const crewUnseen = () => (S.crew.feed || []).some(e => e.ts > (S.crew.seen || 0) && (e.kind === 'ev' || S.crew.logins.includes(e.login)));
 function crewFeedHtml(ready) {
-  const M = S.M, feed = (S.crew.feed || []).filter(e => S.crew.logins.includes(e.login)).slice(-12).reverse();
+  const M = S.M, feed = (S.crew.feed || []).filter(e => e.kind === 'ev' || S.crew.logins.includes(e.login)).slice(-12).reverse();
   const names = ids => ids.slice(0, 6).map(gLink).join(', ') + (ids.length > 6 ? ` and ${ids.length - 6} more` : '');
   const day = ts => new Date(ts).toLocaleDateString(undefined, { day:'numeric', month:'short' });
-  const ev = e => { const miss = isGuest() ? [] : e.g.filter(id => !M.G.has(id));
+  const ev = e => { if (e.kind === 'ev') return `<div class="feed">${EV_MODES[e.m]?.i || '🏁'} ${S.events[e.id] ? `<a href="#" data-act="evOpen" data-v="${esc(e.id)}">${esc(e.n)}</a>` : esc(e.n)}: ${esc(e.txt)}<div class="small muted">${day(e.ts)}</div></div>`;
+    const miss = isGuest() ? [] : e.g.filter(id => !M.G.has(id));
     return `<div class="feed">🆕 <b>${esc(e.login)}</b> added ${e.g.length ? `${e.g.length} ${e.g.length === 1 ? 'genus' : 'genera'} (${names(e.g)})` : ''}${e.g.length && e.s.length ? ' and ' : ''}${e.s.length ? `${e.s.length} species` : ''} to their collection${miss.length ? ` <span class="small">· ${miss.length < e.g.length ? `${miss.length} not` : e.g.length === 1 ? 'not' : 'none of them'} in yours 😤</span>` : ''}
       <div class="small muted">spotted between ${day(e.since)} and ${day(e.ts)}</div></div>`; };
   const others = ready.filter(m => !m.me && m.wk);
@@ -1925,6 +1964,11 @@ function crewMembers() {
   return out;
 }
 function viewCrew() {
+  if (S.evBroken) return '<div class="panel"><p style="margin:0">This event link is broken.</p></div>';
+  const E = S.evOpen && S.events[S.evOpen];
+  return E ? viewEvent(E) : eventsHtml() + viewCrewMain();
+}
+function viewCrewMain() {
   const scope = S.prefs.scope, where = esc(scopeLabel(scope));
   const members = crewMembers(), ready = members.filter(m => !m.pending && !m.err);
   let form = `<div class="panel" style="margin-bottom:16px"><h2>Crew</h2>
@@ -1979,6 +2023,760 @@ function viewCrew() {
   <h2 style="margin-top:22px">Genus by genus</h2>
   <p class="small muted">Taxonomic order as used on iNaturalist. Numbers are each person's observation count for the genus.</p>
   <div class="panel tablewrap"><table class="cmp matrix"><tr><th>Genus</th>${ready.map(m => `<th class="have">${esc(m.login)}</th>`).join('')}<th class="n"></th></tr>${matrix}</table></div>`;
+}
+
+/* ---------------- events: crew games scored from public iNat records, with the rules carried in the link ---------------- */
+// The link is the rulebook and iNaturalist is the referee: ?ev=<base64url JSON>. Every viewer fetches the same public records and
+// scores them the same way, so there's no server. An observation scores ("inked") once a current identification by someone who
+// isn't a player puts it in its genus; until then its points show pencilled. Standings turn final a week after the window closes.
+const EV_POINTS = { genus:3, star:2, newToYou:5, nobodyHad:3, pair:2, target:2, line:10, blackout:50, firstLine:5 };   // target = multiplier
+const EV_MODES = { blitz:{ i:'🏕', n:'Bioblitz' }, bingo:{ i:'🎲', n:'Spood Bingo' }, turf:{ i:'🗺', n:'Turf War' }, duel:{ i:'⚔️', n:'Duel' }, dare:{ i:'🎯', n:'Dare' }, cup:{ i:'🏆', n:'Crew Cup' } };
+const EV_TTL = 30 * 60e3, EV_KEEP = 20, EV_FINAL_DAYS = 7, EV_LATE_UPLOAD = 2, EV_MAX_DAYS = 92, EV_LINK_MAX = 1500, EV_OPEN_N = 25, EV_ROSTER = 6, EV_TARGETS = 30;
+const EV_FIELDS = '(id:!t,observed_on:!t,created_at:!t,obscured:!t,geojson:!t,quality_grade:!t,community_taxon_id:!t,description:!t,tags:!t,user:(login:!t),'
+  + 'taxon:(id:!t,rank:!t,ancestor_ids:!t),identifications:(current:!t,user:(id:!t,login:!t),taxon:(id:!t,ancestor_ids:!t)),'
+  + 'annotations:(controlled_attribute_id:!t,controlled_value_id:!t,votes:(vote_flag:!t)),photos:(url:!t))';
+const SQ_LABEL = { n:'A genus new to you', x:'A genus no player had', t:'A tribe new to you', M:'♂ A male', F:'♀ A female', J:'◦ A juvenile',
+  s:'🔬 A species-level ID', q:'📍 3 different 25 km squares', bf:'🍴 Feeding', bc:'💃 Courtship or display', be:'🕸 Egg sac, retreat or moult' };
+const SQ_FIXED = ['n', 'x', 't', 'M', 'F', 'J', 's', 'q', 'bf', 'bc', 'be'], BINGO_POOL = 30, BINGO_TIERS = { 1:10, 2:7, 3:2 };
+const LOGIN_RX = /^[A-Za-z0-9][A-Za-z0-9_-]{0,39}$/, DATE_RX = /^\d{4}-\d{2}-\d{2}$/, SQ_RX = /^(g\d{1,9}|s\d{1,9}|[nxtMFJsq]|b[fce])$/;
+const BINGO_LINES = [...[0,1,2,3,4].map(i => [0,1,2,3,4].map(j => i * 5 + j)), ...[0,1,2,3,4].map(j => [0,1,2,3,4].map(i => i * 5 + j)), [0,6,12,18,24], [4,8,12,16,20]];
+const TURF_COLS = ['#a8412a', '#2f6b3a', '#2d5f8a', '#c08a1e', '#6a4c93', '#3a2c22'];   // readable on kraft, herbarium and cabinet panels
+S.events = store.get('events', {});   // id -> {id, code, ev, ts, at, players, pre, obs, st, lead, ink, turf, from, feed, res, final, shown}
+let evBusy = null, evQueue = Promise.resolve(), evMap = null;
+const evErr = {};
+
+// dates are calendar days (observed_on), compared as YYYY-MM-DD strings
+const isoDay = t => new Date(t - new Date(t).getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
+const todayIso = () => isoDay(Date.now());
+const addDays = (d, n) => new Date(Date.parse(d + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
+const dayDiff = (a, b) => Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 864e5);
+const dShort = d => new Date(d + 'T12:00:00Z').toLocaleDateString('en-AU', { day:'numeric', month:'short', timeZone:'UTC' });
+const evDates = ev => ev.d1 === ev.d2 ? `${dShort(ev.d1)} ${ev.d1.slice(0, 4)}` : `${dShort(ev.d1)} – ${dShort(ev.d2)} ${ev.d2.slice(0, 4)}`;
+const plural = (n, one, many = one + 's') => `${n} ${n === 1 ? one : many}`;
+function evStatus(ev) {
+  const t = todayIso(), fin = addDays(ev.d2, EV_FINAL_DAYS);
+  if (t < ev.d1) return { k:'soon', txt:`Starts in ${plural(dayDiff(t, ev.d1), 'day')}` };
+  if (t <= ev.d2) return { k:'live', txt:t === ev.d2 ? 'Last day' : `Live · ${plural(dayDiff(t, ev.d2) + 1, 'day')} left` };
+  if (t < fin) return { k:'judging', txt:`Provisional · final in ${plural(dayDiff(t, fin), 'day')}` };
+  return { k:'final', txt:'Final' };
+}
+
+// ---- the link ----
+const b64u = s => { let bin = ''; new TextEncoder().encode(s).forEach(c => bin += String.fromCharCode(c)); return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+const unb64u = s => new TextDecoder('utf-8', { fatal:true }).decode(Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)));
+const evEncode = ev => b64u(JSON.stringify(Object.fromEntries(['v','m','n','d1','d2','p','r','s','sc','t','b','q'].filter(k => ev[k] != null).map(k => [k, ev[k]]))));
+const evLink = code => location.origin + location.pathname + '?ev=' + code;
+const hash32 = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return h >>> 0; };
+const evId = code => 'e' + hash32(code).toString(36);
+const newSeed = () => Math.floor(Math.random() * 2 ** 31);
+function rng(seed) {   // mulberry32: the same seed gives the same sequence on every device
+  let a = seed >>> 0;
+  return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+const shuffle = (arr, r) => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+// Why an event payload is invalid, or '' if it's fine. Used for links (any failure = broken) and for the create form (shown to the creator).
+function evCheck(o) {
+  if (!o || typeof o !== 'object' || Array.isArray(o)) return 'not an event';
+  if (Object.keys(o).some(k => !['v','m','n','d1','d2','p','r','s','sc','t','b','q'].includes(k))) return 'unknown field';
+  if (o.v !== 1) return 'unknown version';
+  if (!EV_MODES[o.m] || o.m === 'cup') return 'unknown mode';
+  if (typeof o.n !== 'string' || !o.n.trim() || o.n.length > 40) return 'Give it a name of up to 40 characters.';
+  const day = d => typeof d === 'string' && DATE_RX.test(d) && !isNaN(Date.parse(d + 'T00:00:00Z')) && new Date(d + 'T00:00:00Z').toISOString().slice(0, 10) === d;
+  if (!day(o.d1) || !day(o.d2)) return 'Pick the dates.';
+  if (o.d2 < o.d1) return 'The end date is before the start date.';
+  if (dayDiff(o.d1, o.d2) >= EV_MAX_DAYS) return `Events can last up to ${EV_MAX_DAYS} days.`;
+  const id = x => Number.isInteger(x) && x > 0 && x < 1e9;
+  if (o.p != null && !id(o.p)) return 'bad place';
+  if (o.sc != null && !id(o.sc)) return 'bad scope';
+  if (!Number.isInteger(o.s) || o.s < 0 || o.s >= 2 ** 31) return 'bad seed';
+  if (o.r != null) {
+    if (!Array.isArray(o.r) || !o.r.length || o.r.length > EV_ROSTER) return `A roster is 1 to ${EV_ROSTER} iNaturalist usernames.`;
+    if (!o.r.every(l => typeof l === 'string' && LOGIN_RX.test(l))) return 'One of the usernames isn\'t a valid iNaturalist login.';
+    if (new Set(o.r.map(l => l.toLowerCase())).size !== o.r.length) return 'Someone is on the roster twice.';
+  }
+  if (o.t != null && (!Array.isArray(o.t) || !o.t.length || o.t.length > EV_TARGETS || !o.t.every(id) || new Set(o.t).size !== o.t.length)) return 'bad targets';
+  if (o.b != null && (!Array.isArray(o.b) || o.b.length < 24 || o.b.length > 40 || !o.b.every(c => typeof c === 'string' && SQ_RX.test(c) && c[0] !== 's' || c === 's') || new Set(o.b).size !== o.b.length)) return 'bad bingo pool';
+  if (o.q != null && !(typeof o.q === 'string' && SQ_RX.test(o.q))) return 'bad dare';
+  if (o.m !== 'blitz' && !o.r) return 'Add the players.';
+  if (o.m === 'blitz' && !o.r && !o.p) return 'An event open to anyone needs a place.';
+  if (['duel', 'dare'].includes(o.m) && o.r.length !== 2) return o.m === 'duel' ? 'A duel is exactly 2 players.' : 'A dare is the challenger, then the dared player.';
+  if (o.m === 'duel' && dayDiff(o.d1, o.d2) > 2) return 'A duel lasts 1 to 3 days (24–72 hours).';
+  if (o.m === 'dare' && !o.q) return 'Pick what to dare them to find.';
+  if (o.m === 'bingo' && !o.b) return 'bingo needs a pool';
+  if ((o.t && o.m !== 'blitz') || (o.b && o.m !== 'bingo') || (o.q && o.m !== 'dare')) return 'field not used by this mode';
+  return '';
+}
+function evParse(code) {
+  try {
+    if (typeof code !== 'string' || !/^[A-Za-z0-9_-]{8,2000}$/.test(code)) return null;
+    const o = JSON.parse(unb64u(code));
+    if (evCheck(o)) return null;
+    return { v:1, m:o.m, n:o.n.trim(), d1:o.d1, d2:o.d2, p:o.p ?? null, r:o.r ?? null, s:o.s, sc:o.sc ?? null, t:o.t ?? null, b:o.b ?? null, q:o.q ?? null };
+  } catch { return null; }
+}
+
+// ---- fetching ----
+const evPlayers = E => E.ev.r || E.players || [];
+const evScope = ev => ev.p || ev.sc || null;   // rarity (and the bioblitz checklist): the place if set, otherwise the state the creator chose
+function evSave() {
+  const ids = Object.keys(S.events);
+  if (ids.length > EV_KEEP) {
+    // oldest finished first, then the oldest opened; never the one on screen
+    const drop = ids.filter(id => id !== S.evOpen).sort((a, b) => (S.events[b].final ? 1 : 0) - (S.events[a].final ? 1 : 0)
+      || (S.events[a].final ? S.events[a].ev.d2.localeCompare(S.events[b].ev.d2) : S.events[a].ts - S.events[b].ts));
+    drop.slice(0, ids.length - EV_KEEP).forEach(id => delete S.events[id]);
+  }
+  store.set('events', S.events);
+}
+const evRedraw = () => { if (S.tab === 'crew' && !document.activeElement?.closest?.('.evform')) render(); };
+// One event at a time, queued, so the Crew Cup and an opened event don't interleave their calls
+function loadEvent(id, force = false) {
+  const E = S.events[id];
+  if (!E || (!force && E.at && (E.final || Date.now() - E.at < EV_TTL)) || evStatus(E.ev).k === 'soon') return evQueue;
+  if (E.queued) return evQueue;
+  E.queued = true;
+  return evQueue = evQueue.then(() => evFetch(id)).catch(e => console.warn(e)).finally(() => { if (S.events[id]) S.events[id].queued = false; });
+}
+async function evFetch(id) {
+  const E = S.events[id]; if (!E) return;
+  const ev = E.ev;
+  evBusy = id; evErr[id] = null; evRedraw();
+  try {
+    if (ev.p && !S.places[ev.p]?.n) { delete S.places[ev.p]; await fetchPlaces([ev.p]); }
+    const scope = evScope(ev);
+    if (scope) await ensureRefPlace(scope);
+    // Open bioblitz: the top observers of the place in the window are the players
+    if (!ev.r) {
+      const d = await api('/observations/observers', { taxon_id:SALTICIDAE, place_id:ev.p, d1:ev.d1, d2:ev.d2, captive:false, per_page:EV_OPEN_N });
+      E.players = d.results.map(x => x.user?.login).filter(l => l && LOGIN_RX.test(l)).slice(0, EV_OPEN_N);
+    }
+    const P = evPlayers(E), lc = new Set(P.map(l => l.toLowerCase()));
+    // Each player's collection before the event, for "new to you" and "nobody had it". Fixed once the event has started.
+    E.pre = E.pre || {}; E.gone = E.gone || {};
+    for (const l of P) {
+      const k = l.toLowerCase(); if (E.pre[k]) continue;
+      try {
+        const d = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, user_login:l, captive:false, d2:addDays(ev.d1, -1) });
+        d.results.forEach(addNode);
+        E.pre[k] = d.results.filter(t => t.rank === 'genus').map(t => t.id);
+      } catch (e) { if (!/returned 4\d\d/.test(e.message)) throw e; E.pre[k] = []; E.gone[k] = true; }
+    }
+    const obs = [];
+    if (P.length) {
+      // v2 takes a comma-separated user_login (checked: totals add up), so one query covers the whole roster
+      const q = { taxon_id:SALTICIDAE, user_login:P.join(','), d1:ev.d1, d2:ev.d2, place_id:ev.p, captive:false };
+      const tree = await api('/observations/taxonomy', q);   // names and ranks for every taxon in the event
+      tree.results.forEach(addNode);
+      const late = addDays(ev.d2, EV_LATE_UPLOAD);
+      let idAbove = 0;
+      while (true) {
+        const d = await api('/observations', { ...q, per_page:200, order_by:'id', order:'asc', id_above:idAbove || null, fields:EV_FIELDS }, API2);
+        for (const o of d.results) { const t = evTrim(o, lc, ev, late); if (t) obs.push(t); }
+        if (d.results.length < 200) break;
+        idAbove = d.results[d.results.length - 1].id;
+      }
+    }
+    E.obs = obs; E.at = Date.now();
+    saveShared();
+    evAfter(E);
+    evSave();
+  } catch (e) { evErr[id] = e.message; }
+  evBusy = null; evRedraw();
+  if (S.events[id]?.justFinal && S.evOpen === id && S.tab === 'crew') evPodium(id);
+}
+// What counts: observed in the window, uploaded by two days after it, not captive (query), in the place (query)
+function evTrim(o, lc, ev, late) {
+  const u = o.user?.login || ''; if (!lc.has(u.toLowerCase())) return null;
+  const d = o.observed_on || '', c = (o.created_at || '').slice(0, 10);
+  if (!d || d < ev.d1 || d > ev.d2 || !c || c > late) return null;
+  const anc = [...(o.taxon?.ancestor_ids || [])]; if (o.taxon?.id && !anc.includes(o.taxon.id)) anc.push(o.taxon.id);
+  const g = genusOf(anc), sp = speciesOf(anc);
+  // v2 identification ancestor_ids leave out the taxon itself, so check both
+  const outside = (o.identifications || []).filter(i => i.current && i.taxon && !lc.has(String(i.user?.login || '').toLowerCase()));
+  const backs = id => !!id && outside.some(i => i.taxon.id === id || (i.taxon.ancestor_ids || []).includes(id));
+  const ann = (o.annotations || []).filter(a => (a.votes || []).reduce((s, v) => s + (v.vote_flag === false ? -1 : 1), 0) >= 0)
+    .map(a => a.controlled_attribute_id + '|' + a.controlled_value_id);
+  const text = [o.description || '', ...(o.tags || [])].join(' '), cc = o.geojson?.coordinates;
+  return { id:o.id, u, d, c, g, sp, ink:backs(g), inkS:backs(sp), k:!o.obscured && cc ? cellKey(cc[1], cc[0], .25) : null,
+    a:ann, b:Object.keys(BEH_RX).filter(k => BEH_RX[k].test(text)), ph:o.photos?.[0]?.url || '' };
+}
+
+// ---- scoring (pure: the same records give the same standings on every device) ----
+const evOrder = (a, b) => a.d.localeCompare(b.d) || a.c.localeCompare(b.c) || a.id - b.id;
+function starsAt(id, pid) {   // ★1–3 by record-count tertile in a place, like rarityTier; absent = ★★★
+  const table = pid && S.ref['p' + pid]?.g; if (!table) return 1;
+  if (table[id] == null) return 3;
+  let counts = sortedCache.get(table);
+  if (!counts) { counts = Object.values(table).sort((a, b) => a - b); sortedCache.set(table, counts); }
+  const rank = counts.findIndex(c => c >= table[id]) / Math.max(1, counts.length - 1);
+  return rank < .33 ? 3 : rank < .66 ? 2 : 1;
+}
+const tribeIdOf = gid => { const L = lineage(gid); return (L.find(n => n.r === 'tribe') || L.find(n => n.r === 'subfamily') || {}).id || null; };
+function evScore(E) {
+  const ev = E.ev, pre = E.pre || {}, preAll = new Set(Object.values(pre).flat()), scope = evScope(ev), tgt = new Set(ev.t || []), X = EV_POINTS;
+  const rows = evPlayers(E).map(l => ({ login:l, k:l.toLowerCase(), obs:[], gen:new Map(), pts:0, pencil:0 }));
+  const by = new Map(rows.map(r => [r.k, r]));
+  for (const o of [...(E.obs || [])].sort(evOrder)) {
+    const r = by.get(o.u.toLowerCase()); if (!r) continue;
+    r.obs.push(o);
+    if (!o.g) continue;
+    const x = r.gen.get(o.g) || { gid:o.g, obs:[], ink:[] };
+    x.obs.push(o); if (o.ink) x.ink.push(o);
+    r.gen.set(o.g, x);
+  }
+  for (const r of rows) {
+    const had = pre[r.k] && new Set(pre[r.k]);
+    for (const x of r.gen.values()) {
+      x.inked = x.ink.length > 0;
+      const use = x.inked ? x.ink : x.obs;
+      x.parts = [['genus', X.genus]];
+      const st = starsAt(x.gid, scope); if (st) x.parts.push([`${'★'.repeat(st)}`, X.star * st]);
+      if (had && !had.has(x.gid)) x.parts.push(['new to you', X.newToYou]);
+      if (!preAll.has(x.gid)) x.parts.push(['no player had it', X.nobodyHad]);
+      if (use.some(o => o.a.includes(ANN.MALE)) && use.some(o => o.a.includes(ANN.FEMALE))) x.parts.push(['♂ and ♀', X.pair]);
+      x.target = tgt.has(x.gid);
+      x.pts = x.parts.reduce((s, p) => s + p[1], 0) * (x.target ? X.target : 1);
+      x.first = use[0];
+      if (x.inked) r.pts += x.pts; else r.pencil += x.pts;
+    }
+  }
+  return rows;
+}
+const bingoCard = (ev, login) => { const p = shuffle(ev.b, rng(hash32(ev.s + ':' + login.toLowerCase()))).slice(0, 24); return [...p.slice(0, 12), 'free', ...p.slice(12)]; };
+// Does observation o satisfy square code c (ignoring ink)? ctx: {had, all, tribes} = the player's genera / everyone's / the player's tribes before the event
+function sqTest(c, o, ctx) {
+  if (!o.g) return false;
+  switch (c) {
+    case 'n': return !ctx.had.has(o.g);
+    case 'x': return !ctx.all.has(o.g);
+    case 't': { const t = tribeIdOf(o.g); return !!t && !ctx.tribes.has(t); }
+    case 'M': return o.a.includes(ANN.MALE);
+    case 'F': return o.a.includes(ANN.FEMALE);
+    case 'J': return o.a.includes(ANN.JUV) || o.a.includes(ANN.NYMPH);
+    case 's': return !!o.sp;
+    case 'bf': return o.b.includes('feed');
+    case 'bc': return o.b.includes('court');
+    case 'be': return o.b.includes('egg') || [ANN.EGG, ANN.MOLT, ANN.CONSTRUCTION].some(a => o.a.includes(a));
+    default: return c[0] === 'g' ? o.g === +c.slice(1) : c[0] === 's' ? o.sp === +c.slice(1) : false;
+  }
+}
+const sqInk = (c, o) => /^s\d/.test(c) ? o.inkS : o.ink;   // a named species needs the species backed, everything else the genus
+// First inked (and first pencilled) observation for each square, in time order; 'q' ticks on the third distinct 25 km square
+function sqTicks(codes, obs, ctx) {
+  const tick = codes.map(c => c === 'free' ? { ink:{ free:true }, pen:{ free:true } } : {});
+  const seenI = new Set(), seenP = new Set();
+  for (const o of obs) {
+    codes.forEach((c, i) => {
+      const t = tick[i];
+      if (c === 'free') return;
+      if (c === 'q') {
+        if (!o.g || !o.k) return;
+        seenP.add(o.k); if (!t.pen && seenP.size >= 3) t.pen = o;
+        if (o.ink) { seenI.add(o.k); if (!t.ink && seenI.size >= 3) t.ink = o; }
+        return;
+      }
+      if (!sqTest(c, o, ctx)) return;
+      if (!t.pen) t.pen = o;
+      if (!t.ink && sqInk(c, o)) t.ink = o;
+    });
+  }
+  return tick;
+}
+const evCtx = (E, r) => { const pre = E.pre || {}, had = new Set(pre[r.k] || []);
+  return { had, all:new Set(Object.values(pre).flat()), tribes:new Set([...had].map(tribeIdOf).filter(Boolean)) }; };
+function evBingo(E, rows) {
+  const X = EV_POINTS;
+  let first = null;
+  for (const r of rows) {
+    r.card = bingoCard(E.ev, r.login);
+    r.tick = sqTicks(r.card, r.obs, evCtx(E, r));
+    r.lines = BINGO_LINES.filter(L => L.every(i => r.tick[i].ink)).map(L => ({ L, by:L.map(i => r.tick[i].ink).filter(o => !o.free).sort(evOrder).pop() }));
+    r.blackout = r.tick.every(t => t.ink);
+    r.bingo = r.lines.length * X.line + (r.blackout ? X.blackout : 0);
+    r.ticked = r.tick.filter(t => t.ink).length;
+    for (const ln of r.lines) if (ln.by && (!first || evOrder(ln.by, first.by) < 0)) first = { r, by:ln.by };
+  }
+  if (first) { first.r.bingo += X.firstLine; first.r.firstLine = true; }
+  return { first };
+}
+// Each 25 km square goes to whoever has the most inked genera there; a tie goes to whoever reached that count first
+function evTurf(E, rows) {
+  const cells = new Map();
+  for (const r of rows) for (const o of r.obs) {
+    if (!o.ink || !o.k || !o.g) continue;   // obscured records have no square: their coordinates are deliberately displaced
+    const c = cells.get(o.k) || new Map(); cells.set(o.k, c);
+    const p = c.get(r.k) || { r, g:new Set(), at:null }; c.set(r.k, p);
+    if (!p.g.has(o.g)) { p.g.add(o.g); p.at = o; }
+  }
+  const own = new Map();
+  for (const [k, c] of cells) {
+    const all = [...c.values()].sort((a, b) => b.g.size - a.g.size || evOrder(a.at, b.at));
+    own.set(k, { k, r:all[0].r, n:all[0].g.size, all:all.map(p => ({ login:p.r.login, n:p.g.size })) });
+  }
+  rows.forEach(r => { r.turf = 0; r.turfG = 0; });
+  own.forEach(x => { x.r.turf++; x.r.turfG += x.n; });
+  return { own };
+}
+function evDare(E, rows) {
+  const ev = E.ev, chal = rows.find(r => r.k === ev.r[0].toLowerCase()), dared = rows.find(r => r.k === ev.r[1].toLowerCase());
+  const t = dared ? sqTicks([ev.q], dared.obs, evCtx(E, dared))[0] : {};
+  return { chal, dared, hit:t.ink || null, pen:t.pen || null, won:!!t.ink };
+}
+function evResult(E) {
+  const ev = E.ev, rows = evScore(E), out = { rows };
+  let val = r => r.pts;
+  if (ev.m === 'bingo') { out.bingo = evBingo(E, rows); val = r => r.bingo; }
+  if (ev.m === 'turf') { out.turf = evTurf(E, rows); val = r => r.turf; }
+  if (ev.m === 'dare') {
+    const D = out.dare = evDare(E, rows), fin = evStatus(ev).k === 'final';
+    val = r => r === D.dared ? (D.won ? 1 : 0) : r === D.chal ? (!D.won && fin ? 1 : 0) : 0;
+  }
+  const tie = ev.m === 'turf' ? r => r.turfG : ev.m === 'bingo' ? r => r.ticked : r => r.pencil;
+  rows.forEach(r => r.val = val(r));
+  rows.sort((a, b) => b.val - a.val || tie(b) - tie(a) || b.pts - a.pts || a.k.localeCompare(b.k));
+  rows.forEach((r, i) => r.rank = i && rows[i - 1].val === r.val ? rows[i - 1].rank : i + 1);
+  return out;
+}
+// After a refresh: lead changes, newly inked points (counted up on screen), turf changes, finality. Silent on the first fetch.
+function evAfter(E) {
+  const ev = E.ev, R = evResult(E), top = R.rows[0];
+  const lead = top && top.val > 0 && !(R.rows[1] && R.rows[1].val === top.val) ? top.k : null;
+  const ink = Object.fromEntries(R.rows.map(r => [r.k, Object.fromEntries([...r.gen.values()].filter(x => x.inked).map(x => [x.gid, x.pts]))]));
+  if (E.st) {
+    if (lead && lead !== E.lead && ev.m !== 'dare') {
+      const gain = top.val - (E.st[top.k] ?? 0);
+      const fresh = [...top.gen.values()].filter(x => x.inked && !(E.ink?.[top.k] || {})[x.gid]).sort((a, b) => b.pts - a.pts)[0];
+      const txt = `${top.login} takes the lead${gain > 0 ? `: +${gain}` : ''}${fresh ? ` for an inked ${S.nodes[fresh.gid]?.n || 'genus'}` : ''}`;
+      evPost(E, txt); toast(`${EV_MODES[ev.m].i} ${ev.n}: ${txt}`);
+    }
+    if (R.rows.some(r => (E.st[r.k] ?? 0) !== r.val)) E.from = { ...E.st };
+    if (ev.m === 'dare' && R.dare.won && !E.dareWon) evPost(E, `${R.dare.dared.login} completed the dare: ${evTargetTxt(ev.q)}`);
+    if (ev.m === 'turf' && E.turf) {
+      const lines = [];
+      R.turf.own.forEach((x, k) => { const was = E.turf[k]; if (was && was !== x.r.k) lines.push(`${x.r.login} took the square at ${cellLabel(cellCenter(k))} from ${R.rows.find(r => r.k === was)?.login || was}`); });
+      const held = {}; Object.values(E.turf).forEach(k => held[k] = (held[k] || 0) + 1);
+      R.rows.forEach(r => { if ((held[r.k] || 0) !== r.turf) lines.push(`${r.login} holds ${plural(r.turf, 'square')}`); });
+      lines.slice(0, 8).forEach(t => evPost(E, t));
+    }
+  }
+  if (ev.m === 'dare') E.dareWon = R.dare.won;
+  if (ev.m === 'turf') E.turf = Object.fromEntries([...R.turf.own].map(([k, x]) => [k, x.r.k]));
+  E.st = Object.fromEntries(R.rows.map(r => [r.k, r.val]));
+  E.lead = lead; E.ink = ink;
+  E.res = { rows:R.rows.map(r => ({ login:r.login, rank:r.rank, val:r.val, pts:r.pts, pencil:r.pencil })) };
+  const fin = evStatus(ev).k === 'final';
+  E.justFinal = fin && !E.shown;
+  E.final = fin;
+}
+// Event news goes in the event and in the crew feed (which lights the Crew tab's ●)
+function evPost(E, txt) {
+  const ts = Date.now();
+  E.feed = [...(E.feed || []), { ts, txt }].slice(-30);
+  S.crew.feed = [...(S.crew.feed || []), { ts, since:ts, kind:'ev', id:E.id, n:E.ev.n, m:E.ev.m, txt }].slice(-CREW_FEED);
+  saveCrew();
+}
+
+// ---- opening, creating, cloning ----
+function openEventCode(code, fromLink) {
+  const ev = evParse(code);
+  S.tab = 'crew'; S.evDraft = null;
+  if (!ev) { S.evBroken = true; S.evOpen = null; render(); return; }
+  const id = evId(code);
+  S.events[id] = S.events[id] || { id, code, ev, ts:Date.now() };
+  S.events[id].ts = Date.now();
+  if (fromLink) track('event-opened');
+  S.evOpen = id; S.evBroken = false;
+  evSave(); updateUrl(); render();
+  loadEvent(id);
+}
+async function evStart(ev, msg = toast) {
+  const why = evCheck(ev); if (why) return msg(why);
+  const code = evEncode(ev), url = evLink(code);
+  if (url.length > EV_LINK_MAX) return msg(`That link would be ${url.length} characters (the limit is about ${EV_LINK_MAX}). Use fewer targets or a shorter name.`);
+  track('event-created');
+  try { await navigator.clipboard.writeText(url); toast('Event link copied. Send it to the players.'); } catch { window.prompt('Copy this event link:', url); }
+  openEventCode(code, false);
+}
+function evRematch(id) {
+  const ev = S.events[id]?.ev; if (!ev) return;
+  const t = todayIso();
+  evStart({ ...ev, d1:t, d2:addDays(t, dayDiff(ev.d1, ev.d2)), s:newSeed() });
+}
+function evDareBack(id) {
+  const ev = S.events[id]?.ev; if (!ev) return;
+  const t = todayIso();
+  evStart({ ...ev, n:`Dare back: ${ev.n}`.slice(0, 40), r:[ev.r[1], ev.r[0]], d1:t, d2:addDays(t, Math.max(1, dayDiff(ev.d1, ev.d2))), s:newSeed() });
+}
+// Bingo pool: the fixed squares plus genera recorded in the place (or state), in season during the window, mostly ★ and ★★
+async function bingoPool(ev, msg) {
+  const pid = evScope(ev), out = [...SQ_FIXED], r = rng(ev.s);
+  if (!pid) return out.concat([]);
+  await ensureRefPlace(pid);
+  const ref = S.ref['p' + pid], ids = Object.keys(ref.g).map(Number);
+  const tier = { 1:[], 2:[], 3:[] }; ids.forEach(id => tier[starsAt(id, pid)].push(id));
+  const months = []; for (let d = ev.d1; d <= ev.d2 && months.length < 12; d = addDays(d, 1)) { const m = +d.slice(5, 7) - 1; if (!months.includes(m)) months.push(m); }
+  // season curves for the likeliest candidates of each tier (30-day cache, shared with the posters)
+  const cand = t => tier[t].sort((a, b) => ref.g[b] - ref.g[a]).slice(0, BINGO_TIERS[t] * 2 + 2);
+  const check = [1, 2, 3].flatMap(cand);
+  msg?.(`Checking the season for ${check.length} genera…`);
+  ensurePheno(check, pid);
+  for (let i = 0; i < 90 && phenoBusy; i++) await sleep(1000);
+  const inSeason = id => { const p = S.pheno[phenoKey(id, pid)]; if (!p) return false; return months.some(m => { const pk = peakInfo(id, pid, m); return pk && (pk.few || pk.now); }); };
+  const want = BINGO_POOL - out.length, picked = [];
+  for (const t of [1, 2, 3]) {
+    const pool = shuffle(cand(t), r), good = pool.filter(inSeason);
+    picked.push(...[...good, ...pool.filter(id => !good.includes(id))].slice(0, BINGO_TIERS[t]));
+  }
+  // top up from any tier if the place is small
+  shuffle(ids.filter(id => !picked.includes(id)), r).slice(0, Math.max(0, want - picked.length)).forEach(id => picked.push(id));
+  return out.concat(picked.slice(0, want).map(id => 'g' + id));
+}
+
+// ---- Crew Cup: an automatic monthly event for the saved crew, no link ----
+function cupEv(monthsAgo) {
+  const now = new Date(), first = new Date(now.getFullYear(), now.getMonth() - monthsAgo, 1);
+  const d1 = isoDay(first.getTime()), d2 = isoDay(new Date(first.getFullYear(), first.getMonth() + 1, 0).getTime());
+  const r = [...(isGuest() ? [] : [S.login]), ...S.crew.logins].slice(0, EV_ROSTER);
+  return { v:1, m:'cup', n:`Crew Cup · ${MONTHS[first.getMonth()]} ${first.getFullYear()}`, d1, d2, p:null, r, s:hash32(d1), sc:S.M?.home.state || S.M?.home.country || null, t:null, b:null, q:null };
+}
+function cupEnsure(monthsAgo) {
+  const ev = cupEv(monthsAgo); if (ev.r.length < 2) return null;
+  const id = 'cup:' + ev.d1.slice(0, 7), sig = ev.r.map(l => l.toLowerCase()).sort().join(','), E = S.events[id];
+  if (E && E.sig === sig) return E;
+  // a new or changed roster: keep the collections already read, refetch the rest
+  return S.events[id] = { id, code:null, ev, sig, ts:Date.now(), pre:E?.pre, feed:E?.feed, shown:E?.shown };
+}
+let cupLoading = false;
+async function loadCups() {
+  if (cupLoading) return;
+  cupLoading = true;
+  try { const cur = cupEnsure(0), last = cupEnsure(1); if (cur) await loadEvent(cur.id); if (last) await loadEvent(last.id); } finally { cupLoading = false; }
+}
+const cupDue = () => [cupEnsure(0), cupEnsure(1)].some(E => E && !evErr[E.id] && evStatus(E.ev).k !== 'soon' && !E.queued && (!E.at || (!E.final && Date.now() - E.at > EV_TTL)));
+
+// ---- views ----
+const evMe = E => E.res?.rows.find(r => isMe(r.login));
+const evValTxt = (m, v) => m === 'turf' ? plural(v, 'square') : m === 'dare' ? (v ? 'won' : '—') : `${fmt(v)} pts`;
+const evTargetTxt = q => !q ? '' : /^g\d/.test(q) ? `an inked ${S.nodes[+q.slice(1)]?.n || 'genus'}` : /^s\d/.test(q) ? `an inked ${S.nodes[+q.slice(1)]?.n || 'species'}` : (SQ_LABEL[q] || q).replace(/^\S+ (?=[A-Z0-9])/u, '').toLowerCase();
+const evPlaceTxt = ev => ev.p ? esc(S.places[ev.p]?.n || 'a place on iNat') : '';
+function evCardHtml(E) {
+  const ev = E.ev, st = evStatus(ev), me = evMe(E), top = E.res?.rows[0];
+  return `<div class="evcard" data-act="evOpen" data-v="${esc(E.id)}"><div><span class="evicon">${EV_MODES[ev.m].i}</span> <b>${esc(ev.n)}</b></div>
+    <div class="small muted">${EV_MODES[ev.m].n} · ${evDates(ev)}${ev.p ? ' · ' + evPlaceTxt(ev) : ''}</div>
+    <div class="small">${me && me.val > 0 ? `You: <b>${ordinal(me.rank)}</b> of ${E.res.rows.length}` : top && top.val > 0 ? `Leading: <b>${esc(top.login)}</b>` : E.res ? 'No inked points yet' : 'Not read yet'}</div>
+    <div class="small"><b>${st.txt}</b></div></div>`;
+}
+function eventsHtml() {
+  const all = Object.values(S.events).filter(E => E.code).sort((a, b) => b.ts - a.ts);
+  const active = all.filter(E => !E.final), done = all.filter(E => E.final);
+  return `${S.evDraft ? evFormHtml() : ''}<div class="panel" style="margin-bottom:16px">
+    <div class="row"><h2 style="margin:0">Events</h2>${S.evDraft ? '' : '<button class="primary" data-act="evNew" style="margin-left:auto">＋ New event</button>'}</div>
+    ${active.length ? `<div class="evcards">${active.map(evCardHtml).join('')}</div>` : '<p class="small muted" style="margin-bottom:0">Bioblitzes, bingo, turf wars, duels and dares, scored from everyone\'s public iNaturalist records. Make one and send the link.</p>'}
+    ${done.length ? `<h3 style="margin-top:14px">Finished</h3>${done.map(E => { const me = evMe(E), w = E.res?.rows[0];
+      return `<div class="feed small">${EV_MODES[E.ev.m].i} <a href="#" data-act="evOpen" data-v="${esc(E.id)}">${esc(E.ev.n)}</a> · ${evDates(E.ev)}
+        ${me && me.val > 0 && me.rank <= 3 ? ['🥇','🥈','🥉'][me.rank - 1] : ''} ${w && w.val > 0 ? `· won by <b>${esc(w.login)}</b>` : ''}
+        <span data-act="evDel" data-v="${esc(E.id)}" title="Remove from this list" style="cursor:pointer;float:right">✕</span></div>`; }).join('')}` : ''}
+  </div>${cupHtml()}`;
+}
+function cupHtml() {
+  const E = cupEnsure(0); if (!E) return '';
+  const R = E.obs ? evResult(E) : null, last = cupEnsure(1), lw = last?.final && last.res?.rows[0]?.val > 0 ? last.res.rows[0] : null;
+  return `<div class="panel" style="margin-bottom:16px"><div class="row"><h2 style="margin:0">🏆 ${esc(E.ev.n)}</h2>
+      <span class="small muted">${esc(evStatus(E.ev).txt)}</span>${E.queued || evBusy === E.id ? '<span class="small">Reading…</span>' : `<button data-act="evOpen" data-v="${esc(E.id)}" style="margin-left:auto">Open</button>`}</div>
+    <p class="small muted">This month's records from you and your crew, scored like a bioblitz. Last month's winner gets a trophy.</p>
+    ${R ? `<div class="row small" style="gap:14px">${R.rows.map(r => `<span>${r.rank <= 3 && r.val > 0 ? ['🥇','🥈','🥉'][r.rank - 1] : '#' + r.rank} <b>${esc(r.login)}</b> ${fmt(r.val)}${r.pencil ? ` <span class="muted">+${r.pencil} ✏️</span>` : ''}</span>`).join('')}</div>` : ''}
+    ${evErr[E.id] ? `<p class="small">${esc(evErr[E.id])} <button data-act="evRefresh" data-v="${esc(E.id)}">Try again</button></p>` : ''}
+    ${lw ? `<p class="small" style="margin-bottom:0">${esc(last.ev.n)}: won by <b>${esc(lw.login)}</b> with ${fmt(lw.val)} pts.</p>` : ''}</div>`;
+}
+const medal = rank => rank <= 3 ? ['🥇','🥈','🥉'][rank - 1] : '#' + rank;
+const obsLink = (o, text) => o && o.id ? `<a href="https://www.inaturalist.org/observations/${o.id}" target="_blank" rel="noopener">${text}</a>` : text;
+const gName = id => `<i>${esc(S.nodes[id]?.n || '?')}</i>`;
+function viewEvent(E) {
+  const ev = E.ev, st = evStatus(ev), mode = EV_MODES[ev.m], busy = E.queued || evBusy === E.id;
+  const R = E.obs ? evResult(E) : null, P = evPlayers(E);
+  const head = `<p class="small"><a href="#" data-act="evBack">← All events</a></p>
+  <div class="panel evhead" style="margin-bottom:16px">
+    <div class="small" style="letter-spacing:.15em">${mode.i} ${mode.n.toUpperCase()}${ev.m === 'cup' ? '' : ev.r ? '' : ' · OPEN TO ANYONE'}</div>
+    <h2>${esc(ev.n)}</h2>
+    <div>${evDates(ev)}${ev.p ? ` · ${evPlaceTxt(ev)}` : ''} · <b>${st.txt}</b></div>
+    <div class="small muted">${P.length ? `${ev.r ? 'Players' : `Players (the ${EV_OPEN_N} most active salticid observers here in the window)`}: ${P.map(l => esc(l)).join(', ')}` : ev.r ? '' : 'Players are the top observers here once records come in.'}</div>
+    <div class="row" style="margin-top:8px;gap:6px">
+      ${!E.final && st.k !== 'soon' ? `<button data-act="evRefresh" data-v="${esc(E.id)}" ${busy ? 'disabled' : ''}>${busy ? 'Reading records…' : '⟳ Refresh'}</button>` : ''}
+      ${E.code ? '<button data-act="evCopy">🔗 Copy event link</button>' : ''}
+      ${E.final && E.code && ev.m !== 'dare' ? `<button data-act="evRematch" data-v="${esc(E.id)}">🔁 Rematch</button>` : ''}
+      ${ev.m === 'dare' && E.code ? `<button data-act="evDareBack" data-v="${esc(E.id)}">🎯 Dare back</button>` : ''}
+      ${R && st.k !== 'soon' ? `<button data-act="evCard" data-v="${esc(E.id)}">🪪 ${E.final ? 'Result card' : 'Card so far'}</button>` : ''}
+    </div>
+    ${E.at ? `<p class="small muted" style="margin:6px 0 0">Read ${esc(new Date(E.at).toLocaleString())}. ${E.final ? '' : 'Refreshes every 30 minutes while open.'}</p>` : ''}
+    ${evErr[E.id] ? `<p>${esc(evErr[E.id])} <button data-act="evRefresh" data-v="${esc(E.id)}">Try again</button></p>` : ''}
+    ${Object.keys(E.gone || {}).length ? `<p class="small">⚠ No iNaturalist user: ${Object.keys(E.gone).map(esc).join(', ')}</p>` : ''}
+  </div>`;
+  const rules = `<p class="small muted">Records count if observed ${evDates(ev)}, uploaded by ${dShort(addDays(ev.d2, EV_LATE_UPLOAD))}, not captive${ev.p ? `, in ${evPlaceTxt(ev)}` : ''}.
+    A record is <b>inked</b> once someone outside the event agrees on its genus on iNaturalist; until then its points are <b>✏️ pencilled</b>.
+    ${['blitz', 'duel', 'cup'].includes(ev.m) ? `Points per genus: ${EV_POINTS.genus}, +${EV_POINTS.star} per ★ (few iNat records in ${esc(S.places[evScope(ev)]?.n || 'the region')}), +${EV_POINTS.newToYou} if new to you, +${EV_POINTS.nobodyHad} if no player had it, +${EV_POINTS.pair} for ♂ and ♀${ev.t ? `, ×${EV_POINTS.target} for 🎯 targets` : ''}.` : ''}</p>`;
+  if (st.k === 'soon') return head + rules;
+  if (!R) return head + (busy ? '<p class="muted">Reading the records…</p>' : '') + rules;
+  const body = { blitz:evBlitzHtml, duel:evDuelHtml, cup:evBlitzHtml, bingo:evBingoHtml, turf:evTurfHtml, dare:evDareHtml }[ev.m](E, R);
+  const feed = (E.feed || []).slice(-10).reverse();
+  return head + body + (feed.length ? `<div class="panel" style="margin-top:16px"><h3>Event news</h3>${feed.map(f => `<div class="feed small">${esc(f.txt)} <span class="muted">· ${esc(new Date(f.ts).toLocaleString(undefined, { day:'numeric', month:'short', hour:'numeric', minute:'2-digit' }))}</span></div>`).join('')}</div>` : '') + rules;
+}
+// Points table plus each player's genera, with every point accounted for
+function evBoardHtml(E, R, unit = 'Points', pencilled = true) {
+  const from = E.from || {};
+  const cnt = (r, v) => from[r.k] != null && from[r.k] !== v ? ` data-from="${from[r.k]}" data-to="${v}"` : '';
+  return `<div class="panel tablewrap"><table class="ladder evboard"><tr><th></th><th>Naturalist</th><th class="n">${unit}${pencilled ? ' <span class="small">(+ ✏️)</span>' : ''}</th><th class="n">Genera</th></tr>
+    ${R.rows.map(r => { const gi = [...r.gen.values()].filter(x => x.inked).length, gp = r.gen.size - gi;
+      return `<tr class="${isMe(r.login) ? 'me' : ''}"><td class="rk">${r.val > 0 ? medal(r.rank) : '#' + r.rank}</td><td class="who">${esc(r.login)}${isMe(r.login) ? ' <span class="small muted">(you)</span>' : ''}</td>
+        <td class="n"><b${cnt(r, r.val)}>${fmt(r.val)}</b>${pencilled && r.pencil ? ` <span class="small muted">+${fmt(r.pencil)} ✏️</span>` : ''}</td><td class="n">${gi}${gp ? ` <span class="small muted">+${gp} ✏️</span>` : ''}</td></tr>`; }).join('')}</table>
+    ${R.rows.map(r => r.gen.size ? `<details style="margin-top:6px"><summary class="small">${esc(r.login)}: ${plural(r.obs.length, 'record')}, ${plural(r.gen.size, 'genus', 'genera')}</summary>
+      ${[...r.gen.values()].sort((a, b) => b.inked - a.inked || b.pts - a.pts).map(x => `<div class="small">${x.inked ? '✓' : '✏️'} ${x.target ? '🎯 ' : ''}<a href="#" data-genus="${x.gid}">${gName(x.gid)}</a>
+        <b>${x.pts}</b> <span class="muted">(${x.parts.map(p => `${esc(p[0])} ${p[1]}`).join(' + ')}${x.target ? ` ×${EV_POINTS.target}` : ''}) · ${obsLink(x.first, `${plural(x.obs.length, 'record')}, first ${esc(dShort(x.first.d))}`)}</span></div>`).join('')}</details>` : '').join('')}</div>`;
+}
+function evBlitzHtml(E, R) {
+  const ev = E.ev, pid = evScope(ev), ref = pid && S.ref['p' + pid], where = esc(S.places[pid]?.n || 'the region');
+  const found = new Map(), pencil = new Set();
+  R.rows.forEach(r => r.gen.forEach(x => {
+    if (!x.inked) { pencil.add(x.gid); return; }
+    const f = found.get(x.gid), o = x.ink[0];
+    if (!f || evOrder(o, f.o) < 0) found.set(x.gid, { login:r.login, o });
+  }));
+  const total = ref ? Object.keys(ref.g).length : 0, tgt = new Set(ev.t || []);
+  const missing = ref ? Object.keys(ref.g).map(Number).filter(id => !found.has(id) && !pencil.has(id)).sort((a, b) => (tgt.has(b) - tgt.has(a)) || ref.g[b] - ref.g[a]) : [];
+  return `<div class="panel evbig" style="margin-bottom:16px"><b>${found.size}</b> ${found.size === 1 ? 'genus' : 'genera'} inked${ref ? ` of the <b style="font-size:inherit;color:inherit">${total}</b> on iNat in ${where}` : ''}${pencil.size ? ` <span class="muted">· ${[...pencil].filter(id => !found.has(id)).length} more pencilled</span>` : ''}
+      ${ref ? `<div class="bar" style="max-width:420px;margin-top:6px"><i style="width:${pct(found.size, total)}%"></i></div>` : ''}</div>
+    ${evBoardHtml(E, R)}
+    <div class="grid2" style="margin-top:16px"><div class="panel"><h3>Found <span class="small muted">taxonomic order</span></h3>
+      ${taxonomicOrder([...found.keys()]).order.map(id => { const f = found.get(id); return `<div class="small">✓ ${tgt.has(id) ? '🎯 ' : ''}<a href="#" data-genus="${id}">${gName(id)}</a> · first by <b>${esc(f.login)}</b>, ${obsLink(f.o, esc(dShort(f.o.d)))}</div>`; }).join('') || '<p class="small muted">Nothing inked yet.</p>'}
+      ${[...pencil].filter(id => !found.has(id)).map(id => `<div class="small muted">✏️ <a href="#" data-genus="${id}">${gName(id)}</a> waiting for an ID</div>`).join('')}</div>
+    <div class="panel"><h3>Still missing <span class="small muted">most-recorded first</span></h3>
+      ${ref ? missing.slice(0, 60).map(id => `<div class="small">${tgt.has(id) ? '🎯 ' : ''}<a href="#" data-genus="${id}">${gName(id)}</a> <span class="muted">${fmt(ref.g[id])} records in ${where}</span></div>`).join('') + (missing.length > 60 ? `<p class="small muted">…and ${missing.length - 60} more.</p>` : '') : '<p class="small muted">Loading the checklist…</p>'}</div></div>`;
+}
+function evDuelHtml(E, R) {
+  const [a, b] = E.ev.r.map(l => R.rows.find(r => r.k === l.toLowerCase()));
+  const side = r => `<div class="side"><div style="font-family:var(--head);font-size:22px">${esc(r.login)}</div><div class="prestige" style="font-size:54px">${fmt(r.pts)}</div>
+    <div class="small">${r.pencil ? `+${fmt(r.pencil)} ✏️ pencilled` : '&nbsp;'}</div><div class="small muted">${plural([...r.gen.values()].filter(x => x.inked).length, 'genus', 'genera')} inked</div></div>`;
+  return `<div class="vs" style="margin-bottom:16px">${side(a)}<div class="vsmark">VS</div>${side(b)}</div>${evBoardHtml(E, R)}`;
+}
+function sqHtml(c) {
+  if (c === 'free') return 'FREE';
+  if (/^g\d/.test(c)) { const n = S.nodes[+c.slice(1)]?.n || '?';   // shrink long names rather than break them mid-word
+    return `<i style="font-size:${n.length > 13 ? 7 : n.length > 11 ? 7.5 : n.length > 9 ? 8.5 : n.length > 7 ? 9.5 : 11}px">${esc(n)}</i>`; }
+  return esc(SQ_LABEL[c] || c);
+}
+function evBingoHtml(E, R) {
+  const me = R.rows.filter(r => isMe(r.login)), others = R.rows.filter(r => !isMe(r.login));
+  const card = r => {
+    const hits = new Set(r.lines.map(l => l.by?.id));
+    const cell = (c, i) => { const t = r.tick[i], cls = c === 'free' ? 'free' : t.ink ? 'on' : t.pen ? 'pen' : '';
+      const o = t.ink || t.pen, tip = c === 'free' ? 'Free square' : o ? `${t.ink ? 'Inked' : 'Pencilled'}: ${S.nodes[o.g]?.n || ''} ${o.d}` : 'Not yet';
+      return `<div class="bsq ${cls}${t.ink && hits.has(t.ink.id) ? ' hit' : ''}" title="${esc(tip)}">${o && c !== 'free' && !t.ink?.free ? obsLink(o, sqHtml(c)) : sqHtml(c)}</div>`; };
+    const xy = i => [(i % 5) * 20 + 10, Math.floor(i / 5) * 20 + 10];
+    const lines = r.lines.map(l => { const [x1, y1] = xy(l.L[0]), [x2, y2] = xy(l.L[4]); const dx = Math.sign(x2 - x1) * 6, dy = Math.sign(y2 - y1) * 6;
+      return `<line x1="${x1 - dx}" y1="${y1 - dy}" x2="${x2 + dx}" y2="${y2 + dy}" vector-effect="non-scaling-stroke"/>`; }).join('');
+    return `<div class="panel"><h3 style="margin-bottom:4px">${esc(r.login)}${isMe(r.login) ? ' <span class="small muted">(you)</span>' : ''} <span class="small">· ${medal(r.rank)} · <b>${fmt(r.bingo)}</b> pts</span></h3>
+      <div class="small muted" style="margin-bottom:6px">${plural(r.lines.length, 'line')}${r.blackout ? ' · BLACKOUT' : ''}${r.firstLine ? ' · first line of the event' : ''} · ${r.ticked}/25 squares</div>
+      <div class="bwrap"><div class="bgrid">${r.card.map(cell).join('')}</div><svg class="blines" viewBox="0 0 100 100" preserveAspectRatio="none">${lines}</svg></div>
+      ${r.lines.map(l => l.by ? `<div class="small">Line completed by ${obsLink(l.by, `${gName(l.by.g)}, ${esc(dShort(l.by.d))}`)}</div>` : '').join('')}</div>`;
+  };
+  return `<p class="small muted">Everyone's card is drawn from the same ${E.ev.b.length} squares, shuffled by player, so it looks the same on every device. Green = inked, dashed = pencilled. A line is ${EV_POINTS.line} pts, the first line of the event +${EV_POINTS.firstLine}, a blackout +${EV_POINTS.blackout}.</p>
+    <div class="bingos">${[...me, ...others].map(card).join('')}</div>`;
+}
+function turfColours(players) {
+  const used = new Set(), out = {};
+  for (const l of players) { let i = hash32(l.toLowerCase()) % TURF_COLS.length; while (used.has(i) && used.size < TURF_COLS.length) i = (i + 1) % TURF_COLS.length; used.add(i); out[l.toLowerCase()] = TURF_COLS[i]; }
+  return out;
+}
+function evTurfHtml(E, R) {
+  const col = turfColours(evPlayers(E)), from = E.from || {};
+  return `<div class="maplayout"><div id="evMap" class="evturf"></div><div class="panel"><h3>Turf held</h3>
+      ${R.rows.map(r => `<div class="row" style="gap:6px;margin-bottom:4px"><span class="swatch" style="background:${col[r.k]}"></span><b>${esc(r.login)}</b>
+        <span><b${from[r.k] != null && from[r.k] !== r.val ? ` data-from="${from[r.k]}" data-to="${r.val}"` : ''}>${r.turf}</b> ${r.turf === 1 ? 'square' : 'squares'}</span>
+        <span class="small muted">${plural(r.turfG, 'genus', 'genera')} across them</span></div>`).join('')}
+      <p class="small muted">Each ~25 km square belongs to whoever has the most inked genera recorded there in the window; a tie goes to whoever got there first. Obscured records don't claim squares.</p></div></div>
+    <div style="margin-top:16px">${evBoardHtml(E, R, 'Squares', false)}</div>`;
+}
+function mountEventMap() {
+  const el = $('#evMap'), E = S.events[S.evOpen];
+  if (!el || !E?.obs || !window.L) return;
+  if (evMap) { try { evMap.remove(); } catch {} }
+  const R = evResult(E), col = turfColours(evPlayers(E)), bounds = [];
+  evMap = L.map(el, { worldCopyJump:true, scrollWheelZoom:false });
+  esriTopo().addTo(evMap);
+  // frame the densest cluster (the square with most others within 8°), so a far-off trip square doesn't zoom out to the whole country
+  const cs = [...R.turf.own.keys()].map(cellCenter), near = (a, b) => Math.abs(a.lat - b.lat) <= 8 && Math.abs(a.lng - b.lng) <= 8;
+  const hub = cs.map(c => [c, cs.filter(d => near(c, d)).length]).sort((a, b) => b[1] - a[1])[0]?.[0];
+  R.turf.own.forEach(x => {
+    const c = cellCenter(x.k), b = [[c.lat - .125, c.lng - .125], [c.lat + .125, c.lng + .125]];
+    if (near(c, hub)) bounds.push(...b);
+    L.rectangle(b, { color:col[x.r.k], weight:2, fillColor:col[x.r.k], fillOpacity:.25 + .1 * Math.min(5, x.n) })
+      .bindTooltip(`${esc(x.r.login)} · ${x.all.map(p => `${esc(p.login)} ${p.n}`).join(', ')} genera`).addTo(evMap);
+  });
+  setTimeout(() => { evMap.invalidateSize(); if (bounds.length) evMap.fitBounds(bounds, { padding:[20, 20], maxZoom:10 }); else evMap.setView([-25, 134], 4); }, 60);
+}
+function evDareHtml(E, R) {
+  const ev = E.ev, D = R.dare, st = evStatus(ev);
+  const verdict = D.won ? `<div class="evbig"><b>DARE COMPLETED</b></div><p>${esc(D.dared.login)} inked it: ${obsLink(D.hit, `${gName(D.hit.g)}, ${esc(dShort(D.hit.d))}`)}.</p>`
+    : D.pen ? `<div class="evbig"><b>✏️ PENCILLED</b></div><p>${esc(D.dared.login)} has ${obsLink(D.pen, 'a record')} that would do it once someone outside the dare agrees on the ID${st.k === 'final' ? ', but judging has closed' : ''}.</p>`
+    : st.k === 'final' || st.k === 'judging' ? `<div class="evbig"><b>${st.k === 'final' ? 'DARE MISSED' : 'TIME\'S UP'}</b></div><p>Nothing that fits was recorded in time${st.k === 'judging' ? ' (records uploaded in the next two days can still count)' : ''}.</p>`
+    : `<div class="evbig"><b>ON</b></div><p>${plural(dayDiff(todayIso(), ev.d2) + 1, 'day')} left.</p>`;
+  return `<div class="panel" style="text-align:center"><p class="hand" style="margin:0">${esc(ev.r[0])} dared ${esc(ev.r[1])} to find</p>
+    <h2 style="font-size:30px;margin:6px 0">${esc(evTargetTxt(ev.q).replace(/^an inked /, ''))}</h2><p class="small muted">by ${esc(dShort(ev.d2))}</p>${verdict}</div>`;
+}
+// Count changed scores up from their previous value, once
+function evAnimate() {
+  const E = S.events[S.evOpen]; if (!E?.from) return;
+  delete E.from;
+  document.querySelectorAll('#view [data-from]').forEach(el => {
+    const a = +el.dataset.from, b = +el.dataset.to, t0 = performance.now();
+    el.classList.add('counting');
+    const step = t => { const k = Math.min(1, (t - t0) / 900); el.textContent = fmt(Math.round(a + (b - a) * k)); if (k < 1) requestAnimationFrame(step); else el.classList.remove('counting'); };
+    requestAnimationFrame(step);
+  });
+}
+
+// ---- the finish: podium, share card, trophies ----
+function evPodium(id) {
+  const E = S.events[id]; if (!E?.res) return;
+  E.shown = true; E.justFinal = false; evSave();
+  const ev = E.ev, top = E.res.rows.filter(r => r.val > 0).slice(0, 3);
+  const step = (r, h) => r ? `<div><div style="font-size:34px">${medal(r.rank)}</div><div style="font-family:Fraunces,Georgia,serif;font-size:18px">${esc(r.login)}</div>
+    <div class="small">${esc(evValTxt(ev.m, r.val))}</div><i style="height:${h}px"></i></div>` : '<div></div>';
+  const el = document.createElement('div');
+  el.id = 'reveal';
+  el.innerHTML = `<div class="k">${EV_MODES[ev.m].i} ${EV_MODES[ev.m].n.toUpperCase()} · FINAL</div><h2>${esc(ev.n)}</h2><p>${evDates(ev)}${ev.p ? ' · ' + evPlaceTxt(ev) : ''}</p>
+    ${top.length ? `<div class="podium">${step(top[1], 70)}${step(top[0], 110)}${step(top[2], 45)}</div>` : '<p style="margin:18px 0">Nobody inked a point.</p>'}
+    <p style="margin-top:6px;font-size:12px">tap for the result card</p>`;
+  el.addEventListener('click', () => { el.remove(); openEventCard(id); });
+  document.body.appendChild(el);
+}
+function evTopFind(E, R) {
+  let best = null;
+  R.rows.forEach(r => r.gen.forEach(x => { if (x.inked && (!best || x.pts > best.x.pts)) best = { r, x, o:x.ink.find(o => o.ph) || x.ink[0] }; }));
+  return best;
+}
+async function openEventCard(id) {
+  const E = S.events[id]; if (!E?.obs) return;
+  const R = evResult(E), top = evTopFind(E, R);
+  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(640px,100%)"><button class="x" data-close="1">✕</button><div class="body">
+    <h2>${esc(E.ev.n)}</h2><div id="cardOut"><p class="muted">Developing the print…</p></div></div></div></div>`;
+  const tiles = top?.o?.ph ? await cardPhotos([{ id:top.x.gid, name:S.nodes[top.x.gid]?.n || '?', cover:top.o.ph }]) : [];
+  const out = $('#cardOut'); if (!out) return;
+  await mountCard(out, (cv, po) => drawEventCard(cv, E, R, top, tiles[0], po), `spoodex-${E.ev.m}-${E.ev.d1}`);
+}
+function drawEventCard(cv, E, R, top, tile, photosOnly) {
+  const ev = E.ev, K = cardKit(cv), { C, text, x } = K;
+  K.frame(`SPOODEX · ${EV_MODES[ev.m].n.toUpperCase()}${E.final ? ' · FINAL' : ''}`);
+  text(ev.n, 80, 200, '600 64px Fraunces, Georgia, serif', C.ink);
+  text(`${evDates(ev)}${ev.p ? ' · ' + (S.places[ev.p]?.n || '') : ''}`, 80, 256, '600 44px Caveat, cursive', C.accent);
+  K.rule(296);
+  if (ev.m === 'dare') {
+    const D = R.dare;
+    text(`${ev.r[0]} dared ${ev.r[1]} to find`, 540, 380, '400 30px "IBM Plex Mono", monospace', C.muted, 'center');
+    text(evTargetTxt(ev.q).replace(/^an inked /, ''), 540, 460, 'italic 600 64px Fraunces, Georgia, serif', C.ink, 'center');
+    text(D.won ? 'COMPLETED' : evStatus(ev).k === 'final' ? 'MISSED' : 'STILL ON', 540, 560, '600 72px Fraunces, Georgia, serif', C.accent, 'center');
+  } else {
+    const podium = R.rows.filter(r => r.val > 0).slice(0, 3), place = [1, 0, 2], hs = [170, 230, 120];
+    place.forEach((pi, col) => {
+      const r = podium[pi]; if (!r) return;
+      const cx = 80 + col * 313 + 146, base = 640;
+      x.fillStyle = col === 1 ? C.accent : C.line; x.fillRect(cx - 120, base - hs[col], 240, hs[col]);
+      text(['1st', '2nd', '3rd'][r.rank - 1] || '#' + r.rank, cx, base - hs[col] + 70, '600 52px Fraunces, Georgia, serif', C.panel, 'center');
+      text(r.login, cx, base - hs[col] - 64, '600 36px Fraunces, Georgia, serif', C.ink, 'center', 290);
+      text(evValTxt(ev.m, r.val), cx, base - hs[col] - 22, '400 26px "IBM Plex Mono", monospace', C.muted, 'center', 290);
+    });
+    if (!podium.length) text('No inked points yet', 540, 520, '400 40px Fraunces, Georgia, serif', C.muted, 'center');
+  }
+  K.rule(680);
+  if (top) {
+    text('TOP FIND', 80, 726, '400 20px "IBM Plex Mono", monospace', C.muted);
+    K.tile(tile || { g:{ id:top.x.gid, name:S.nodes[top.x.gid]?.n || '?' } }, 80, 750, 293, 293, photosOnly);
+    text(S.nodes[top.x.gid]?.n || '', 410, 830, 'italic 600 54px Fraunces, Georgia, serif', C.ink, 'left', 590);
+    text(`by ${top.r.login} · ${top.x.pts} pts`, 410, 884, '400 30px "IBM Plex Mono", monospace', C.muted, 'left', 590);
+    text(`${dShort(top.o.d)} · inked on iNaturalist`, 410, 928, '400 26px "IBM Plex Mono", monospace', C.muted, 'left', 590);
+  }
+  K.rule(1150);
+  if (top?.o?.ph) text(`Photo © ${top.r.login} via iNaturalist`, 80, 1200, '400 19px "IBM Plex Mono", monospace', C.muted);
+  text('Scored from public iNat records. Inked = genus agreed by a non-player.', 80, 1228, '400 19px "IBM Plex Mono", monospace', C.muted);
+  text(location.host + location.pathname.replace(/(index|spoodex)\.html$/, ''), 80, 1256, '600 19px "IBM Plex Mono", monospace', C.ink);
+  return K.tainted;
+}
+function trophies() {
+  if (isGuest()) return [];
+  const out = [];
+  for (const E of Object.values(S.events)) {
+    const me = E.final && evMe(E); if (!me || me.val <= 0) continue;
+    if (E.ev.m === 'cup' ? me.rank === 1 : me.rank <= 3) out.push({ E, icon:E.ev.m === 'cup' ? '🏆' : medal(me.rank) });
+  }
+  return out.sort((a, b) => b.E.ev.d2.localeCompare(a.E.ev.d2));
+}
+function trophyHtml() {
+  const t = trophies(); if (!t.length) return '';
+  return `<div class="panel" style="margin-top:16px"><h2>Trophy cabinet</h2><div class="trophies">${t.map(({ E, icon }) =>
+    `<span class="trophy" ${E.code ? `data-act="evOpen" data-v="${esc(E.id)}" style="cursor:pointer"` : ''}>${icon} <b>${esc(E.ev.n)}</b> <span class="muted">${EV_MODES[E.ev.m].i} ${MONTHS[+E.ev.d2.slice(5, 7) - 1]} ${E.ev.d2.slice(0, 4)}</span></span>`).join('')}</div></div>`;
+}
+
+// ---- the create form ----
+function evDraftNew(m = 'blitz') {
+  const t = todayIso(), crew = [...(isGuest() ? [] : [S.login]), ...S.crew.logins];
+  return { m, n:'', d1:t, d2:addDays(t, 6), p:null, pn:'', r:(['duel', 'dare'].includes(m) ? crew.slice(0, 2) : crew.slice(0, EV_ROSTER)).join(', '), open:false, t:[], q:null, qn:'', hits:[], dhits:[], msg:'' };
+}
+function evPreset(D, k) {
+  const t = todayIso(), dow = new Date(t + 'T12:00:00Z').getUTCDay();
+  const sat = dow === 0 ? addDays(t, -1) : addDays(t, (6 - dow) % 7), end = isoDay(new Date(+t.slice(0, 4), +t.slice(5, 7), 0).getTime());
+  const set = { weekend:[sat < t ? t : sat, addDays(sat, 1)], week:[t, addDays(t, 6)], month:[t.slice(0, 8) + '01', end], d1:[t, t], d2:[t, addDays(t, 1)], d3:[t, addDays(t, 2)] }[k];
+  if (set) [D.d1, D.d2] = set;
+  if (D.m === 'dare') D.d1 = t;
+}
+function evFormHtml() {
+  const D = S.evDraft, m = D.m;
+  const chip = (act, v, on, label) => `<span class="chip ${on ? 'on' : ''}" data-act="${act}" data-v="${v}" style="cursor:pointer">${label}</span>`;
+  const presets = m === 'duel' ? [['d1', '1 day'], ['d2', '2 days'], ['d3', '3 days']] : m === 'dare' ? [['weekend', 'By Sunday'], ['week', '7 days'], ['month', 'End of month']] : [['weekend', 'This weekend'], ['week', 'Next 7 days'], ['month', 'This month']];
+  const ref = D.p && S.ref['p' + D.p];
+  const scopeName = D.p ? esc(D.pn) : esc(S.places[S.M.home.state || S.M.home.country]?.n || 'your region');
+  const opts = {
+    blitz:`<label class="small"><input type="checkbox" data-evf="open" ${D.open ? 'checked' : ''} ${D.p ? '' : 'disabled'}> Open to anyone: the ${EV_OPEN_N} most active salticid observers in the place are the players${D.p ? '' : ' (pick a place first)'}</label>
+      ${D.p ? ref ? `<details style="margin-top:6px"><summary class="small">🎯 Target genera (score ×${EV_POINTS.target}): ${D.t.length ? D.t.map(gName).join(', ') : 'none'}</summary>
+        <div class="evtargets">${taxonomicOrder(Object.keys(ref.g).map(Number)).order.map(id => `<label class="small"><input type="checkbox" data-evt="${id}" ${D.t.includes(id) ? 'checked' : ''}> ${gName(id)} <span class="muted">${fmt(ref.g[id])}</span></label>`).join('')}</div></details>`
+        : '<p class="small muted">Loading the place\'s genera…</p>' : ''}`,
+    bingo:`<p class="small muted">${BINGO_POOL} squares are drawn when you create the link: ${SQ_FIXED.length} challenge squares (new genus, a male, three squares…) plus genera recorded in ${scopeName} that are in season, mostly common ones. Each player gets 24 of them and a free centre.</p>`,
+    dare:`<form class="row" data-form="evDare"><input name="q" placeholder="genus or species to dare them to find" style="flex:1;min-width:160px"><button>Search</button></form>
+      <div class="small" style="margin-top:4px">${D.dhits.map(h => `<a href="#" data-act="evDarePick" data-v="${esc(h.code)}">${esc(h.name)}</a> <span class="muted">${esc(h.rank)}</span>`).join(' · ')}</div>
+      <label class="small">…or a challenge: <select data-evf="qsq"><option value="">choose</option>${SQ_FIXED.map(c => `<option value="${c}" ${D.q === c ? 'selected' : ''}>${esc(SQ_LABEL[c])}</option>`).join('')}</select></label>
+      <p class="small" style="margin-bottom:0">Dare: <b>${D.q ? esc(evTargetTxt(D.q)) : 'not chosen yet'}</b></p>`,
+    turf:'', duel:'',
+  }[m];
+  return `<div class="panel evform" style="margin-bottom:16px"><h2>New event</h2>
+    <div class="row" style="gap:6px">${Object.entries(EV_MODES).filter(([k]) => k !== 'cup').map(([k, v]) => chip('evMode', k, k === m, `${v.i} ${v.n}`)).join('')}</div>
+    <div class="evgrid">
+      <label>Name <input data-evf="n" maxlength="40" value="${esc(D.n)}" placeholder="${esc(EV_MODES[m].n)}"></label>
+      <div><div class="row small" style="gap:6px">${presets.map(([k, l]) => chip('evPreset', k, false, l)).join('')}</div>
+        <div class="row" style="gap:6px;margin-top:6px">${m === 'dare' ? `<label class="small">Deadline <input type="date" data-evf="d2" value="${D.d2}"></label>`
+          : `<input type="date" data-evf="d1" value="${D.d1}" aria-label="Start"> – <input type="date" data-evf="d2" value="${D.d2}" aria-label="End">`}</div></div>
+      ${m === 'dare' ? '' : `<div>${D.p ? `<span class="chip on">📍 ${esc(D.pn)} <span data-act="evPlaceClear" style="cursor:pointer">✕</span></span>`
+        : `<form class="row" data-form="evPlace"><input name="q" placeholder="Place (optional): a park, LGA or region" style="flex:1;min-width:160px"><button>Search</button></form>
+          <div class="small" style="margin-top:4px">${D.hits.map(h => `<a href="#" data-act="evPlacePick" data-v="${h.id}">${esc(h.name)}</a>`).join(' · ')}</div>`}</div>`}
+      <label>${m === 'dare' ? 'Challenger, then the dared player' : m === 'duel' ? 'The two players' : 'Players (iNaturalist usernames, up to 6)'}
+        <input data-evf="r" value="${esc(D.r)}" ${m === 'blitz' && D.open ? 'disabled' : ''} placeholder="usernames, separated by commas"></label>
+    </div>
+    ${opts}
+    <p class="small muted">Rarity ★ counts iNat records in ${scopeName}. The link carries only usernames, dates${m === 'dare' ? '' : ', the place'} and taxon ids.</p>
+    <div class="row"><button class="primary" data-act="evCreate">Create and copy event link</button><button data-act="evCancel">Cancel</button><span class="small" id="evMsg">${esc(D.msg)}</span></div></div>`;
+}
+async function evCreate() {
+  const D = S.evDraft; if (!D || D.busy) return;
+  const msg = t => { D.msg = t; const el = $('#evMsg'); if (el) el.textContent = t; };
+  const ev = { v:1, m:D.m, n:(D.n.trim() || EV_MODES[D.m].n).slice(0, 40), d1:D.m === 'dare' ? todayIso() : D.d1, d2:D.d2, p:D.m === 'dare' ? null : D.p,
+    r:D.m === 'blitz' && D.open ? null : D.r.split(/[\s,;]+/).map(x => x.trim().replace(/^@/, '')).filter(Boolean), s:newSeed(),
+    sc:D.p && D.m !== 'dare' ? null : (S.M.home.state || S.M.home.country || null), t:D.m === 'blitz' && D.t.length ? D.t : null, b:null, q:D.m === 'dare' ? D.q : null };
+  const why = evCheck({ ...ev, b:ev.m === 'bingo' ? SQ_FIXED.concat(Array.from({ length:19 }, (_, i) => 'g' + (i + 1))) : null });
+  if (why) return msg(why);
+  if (ev.m === 'bingo') {
+    D.busy = true;
+    try { ev.b = await bingoPool(ev, msg); } catch (e) { D.busy = false; return msg(e.message); }
+    D.busy = false;
+    if (ev.b.length < 24) return msg('Not enough genera recorded in that area to fill a card. Pick a bigger place.');
+  }
+  evStart(ev, msg);
 }
 
 /* ---------------- share of the record: your records as a fraction of iNat's for a region (no extra calls) ---------------- */
@@ -3088,7 +3886,9 @@ function updateUrl() {
   const p = new URLSearchParams();
   if (S.login && !isGuest()) p.set('u', S.login);
   if (S.cmp?.M && S.cmp.login) p.set('vs', S.cmp.login);
-  if (S.tab === 'crew' && S.crew.logins.length) p.set('crew', S.crew.logins.join(','));
+  const evCode = S.tab === 'crew' && S.evOpen && S.events[S.evOpen]?.code;   // usernames, dates, a place id and taxon ids only
+  if (evCode) p.set('ev', evCode);
+  else if (S.tab === 'crew' && S.crew.logins.length) p.set('crew', S.crew.logins.join(','));
   const qs = p.toString();
   try { history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '')); } catch {}
 }
@@ -3145,7 +3945,8 @@ function enterApp(tab) {
   markVisit();
   S.tab = tab || (S.M.G.size ? 'profile' : 'map');
   updateUrl(); render();
-  if (S.pendingVs) { const v = S.pendingVs; S.pendingVs = null; S.tab = 'compare'; render(); loadCompare(v); }
+  if (S.pendingEv) { const c = S.pendingEv; S.pendingEv = null; openEventCode(c, true); }
+  else if (S.pendingVs) { const v = S.pendingVs; S.pendingVs = null; S.tab = 'compare'; render(); loadCompare(v); }
   else if (S.pendingCrew) { const c = S.pendingCrew; S.pendingCrew = null; S.tab = 'crew'; setCrew(c); }
 }
 function startGuest() {
@@ -3183,7 +3984,7 @@ document.addEventListener('click', e => {
   if (t.dataset.close && e.target !== t && !e.target.closest('.x')) return;
   if (t.dataset.genus) { e.preventDefault(); openGenus(+t.dataset.genus); return; }
   if (t.dataset.close) { $('#modalRoot').innerHTML = ''; return; }
-  if (t.dataset.tab) { e.preventDefault(); $('#modalRoot').innerHTML = ''; S.tab = t.dataset.tab; render(); return; }
+  if (t.dataset.tab) { e.preventDefault(); $('#modalRoot').innerHTML = ''; S.tab = t.dataset.tab; if (S.tab === 'crew') { S.evOpen = null; S.evBroken = false; } updateUrl(); render(); return; }
   if (t.dataset.filter) { S.prefs.filter = t.dataset.filter; savePrefs(); render(); return; }
   if (t.dataset.layer) { S.prefs.layer = t.dataset.layer; savePrefs(); render(); return; }
   if (t.dataset.scan) { if (S.tab !== 'map') { S.tab = 'map'; render(); } showCell(t.dataset.scan); scanCell(t.dataset.scan); return; }
@@ -3231,6 +4032,26 @@ document.addEventListener('click', e => {
   if (a === 'cardPng') cardExport(false);
   if (a === 'cardShare') cardExport(true);
   if (a === 'geo') geolocate();
+  if (a === 'evNew') { S.evDraft = evDraftNew(); render(); }
+  if (a === 'evCancel') { S.evDraft = null; render(); }
+  if (a === 'evMode' && S.evDraft) { const D = S.evDraft; S.evDraft = { ...evDraftNew(val), n:D.n, p:val === 'dare' ? null : D.p, pn:val === 'dare' ? '' : D.pn }; render(); }
+  if (a === 'evPreset' && S.evDraft) { evPreset(S.evDraft, val); render(); }
+  if (a === 'evPlacePick' && S.evDraft) {
+    e.preventDefault();
+    const D = S.evDraft, h = D.hits.find(x => String(x.id) === val);
+    if (h) { Object.assign(D, { p:h.id, pn:h.name, hits:[], t:[] }); S.places[h.id] = { n:h.name, l:h.l }; render(); ensureRefPlace(h.id).then(() => { saveShared(); if (S.evDraft) render(); }).catch(err => toast(err.message)); }
+  }
+  if (a === 'evPlaceClear' && S.evDraft) { Object.assign(S.evDraft, { p:null, pn:'', open:false, t:[] }); render(); }
+  if (a === 'evDarePick' && S.evDraft) { e.preventDefault(); S.evDraft.q = val; S.evDraft.dhits = []; render(); }
+  if (a === 'evCreate') evCreate();
+  if (a === 'evOpen' && S.events[val]) { e.preventDefault(); $('#modalRoot').innerHTML = ''; S.evOpen = val; S.evDraft = null; S.evBroken = false; S.tab = 'crew'; S.events[val].ts = Date.now(); updateUrl(); render(); }
+  if (a === 'evBack') { e.preventDefault(); S.evOpen = null; updateUrl(); render(); }
+  if (a === 'evRefresh') { evErr[val] = null; loadEvent(val, true); render(); }
+  if (a === 'evCopy') copyLink();
+  if (a === 'evRematch') evRematch(val);
+  if (a === 'evDareBack') evDareBack(val);
+  if (a === 'evCard') openEventCard(val);
+  if (a === 'evDel') { delete S.events[val]; evSave(); render(); }
   if (a === 'clearBase') { delete S.u.base; saveUser(); S.M = buildModel(); render(); }
   if (a === 'guest') startGuest();
   if (a === 'sample') { $('#loginInput').value = SAMPLE_LOGIN; onboard(SAMPLE_LOGIN); }
@@ -3242,6 +4063,22 @@ document.addEventListener('submit', async e => {
   e.preventDefault();
   if (f === 'compare') loadCompare(e.target.login.value);
   if (f === 'crew') setCrew(e.target.logins.value.split(/[\s,;]+/));
+  if (f === 'evPlace' && S.evDraft) {
+    const q = e.target.q.value.trim(), D = S.evDraft; if (!q) return;
+    try { const d = await api('/places/autocomplete', { q, per_page:8 }); D.hits = d.results.map(x => ({ id:x.id, name:x.display_name || x.name, l:x.admin_level ?? null })); D.msg = D.hits.length ? '' : 'No places found.'; }
+    catch (err) { D.msg = err.message; }
+    render();
+  }
+  if (f === 'evDare' && S.evDraft) {
+    const q = e.target.q.value.trim(), D = S.evDraft; if (!q) return;
+    try {
+      const d = await api('/taxa/autocomplete', { q, taxon_id:SALTICIDAE, rank:'genus,species', per_page:8 });
+      d.results.forEach(addNode);
+      D.dhits = d.results.filter(x => ['genus', 'species'].includes(x.rank)).map(x => ({ code:(x.rank === 'genus' ? 'g' : 's') + x.id, name:x.name, rank:x.rank }));
+      D.msg = D.dhits.length ? '' : 'No jumping spider genus or species by that name.';
+    } catch (err) { D.msg = err.message; }
+    render();
+  }
   if (f === 'placeSearch') {
     const q = e.target.q.value.trim(); if (!q) return;
     const out = $('#placeResults'); out.textContent = 'Searching…';
@@ -3267,8 +4104,24 @@ document.addEventListener('submit', async e => {
     } catch (err) { out.textContent = err.message; }
   }
 });
+// Event form: typing updates the draft without redrawing (keeps focus); toggles redraw
+document.addEventListener('input', e => { const k = e.target.dataset?.evf; if (S.evDraft && ['n', 'r', 'd1', 'd2'].includes(k)) S.evDraft[k] = e.target.value; });
 document.addEventListener('change', async e => {
   if (e.target.dataset.tripm && S.trip.cur) { S.trip.cur.m = +e.target.value; saveTrip(); render(); return; }
+  const evf = e.target.dataset.evf, D = S.evDraft;
+  if (evf && D) {
+    if (evf === 'open') { D.open = e.target.checked; render(); }
+    else if (evf === 'qsq') { D.q = e.target.value || null; render(); }
+    else D[evf] = e.target.value;
+    return;
+  }
+  if (e.target.dataset.evt && D) {
+    const id = +e.target.dataset.evt;
+    if (!e.target.checked) D.t = D.t.filter(x => x !== id);
+    else if (D.t.length >= EV_TARGETS) { e.target.checked = false; toast(`Up to ${EV_TARGETS} targets.`); }
+    else D.t.push(id);
+    return;
+  }
   const p = e.target.dataset.pref; if (!p) return;
   S.prefs[p] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; savePrefs();
   if (p === 'scope') { try { await ensureRef(S.prefs.scope); } catch (err) { toast(err.message); } S.M = buildModel(); }
@@ -3284,7 +4137,7 @@ $('#openDex').addEventListener('click', () => enterApp());
 // ?u=<login> opens that SPOODEX (importing it if needed); ?vs=<login> jumps to Compare.
 // Otherwise a returning player opens straight from cache, then quietly syncs.
 // Shared caches get their defaults when the script loads, before IndexedDB is open; re-read them once it is.
-const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladder', 'crew', 'pioneer', 'report', 'haunts', 'trip'];
+const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladder', 'crew', 'pioneer', 'report', 'haunts', 'trip', 'events'];
 (async function boot() {
   track(location.pathname, false);
   await store.init();
@@ -3293,12 +4146,14 @@ const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladd
   const u = (q.get('u') || '').trim().replace(/^@/, '');
   S.pendingVs = (q.get('vs') || '').trim() || null;
   S.pendingCrew = q.get('crew') ? q.get('crew').split(',') : null;
+  S.pendingEv = (q.get('ev') || '').trim() || null;
   const target = u || store.get('lastLogin');
   if (target && store.get(ukey(target))) {
     loadUser(target);
     try { S.M = buildModel(); enterApp(); doSync(false); return; } catch (e) { console.warn(e); }
   }
   if (u) { $('#loginInput').value = u; onboard(u); }
+  else if (S.pendingEv) startGuest();   // an event link opened by someone new: view it as a guest
 })();
 </script>
 </body>
