@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SPOODEX</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#e7d8b9">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-title" content="SPOODEX">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=IBM+Plex+Mono:wght@400;600&family=Caveat:wght@600&display=swap" rel="stylesheet">
@@ -262,6 +267,51 @@ main { padding-top:18px; }
 .plate { text-align:center; padding:40px 16px; border:2px dashed var(--line); border-radius:var(--radius); }
 .plate h2 { font-size:22px; }
 
+/* ---------- Spooding weather & field mode ---------- */
+.wxpanel { margin-bottom:16px; }
+.wxhead { margin-bottom:8px; }
+.wxhead h2 { margin:0; }
+.wxgrid { display:grid; grid-template-columns:minmax(0,3fr) minmax(0,2fr); gap:18px; }
+.wxstrip { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:4px; margin-bottom:6px; }
+.wxday { border:1px solid var(--line); border-radius:var(--radius); padding:5px 1px; text-align:center; font-size:11px; line-height:1.35; background:var(--panel2); }
+.wxday b, .wxday span { display:block; white-space:nowrap; overflow:hidden; }
+.wxday.good { border-color:var(--lit); }
+.wxwins { margin:4px 0 0; padding-left:22px; }
+.wxwins li { padding:2px 0; }
+.wxg { padding:4px 0; border-bottom:1px dashed var(--dim); }
+#offChip { background:var(--accent); color:var(--panel); border-color:var(--accent); }
+body.fieldon { overflow:hidden; }
+.fieldov { position:fixed; inset:0; z-index:900; background:var(--bg); background-image:var(--paper); overflow-y:auto; overscroll-behavior:contain; }
+.fieldbar { position:sticky; top:0; z-index:1; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 16px; padding-top:max(8px, env(safe-area-inset-top)); background:var(--ink); color:var(--panel); }
+.fieldbar b { font:400 21px var(--head); }
+.fieldbar button { background:var(--panel); color:var(--ink); border-color:var(--panel); min-height:44px; font-weight:600; }
+.fieldwrap { max-width:520px; margin:0 auto; padding:12px 16px 40px; display:flex; flex-direction:column; gap:12px; font-size:16px; }
+.fieldwrap .panel { border:2px solid var(--ink); padding:14px; }
+.fieldwrap h3 { font-size:20px; }
+.fieldwrap .small { font-size:14px; }
+.fieldwrap .muted { color:var(--ink); opacity:.78; }
+.fieldwrap a { font-weight:600; }
+.fieldwrap button { min-height:44px; }
+.fieldwrap button.big { width:100%; min-height:56px; font-size:19px; }
+.fstatus:empty { display:none; }
+.fstatus { background:var(--ink); color:var(--panel); border-radius:var(--radius); padding:10px 12px; font-weight:600; }
+.fbig { font:600 22px var(--head); }
+.fdial { display:block; width:min(78vw, 300px); height:auto; margin:0 auto 8px; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+.fdial .spin { transform-origin:100px 100px; transition:transform .2s linear, opacity .2s; }
+.fdial .face { fill:var(--panel); stroke:var(--ink); stroke-width:3; }
+.fdial .ticks line { stroke:var(--ink); stroke-width:2; }
+.fdial text { font:700 22px var(--body); fill:var(--ink); text-anchor:middle; dominant-baseline:middle; }
+.fdial text.n { fill:var(--accent); }
+.fdial .head { fill:var(--accent); stroke:var(--ink); stroke-width:2; stroke-linejoin:round; }
+.fdial .tail { fill:var(--ink); opacity:.35; }
+.fdial .lubber, .fdial .hub { fill:var(--ink); }
+.ftarget { text-align:center; }
+.fdist { font:600 26px var(--head); }
+.fgen { font-size:19px; margin:2px 0 4px; }
+.fgenrow { padding:8px 0; border-bottom:1px dashed var(--line); }
+.fgenrow a { font-size:17px; }
+@media (max-width:820px) { .wxgrid { grid-template-columns:1fr; } }
+
 @media (max-width:600px) {
   .brand h1 { font-size:20px; }
   .lvl { margin-left:0; }
@@ -303,6 +353,8 @@ main { padding-top:18px; }
       <div class="lvl">
         <span class="muted" id="whoami"></span>
         <b id="lvlBadge"></b>
+        <span class="chip hidden" id="offChip">Offline</span>
+        <button data-act="field" title="Field compass: where you are, what's around, and the nearest recent records of genera you're missing">🧭 Field</button>
         <button id="syncBtn" title="Fetch new/updated observations since last sync">⟳ Sync</button>
         <button id="shareBtn" title="Copy a link to this SPOODEX">🔗 Share</button>
         <button id="menuBtn" title="Settings">⚙</button>
@@ -313,6 +365,7 @@ main { padding-top:18px; }
   <main class="wrap" id="view"></main>
 </div>
 
+<div id="fieldRoot"></div>
 <div id="modalRoot"></div>
 
 <script>
@@ -455,6 +508,7 @@ async function api(path, params = {}, base = API) {
   const qs = new URLSearchParams(Object.entries(params).filter(([,v]) => v != null && v !== '')).toString();
   const url = `${base}${path}${qs ? '?'+qs : ''}`;
   for (let attempt = 0; attempt < 5; attempt++) {
+    if (!navigator.onLine) throw new Error('Offline');
     const now = Date.now(), slot = Math.max(now, nextSlot);
     nextSlot = slot + 1100;
     if (slot > now) await sleep(slot - now);
@@ -462,7 +516,7 @@ async function api(path, params = {}, base = API) {
     // Back off the whole queue, not just this call, so queued requests don't keep hammering a rate-limited API.
     // iNat's 429s carry no CORS header, so in a browser they surface as network errors rather than status 429.
     const backoff = async () => { const wait = 5000 * (attempt+1); nextSlot = Math.max(nextSlot, Date.now() + wait); await sleep(wait); };
-    try { r = await fetch(url); } catch (e) { await backoff(); continue; }
+    try { r = await fetch(url); } catch (e) { if (!navigator.onLine) throw new Error('Offline'); await backoff(); continue; }
     if (r.status === 429 || r.status >= 500) { await backoff(); continue; }
     if (!r.ok) throw new Error(`iNaturalist returned ${r.status} for ${path}`);
     return r.json();
@@ -994,7 +1048,7 @@ function render() {
   const plan = S.tab === 'trip' && $('#tripPlan');
   if (plan) plan.innerHTML = viewTripPlan();
   else v.innerHTML = ({ profile:viewProfile, dex:viewDex, tree:viewTree, map:viewMapShell, quests:viewQuests, compare:viewCompare, ladder:viewLadder, crew:viewCrew, report:viewReport, wanted:viewWanted, trip:viewTrip })[S.tab]();
-  if (S.tab === 'map') initMap();
+  if (S.tab === 'map') { initMap(); loadWx(); }
   if (S.tab === 'trip') mountTripMap();
 }
 function lockedPlate(t) {
@@ -1281,7 +1335,7 @@ function baseWidget() {
 }
 function viewMapShell() {
   const M = S.M;
-  return `<div class="maplayout"><div id="map"></div><div class="panel" id="mapSide">
+  return `${wxPanelHtml()}<div class="maplayout"><div id="map"></div><div class="panel" id="mapSide">
     <h2>Locality grid</h2><p class="muted small">Each square is ~25 km, coloured by how many genera you've recorded there.</p>
     <p class="small">Click a square, or anywhere on the map, to scan the surrounding 25 km for genera others have recorded that you're missing.</p>
     ${M.homeCell ? `<button class="primary" data-scan="${esc(M.homeCell.k)}">📡 Scan home base</button>` : ''}
@@ -1345,12 +1399,14 @@ async function scanCell(k) {
     if (S.tab === 'map') showScan(k); else render();
   } catch (e) { if (out) out.innerHTML = `<p>${esc(e.message)}</p>`; }
 }
-async function fetchScan(k) {
+// `into`: a session-only box instead of the save (field mode never stores where you are)
+async function fetchScan(k, into = null) {
   const c = pointFor(k); if (!c) return;
   const d = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, lat:c.lat.toFixed(3), lng:c.lng.toFixed(3), radius:25, verifiable:true });
   d.results.forEach(addNode);
-  S.u.scans[k] = { ts:Date.now(), g:d.results.filter(r => r.rank === 'genus').map(r => ({ id:r.id, c:r.descendant_obs_count || r.count || 0 })) };
-  saveUser(); saveShared();
+  (into || S.u.scans)[k] = { ts:Date.now(), g:d.results.filter(r => r.rank === 'genus').map(r => ({ id:r.id, c:r.descendant_obs_count || r.count || 0 })) };
+  if (!into) saveUser();
+  saveShared();
 }
 function showScan(k) {
   const sc = S.u.scans[k], target = $('#scanRes') || $('#scanOut'); if (!sc || !target) return;
@@ -1368,17 +1424,18 @@ function showScan(k) {
 
 /* ---------------- active now: the same 25 km scan, limited to the last 30 days ---------------- */
 const ACTIVE_DAYS = 30, ACTIVE_TTL = 6 * 3600e3;
-async function scanActive(k, force = false) {
+async function scanActive(k, force = false, into = null) {
   const c = pointFor(k); if (!c) return null;
   S.u.active = S.u.active || {};
-  const cur = S.u.active[k];
+  const box = into || S.u.active, cur = box[k];
   if (cur && !force && Date.now() - cur.ts < ACTIVE_TTL) return cur;
   const d1 = new Date(Date.now() - ACTIVE_DAYS * 864e5).toISOString().slice(0,10);
   const d = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, lat:c.lat.toFixed(3), lng:c.lng.toFixed(3), radius:25, verifiable:true, d1 });
   d.results.forEach(addNode);
-  S.u.active[k] = { ts:Date.now(), d1, g:d.results.filter(r => r.rank === 'genus').map(r => ({ id:r.id, c:r.descendant_obs_count || r.count || 0 })) };
-  saveUser(); saveShared();
-  return S.u.active[k];
+  box[k] = { ts:Date.now(), d1, g:d.results.filter(r => r.rank === 'genus').map(r => ({ id:r.id, c:r.descendant_obs_count || r.count || 0 })) };
+  if (!into) saveUser();
+  saveShared();
+  return box[k];
 }
 function activeHtml(k) {
   const act = S.u.active?.[k]; if (!act) return '';
@@ -1451,6 +1508,7 @@ function phenoUpdated() {
   document.querySelectorAll('[data-pheno]').forEach(el => el.innerHTML = phenoHtml(+el.dataset.pheno));
   document.querySelectorAll('[data-phenochart]').forEach(el => { const d = el.dataset;
     el.innerHTML = phenoChart(+d.phenochart, d.phenopid ? +d.phenopid : undefined, d.phenom ? +d.phenom : undefined); });
+  const wg = $('#wxGenera'); if (wg) wg.innerHTML = wxGeneraHtml();
   if (['wanted', 'trip'].includes(S.tab) && !$('#modalRoot').innerHTML) softRender();
 }
 
@@ -2186,11 +2244,13 @@ function kmBetween(a, b) {
   return 12742 * Math.asin(Math.sqrt(h));
 }
 const kmTxt = d => `~${Math.max(5, Math.round(d / 5) * 5)} km away`;   // distance to a 25 km square's centre, so keep it rough
-function bearingTxt(a, b) {
+function bearingDeg(a, b) {
   const r = Math.PI / 180, y = Math.sin((b.lng - a.lng) * r) * Math.cos(b.lat * r);
   const x = Math.cos(a.lat * r) * Math.sin(b.lat * r) - Math.sin(a.lat * r) * Math.cos(b.lat * r) * Math.cos((b.lng - a.lng) * r);
-  return ['N','NE','E','SE','S','SW','W','NW'][Math.round(((Math.atan2(y, x) / r + 360) % 360) / 45) % 8];
+  return (Math.atan2(y, x) / r + 360) % 360;
 }
+const compassPt = deg => ['N','NE','E','SE','S','SW','W','NW'][Math.round((((deg % 360) + 360) % 360) / 45) % 8];
+const bearingTxt = (a, b) => compassPt(bearingDeg(a, b));
 function agoTxt(d) {
   if (!d) return '';
   const days = Math.round((Date.now() - Date.parse(d + 'T12:00:00')) / 864e5);
@@ -2226,7 +2286,7 @@ function wantedList(ctx = homeCtx()) {
       x.season = x.few ? .5 : x.curve[m];
     }
     // Reach: how far the nearest record square is from the centre (unknown until its haunts are fetched)
-    const hn = S.haunts[hauntKey(x.id, ctx)], hs = hauntSummary(hn, ctx);
+    const hn = hauntsOf(ctx)[hauntKey(x.id, ctx)], hs = hauntSummary(hn, ctx);
     x.dist = !hn ? null : hs?.nearest && !hn.wide ? hs.nearest.d : Infinity;
     x.reach = !ctx.centre ? 1 : x.dist == null ? .7 : x.dist === Infinity ? .15 : 1 / (1 + (x.dist / 100) ** 2);
     x.score = x.pre * (.25 + (x.season ?? .5)) * x.reach;
@@ -2236,10 +2296,11 @@ function wantedList(ctx = homeCtx()) {
   list.forEach(x => x.tier = x.score >= .6 * top ? 'Prime suspect' : x.score >= .3 * top ? 'Worth a look' : 'Long shot');
   return list;
 }
+const hauntsOf = ctx => ctx.mem || S.haunts;   // field mode away from home keeps its haunts in memory, never in the save
 const hauntKey = (gid, ctx = homeCtx()) => { const c = ctx.centre; return c ? `${gid}@${c.lat.toFixed(1)},${c.lng.toFixed(1)}` : `${gid}@p${ctx.pid}`; };
 // Recent records around the centre (v2 API with only the fields we need), binned into 25 km squares. Falls back to the whole region.
 async function ensureHaunts(gid, ctx = homeCtx()) {
-  const key = hauntKey(gid, ctx), cur = S.haunts[key];
+  const H = hauntsOf(ctx), key = hauntKey(gid, ctx), cur = H[key];
   if (cur && Date.now() - cur.ts < HAUNT_TTL) return cur;
   const h = ctx.centre, pid = ctx.pid;
   const q = { taxon_id:gid, verifiable:true, per_page:200, order_by:'observed_on', order:'desc', fields:'id,observed_on,obscured,geojson' };
@@ -2253,7 +2314,8 @@ async function ensureHaunts(gid, ctx = homeCtx()) {
     e[1]++; if ((o.observed_on || '') > e[2]) e[2] = o.observed_on || '';
     cells.set(k, e);
   }
-  S.haunts[key] = { ts:Date.now(), n:d?.total_results || 0, used:d?.results.length || 0, skipped, wide, cells:[...cells.values()] };
+  H[key] = { ts:Date.now(), n:d?.total_results || 0, used:d?.results.length || 0, skipped, wide, cells:[...cells.values()] };
+  if (H !== S.haunts) return H[key];
   Object.keys(S.haunts).sort((a,b) => S.haunts[b].ts - S.haunts[a].ts).slice(HAUNT_KEEP).forEach(k => delete S.haunts[k]);
   store.set('haunts', S.haunts);
   return S.haunts[key];
@@ -2268,7 +2330,7 @@ function hauntSummary(hn, ctx = homeCtx()) {
 }
 const ctxWhere = ctx => esc(S.places[ctx.pid]?.n || 'your region');
 function wantedReasons(x, ctx = homeCtx()) {
-  const hn = S.haunts[hauntKey(x.id, ctx)], hs = hauntSummary(hn, ctx), out = [], at = esc(ctx.at);
+  const hn = hauntsOf(ctx)[hauntKey(x.id, ctx)], hs = hauntSummary(hn, ctx), out = [], at = esc(ctx.at);
   if (x.recent) out.push(`🔥 ${x.recent} record${x.recent === 1 ? '' : 's'} ${ctx.centre ? `within ${ctx.km} km` : `in ${ctxWhere(ctx)}`} in the last ${ACTIVE_DAYS} days`);
   if (x.peak) out.push(x.few ? '🗓 Season unclear (few records)' : x.peak.now ? `🌡 In season ${monthTxt(ctx.month)} (peak ${esc(x.peak.text)})` : `🗓 Peak ${esc(x.peak.text)}`);
   if (ctx.centre && x.near) out.push(`📍 ${fmt(x.near)} record${x.near === 1 ? '' : 's'} within ${ctx.km} km of ${at}, all time`);
@@ -3062,6 +3124,405 @@ function drawWrappedCard(cv, W, tiles, photosOnly) {
   return K.tainted;
 }
 
+/* ---------------- spooding weather: the best hours near home this week, from the Open-Meteo forecast ---------------- */
+// Scores the weather and the season, not the spiders. Every threshold is a first guess for the owner to tune (HANDOVER §12).
+const WX = {
+  warm:{ from:18, full:24, hot:32, tooHot:35, max:40 },   // °C: 0 at `from`, 1 from `full` to `hot`, .8 at `tooHot`, 0 at `max`
+  sun:{ dim:100, bright:500, clear:.7 },                   // shortwave W/m² from dim to bright, or clear sky × `clear`, whichever is higher
+  dry:{ pp:[20, 70], mm:[.1, 1] },                         // rain chance % and mm per hour: no penalty below the first, 0 at the second
+  calm:{ kmh:[15, 35] },                                   // wind at 10 m, km/h
+  floor:{ sun:.4, calm:.5 },                               // share of the score a dull or windy hour keeps
+  good:.6,                                                 // a window = consecutive daylight hours scoring at least this
+  perHour:.03, hourCap:4,                                  // window ranking: mean score + this per hour (up to hourCap), so longer windows win near-ties
+  sky:[30, 70],                                            // mean cloud %: below the first "sunny", below the second "partly cloudy", else "cloudy" ("hazy sun" if still bright)
+};
+// Free tier: non-commercial use only, CC BY 4.0 (credited in the panel). If SPOODEX ever charges, this needs Open-Meteo's paid plan.
+const WX_URL = 'https://api.open-meteo.com/v1/forecast', WX_TTL = 3600e3, WX_KEEP = 4;
+S.wx = store.get('wx', {});   // `${lat},${lng}` of the home base rounded to 0.1° -> {ts, off:UTC offset s, h:{time, t, pp, p, cc, w, sw, day}}
+let wxBusy = false, wxErr = null, wxNext = 0;
+const wxKey = c => `${c.lat.toFixed(1)},${c.lng.toFixed(1)}`;
+const ramp = (v, a, b) => Math.min(1, Math.max(0, (v - a) / (b - a)));
+// A small queue of its own: api() is for iNat only
+async function wxFetch(url) {
+  const now = Date.now(), slot = Math.max(now, wxNext);
+  wxNext = slot + 1100;
+  if (slot > now) await sleep(slot - now);
+  if (!navigator.onLine) throw new Error('Offline');
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`Open-Meteo returned ${r.status}`);
+  return r.json();
+}
+async function loadWx(force = false) {
+  const c = S.M?.homeCell; if (!c || wxBusy) return;
+  const k = wxKey(c), cur = S.wx[k];
+  if (!force && cur && Date.now() - cur.ts < WX_TTL) return;
+  wxBusy = true; wxErr = null; paintWx();
+  try {
+    const [lat, lng] = k.split(',');
+    const d = await wxFetch(`${WX_URL}?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,precipitation_probability,precipitation,cloud_cover,wind_speed_10m,shortwave_radiation,is_day&timezone=auto&forecast_days=7`);
+    const h = d.hourly;
+    if (!h?.time?.length) throw new Error('empty forecast');
+    S.wx[k] = { ts:Date.now(), off:d.utc_offset_seconds || 0, h:{ time:h.time, t:h.temperature_2m, pp:h.precipitation_probability, p:h.precipitation,
+      cc:h.cloud_cover, w:h.wind_speed_10m, sw:h.shortwave_radiation, day:h.is_day } };
+    Object.keys(S.wx).sort((a,b) => S.wx[b].ts - S.wx[a].ts).slice(WX_KEEP).forEach(x => delete S.wx[x]);
+    store.set('wx', S.wx);
+  } catch (e) { wxErr = navigator.onLine ? 'Open-Meteo isn\'t responding' : 'Offline'; }
+  wxBusy = false; paintWx();
+}
+function wxWarm(t) {
+  const w = WX.warm;
+  if (t < w.full) return ramp(t, w.from, w.full);
+  if (t <= w.hot) return 1;
+  if (t <= w.tooHot) return 1 - .2 * ramp(t, w.hot, w.tooHot);
+  return .8 * (1 - ramp(t, w.tooHot, w.max));
+}
+function wxScore(t, pp, p, cc, w, sw) {
+  const sun = Math.max(ramp(sw || 0, WX.sun.dim, WX.sun.bright), WX.sun.clear * (1 - (cc ?? 100) / 100));
+  const dry = Math.min(1 - ramp(pp || 0, ...WX.dry.pp), 1 - ramp(p || 0, ...WX.dry.mm));
+  const calm = 1 - ramp(w || 0, ...WX.calm.kmh);
+  return wxWarm(t) * dry * (WX.floor.sun + (1 - WX.floor.sun) * sun) * (WX.floor.calm + (1 - WX.floor.calm) * calm);
+}
+// Daylight hours from now on, scored; windows = runs of good hours. Times are local to the forecast point.
+function wxPlan(f) {
+  const h = f.h, now = new Date(Date.now() + f.off * 1000).toISOString().slice(0, 13);
+  const days = new Map(), wins = [];
+  let run = null;
+  const close = () => { if (run) wins.push(run); run = null; };
+  h.time.forEach((time, i) => {
+    const d = time.slice(0, 10), hr = +time.slice(11, 13);
+    if (!days.has(d)) days.set(d, { d, tmax:null, win:null });
+    const day = days.get(d);
+    if (h.t[i] != null) day.tmax = Math.max(day.tmax ?? -99, h.t[i]);
+    if (!h.day[i] || h.t[i] == null || time.slice(0, 13) < now) return close();
+    const s = wxScore(h.t[i], h.pp[i], h.p[i], h.cc[i], h.w[i], h.sw[i]);
+    if (s < WX.good || (run && run.d !== d)) close();
+    if (s < WX.good) return;
+    run = run || { d, from:hr, s:[], t:[], cc:[], sw:[], pp:[] };
+    run.to = hr + 1; run.s.push(s); run.t.push(h.t[i]); run.cc.push(h.cc[i] ?? 0); run.sw.push(h.sw[i] || 0); run.pp.push(h.pp[i] ?? 0);
+  });
+  close();
+  const avg = a => a.reduce((x, y) => x + y, 0) / a.length;
+  for (const w of wins) {
+    w.mean = avg(w.s); w.temp = Math.round(avg(w.t)); w.rain = Math.max(...w.pp);
+    const cc = avg(w.cc);
+    // Thin high cloud counts towards cloud cover while the sun still gets through, so check the radiation too
+    w.sky = cc < WX.sky[0] ? 'sunny' : cc < WX.sky[1] ? 'partly cloudy' : avg(w.sw) >= WX.sun.bright ? 'hazy sun' : 'cloudy';
+    w.rank = w.mean + WX.perHour * Math.min(w.s.length, WX.hourCap);
+    const day = days.get(w.d);
+    if (!day.win || w.rank > day.win.rank) day.win = w;
+  }
+  return { days:[...days.values()].slice(0, 7), wins:wins.sort((a,b) => b.rank - a.rank), today:now.slice(0, 10) };
+}
+const wxDay = (d, today) => d === today ? 'Today' : new Date(d + 'T12:00:00Z').toLocaleDateString('en', { weekday:'short', timeZone:'UTC' });
+const wxHr = h => h % 12 || 12, wxAp = h => h % 24 < 12 ? 'am' : 'pm';
+const wxSpan = (a, b) => wxAp(a) === wxAp(b) ? `${wxHr(a)}–${wxHr(b)} ${wxAp(b)}` : `${wxHr(a)} ${wxAp(a)}–${wxHr(b)} ${wxAp(b)}`;
+const wxWinTxt = (w, today) => `${wxDay(w.d, today)} ${wxSpan(w.from, w.to)} · ${w.temp} °C · ${w.sky}${w.rain >= WX.dry.pp[0] ? ` · ${w.rain}% chance of rain` : ''}`;
+const wxPanelHtml = () => `<div class="panel wxpanel" id="wxPanel">${wxInner()}</div>`;
+function paintWx() { const el = $('#wxPanel'); if (el) el.innerHTML = wxInner(); }
+function wxInner() {
+  const c = S.M.homeCell;
+  const head = `<div class="row wxhead"><h2>Spooding weather</h2><a class="small" href="https://open-meteo.com/" target="_blank" rel="noopener">Weather: Open-Meteo</a>
+    <button class="primary" data-act="field" style="margin-left:auto">🧭 Field compass</button></div>`;
+  if (!c) return head + '<p class="small">Set a home base to see the best hours to go spooding this week.</p>';
+  const f = S.wx[wxKey(c)];
+  if (!f) return head + (wxErr ? `<p class="small">${esc(wxErr)}. <button data-act="wxRetry">Try again</button></p>` : '<p class="small muted">Fetching the 7-day forecast…</p>');
+  const plan = wxPlan(f);
+  const strip = plan.days.map(d => {
+    const w = d.win, mix = w ? Math.round(25 + 40 * ramp(w.mean, WX.good, 1)) : 0;
+    return `<div class="wxday${w ? ' good' : ''}"${w ? ` style="background:color-mix(in srgb, var(--lit) ${mix}%, var(--panel))"` : ''} title="${esc(w ? wxWinTxt(w, plan.today) : 'No good window')}">
+      <b>${wxDay(d.d, plan.today)}</b><span>${d.tmax != null ? Math.round(d.tmax) + '°' : ''}</span><span>${w ? `${wxHr(w.from)}–${wxHr(w.to)}` : '–'}</span></div>`;
+  }).join('');
+  const top = plan.wins.slice(0, 3);
+  return `${head}${wxErr ? `<p class="small">${esc(wxErr)}; showing the forecast from ${agoShort(f.ts)}. <button data-act="wxRetry">Try again</button></p>` : ''}
+    <div class="wxgrid"><div>
+      <div class="wxstrip">${strip}</div>
+      <p class="small muted" style="margin:0 0 6px">Daylight hours scored for warmth, sun, rain and wind; the darker the day, the better its best window.</p>
+      <h3 style="margin:10px 0 2px">Best windows</h3>
+      ${top.length ? `<ol class="wxwins">${top.map(w => `<li>${esc(wxWinTxt(w, plan.today))}</li>`).join('')}</ol>`
+        : '<p class="small">No good windows in the next 7 days: too cool, wet or windy.</p>'}
+    </div><div id="wxGenera">${wxGeneraHtml()}</div></div>`;
+}
+// Missing genera worth the trip: in season this month, or recorded within 25 km of home in the last 30 days
+function wxGeneraHtml() {
+  const ctx = homeCtx(), list = wantedList(ctx);
+  if (!list) return '';
+  ensurePheno(list.map(x => x.id), ctx.pid);
+  const top = list.filter(x => x.season >= .6 || x.recent).slice(0, 5);
+  return `<h3 style="margin:0 0 4px">Missing genera, in season or active near home</h3>
+    ${top.map(x => `<div class="wxg">${x.recent ? '🔥 ' : ''}<a href="#" data-genus="${x.id}"><i>${esc(S.nodes[x.id]?.n || '?')}</i></a>
+      <span class="small muted">${x.recent ? `${x.recent} record${x.recent === 1 ? '' : 's'} within ${ctx.km} km in ${ACTIVE_DAYS} days` : x.peak && !x.few ? `peak ${esc(x.peak.text)}` : ''}</span>
+      <a href="#" class="small" data-act="wanted" data-v="${x.id}">case file</a></div>`).join('')
+    || `<p class="small muted">${phenoBusy ? 'Checking seasons…' : `None of your missing genera is in season in ${MONTHS[ctx.month]}.`}</p>`}`;
+}
+
+/* ---------------- field compass: where you are, what's around, and a needle to the nearest recent records of missing genera ---------------- */
+// The live position lives only in F, for this session: never saved, logged, tracked or put in a link. It reaches iNat only as a
+// 25 km scan point rounded to 0.1°, like a map scan. The needle points at 25 km square centres (the 25 km rule), never at records.
+const FIELD = { scanGap:10 * 60e3, recentDays:90, haunts:8, homeKm:75, cachedKm:15, list:15 };
+const F = { on:false, pos:null, geo:'', compass:'', heading:null, watch:null, lock:null, sq:null, toasted:new Set(),
+  scans:{}, active:{}, haunts:{}, scanK:null, scanAt:0, scanTimer:0, scanning:false, scanErr:null, hauntsBusy:false, hauntsFor:'',
+  pick:0, tb:null, rose:0, arrow:0, raf:0 };
+const fieldKey = p => `pt:${p.lat.toFixed(1)},${p.lng.toFixed(1)}`;
+const agoShort = ts => { const m = Math.round((Date.now() - ts) / 60e3); return m < 2 ? 'just now' : m < 90 ? `${m} min ago` : sinceTxt(ts); };
+// Near home the needle uses the home base's haunts (shared with the wanted posters). Further away it uses a 0.5° centre,
+// so walking about doesn't refetch, and keeps those haunts in memory only.
+function fieldCtx() {
+  const home = homeCtx(), p = F.pos;
+  if (!p || (home.centre && kmBetween(home.centre, p) <= FIELD.homeKm)) return home;
+  const fs = fieldScan();
+  return { ...home, kind:'field', centre:{ lat:Math.round(p.lat * 2) / 2, lng:Math.round(p.lng * 2) / 2 }, near:fs?.sc.g, recent:fs?.act?.g,
+    at:'here', atLong:'here', mem:F.haunts };
+}
+// This session's scan of the current 0.1° cell, else the nearest cached scan within 15 km (this session's, or a saved map scan)
+function fieldScan() {
+  const p = F.pos; if (!p) return null;
+  const k = fieldKey(p);
+  if (F.scans[k]) return { sc:F.scans[k], act:F.active[k], d:0, live:true };
+  let best = null;
+  const consider = (key, sc, act) => {
+    const c = pointFor(key); if (!c) return;
+    const d = kmBetween(p, c);
+    if (d <= FIELD.cachedKm && (!best || d < best.d)) best = { sc, act, d, live:false };
+  };
+  for (const [key, sc] of Object.entries(F.scans)) consider(key, sc, F.active[key]);
+  for (const [key, sc] of Object.entries(S.u.scans)) consider(key, sc, S.u.active?.[key]);
+  return best;
+}
+// Squares holding a record from the last 90 days of a genus you're missing, nearest first
+function fieldTargets() {
+  const p = F.pos; if (!p) return [];
+  const ctx = fieldCtx(), H = hauntsOf(ctx), cut = new Date(Date.now() - FIELD.recentDays * 864e5).toISOString().slice(0, 10), cells = new Map();
+  for (const x of wantedList(ctx) || []) {
+    const hn = H[hauntKey(x.id, ctx)]; if (!hn || hn.wide) continue;
+    for (const [k, , last] of hn.cells) {
+      if (last < cut) continue;
+      const e = cells.get(k) || { k, g:[], last:'' };
+      e.g.push(x.id); if (last > e.last) e.last = last;
+      cells.set(k, e);
+    }
+  }
+  return [...cells.values()].map(e => { const c = cellCenter(e.k); return { ...e, d:kmBetween(p, c), b:bearingDeg(p, c) }; }).sort((a,b) => a.d - b.d);
+}
+async function fieldScanNow() {
+  clearTimeout(F.scanTimer);
+  if (!F.on || !F.pos || F.scanning) return;
+  const k = fieldKey(F.pos);
+  if (k === F.scanK || !navigator.onLine) return;
+  const wait = F.scanAt + FIELD.scanGap - Date.now();
+  if (wait > 0) { F.scanTimer = setTimeout(fieldScanNow, wait); return; }
+  F.scanning = true; F.scanErr = null; paintField();
+  try {
+    await fetchScan(k, F.scans);
+    try { await scanActive(k, true, F.active); } catch (e) { console.warn(e.message); }
+    F.scanAt = Date.now();
+  } catch (e) { F.scanErr = e.message; }
+  F.scanK = k; F.scanning = false;
+  paintField(); fieldHaunts();
+}
+async function fieldHaunts() {
+  const ctx = fieldCtx(), sig = hauntKey(0, ctx);
+  if (F.hauntsBusy || !F.on || !F.pos || !ctx.pid || !navigator.onLine || sig === F.hauntsFor) return;
+  F.hauntsBusy = true; F.hauntsFor = sig; paintField();
+  try {
+    for (const x of (wantedList(ctx) || []).slice(0, FIELD.haunts)) {
+      const cur = hauntsOf(ctx)[hauntKey(x.id, ctx)];
+      if (!F.on) break;
+      if (cur && Date.now() - cur.ts < HAUNT_TTL) continue;
+      await ensureHaunts(x.id, ctx); paintField();
+    }
+  } catch (e) { console.warn(e.message); }
+  F.hauntsBusy = false; paintField();
+}
+function onPos(p) {
+  if (!F.on) return;
+  F.pos = { lat:p.coords.latitude, lng:p.coords.longitude }; F.geo = '';
+  const sq = cellKey(F.pos.lat, F.pos.lng, .25);
+  if (sq !== F.sq) {
+    F.sq = sq; F.pick = 0;
+    if (!S.M.cells25.has(sq) && !F.toasted.has(sq)) { F.toasted.add(sq); toast('Unexplored square: a record here counts towards Change of Scenery.'); }
+  }
+  paintField(); fieldScanNow(); fieldHaunts();
+}
+function onPosErr(e) {
+  if (!F.on) return;
+  F.geo = e.code === 1 ? 'Location is blocked for this site. Allow it in your browser settings, then close field mode and start it again.'
+    : F.pos ? '' : 'Still looking for a GPS fix…';
+  paintField();
+}
+// Heading of the top of the screen, clockwise from north
+function onOrient(e) {
+  let h = null;
+  if (typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading)) h = e.webkitCompassHeading;   // iOS
+  else if (e.absolute && e.alpha != null) h = 360 - e.alpha;   // deviceorientationabsolute: alpha runs anticlockwise from north
+  if (h == null) return;
+  const a = screen.orientation?.angle ?? window.orientation ?? 0;
+  F.heading = (((h + a) % 360) + 360) % 360;
+  if (F.compass !== 'on') { F.compass = 'on'; paintField(); }
+  spinField();
+}
+const listenOrient = on => ['deviceorientationabsolute', 'deviceorientation'].forEach(t => window[on ? 'addEventListener' : 'removeEventListener'](t, onOrient));
+async function wakeOn() {
+  if (!F.on || F.lock || !navigator.wakeLock || document.hidden) return;
+  try {
+    const l = await navigator.wakeLock.request('screen');
+    if (!F.on) return l.release();
+    F.lock = l; l.addEventListener('release', () => { if (F.lock === l) F.lock = null; });
+  } catch {}
+}
+function wakeOff() { const l = F.lock; F.lock = null; if (l) l.release().catch(() => {}); }
+document.addEventListener('visibilitychange', () => { if (document.hidden) wakeOff(); else wakeOn(); });
+// Must run inside the tap: iOS only shows its motion-access prompt from a user gesture
+function fieldStart() {
+  if (F.on) return;
+  Object.assign(F, { on:true, compass:'wait', geo:'wait', pick:0, heading:null });
+  const DOE = window.DeviceOrientationEvent;
+  const ask = DOE && typeof DOE.requestPermission === 'function' ? DOE.requestPermission() : Promise.resolve(DOE ? 'granted' : 'none');
+  // Listen regardless: readings that do arrive win over a refusal; the answer only explains a silent compass
+  listenOrient(true);
+  ask.catch(() => 'denied').then(s => {
+    if (!F.on || F.compass === 'on') return;
+    if (s === 'granted') setTimeout(() => { if (F.on && F.compass === 'wait') { F.compass = 'none'; paintField(); } }, 3000);
+    else { F.compass = s === 'none' ? 'none' : 'denied'; paintField(); }
+  });
+  if (navigator.geolocation) F.watch = navigator.geolocation.watchPosition(onPos, onPosErr, { enableHighAccuracy:true, maximumAge:10000, timeout:30000 });
+  else F.geo = 'Location isn\'t available in this browser.';
+  wakeOn();
+  paintField();
+}
+function fieldStop() {
+  if (F.watch != null) navigator.geolocation.clearWatch(F.watch);
+  listenOrient(false); wakeOff(); clearTimeout(F.scanTimer);
+  Object.assign(F, { on:false, pos:null, watch:null, heading:null, compass:'', geo:'', sq:null, tb:null });
+}
+function openField() {
+  $('#fieldRoot').innerHTML = `<div class="fieldov" role="dialog" aria-label="Field mode"><div class="fieldbar"><b>🧭 Field mode</b><button data-act="fieldClose">✕ Close</button></div>
+    <div class="fieldwrap" id="fieldBody"></div></div>`;
+  document.body.classList.add('fieldon');
+  paintField();
+}
+function closeField() { fieldStop(); $('#fieldRoot').innerHTML = ''; document.body.classList.remove('fieldon'); }
+const setHtml = (el, html) => { if (el && el._h !== html) { el._h = html; el.innerHTML = html; } };
+function fieldDial() {
+  const ticks = Array.from({ length:72 }, (_, i) => { const r = i % 18 ? i % 2 ? 85 : 81 : 74;
+    return `<line x1="100" y1="10" x2="100" y2="${100 - r}" transform="rotate(${i * 5} 100 100)"/>`; }).join('');
+  const lab = (t, deg, cls) => `<text x="100" y="40" transform="rotate(${deg} 100 100)" class="${cls}">${t}</text>`;
+  return `<svg id="fDial" class="fdial" viewBox="0 0 200 200" data-act="fieldNext" role="button" aria-label="Point at the next square">
+    <circle cx="100" cy="100" r="97" class="face"/>
+    <g id="fRose" class="spin"><g class="ticks">${ticks}</g>${lab('N', 0, 'n')}${lab('E', 90, '')}${lab('S', 180, '')}${lab('W', 270, '')}</g>
+    <g id="fArrow" class="spin"><path d="M100 18 L117 108 L100 97 L83 108 Z" class="head"/><path d="M100 104 L110 168 L100 160 L90 168 Z" class="tail"/></g>
+    <path d="M91 0 L109 0 L100 13 Z" class="lubber"/><circle cx="100" cy="100" r="8" class="hub"/></svg>`;
+}
+function paintField() {
+  const body = $('#fieldBody'); if (!body) return;
+  if (!F.on) {
+    body._h = null;
+    body.innerHTML = `<div class="panel"><p>Points you at the nearest 25 km square with a record from the last ${FIELD.recentDays} days of a genus you're missing, and lists what's been recorded around you.</p>
+      <button class="primary big" data-act="fieldStart">Start field mode</button>
+      <p class="small muted" style="margin-bottom:0">Uses your location (kept on this device, for this session only), the compass, and keeps the screen awake.</p></div>`;
+    return;
+  }
+  if (!$('#fDial')) body.innerHTML = `<div id="fStatus" class="fstatus"></div><div class="panel" id="fWhere"></div>
+    <div class="panel">${fieldDial()}<div id="fTarget" class="ftarget"></div></div><div class="panel" id="fAround"></div>`;
+  const p = F.pos, M = S.M;
+  setHtml($('#fStatus'), !navigator.onLine ? '📴 Offline: using cached data.' : F.geo && F.geo !== 'wait' ? esc(F.geo) : '');
+  // Where you are
+  if (!p) setHtml($('#fWhere'), `<p style="margin:0">${F.geo === 'wait' ? 'Finding your position…' : esc(F.geo)}</p>`);
+  else {
+    const k = cellKey(p.lat, p.lng, .25), mine = M.cells25.get(k);
+    setHtml($('#fWhere'), `<div class="small muted">Your 25 km square</div><div class="fbig">${cellLabel(cellCenter(k))}</div>
+      <p style="margin:4px 0 0">${mine ? `You've recorded here: <b>${fmt(mine.n)}</b> obs, <b>${mine.g.size}</b> genera.` : '<b>Unexplored square</b>: you have no records here yet.'}</p>`);
+  }
+  // The needle
+  const ts = p ? fieldTargets() : [], t = ts.length ? ts[F.pick % ts.length] : null;
+  F.tb = t ? t.b : null;
+  const dialNote = F.compass === 'denied' ? 'Compass access refused: north is at the top of the dial.'
+    : F.compass === 'none' ? 'No compass reading: north is at the top of the dial.' : '';
+  let tgt;
+  if (!p) tgt = '';
+  else if (!homeCtx().pid) tgt = '<p>Set a home base on the Map tab so the needle knows which genera you\'re missing.</p>';
+  else if (!t) tgt = `<p>${F.hauntsBusy ? 'Checking recent records of your missing genera…'
+    : `No squares with a record of a missing genus from the last ${FIELD.recentDays} days${navigator.onLine ? '' : ' in the cached data'}.`}</p>`;
+  else {
+    const here = t.k === cellKey(p.lat, p.lng, .25);
+    tgt = `<div class="fdist">${here ? 'You\'re in this square' : `${kmTxt(t.d)} · ${compassPt(t.b)}`}</div>
+      <div class="fgen">${t.g.slice(0, 3).map(id => `<a href="#" data-genus="${id}"><i>${esc(S.nodes[id]?.n || '?')}</i></a>`).join(', ')}${t.g.length > 3 ? ` +${t.g.length - 3} more` : ''}</div>
+      <div class="small">Last record there ${esc(agoTxt(t.last))} · square ${F.pick % ts.length + 1} of ${ts.length}${ts.length > 1 ? ' · tap the dial for the next' : ''}</div>`;
+  }
+  setHtml($('#fTarget'), tgt + (dialNote && p ? `<p class="small" style="margin:6px 0 0">${dialNote}</p>` : ''));
+  // What's around
+  const fs = p && fieldScan(), head = '<h3>What\'s around <span class="small muted">within 25 km</span></h3>';
+  if (!p) setHtml($('#fAround'), head + '<p class="muted" style="margin:0">Waiting for a GPS fix…</p>');
+  else if (!fs) setHtml($('#fAround'), head + (F.scanning ? '<p>Scanning 25 km around you…</p>'
+    : F.scanErr ? `<p>${esc(F.scanErr)} <button data-act="fieldRescan">Try again</button></p>`
+    : !navigator.onLine ? `<p>Offline, and no cached scan within ${FIELD.cachedKm} km.</p>` : '<p>Next scan shortly…</p>'));
+  else {
+    const recent = new Map((fs.act?.g || []).map(x => [x.id, x.c]));
+    const miss = fs.sc.g.filter(x => !M.G.has(x.id)).map(x => ({ ...x, r:recent.get(x.id) || 0 })).sort((a,b) => b.r - a.r || b.c - a.c);
+    const have = fs.sc.g.filter(x => M.G.has(x.id)).sort((a,b) => b.c - a.c);
+    ensurePheno(miss.slice(0, 25).map(x => x.id));
+    const row = x => `<div class="fgenrow">${x.r ? '🔥 ' : ''}<a href="#" data-genus="${x.id}"><i>${esc(S.nodes[x.id]?.n || '?')}</i></a>
+      <span class="small muted">${x.r ? `${x.r} recent · ` : ''}${fmt(x.c)} record${x.c === 1 ? '' : 's'}</span><div>${phenoTag(x.id)}</div></div>`;
+    setHtml($('#fAround'), `${head}
+      ${fs.live ? '' : `<p class="small"><b>Using cached data</b>: scan from ${esc(agoShort(fs.sc.ts))}, centred ${kmTxt(fs.d)}.</p>`}
+      ${F.scanning ? '<p class="small">Updating…</p>' : F.scanErr && !fs.live ? `<p class="small">${esc(F.scanErr)} <button data-act="fieldRescan">Try again</button></p>` : ''}
+      <p class="small">${fs.sc.g.length} genera recorded · <b>${miss.length}</b> you're missing${miss.some(x => x.r) ? ` · 🔥 recorded in the last ${ACTIVE_DAYS} days` : ''}</p>
+      ${miss.slice(0, FIELD.list).map(row).join('')}
+      ${miss.length > FIELD.list ? `<details><summary class="small">${miss.length - FIELD.list} more</summary>${miss.slice(FIELD.list).map(row).join('')}</details>` : ''}
+      ${have.length ? `<p class="small muted" style="margin-bottom:0">Yours here: ${have.map(x => `<a href="#" data-genus="${x.id}"><i>${esc(S.nodes[x.id]?.n || '?')}</i></a>`).join(', ')}</p>` : ''}`);
+  }
+  spinField();
+}
+const turnTo = (cur, to) => cur + ((((to - cur) % 360) + 540) % 360 - 180);   // shortest way round, so the dial never spins the long way
+function spinField() {
+  if (F.raf) return;
+  F.raf = requestAnimationFrame(() => {
+    F.raf = 0;
+    const rose = $('#fRose'), arrow = $('#fArrow'); if (!rose) return;
+    const up = F.compass === 'on' && F.heading != null ? -F.heading : 0;
+    F.rose = turnTo(F.rose, up);
+    F.arrow = turnTo(F.arrow, (F.tb ?? 0) + up);
+    rose.style.transform = `rotate(${F.rose}deg)`;
+    arrow.style.transform = `rotate(${F.arrow}deg)`;
+    arrow.style.opacity = F.tb == null ? 0 : 1;
+  });
+}
+
+/* ---------------- offline & install: service worker, connection state, add to home screen ---------------- */
+let installEvt = null;
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; });
+addEventListener('appinstalled', () => { installEvt = null; });
+const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function installHtml() {
+  if (standalone()) return '';
+  if (installEvt) return '<p style="margin-top:14px"><button class="primary" data-act="install">📲 Install SPOODEX</button></p>';
+  if (isIOS()) return '<p class="small" style="margin-top:14px">📲 <b>Install on iPhone or iPad</b>: tap the Share button <span aria-hidden="true">(□↑)</span>, then <b>Add to Home Screen</b>.</p>';
+  return '';
+}
+async function installApp() {
+  const ev = installEvt; if (!ev) return;
+  installEvt = null;
+  ev.prompt();
+  try { await ev.userChoice; } catch {}
+  if ($('#modalRoot').innerHTML) settings();
+}
+function netState() {
+  $('#offChip')?.classList.toggle('hidden', navigator.onLine);
+  paintField();
+}
+addEventListener('offline', netState);
+addEventListener('online', () => {
+  netState();
+  if (F.on) { if (F.scanErr) { F.scanK = null; F.scanErr = null; } F.hauntsFor = ''; fieldScanNow(); fieldHaunts(); }
+  if (wxErr && $('#wxPanel')) loadWx(true);
+});
+function registerSW() {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('./sw.js').catch(e => console.warn('SPOODEX: offline support unavailable', e));
+  // An installed app keeps its saves when the device runs low on space
+  if (standalone() && navigator.storage?.persist) navigator.storage.persist().catch(() => {});
+}
+
 /* ---------------- analytics: anonymous visit and event counts (GoatCounter) ---------------- */
 // Sent by hand rather than with GoatCounter's count.js, which always forwards location.search (our ?u=/?vs=/?crew= usernames).
 // Only the page path, screen width, a query-less referrer and a few event names leave the browser: no usernames, places or cookies.
@@ -3172,7 +3633,9 @@ function settings() {
       <button data-act="switch">Switch user</button>
       <button data-act="wipe">Forget this user's cache</button>
     </div>
+    ${installHtml()}
     <p class="small muted" style="margin-top:14px">Anonymous visit counts via GoatCounter: no cookies, no usernames, no locations.</p>
+    <p class="small muted">Weather lookups send your home base, rounded to ~10 km, to Open-Meteo.</p>
     <p class="small muted" id="storeInfo">Saved in this browser${store.db ? ' (IndexedDB)' : ' (localStorage, about 5 MB at most)'}.</p></div></div></div>`;
   store.usage().then(b => { const el = $('#storeInfo'); if (el && b) el.textContent += ` This site is using about ${(b / 1048576).toFixed(1)} MB.`; });
 }
@@ -3231,6 +3694,13 @@ document.addEventListener('click', e => {
   if (a === 'cardPng') cardExport(false);
   if (a === 'cardShare') cardExport(true);
   if (a === 'geo') geolocate();
+  if (a === 'field') openField();
+  if (a === 'fieldStart') fieldStart();
+  if (a === 'fieldClose') closeField();
+  if (a === 'fieldNext') { e.preventDefault(); F.pick++; paintField(); }
+  if (a === 'fieldRescan') { F.scanK = null; F.scanErr = null; fieldScanNow(); }
+  if (a === 'wxRetry') loadWx(true);
+  if (a === 'install') installApp();
   if (a === 'clearBase') { delete S.u.base; saveUser(); S.M = buildModel(); render(); }
   if (a === 'guest') startGuest();
   if (a === 'sample') { $('#loginInput').value = SAMPLE_LOGIN; onboard(SAMPLE_LOGIN); }
@@ -3284,9 +3754,10 @@ $('#openDex').addEventListener('click', () => enterApp());
 // ?u=<login> opens that SPOODEX (importing it if needed); ?vs=<login> jumps to Compare.
 // Otherwise a returning player opens straight from cache, then quietly syncs.
 // Shared caches get their defaults when the script loads, before IndexedDB is open; re-read them once it is.
-const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladder', 'crew', 'pioneer', 'report', 'haunts', 'trip'];
+const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladder', 'crew', 'pioneer', 'report', 'haunts', 'trip', 'wx'];
 (async function boot() {
   track(location.pathname, false);
+  registerSW(); netState();
   await store.init();
   for (const k of PERSISTED) S[k] = store.get(k, S[k]);
   const q = new URLSearchParams(location.search);
