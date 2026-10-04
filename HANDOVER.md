@@ -1,6 +1,6 @@
 # SPOODEX — handover
 
-**As of 2026-09-28 · v1.13 · live at https://themoojuice.github.io/spoodex/?u=themoojuice**
+**As of 2026-10-04 · v1.14 (branch `feature/3d-map`, not yet on main) · live at https://themoojuice.github.io/spoodex/?u=themoojuice**
 
 This is the single source of truth for anyone (human or Claude) picking up the project. Read §0 first; it's enough
 to start safely. The rest is reference. When you change something, update this file in the same commit.
@@ -80,9 +80,17 @@ python -m http.server 8765        # any static server works
 | (linked, not copied) | The **Identification aid** (owner's interactive key to Australian salticid genera) lives in its own repo, https://github.com/Themoojuice/Identification-aid, and its own Pages site, https://themoojuice.github.io/Identification-aid/ (React/Vite, deployed by that repo's Actions workflow). SPOODEX only links to it via the `ID_AID` constant and `idAidBtn()`. Don't copy its build in here: it has its own service worker and offline package tied to `/Identification-aid/`, and a copy would go stale |
 | `.gitignore` | Ignores `.claude/` and `site/` |
 
-External dependencies (CDN): Leaflet 1.9.4 (cdnjs), Google Fonts (Special Elite, Fraunces, IBM Plex Mono, Caveat).
+External dependencies (CDN): Leaflet 1.9.4 (cdnjs), Google Fonts (Special Elite, Fraunces, IBM Plex Mono, Caveat), and
+**MapLibre GL JS 5.24.0** (cdnjs, loaded lazily the first time the 3D map opens; `MAPLIBRE` constant). MapLibre 6 is ESM-only
+(`.mjs` plus worker modules) and cdnjs carries only its CSS, so 5.24.0 is the newest release cdnjs serves as a script.
 Map tiles: **Esri World_Topo_Map + World_Imagery (keyless)**. OSM's tile servers blocked us (tile usage policy) and
-CARTO now needs a key, so don't switch back.
+CARTO now needs a key, so don't switch back. MapLibre needs CORS on tiles (Leaflet didn't): Esri and the terrain tiles both send
+`Access-Control-Allow-Origin: *` (checked in a real browser, 2026-10-04).
+Terrain: **AWS Terrain Tiles, terrarium encoding** (`TERRAIN_TILES`, `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png`,
+keyless, CORS `*`). Decode: metres = R×256 + G + B/256 − 32768 (tilezen `docs/formats.md`). Attribution (`TERRAIN_ATTR`) is the full
+"Required attribution" list from https://github.com/tilezen/joerd/blob/master/docs/attribution.md, including "Australia terrain data
+© Commonwealth of Australia (Geoscience Australia) 2017" and "…global GMTED2010 and SRTM terrain data courtesy of the U.S. Geological
+Survey". It sits behind the map's ⓘ button (collapsed on load because it's long). Esri's credits are unchanged.
 
 ## 4. What the app does, tab by tab
 
@@ -91,7 +99,7 @@ CARTO now needs a key, so don't switch back.
 | **Profile** (`profile`) | "Since your last visit" panel (after 3+ h away); level, title, stats incl. sets complete; chassis/tier progress; regions; favourite lineages; field style; rarest finds; share of the record; pioneer badges; new genera per year. Title card 🪪 and Wrapped 🎁 buttons |
 | **SPOODEX** (`dex`) | Four views (`S.prefs.layer`): **Genera** (cards, scope country/state/world, filters) · **Species** (side collection) · **Sets** (themed sets, sets computed from records, complete-the-lineage, every-species-in-a-genus) · **🔎 Needs ID** (one photo tile per observation stuck above genus → iNat, filter chips, "open these on iNaturalist" and 🔑 Identification aid) |
 | **Lineage tree** (`tree`, tier 2) | iNat classification tree, lit where you have genera |
-| **Map & scanner** (`map`) | 25 km squares you've recorded in; click anywhere to scan 25 km for genera you're missing; "active in the last 30 days"; home base (geolocate, search, or click the map) |
+| **Map & scanner** (`map`) | **3D** (default with WebGL2): tilted terrain around home, a column per 25 km square holding recent records of missing genera (tap for the list and a scan), your squares as low lit tiles, everything else under a kraft haze (fog of war). **2D** toggle: the original Leaflet grid. Both: click anywhere to scan 25 km; "active in the last 30 days"; home base (geolocate, search, or click the map) |
 | **This week** (`report`) | The Spood Report: masthead, then **picks of the week (photos first, at the owner's request)**, then headlines, weekly mini-ladder and genera recorded |
 | **Bounty board** (`wanted`) | Two views (`S.prefs.wantedView`): **🔎 Bounties** (default: Needs ID records within 50 km, for genera you're missing and for "unnamed spoods", with a helper tally, ranks and 🔑 Identification aid) · **🗞 Wanted posters** (this month's forecast of missing genera, posters, year calendar, case files with a map) |
 | **Trip planner** (`trip`) | Search any destination → its wanted list for a chosen month, "what this trip could add", map + list of record squares, posters, calendar, case files |
@@ -116,6 +124,8 @@ Search for `/* ---------------- <name>` to jump. Line numbers drift; names don't
 | field style & titles | `fieldStyle`, `favouriteLineages`, `generatedTitle` | |
 | quests | `buildQuests(M)`, `questDone(q,M)` | Derived fresh each time; completion detected on sync by diffing the pre-sync list. Kinds: `hunt` (any target genus found), `lineage`, `resolve`, `master`, `beh`, `month`, `explore`, `first`, `scan`, `base`, `info`. Includes "Complete the Set" (`nearestSet`) |
 | views | `TABS`, `render`, `softRender`, `viewProfile`, `cardHtml`, `viewDex`, `viewTree`, map (`initMap`, `showCell`, `scanCell`, `fetchScan`, `showScan`, `baseWidget`), `viewQuests` | `render()` swaps `#view` innerHTML and triggers lazy loads per tab. `softRender()` debounces 400 ms and skips the map tab |
+| 3D map | `MAPLIBRE`, `TERRAIN_TILES`, `TERRAIN_ATTR`, `hasGL2`, `use3d`, `loadMapLibre`, `initMap3d`, `dropMap3d`, `paintMap3d`, `columnCells`, `drawColumns`, `fillColumns`, `columnPopup`, `mixHex`, `cssVar` | `initMap()` branches to `initMap3d()` when `use3d()` (WebGL2, `S.prefs.map3d !== false`, MapLibre loaded); otherwise the Leaflet code runs unchanged. `render()` calls `dropMap3d()` whenever the tab isn't `map` (WebGL contexts are capped, so the map is torn down, not hidden). Layers bottom→top: Esri topo/imagery, fog `fill` (world polygon with a hole per `M.cells25` square; holes wind opposite to the outer ring), `fogNew` (squares cleared since `S.u.fog`, faded once via feature-state `f`), hillshade (above the haze so relief reads through it), home circle, `lit` (your squares, `fill-extrusion` `LIT_M`), `cols`. Column height = Σ `starsIn(id,'g','state')` × `COL_STAR_M`, capped at `COL_MAX_STARS`; colour accent if any genus is in season (`peakInfo().now`), `--muted` otherwise, paler if the square has a record from the last 30 days. Columns = top `COL_GENERA` (25) of the home `wantedList`, from `S.haunts` (non-`wide` only). `fillColumns()` runs on map load: scan + active for home, season curves for the list, then `ensureHaunts` one genus at a time, redrawing after each. Popup links/buttons have direct handlers (`data-g`, not `data-genus`). Phones (`pointer:coarse` or < 600 px) get a lighter map: hillshade shares the terrain source (MapLibre logs a quality warning), pixel ratio ≤ 1.5, terrain tiles ≤ z12, opening zoom 8 |
+| elevation | `ELEV_Z`, `S.elev`, `fillElev`, `elevsOf`, `topElev`, `altitudeLine` | After each sync (`doSync`, `onboard`), in the background: for each non-obscured record without a cached height, fetch its z12 terrarium tile (each tile once, plain `fetch`, not iNat) and decode the pixel. `createImageBitmap(…, {colorSpaceConversion:'none', premultiplyAlpha:'none'})` matters: colour management would shift the encoded heights. Spot checks: Cairns Esplanade −1 m, Lake Eacham 769 m, Atherton 772 m, Bellenden Ker summit 1,553 m (true 1,593 m). Used by the genus page "Altitude" line (lowest–highest, rounded to 50 m) and the Highlanders set. Never per record, never on cards or in links |
 | species layer | `speciesInScope`, `speciesCard`, `viewDexSpecies`, `leadsUrl`, `viewNeedsId`, `layerSwitch`, `speciesSection(gid)` | Needs ID also lives here |
 | active now | `scanActive(k)`, `activeHtml(k)` | 25 km, last 30 days |
 | best months | `phenoKey(gid,pid)`, `ensurePheno(ids,pid)`, `peakInfo(gid,pid,month)`, `phenoHtml`, `phenoTag`, `phenoChart(gid,pid,month)`, `phenoUpdated` | Month-of-year histograms for any place. `[data-pheno]`/`[data-phenochart]` placeholders update in place |
@@ -153,15 +163,18 @@ month select uses `data-tripm`. **Exception**: Leaflet popups stop click propaga
 `S` (global): `login`, `u` (per-user save), `nodes` (taxon id → `{n,r,l,p}`), `places` (id → `{n,l}` admin level),
 `info` (taxon id → `{p photo, s summary, w wiki, a attribution, c count}`), `ref` (`'p<place>'` or `'world'` →
 `{ts, g:{genusId:count}, s:{speciesId:count}, t:familyTotal}`), `observers`, `pheno` (`'gid:place'` → `{ts, m:[12]}`),
-`prefs`, `tab`, `M` (model), `cmp`, `ladder`, `crew`, `pioneer`, `report`, `haunts`, `trip`, `pendingVs`, `pendingCrew`.
+`prefs`, `tab`, `M` (model), `cmp`, `ladder`, `crew`, `pioneer`, `report`, `haunts`, `trip`, `elev` (observation id → metres above
+sea level, from the terrain tiles; shared across users since ids are global), `pendingVs`, `pendingCrew`.
 
 `S.prefs`: `scope` (country|state|world), `reveal`, `peek`, `chassis`, `filter`, `layer` (genus|species|sets|needsid),
-`ladderScope`, `ladderSort`, `wantedView` (bounty|posters; default bounty), `leadFilter` (taxon id or null).
+`ladderScope`, `ladderSort`, `wantedView` (bounty|posters; default bounty), `leadFilter` (taxon id or null), `map3d` (false = 2D Leaflet map;
+unset/true = 3D when WebGL2 is available).
 
 Per-user save `S.u` (key `u:<login lowercased>`): `obs` (id → trimmed obs), `meta {lastSync, lastFull}`, `seen` (revealed genus ids),
 `scans` (point key → `{ts, g:[{id,c}]}`), `active` (same, last 30 days, with `d1`), `completed` (quests), `base` (optional home base
 `{lat, lng, label, places{country,state}, near}`), `visit {last, prev}`, `news {since, ts, dismissed, near, nearT, st, stT, unk}`,
-`bounty {helped:[obs ids], data{ts, k, unk[], unkN, conf[], confN}}`.
+`bounty {helped:[obs ids], data{ts, k, unk[], unkN, conf[], confN}}`, `fog` (25 km square keys already cleared on the 3D map; squares not in
+it fade out once, then it's updated).
 
 Trimmed obs: `{id, d date, q quality_grade, cap captive, t{id,n,r,l}, anc ancestor ids (incl. self), ct community-taxon ancestry|null,
 lat, lng, ob obscured, pg place_guess, pl place_ids, ph [≤3 photo urls], ann ["attr|value", net-positive votes only], beh [keyword hits]}`.
@@ -176,7 +189,8 @@ JSON strings, so `store.get` returns a fresh copy just like localStorage did. `s
 `pagehide`/hidden (`store.flush()` returns a promise, e.g. `wipe` awaits it before navigating). The first run moved old `spoodex:*`
 localStorage saves across and deleted them only once written. With no IndexedDB (some private modes) it falls back to localStorage.
 Settings shows usage via `navigator.storage.estimate()`. Other keys: `nodes places info ref observers pheno cmp ladder crew pioneer
-haunts report trip`. The owner's save is ~1 MB of JSON.
+haunts report trip elev`. The owner's save is ~1 MB of JSON. `HAUNT_KEEP` (newest haunts kept) is 120 since v1.14: the 3D map keeps
+25 home genera cached, the wanted posters share them, and a trip adds up to ~40.
 
 Scan-point keys: a 0.25° cell `"lat:lng"` (integers) or an arbitrary point `"pt:lat,lng"`. Resolve with `pointFor(k)`.
 
@@ -202,6 +216,10 @@ Scan-point keys: a 0.25° cell `"lat:lng"` (integers) or an arbitrary point `"pt
 - **Rate limits**: iNat asks for ~1 req/s and ≤10k/day per client, and returns 429s with no CORS header. Bursts from `curl` plus the
   app sharing an IP get empty responses: wait a minute. Rough call costs: fresh import ≈ 1 per 200 obs + 3; ladder ≈ 26; pioneer ≈ 180;
   wanted posters ≈ 40; a trip ≈ 55; bounties 3; news 3; sets 1–2 (world tree).
+  **3D map, first open** ≈ 70 at most: home scan + active (2, usually cached already), season curves for the home wanted list (≤ 40,
+  30-day cache, shared with the posters), 25 haunts (7-day cache), genus info (1–2). Measured: 25 haunts + 14 season curves for a guest at
+  Cairns when the other curves were cached; reopening within a week costs 0–2. Elevation and terrain tiles come from AWS, not iNat
+  (owner: 66 z12 tiles for 1,534 records, once).
 - **The iNat website is behind a Cloudflare bot check.** Automated browsers get "Just a moment…". Don't try to bypass it; verify
   web-link filters by running the same parameters against the API.
 - Test accounts: `themoojuice` (owner), `laz` (Qld, 38 genera, 60 species; the standard compare test, 1,180 obs), `natashataylor`,
@@ -221,7 +239,8 @@ Scan-point keys: a 0.25° cell `"lat:lng"` (integers) or an arbitrary point `"pt
     🐜 Ant mimics (hand-picked genera; the tribe Myrmarachnini wasn't used because it also holds *Judalana*, *Damoetas* etc.),
     🕸 Portia & the spartaeines (Spartaeinae), 🌿 Beyond Salticinae (every other subfamily), ⭐ Celebrities (11 famous species, worldwide).
   - Computed: 🏡 Local specialties (≥90% of a genus's verifiable iNat records are in scope, ≥5 worldwide), 👻 Ghost list (≤25 records
-    in scope), 💞 Couples (your species with both Male and Female annotations), 🧭 Wanderers (your genera in ≥5 different 25 km squares).
+    in scope), 💞 Couples (your species with both Male and Female annotations), 🧭 Wanderers (your genera in ≥5 different 25 km squares),
+  ⛰ Highlanders (your genera recorded above `HIGHLAND_M`, currently 700 m, by terrain height at each non-obscured record; no quest).
   - Automatic: complete-the-lineage (each tribe, or subfamily without tribes, with ≥2 genera in scope) and every-species-in-a-genus
     (each genus you have with ≥2 species in scope).
   - "Complete the Set" quest = the started genus set (not Couples/Wanderers) with the fewest left, ≤3.
@@ -302,6 +321,9 @@ reminder) → `git push`. Confirm it's live: `curl -s "https://themoojuice.githu
 - Only tested in depth with Australian accounts. Other countries should work (all queries are place-based), but check with a US and
   a European account before promoting widely.
 - The tab bar has 11 tabs and scrolls sideways on phones.
+- 3D map: the terrain tiles include sea-floor depths, so the hillshade draws the reef shelf off Cairns as a faint grey streak in the sea.
+  A MapLibre map doesn't draw (or fire `load`) while its page isn't painting, e.g. when the Claude browser pane is hidden or the app
+  window is behind another: test the 3D map with it in front.
 
 ## 12. Backlog and ideas (owner-approved or discussed; not built)
 
@@ -310,6 +332,10 @@ reminder) → `git push`. Confirm it's live: `curl -s "https://themoojuice.githu
 - **Mobile navigation**: group the 11 tabs into ~4 sections (e.g. Collection / Explore / Social / Quests).
 - **Test outside Australia**; consider showing progress as a % of the regional total for low-diversity regions (e.g. the UK has ~20 genera).
 - **Full-photo share cards** via an image proxy (see §11).
+
+**Awaiting the owner's decision (v1.14)**:
+- **Highlanders threshold**: `HIGHLAND_M = 700` m is a proposal (about the height of the Atherton Tablelands; with it 6 of the owner's
+  54 genera qualify). Confirm or pick another height; it's one constant in the sets section. No quest for it yet.
 
 **Sets not built yet** (the owner chose others first): House guests (cosmopolitan synanthropes: *Hasarius adansoni*, *Plexippus
 paykulli*, *Menemerus bivittatus*, *Salticus scenicus*), Ant-eaters (e.g. *Zenodorus*), Masters of disguise (beetle/bird-dropping/bark
@@ -332,6 +358,7 @@ cards progressively during a first import; generalising beyond jumping spiders (
 | v1.7 | IndexedDB storage (with migration), v2 imports with `fields=` (~6% of the download), Trip planner |
 | v1.8 | Sets (themed + complete-the-lineage), Bounty board, "since your last visit" |
 | v1.9 | Most Wanted tab renamed Bounty board (bounties first), SPOODEX › Needs ID layer, fixed-height quest tiles |
+| v1.14 | 3D Map tab (MapLibre 5.24.0 + AWS terrain tiles): missing-genus columns, fog of war over unrecorded squares, 2D/3D toggle (Leaflet kept as 2D); record elevations (`elev`), genus page Altitude line, ⛰ Highlanders set (threshold awaiting owner); `HAUNT_KEEP` 80 → 120 |
 | v1.13 | 🔑 Identification aid button (Needs ID view, Bounty board) opens the owner's genus key in one reused popup window |
 | v1.12 | Removed ~50 filler captions, disclaimers and quips across the app |
 | v1.11 | GoatCounter analytics (hand-rolled beacon, no usernames); Spood Report leads with picks of the week |

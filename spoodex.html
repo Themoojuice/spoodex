@@ -247,6 +247,24 @@ main { padding-top:18px; }
 #map { height:520px; border-radius:var(--radius); border:1px solid var(--line); isolation:isolate; }
 .maplayout { display:grid; grid-template-columns:2fr 1fr; gap:16px; }
 @media (max-width:820px) { .maplayout { grid-template-columns:1fr; } #map { height:380px; } }
+.maplayout > div { min-width:0; }
+.mapwrap { position:relative; }
+.mapmode { position:absolute; left:10px; bottom:26px; z-index:2; display:flex; box-shadow:0 1px 4px rgba(0,0,0,.25); border-radius:var(--radius); }
+.mapmode button { padding:3px 10px; font-size:12px; border-radius:0; background:var(--panel); }
+.mapmode button:first-child { border-radius:var(--radius) 0 0 var(--radius); } .mapmode button:last-child { border-radius:0 var(--radius) var(--radius) 0; border-left:0; }
+.mapmode button.on { background:var(--accent); color:var(--panel); border-color:var(--accent); }
+.mapbadge { position:absolute; left:50%; top:10px; transform:translateX(-50%); z-index:2; background:var(--panel); border:1px solid var(--accent); color:var(--ink); border-radius:99px; padding:3px 12px; font-size:13px; white-space:nowrap; }
+.maplegend { margin-top:6px; color:var(--muted); }
+[data-chassis="cabinet"] .maplegend { color:#c9b48f; }
+.maplegend b { color:inherit; }
+.sw { display:inline-block; width:10px; height:10px; border-radius:2px; vertical-align:middle; border:1px solid rgba(0,0,0,.2); }
+.basesw { display:flex; flex-direction:column; }
+.basesw button { width:auto !important; height:auto !important; padding:3px 8px !important; font:12px var(--body); text-align:left; }
+.basesw button.on { background:var(--accent); color:var(--panel); }
+.maplibregl-popup-content { background:var(--panel); color:var(--ink); font:13px/1.45 var(--body); border:1px solid var(--line); }
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip { border-top-color:var(--panel); } .maplibregl-popup-anchor-top .maplibregl-popup-tip { border-bottom-color:var(--panel); }
+.maplibregl-popup-close-button { font-size:18px; padding:0 6px; }
+.colpop > div { margin:3px 0; } .colpop .st { color:var(--accent); font-size:11px; letter-spacing:1px; } .colpop button { margin-top:8px; font:13px var(--body); }
 
 /* ---------- Quests ---------- */
 .quest { border-left:4px solid var(--accent); }
@@ -972,6 +990,7 @@ function softRender() { if (renderPending) return; renderPending = true; setTime
 
 function render() {
   const M = S.M, tier = TIERS[M.tier];
+  if (S.tab !== 'map') dropMap3d();
   document.body.dataset.chassis = S.prefs.chassis === 'auto' ? tier.chassis : S.prefs.chassis;
   $('#chassisName').textContent = tier.name;
   $('#chassisSub').textContent = tier.sub;
@@ -1281,14 +1300,23 @@ function baseWidget() {
 }
 function viewMapShell() {
   const M = S.M;
-  return `<div class="maplayout"><div id="map"></div><div class="panel" id="mapSide">
-    <h2>Locality grid</h2><p class="muted small">Each square is ~25 km, coloured by how many genera you've recorded there.</p>
-    <p class="small">Click a square, or anywhere on the map, to scan the surrounding 25 km for genera others have recorded that you're missing.</p>
+  const d3 = use3d(), on = cssVar('--accent'), off = cssVar('--muted');
+  const sw = c => `<i class="sw" style="background:${esc(c)}"></i>`;
+  return `<div class="maplayout"><div><div class="mapwrap"><div id="map"></div>
+      ${hasGL2() ? `<div class="mapmode">${[['0', '2D'], ['1', '3D']].map(([v, l]) => `<button type="button" data-act="map3d" data-v="${v}" class="${d3 === (v === '1') ? 'on' : ''}">${l}</button>`).join('')}</div>` : ''}
+      <div id="mapBadge" class="mapbadge hidden"></div></div>
+    ${d3 ? `<div class="maplegend small"><div><b>Height</b>: rarity (★) of the genera you're missing recorded in that square</div>
+      <div><b>Colour</b>: ${sw(on)} one is in season · ${sw(off)} none in season · ${sw(mixHex(on, '#fff6dc', .4))} paler: a record in the last ${ACTIVE_DAYS} days · ${sw(cssVar('--lit'))} squares you've recorded in</div></div>` : ''}</div>
+    <div class="panel" id="mapSide">
+    <h2>Locality grid</h2>${d3 ? '' : `<p class="muted small">Each square is ~25 km, coloured by how many genera you've recorded there.</p>`}
+    <p class="small">${d3 ? "Tap a column for the genera you're missing there, or anywhere on the map to scan the surrounding 25 km." : "Click a square, or anywhere on the map, to scan the surrounding 25 km for genera others have recorded that you're missing."}</p>
     ${M.homeCell ? `<button class="primary" data-scan="${esc(M.homeCell.k)}">📡 Scan home base</button>` : ''}
     <div id="scanOut"></div>
     ${baseWidget()}</div></div>`;
 }
 function initMap() {
+  if (use3d()) { initMap3d(); return; }
+  dropMap3d();
   if (!window.L) { $('#map').innerHTML = '<p style="padding:16px">Map library failed to load (offline?).</p>'; return; }
   const M = S.M;
   if (map) map.remove();
@@ -1364,6 +1392,245 @@ function showScan(k) {
     ${missing.map(x => `<div class="row" style="gap:6px"><a href="#" data-genus="${x.id}" style="min-width:130px"><i>${esc(S.nodes[x.id]?.n)}</i></a>
       <div class="bar"><i style="width:${pct(x.c,max)}%"></i></div><span class="small muted">${tier(x)}</span></div>
       <div style="margin:0 0 6px 2px">${recent.has(x.id) ? `<span class="small">🔥 ${recent.get(x.id)} in the last ${ACTIVE_DAYS} days</span> ` : ''}${phenoTag(x.id)}</div>`).join('') || (sc.g.length ? '<p>You have every genus recorded here.</p>' : '<p>No public salticid records here yet.</p>')}`;
+}
+
+/* ---------------- 3D map: terrain, missing-genus columns, fog of war (MapLibre; Leaflet stays as the 2D option) ---------------- */
+// cdnjs has no JS build of MapLibre 6 (it's ESM-only), so this is the newest release cdnjs serves as a script
+const MAPLIBRE = 'https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/5.24.0/maplibre-gl.min';
+const TERRAIN_TILES = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
+// Wording required by https://github.com/tilezen/joerd/blob/master/docs/attribution.md
+const TERRAIN_ATTR = 'Terrain: ArcticDEM terrain data DEM(s) were created from DigitalGlobe, Inc., imagery and funded under National Science Foundation awards 1043681, 1559691, and 1542736; '
+  + 'Australia terrain data © Commonwealth of Australia (Geoscience Australia) 2017; Austria terrain data © offene Daten Österreichs – Digitales Geländemodell (DGM) Österreich; '
+  + 'Canada terrain data contains information licensed under the Open Government Licence – Canada; Europe terrain data produced using Copernicus data and information funded by the European Union - EU-DEM layers; '
+  + 'Global ETOPO1 terrain data U.S. National Oceanic and Atmospheric Administration; Mexico terrain data source: INEGI, Continental relief, 2016; '
+  + 'New Zealand terrain data Copyright 2011 Crown copyright (c) Land Information New Zealand and the New Zealand Government (All rights reserved); Norway terrain data © Kartverket; '
+  + 'United Kingdom terrain data © Environment Agency copyright and/or database right 2015. All rights reserved; United States 3DEP (formerly NED) and global GMTED2010 and SRTM terrain data courtesy of the U.S. Geological Survey.';
+const ESRI_TOPO = ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', 'Tiles © Esri — Esri, HERE, Garmin, USGS, NGA, and other contributors'];
+const ESRI_IMG = ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', 'Imagery © Esri, Maxar, Earthstar Geographics'];
+const TERRAIN_X = 1.5, COL_GENERA = 25, COL_STAR_M = 1400, COL_MAX_STARS = 15, LIT_M = 200, FOG_OPACITY = .72;
+let map3d = null, map3dSeq = 0, map3dBase = 'topo', mlLoad = null, mlFailed = false, gl2 = null, colBusy = false;
+const hasGL2 = () => gl2 ??= (() => { try { const c = document.createElement('canvas').getContext('webgl2'); c?.getExtension('WEBGL_lose_context')?.loseContext(); return !!c; } catch { return false; } })();
+const use3d = () => !mlFailed && S.prefs.map3d !== false && hasGL2();
+function loadMapLibre() {
+  return mlLoad ||= new Promise((res, rej) => {
+    const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = MAPLIBRE + '.css'; document.head.appendChild(l);
+    const s = document.createElement('script'); s.src = MAPLIBRE + '.js';
+    s.onload = () => window.maplibregl ? res() : rej(new Error('MapLibre missing'));
+    s.onerror = () => rej(new Error('MapLibre failed to load'));
+    document.head.appendChild(s);
+  });
+}
+// WebGL contexts are scarce (browsers cap them), so the 3D map is torn down whenever the Map tab isn't showing
+function dropMap3d() { map3dSeq++; if (map3d) { map3d.remove(); map3d = null; } }
+const mixHex = (a, b, t) => /^#[0-9a-f]{6}$/i.test(a) ? '#' + [1, 3, 5].map(i => Math.round(parseInt(a.substr(i, 2), 16) * (1 - t) + parseInt(b.substr(i, 2), 16) * t).toString(16).padStart(2, '0')).join('') : a;
+const cssVar = n => getComputedStyle(document.body).getPropertyValue(n).trim();
+const ring = (k, inset = 0) => { const c = cellCenter(k), d = .125 - inset; return [[c.lng - d, c.lat - d], [c.lng + d, c.lat - d], [c.lng + d, c.lat + d], [c.lng - d, c.lat + d], [c.lng - d, c.lat - d]]; };
+const fc = features => ({ type:'FeatureCollection', features });
+const square = (k, props = {}, inset = 0) => ({ type:'Feature', properties:{ k, ...props }, geometry:{ type:'Polygon', coordinates:[ring(k, inset)] } });
+// Squares around home holding recent records of genera you're missing (top of the home wanted list), from the haunts cache
+function columnCells() {
+  const ctx = homeCtx(), list = wantedList(ctx); if (!list) return [];
+  const cells = new Map(), cut = new Date(Date.now() - ACTIVE_DAYS * 864e5).toISOString().slice(0, 10);
+  for (const x of list.slice(0, COL_GENERA)) {
+    const hn = S.haunts[hauntKey(x.id, ctx)]; if (!hn || hn.wide) continue;
+    const st = starsIn(x.id, 'g', 'state'), p = peakInfo(x.id, ctx.pid);
+    for (const [k, n, last] of hn.cells) {
+      const c = cells.get(k) || { k, g:[], stars:0, season:false, last:'' };
+      c.g.push({ id:x.id, n, last, st, p }); c.stars += st; c.season ||= !!p?.now;
+      if (last > c.last) c.last = last;
+      cells.set(k, c);
+    }
+  }
+  return [...cells.values()].map(c => ({ ...c, recent:c.last >= cut }));
+}
+function drawColumns() {
+  const src = map3d?.getSource('cols'); if (!src) return;
+  const on = cssVar('--accent'), off = cssVar('--muted');
+  const cells = columnCells();
+  src.setData(fc(cells.map((c, i) => ({ ...square(c.k, {
+    h:Math.min(c.stars, COL_MAX_STARS) * COL_STAR_M,
+    c:mixHex(c.season ? on : off, '#fff6dc', c.recent ? .4 : 0) }, .07), id:i + 1 }))));
+  map3d.__cols = cells;
+}
+// Background: season curves first (they change the ranking), then haunts for the top genera, redrawing as each arrives
+async function fillColumns() {
+  const ctx = homeCtx(), login = S.login;
+  if (colBusy || !ctx.pid || !ctx.centre) return;
+  colBusy = true;
+  try {
+    await ensureRef('state');
+    const h = S.M.homeCell;
+    if (!S.u.scans[h.k]) await fetchScan(h.k);
+    await scanActive(h.k);
+    const ids = (wantedList(ctx) || []).map(x => x.id);
+    ensureInfo(ids); ensurePheno(ids, ctx.pid);
+    while (phenoBusy) await sleep(1000);
+    drawColumns();
+    const done = new Set();
+    while (S.login === login) {
+      const x = (wantedList(ctx) || []).slice(0, COL_GENERA).find(x => !done.has(x.id));
+      if (!x) break;
+      done.add(x.id);
+      await ensureHaunts(x.id, ctx);
+      drawColumns();
+    }
+  } catch (e) { console.warn(e); }
+  colBusy = false;
+}
+// Fog of war: everything outside your recorded 25 km squares. Squares cleared since the last look fade out once.
+function paintMap3d() {
+  const m = map3d; if (!m?.getSource('fog')) return;
+  const M = S.M, keys = [...M.cells25.keys()], prev = S.u.fog ? new Set(S.u.fog) : null;
+  const fresh = prev ? keys.filter(k => !prev.has(k)) : [];
+  const world = [[-180, -85], [180, -85], [180, 85], [-180, 85], [-180, -85]];
+  // holes wind opposite to the outer ring, or MapLibre reads them as separate polygons
+  m.getSource('fog').setData({ type:'Feature', properties:{}, geometry:{ type:'Polygon', coordinates:[world, ...keys.map(k => ring(k).reverse())] } });
+  m.getSource('fogNew').setData(fc(fresh.map((k, i) => ({ ...square(k), id:i + 1 }))));
+  m.getSource('lit').setData(fc(keys.map(k => square(k))));
+  const h = M.homeCell;
+  m.getSource('home').setData(fc(h && S.u.base ? [{ type:'Feature', properties:{}, geometry:{ type:'LineString',
+    coordinates:Array.from({ length:65 }, (_, i) => { const a = i / 64 * 2 * Math.PI; return [h.lng + 25 / 111.32 / Math.cos(h.lat * Math.PI / 180) * Math.cos(a), h.lat + 25 / 110.57 * Math.sin(a)]; }) } }] : []));
+  drawColumns();
+  S.u.fog = keys; saveUser();
+  if (!fresh.length) return;
+  const badge = $('#mapBadge');
+  if (badge) { badge.textContent = `${fresh.length} new square${fresh.length === 1 ? '' : 's'} explored`; badge.classList.remove('hidden'); setTimeout(() => badge.classList.add('hidden'), 9000); }
+  let t0 = 0;
+  const step = now => {
+    if (m !== map3d) return;
+    t0 ||= now;
+    const f = Math.max(0, 1 - (now - t0) / 2500);
+    fresh.forEach((_, i) => m.setFeatureState({ source:'fogNew', id:i + 1 }, { f }));
+    if (f > 0) requestAnimationFrame(step);
+  };
+  setTimeout(() => requestAnimationFrame(step), 900);
+}
+function columnPopup(c, k) {
+  const el = document.createElement('div'); el.className = 'colpop';
+  const gs = [...c.g].sort((a, b) => b.st - a.st || (b.last > a.last) - (b.last < a.last));
+  el.innerHTML = `<b>${gs.length} ${gs.length === 1 ? 'genus' : 'genera'} you're missing</b>` + gs.map(g => `<div><a href="#" data-g="${g.id}"><i>${esc(S.nodes[g.id]?.n || '?')}</i></a>
+    <span class="st">${'★'.repeat(g.st)}</span>${g.p?.now ? ' <b class="inseason">🌡 in season</b>' : g.p && !g.p.few ? ` <span class="muted">peak ${esc(g.p.text)}</span>` : ''}
+    <span class="muted">· last record ${esc(agoTxt(g.last))}</span></div>`).join('') + '<button class="primary">📡 Scan 25 km here</button>';
+  el.querySelectorAll('a[data-g]').forEach(a => a.onclick = e => { e.preventDefault(); openGenus(+a.dataset.g); });
+  el.querySelector('button').onclick = () => { map3d?.__popup?.remove(); showCell(k); scanCell(k); };
+  return el;
+}
+async function initMap3d() {
+  const seq = ++map3dSeq, M = S.M, h = M.homeCell;
+  if (h && S.u.scans[h.k]) showCell(h.k);
+  try { await loadMapLibre(); } catch (e) { console.warn(e); mlFailed = true; mlLoad = null; if (S.tab === 'map') render(); return; }
+  const el = $('#map'); if (seq !== map3dSeq || S.tab !== 'map' || !el) return;
+  if (map) { map.remove(); map = null; }
+  if (map3d) { map3d.remove(); map3d = null; }
+  const fog = mixHex(cssVar('--panel') || '#f5ecd6', '#a88752', .3), lit = cssVar('--lit') || '#2f6b3a';
+  const geo = () => ({ type:'geojson', data:fc([]) });
+  // Phones: one terrain source for relief and hillshade (half the decoding), fewer pixels, coarser terrain when zoomed in
+  const lite = matchMedia('(pointer:coarse)').matches || el.clientWidth < 600;
+  const dem = { type:'raster-dem', tiles:[TERRAIN_TILES], tileSize:256, maxzoom:lite ? 12 : 15, encoding:'terrarium' };
+  const raster = ([url, attribution]) => ({ type:'raster', tiles:[url], tileSize:256, maxzoom:13, attribution });
+  const m = map3d = new maplibregl.Map({
+    container:el, maxZoom:13, maxPitch:70, attributionControl:{ compact:true }, pixelRatio:Math.min(devicePixelRatio || 1, lite ? 1.5 : 2),
+    center:h ? [h.lng, h.lat] : [134, -25], zoom:h ? (lite ? 8 : 8.5) : 2, pitch:h ? 55 : 0, bearing:h ? -12 : 0,
+    style:{ version:8,
+      sources:{ topo:raster(ESRI_TOPO), img:raster(ESRI_IMG), dem:{ ...dem, attribution:TERRAIN_ATTR }, ...(lite ? {} : { hs:dem }),
+        fog:geo(), fogNew:geo(), lit:geo(), cols:geo(), home:geo() },
+      layers:[
+        { id:'topo', type:'raster', source:'topo', layout:{ visibility:map3dBase === 'topo' ? 'visible' : 'none' } },
+        { id:'img', type:'raster', source:'img', layout:{ visibility:map3dBase === 'img' ? 'visible' : 'none' } },
+        { id:'fog', type:'fill', source:'fog', paint:{ 'fill-color':fog, 'fill-opacity':FOG_OPACITY, 'fill-antialias':false } },
+        { id:'fogNew', type:'fill', source:'fogNew', paint:{ 'fill-color':fog, 'fill-opacity':['*', FOG_OPACITY, ['coalesce', ['feature-state', 'f'], 1]], 'fill-antialias':false } },
+        // relief drawn over the haze, so the land still reads where you haven't been
+        { id:'hs', type:'hillshade', source:lite ? 'dem' : 'hs', paint:{ 'hillshade-exaggeration':.35, 'hillshade-shadow-color':'#4a3b26', 'hillshade-highlight-color':'rgba(255,248,230,.45)' } },
+        { id:'home', type:'line', source:'home', paint:{ 'line-color':'#3f6b3a', 'line-width':2, 'line-dasharray':[3, 3] } },
+        { id:'lit', type:'fill-extrusion', source:'lit', paint:{ 'fill-extrusion-color':lit, 'fill-extrusion-height':LIT_M, 'fill-extrusion-opacity':.6 } },
+        { id:'cols', type:'fill-extrusion', source:'cols', paint:{ 'fill-extrusion-color':['get', 'c'], 'fill-extrusion-height':['get', 'h'], 'fill-extrusion-opacity':.88 } },
+      ],
+      terrain:{ source:'dem', exaggeration:TERRAIN_X } },
+  });
+  m.addControl(new maplibregl.NavigationControl({ visualizePitch:true }), 'top-right');
+  m.addControl({
+    onAdd() {
+      const d = document.createElement('div'); d.className = 'maplibregl-ctrl maplibregl-ctrl-group basesw';
+      d.innerHTML = [['topo', 'Terrain'], ['img', 'Satellite (habitat)']].map(([k, l]) => `<button type="button" data-b="${k}" class="${map3dBase === k ? 'on' : ''}">${l}</button>`).join('');
+      d.querySelectorAll('button').forEach(b => b.onclick = () => {
+        map3dBase = b.dataset.b;
+        ['topo', 'img'].forEach(id => m.setLayoutProperty(id, 'visibility', id === map3dBase ? 'visible' : 'none'));
+        d.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+      });
+      return d;
+    },
+    onRemove() {},
+  }, 'top-left');
+  m.on('load', () => { paintMap3d(); fillColumns(); });
+  // The terrain credit is long: keep it behind the ⓘ button. MapLibre opens compact attribution once, when it first fills.
+  const shut = () => {
+    const a = el.querySelector('.maplibregl-ctrl-attrib.maplibregl-compact'); if (!a) return;
+    a.removeAttribute('open'); a.classList.remove('maplibregl-compact-show'); m.off('sourcedata', shut);
+  };
+  m.on('sourcedata', shut);
+  // Popups stop clicks reaching the document listener, so their buttons get direct handlers (as on the Leaflet map)
+  m.on('click', e => {
+    const f = m.queryRenderedFeatures(e.point, { layers:['cols', 'lit'] }).sort((a, b) => (b.layer.id === 'cols') - (a.layer.id === 'cols'))[0];
+    m.__popup?.remove();
+    if (f?.layer.id === 'cols') {
+      const c = (m.__cols || []).find(x => x.k === f.properties.k); if (!c) return;
+      const ctr = cellCenter(c.k), k = M.cells25.has(c.k) ? c.k : `pt:${ctr.lat.toFixed(3)},${ctr.lng.toFixed(3)}`;
+      m.__popup = new maplibregl.Popup({ maxWidth:'290px' }).setLngLat(e.lngLat).setDOMContent(columnPopup(c, k)).addTo(m);
+      return;
+    }
+    if (f) { showCell(f.properties.k); return; }
+    const lat = e.lngLat.lat, lng = e.lngLat.wrap().lng, k = `pt:${lat.toFixed(2)},${lng.toFixed(2)}`;
+    const d = document.createElement('div');
+    d.innerHTML = '<button class="primary">📡 Scan 25 km here</button><br><button style="margin-top:6px">🏠 Make this my home base</button>';
+    const [scan, home] = d.querySelectorAll('button');
+    scan.onclick = () => { m.__popup?.remove(); showCell(k); scanCell(k); };
+    home.onclick = () => { m.__popup?.remove(); setBase(lat, lng, 'Map point'); };
+    m.__popup = new maplibregl.Popup().setLngLat(e.lngLat).setDOMContent(d).addTo(m);
+  });
+  m.on('mouseenter', 'cols', () => m.getCanvas().style.cursor = 'pointer');
+  m.on('mouseleave', 'cols', () => m.getCanvas().style.cursor = '');
+}
+
+/* ---------------- elevation: height above sea level of your records, read from the same terrain tiles as the 3D map ---------------- */
+const ELEV_Z = 12;
+S.elev = store.get('elev', {});   // observation id -> metres. Never shown per record, never shared.
+let elevBusy = false;
+// Terrarium PNGs: metres = R×256 + G + B/256 − 32768. One z12 tile (~9 km) per group of nearby records.
+async function fillElev() {
+  if (elevBusy || !S.M) return;
+  const tiles = new Map(), n = 2 ** ELEV_Z;
+  for (const o of S.M.obs) {
+    if (o.lat == null || o.ob || S.elev[o.id] != null) continue;
+    const r = o.lat * Math.PI / 180, x = (o.lng + 180) / 360 * n, y = (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n;
+    const key = `${Math.floor(x)}/${Math.floor(y)}`;
+    if (!tiles.has(key)) tiles.set(key, []);
+    tiles.get(key).push([o.id, Math.floor(x % 1 * 256), Math.floor(y % 1 * 256)]);
+  }
+  if (!tiles.size) return;
+  elevBusy = true;
+  const cv = document.createElement('canvas'); cv.width = cv.height = 256;
+  const cx = cv.getContext('2d', { willReadFrequently:true });
+  for (const [key, pts] of tiles) {
+    try {
+      const r = await fetch(TERRAIN_TILES.replace('{z}/{x}/{y}', `${ELEV_Z}/${key}`));
+      if (!r.ok) continue;
+      // no colour management or premultiplying, or the encoded heights shift
+      const bmp = await createImageBitmap(await r.blob(), { colorSpaceConversion:'none', premultiplyAlpha:'none' });
+      cx.clearRect(0, 0, 256, 256); cx.drawImage(bmp, 0, 0); bmp.close();
+      const px = cx.getImageData(0, 0, 256, 256).data;
+      for (const [id, x, y] of pts) { const i = (y * 256 + x) * 4; S.elev[id] = Math.round(px[i] * 256 + px[i + 1] + px[i + 2] / 256 - 32768); }
+      store.set('elev', S.elev);
+    } catch (e) { console.warn(e); break; }
+  }
+  elevBusy = false;
+  if (S.tab === 'dex' && S.prefs.layer === 'sets') softRender();
+}
+const elevsOf = gid => (S.M.G.get(gid)?.obs || []).filter(o => !o.ob).map(o => S.elev[o.id]).filter(v => v != null);
+const topElev = gid => Math.max(-Infinity, ...elevsOf(gid));
+function altitudeLine(g) {
+  const e = elevsOf(g.id); if (!e.length) return '';
+  const r50 = v => Math.max(0, Math.round(v / 50) * 50), lo = r50(Math.min(...e)), hi = r50(Math.max(...e));
+  return `<dt>Altitude</dt><dd>${lo === hi ? `~${fmt(lo)} m` : `${fmt(lo)}–${fmt(hi)} m`}</dd>`;
 }
 
 /* ---------------- active now: the same 25 km scan, limited to the last 30 days ---------------- */
@@ -1523,6 +1790,7 @@ async function openGenus(id) {
       <div><h3>Your records</h3><dl class="kv">
         <dt>Observations</dt><dd>${g.obs.length}</dd>
         <dt>Localities</dt><dd>${g.c01.size}</dd>
+        ${altitudeLine(g)}
         <dt>Species-level taxa</dt><dd>${g.species.size ? [...g.species].map(s => `<i>${esc(s)}</i>`).join(', ') : '—'}</dd>
         <dt>First recorded</dt><dd>${esc(g.first.d)}${firstPlace ? ' · ' + esc(firstPlace) : ''}</dd>
         <dt>Latest</dt><dd>${esc(g.last.d)}</dd>
@@ -2175,7 +2443,7 @@ function viewReport() {
 }
 
 /* ---------------- most wanted: this month's forecast of missing genera, wanted posters, and hotspot case files ---------------- */
-const WANTED_MAX = 40, WANTED_POSTERS = 6, WANTED_TTL = 3600e3, HAUNT_TTL = 7 * 864e5, HAUNT_KM = 150, HAUNT_KEEP = 80;
+const WANTED_MAX = 40, WANTED_POSTERS = 6, WANTED_TTL = 3600e3, HAUNT_TTL = 7 * 864e5, HAUNT_KM = 150, HAUNT_KEEP = 120;
 S.haunts = store.get('haunts', {});   // `${genus}@${centre rounded 0.1°}` or `${genus}@p${place}` -> {ts, n, used, skipped, wide, cells:[[cellKey, records, last date]]}
 let wantedBusy = false, wantedErr = null, wantedTs = 0, caseMap = null;
 const smooth12 = m => m.map((v, i) => (m[(i + 11) % 12] + 2 * v + m[(i + 1) % 12]) / 4);
@@ -2550,7 +2818,7 @@ function mountTripMap() {
 }
 
 /* ---------------- sets: themed collections, sets computed from the records, and complete-the-lineage sets ---------------- */
-const GHOST_MAX = 25, LOCAL_SHARE = .9, LOCAL_MIN = 5, WANDER_SQUARES = 5;
+const GHOST_MAX = 25, LOCAL_SHARE = .9, LOCAL_MIN = 5, WANDER_SQUARES = 5, HIGHLAND_M = 700;   // HIGHLAND_M: proposal, awaiting the owner
 // Curated sets are iNat taxon names (any rank); members are every genus (unit 'g') or species (unit 's') under them.
 // Starter content for the owner to edit. Ant mimics and Celebrities are hand-picked lists, not lineages.
 // Computed sets have pick(ref, world) -> member ids, and optionally got(id) when "collected" means more than "recorded".
@@ -2581,6 +2849,10 @@ const THEMES = [
     pick:() => [...S.M.G.keys()], got:id => squaresOf(id) >= WANDER_SQUARES, gotLabel:`Recorded in ${WANDER_SQUARES}+ squares`, missLabel:'Not yet',
     of:`of your genera recorded in ${WANDER_SQUARES}+ different ~25 km squares`,
     blurb:() => `Genera you've recorded in at least ${WANDER_SQUARES} different ~25 km grid squares.` },
+  { k:'highland', icon:'⛰', name:'Highlanders', unit:'g', computed:true, mine:true,
+    pick:() => [...S.M.G.keys()], got:id => topElev(id) >= HIGHLAND_M, gotLabel:`Recorded above ${HIGHLAND_M} m`, missLabel:'Not yet',
+    of:`of your genera recorded above ${HIGHLAND_M} m`,
+    blurb:() => `Genera you've recorded above ${HIGHLAND_M} m, by the terrain height at each record.` },
 ];
 let nameIdx = null, nameIdxN = 0;
 function taxonByName(name) {
@@ -3110,7 +3382,8 @@ async function doSync(full) {
     for (const q of prevQuests) if (!['scan','base'].includes(q.kind) && questDone(q, S.M) && !S.u.completed.some(c => c.id === q.id && c.at === at)) S.u.completed.push({ id:q.id, title:q.title, reward:q.reward, at });
     const fresh = S.M.genera.filter(g => !prevSeen.has(g.id));
     S.u.seen = S.M.genera.map(g => g.id); saveUser();
-    if (S.tab !== 'map') render();
+    if (S.tab !== 'map') render(); else paintMap3d();
+    fillElev();
     if (fresh.length) revealQueue(fresh); else if (!isGuest()) toast('Synced. No new genera this time.');
   } catch (e) { toast(e.message); }
   btn.disabled = false; btn.textContent = '⟳ Sync';
@@ -3127,6 +3400,7 @@ async function onboard(login) {
     const fresh = !S.u.meta.lastSync;
     await sync({ full:fresh, log:w });
     if (fresh) track('new-spoodex');
+    fillElev();
     const M = S.M;
     w(`Identifying unique genera… ${M.G.size} found.`);
     const cas = $('#cascade'); cas.innerHTML = '';
@@ -3231,6 +3505,7 @@ document.addEventListener('click', e => {
   if (a === 'cardPng') cardExport(false);
   if (a === 'cardShare') cardExport(true);
   if (a === 'geo') geolocate();
+  if (a === 'map3d') { S.prefs.map3d = val === '1'; savePrefs(); render(); }
   if (a === 'clearBase') { delete S.u.base; saveUser(); S.M = buildModel(); render(); }
   if (a === 'guest') startGuest();
   if (a === 'sample') { $('#loginInput').value = SAMPLE_LOGIN; onboard(SAMPLE_LOGIN); }
@@ -3284,7 +3559,7 @@ $('#openDex').addEventListener('click', () => enterApp());
 // ?u=<login> opens that SPOODEX (importing it if needed); ?vs=<login> jumps to Compare.
 // Otherwise a returning player opens straight from cache, then quietly syncs.
 // Shared caches get their defaults when the script loads, before IndexedDB is open; re-read them once it is.
-const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladder', 'crew', 'pioneer', 'report', 'haunts', 'trip'];
+const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladder', 'crew', 'pioneer', 'report', 'haunts', 'trip', 'elev'];
 (async function boot() {
   track(location.pathname, false);
   await store.init();
