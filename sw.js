@@ -2,7 +2,7 @@
    Scope is this folder (/spoodex/ on Pages). The Identification aid on the same origin has its own worker (/Identification-aid/)
    and its own caches (salticidae-core:*); this one only ever touches caches named spoodex-*.
    iNat API responses are never cached here: the app keeps its data in IndexedDB. */
-const VERSION = '1.16.0';   // bump on every release (HANDOVER §10 "Ship")
+const VERSION = '1.18.0';   // bump on every release (HANDOVER §10 "Ship")
 const SHELL = `spoodex-shell-${VERSION}`, LIBS = `spoodex-libs-${VERSION}`;
 const TILES = 'spoodex-tiles', PHOTOS = 'spoodex-photos';   // content, not code: kept across releases, oldest out past the cap
 const CAP = { [TILES]:600, [PHOTOS]:400 };
