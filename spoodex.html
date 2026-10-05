@@ -278,19 +278,14 @@ main { padding-top:18px; }
 .maplegend { display:flex; flex-wrap:wrap; gap:4px 12px; align-items:center; }
 .lgsw { display:inline-block; width:15px; height:11px; border:2.5px solid; border-radius:2px; vertical-align:-1px; margin-right:4px; box-shadow:0 0 0 1px rgba(43,36,25,.45); }
 .rchip { display:inline-block; font-size:10px; letter-spacing:.06em; text-transform:uppercase; padding:0 6px; border-radius:99px; border:1.5px solid var(--rc); color:var(--ink); background:color-mix(in srgb, var(--rc) 22%, var(--panel)); white-space:nowrap; vertical-align:1px; }
-.scanpop { font:12px/1.35 var(--body); display:flex; flex-direction:column; gap:4px; min-width:230px; }
-.scanpop .lab { font-size:9.5px; letter-spacing:.14em; color:var(--muted); margin-top:3px; }
-.scanpop .pg { font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:290px; }
-.scanpop .chips { display:flex; flex-wrap:wrap; gap:3px; }
-.scanpop .chips button { padding:1px 7px; font-size:11px; }
-.scanpop .chips button, .scchips button { padding:2px 9px; border-radius:99px; font-size:12px; }
-.scanpop .chips button.on, .scchips button.on { background:var(--ink); color:var(--panel); border-color:var(--ink); }
-.scanpop .go { margin-top:4px; }
-.scanpop .home { font-size:11px; color:var(--muted); }
+.scchips button { padding:2px 9px; border-radius:99px; font-size:12px; }
+.scchips button.on { background:var(--ink); color:var(--panel); border-color:var(--ink); }
 #mapSide { padding:0; overflow:hidden; align-self:start; }
 .schead { padding:14px 16px 12px; background:var(--panel2); border-bottom:1px solid var(--line); }
 .schead .eyebrow { font-size:10px; letter-spacing:.16em; color:var(--muted); }
 .schead h2 { margin:2px 0 0; font-size:21px; }
+.schead .scinfo { margin-top:4px; }
+.mapbadge.go { cursor:pointer; top:auto; bottom:52px; }
 .scchips { display:flex; flex-wrap:wrap; gap:4px; align-items:center; margin-top:8px; }
 .scchips .lb, .schist .lb { font-size:11px; color:var(--muted); margin-right:2px; }
 .schist { display:flex; flex-wrap:wrap; gap:4px; align-items:center; padding:8px 16px; border-bottom:1px solid var(--line); background:var(--panel); }
@@ -339,7 +334,6 @@ details > summary.scsec { cursor:pointer; }
 .wxhead { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px; margin-bottom:10px; }
 .wxhead h2 { margin:0; }
 .wxhead .primary { margin-left:auto; }
-.wxgrid { display:grid; grid-template-columns:minmax(0,3fr) minmax(0,2fr); gap:18px; }
 .wxdays { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px; margin-bottom:8px; }
 .wxd { border:1px solid var(--line); border-radius:var(--radius); background:var(--panel2); padding:7px 5px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:3px; min-width:0; }
 .wxd.top { border:2px solid var(--accent); background:color-mix(in srgb, var(--accent) 8%, var(--panel)); }
@@ -362,7 +356,6 @@ details > summary.scsec { cursor:pointer; }
   .wxd .d { grid-area:d; } .wxd .wxst { grid-area:st; } .wxd .w { grid-area:w; } .wxd .wxbar { grid-area:bar; } .wxd .t { grid-area:t; text-align:right; } .wxd .why { grid-area:why; }
   .wxd.none { grid-template-areas:"d bar bar" "w w w"; }
 }
-.wxg { padding:4px 0; border-bottom:1px dashed var(--dim); }
 #offChip { background:var(--accent); color:var(--panel); border-color:var(--accent); }
 body.fieldon { overflow:hidden; }
 .fieldov { position:fixed; inset:0; z-index:900; background:var(--bg); background-image:var(--paper); overflow-y:auto; overscroll-behavior:contain; }
@@ -394,7 +387,6 @@ body.fieldon { overflow:hidden; }
 .fgen { font-size:19px; margin:2px 0 4px; }
 .fgenrow { padding:8px 0; border-bottom:1px dashed var(--line); }
 .fgenrow a { font-size:17px; }
-@media (max-width:820px) { .wxgrid { grid-template-columns:1fr; } }
 /* ---------- Events (crew games) ---------- */
 .evcards { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:10px; margin-top:10px; }
 .evcard { border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:var(--radius); padding:10px 12px; background:var(--panel2); cursor:pointer; }
@@ -1257,9 +1249,9 @@ function viewProfile() {
       ${refC ? `<div class="row"><span style="min-width:150px">${esc(S.places[M.home.country]?.n)}</span>${bar(Object.keys(refC.g).filter(id => M.G.has(+id)).length, Object.keys(refC.g).length)}<span class="small">${Object.keys(refC.g).filter(id => M.G.has(+id)).length}/${Object.keys(refC.g).length}</span></div>` : ''}
       ${refS && M.home.state !== M.home.country ? `<div class="row"><span style="min-width:150px">${esc(S.places[M.home.state]?.n)}</span>${bar(Object.keys(refS.g).filter(id => M.G.has(+id)).length, Object.keys(refS.g).length)}<span class="small">${Object.keys(refS.g).filter(id => M.G.has(+id)).length}/${Object.keys(refS.g).length}</span></div>` : ''}
       ${!refC || !refS ? `<p class="small muted">Switch the SPOODEX scope to country/state once to load regional totals.</p>` : ''}
-      <h3 style="margin-top:10px">Countries</h3>${regionRows(0).map(r => `<div class="small">${esc(r.n)}: <b>${r.g}</b> genera</div>`).join('') || '<div class="muted small">—</div>'}
-      <h3 style="margin-top:10px">States / provinces</h3>${regionRows(10).slice(0,8).map(r => `<div class="small">${esc(r.n)}: <b>${r.g}</b> genera</div>`).join('') || '<div class="muted small">—</div>'}
-      <h3 style="margin-top:10px">Local areas</h3>${regionRows(20).slice(0,10).map(r => `<div class="small">${esc(r.n)}: <b>${r.g}</b> genera</div>`).join('') || '<div class="muted small">—</div>'}
+      <h3 style="margin-top:10px">Countries</h3>${regionRows(0).map(r => `<div class="small">${esc(r.n)}: <b>${r.g}</b> ${r.g === 1 ? 'genus' : 'genera'}</div>`).join('') || '<div class="muted small">—</div>'}
+      <h3 style="margin-top:10px">States / provinces</h3>${regionRows(10).slice(0,8).map(r => `<div class="small">${esc(r.n)}: <b>${r.g}</b> ${r.g === 1 ? 'genus' : 'genera'}</div>`).join('') || '<div class="muted small">—</div>'}
+      <h3 style="margin-top:10px">Local areas</h3>${regionRows(20).slice(0,10).map(r => `<div class="small">${esc(r.n)}: <b>${r.g}</b> ${r.g === 1 ? 'genus' : 'genera'}</div>`).join('') || '<div class="muted small">—</div>'}
       ` : `<p class="muted">Region statistics install with SPOODEX Mk II (15 genera).</p>`}
     </div>
     <div class="panel">
@@ -1269,7 +1261,7 @@ function viewProfile() {
       ${style.map(s => `<div>${s[0]} <b>${esc(s[1])}</b> <span class="muted small">${esc(s[2])}</span></div>`).join('') || '<p class="muted">Still developing a style. Keep spooding.</p>'}
       ${moduleOn(3) ? `<h2 style="margin-top:14px">Rarest discoveries</h2>
         <p class="small muted">Fewest iNat records in ${esc(scopeLabel(S.prefs.scope))}.</p>
-        ${rare.map(x => `<div><a href="#" data-genus="${x.g.id}"><i>${esc(x.g.name)}</i></a> <span class="small muted">${fmt(x.r.count)} records</span></div>`).join('')}` : ''}
+        ${rare.map(x => `<div><a href="#" data-genus="${x.g.id}"><i>${esc(x.g.name)}</i></a> <span class="small muted">${fmt(x.r.count)} record${x.r.count === 1 ? '' : 's'}</span></div>`).join('')}` : ''}
     </div>
   </div>
   ${isGuest() ? '' : `<div class="grid2" style="margin-top:16px">
@@ -1496,10 +1488,12 @@ const perTxt = p => p === 'all' ? 'all time' : p === 'month' ? `${MONTHS[new Dat
 // 'sq' = the 0.25° grid square itself (about 27 × 28 km at Cairns; narrower towards the poles)
 const sqTxt = km => km === 'sq' ? 'grid square' : `${km * 2} × ${km * 2} km`;
 const kmChip = v => v === 'sq' ? '▣ Grid square' : v === 100 ? '100 km' : String(v);
-let scanBusy = false, scanErr = null, scanPending = null;
+let scanBusy = false, scanErr = null, scanPending = null, scanSeq = 0;
 const placeNames = new Map();   // 0.1° cell -> "Eacham, Queensland" (this session)
-// One taxonomy call for the chosen window, one for the last 30 days (the 🔥 marks), and a place name the first time near a spot
+// One taxonomy call for the chosen window, one for the last 30 days (the 🔥 marks), and a place name the first time near a spot.
+// A tap on the map scans straight away; if another tap comes in first, the older scan's results are dropped.
 async function runScan(lat, lng, km = scanKm(), per = scanPer()) {
+  const seq = ++scanSeq, stale = () => seq !== scanSeq;
   lat = +(+lat).toFixed(2); lng = +(+lng).toFixed(2);   // ~1 km: all a scan needs, and all that's kept
   S.prefs.scanKm = km; S.prefs.scanPer = per; savePrefs();
   scanPending = { lat, lng, km, per }; scanBusy = true; scanErr = null;
@@ -1509,7 +1503,9 @@ async function runScan(lat, lng, km = scanKm(), per = scanPer()) {
     if (per === 'month') q.month = new Date().getMonth() + 1;
     else if (per !== 'all') q.d1 = new Date(Date.now() - +per * 864e5).toISOString().slice(0, 10);
     const all = await api('/observations/taxonomy', q);
+    if (stale()) return;
     const act = per === '30' ? all : await api('/observations/taxonomy', { taxon_id:SALTICIDAE, verifiable:true, ...boxQ(c, km), d1:new Date(Date.now() - ACTIVE_DAYS * 864e5).toISOString().slice(0, 10) });
+    if (stale()) return;
     all.results.forEach(addNode); act.results.forEach(addNode);
     const rec = new Map(act.results.map(t => [t.id, t.descendant_obs_count || 0]));
     const pick = rank => all.results.filter(t => t.rank === rank).map(t => ({ id:t.id, c:t.descendant_obs_count || 0, r:rec.get(t.id) || 0 }));
@@ -1519,27 +1515,51 @@ async function runScan(lat, lng, km = scanKm(), per = scanPer()) {
       try { const p = await placesNear(lat, lng); near = [S.places[p.local]?.n, S.places[p.state]?.n || S.places[p.country]?.n].filter(Boolean).join(', '); } catch { near = ''; }
       placeNames.set(pk, near);
     }
+    if (stale()) return;
     S.u.mscan = { lat, lng, km, per, ts:Date.now(), month:new Date().getMonth(), near, G:pick('genus'), Sp:pick('species') };
     // the last few scans, one tap away (same point, size and window replace each other)
     S.u.scanHist = [S.u.mscan, ...(S.u.scanHist || []).filter(h => !(h.lat === lat && h.lng === lng && h.km === km && h.per === per))].slice(0, SCAN_HIST);
     saveUser(); saveShared();
     ensurePheno(S.u.mscan.G.filter(x => !S.M.G.has(x.id)).map(x => x.id).slice(0, 25));
-  } catch (e) { scanErr = e.message; }
+  } catch (e) { if (stale()) return; scanErr = e.message; }
   scanBusy = false; scanPending = null;
   const D = S.u.mscan; if (D) drawScanArea(D, D.km);
   paintScan();
+  if (D && !scanErr) scanBadge(D);
+}
+// Phones: the results sit below the map, so a badge on the map says what the scan found and jumps down to it
+function scanBadge(D) {
+  const b = $('#mapBadge'); if (!b || !matchMedia('(max-width:820px)').matches) return;
+  const n = D.G.filter(x => !S.M.G.has(x.id)).length;
+  b.textContent = `${D.G.length} genera here · ${n} new to you ↓`; b.classList.add('go'); b.classList.remove('hidden');
+  b.onclick = () => { b.classList.add('hidden'); $('#mapSide')?.scrollIntoView({ behavior:'smooth', block:'start' }); };
+  clearTimeout(scanBadge.t); scanBadge.t = setTimeout(() => b.classList.add('hidden'), 12000);
 }
 function paintScan() { const el = $('#mapSide'); if (el) el.innerHTML = scanPanelHtml(); }
+// Under the place name: your records in the pin's grid square, its frontier counts (with that layer on), and a home base shortcut
+function scanInfo(P) {
+  const k = cellKey(P.lat, P.lng, .25), mine = S.M.cells25.get(k), fr = layerOn('front') ? frontierCounts().get(k) : null, b = S.u.base;
+  const isBase = b && Math.abs(b.lat - P.lat) < .006 && Math.abs(b.lng - P.lng) < .006;
+  const bits = [
+    mine ? `Your records in this grid square: ${fmt(mine.n)} obs · ${mine.g.size} genera` : '',
+    fr ? `${isFrontier(fr) ? `<b style="color:${FRONT.col}">Frontier</b>: ` : ''}${fmt(fr[0])} jumping spider record${fr[0] === 1 ? '' : 's'} among ${fmt(fr[1])} iNat records in this grid square` : '',
+    isBase ? '' : '<a href="#" data-act="pinHome">Make this my home base</a>',
+  ].filter(Boolean);
+  return bits.length ? `<div class="scinfo small">${bits.join('<br>')}</div>` : '';
+}
 function scanPanelHtml() {
   const D = S.u.mscan, P = scanPending || D, M = S.M;
   const home = `<details class="scfoot"><summary>🏠 Home base: <b>${M.homeCell ? cellLabel(M.homeCell) : 'not set'}</b> · change</summary>${baseWidget()}</details>`;
   const hist = (S.u.scanHist || []).filter(h => h !== D);
-  const recent = hist.length ? `<div class="schist"><span class="lb">Recent</span>${hist.map(h => `<button type="button" data-act="scanHist" data-v="${S.u.scanHist.indexOf(h)}" ${scanBusy ? 'disabled' : ''}>${esc((h.near || cellLabel(h)).split(',')[0])} · ${esc(h.km === 'sq' ? '▣' : h.km * 2 + ' km')}</button>`).join('')}</div>` : '';
-  if (!P) return `<div class="schead"><h2>Scan an area</h2><p class="small" style="margin:4px 0 0">Tap the map to drop a pin, then choose how far around it to look and how recent the records should be.</p>
+  // chips named after the place, or by coordinates when two would read the same
+  const chipName = h => `${(h.near || '').split(',')[0]} · ${h.km === 'sq' ? '▣' : h.km * 2 + ' km'}`;
+  const chipTxt = h => h.near && hist.filter(x => chipName(x) === chipName(h)).length === 1 ? chipName(h) : `${cellLabel(h)} · ${h.km === 'sq' ? '▣' : h.km * 2 + ' km'}`;
+  const recent = hist.length ? `<div class="schist"><span class="lb">Recent</span>${hist.map(h => `<button type="button" data-act="scanHist" data-v="${S.u.scanHist.indexOf(h)}" ${scanBusy ? 'disabled' : ''}>${esc(chipTxt(h))}</button>`).join('')}</div>` : '';
+  if (!P) return `<div class="schead"><h2>Scan an area</h2><p class="small" style="margin:4px 0 0">Tap the map to scan around that point. Choose the area and how recent the records should be here.</p>
     ${M.homeCell ? '<p style="margin:10px 0 0"><button class="primary" data-act="scanHome">📡 Scan around home</button></p>' : ''}</div>${home}`;
   const chips = (act, list, cur, lab) => `<div class="scchips"><span class="lb">${lab}</span>${list.map(([v, l]) => `<button type="button" data-act="${act}" data-v="${v}" class="${String(v) === String(cur) ? 'on' : ''}" ${scanBusy ? 'disabled' : ''}>${l}</button>`).join('')}</div>`;
   const head = `${recent}<div class="schead"><div class="eyebrow">${esc(sqTxt(P.km).toUpperCase())}${P.km === 'sq' ? '' : ' SQUARE'} · ${esc(perTxt(P.per).toUpperCase())}</div>
-    <h2>📍 ${cellLabel(P)}</h2>${!scanPending && D?.near ? `<div class="small muted">${esc(D.near)}</div>` : ''}
+    <h2>📍 ${cellLabel(P)}</h2>${!scanPending && D?.near ? `<div class="small muted">${esc(D.near)}</div>` : ''}${scanInfo(P)}
     ${chips('scanKm', SCAN_KM.map(v => [v, kmChip(v)]), P.km, 'Area')}
     ${chips('scanPer', SCAN_PER.map(([k, l]) => [k, k === 'month' ? `${MONTHS[new Date().getMonth()]}, any year` : l.replace(' days', ' d')]), P.per, 'Recorded')}</div>`;
   if (scanBusy) return head + '<p class="scnote">Scanning…</p>' + home;
@@ -1567,7 +1587,7 @@ function scanPanelHtml() {
     ${newList || (list.length ? `<p class="scnote">You have every ${isG ? 'genus' : 'species'} recorded here.</p>` : '')}
     ${mine.length ? `<div class="scsec">ALREADY YOURS (${mine.length})</div><div class="schave">${mine.map(x => { const gid = isG ? x.id : genusOfNode(x.id);
       return gid ? `<a href="#" data-genus="${gid}"><i>${esc(S.nodes[x.id]?.n || '?')}</i></a>` : `<i>${esc(S.nodes[x.id]?.n || '?')}</i>`; }).join(', ')}</div>` : ''}
-    <p class="scnote small"><button type="button" data-act="scanBounty">🔎 Needs ID in this ${D.km === 'sq' ? 'grid square' : 'square'}</button> <span class="muted">Read ${esc(agoShort(D.ts))}.</span></p>
+    <p class="scnote small muted">Read ${esc(agoShort(D.ts))}.</p>
     ${home}`;
 }
 
@@ -1621,13 +1641,11 @@ function drawFrontier() {
 const cellBox = (k, inset = 0) => { const c = cellCenter(k), d = .125 - inset; return [[c.lat - d, c.lng - d], [c.lat + d, c.lng + d]]; };   // Leaflet bounds of a grid square
 
 /* ---------------- the Map tab ---------------- */
-const MAP_LAYERS = [['miss', 'Missing genera'], ['fog', 'Fog of war'], ['mine', 'Your squares'], ['front', 'Frontier']];
+const MAP_LAYERS = [['fog', 'Fog of war'], ['mine', 'Your squares'], ['front', 'Frontier']];
 const layerOn = k => k === 'front' ? S.prefs.mapLayers?.front === true : S.prefs.mapLayers?.[k] !== false;
 function mapLegendHtml() {
   const sw = (style, label) => `<span><i class="lgsw" style="${style}"></i>${label}</span>`;
   const out = [];
-  if (layerOn('miss')) out.push(`<span><b>Squares with recent records of genera you're missing</b>, by the rarest:</span>`
-    + RARITY.map(r => sw(`border-color:${r.c}`, esc(r.n))).join('') + sw('border-color:var(--muted);background:color-mix(in srgb, var(--muted) 40%, transparent)', 'filled: one is in season'));
   if (layerOn('front')) out.push(sw(`border:2px dashed ${FRONT.col};background:color-mix(in srgb, ${FRONT.col} 25%, transparent)`, `frontier: plenty of iNat records of other life, ${FRONT.salt} or fewer jumping spiders`));
   if (layerOn('mine')) out.push(sw(`border:2px dotted ${esc(cssVar('--lit') || '#2f6b3a')}`, 'your squares'));
   out.push(sw('border:2px dashed #3f6b3a', 'home area'), sw(`border:2px dashed ${esc(cssVar('--accent') || '#a8412a')}`, 'scan area'));
@@ -1656,35 +1674,6 @@ function drawScanArea(c, km) {
       L.circleMarker([c.lat, c.lng], { radius:6, color:'#fff6dc', weight:2, fillColor:col, fillOpacity:1, interactive:false })]).addTo(map) : null;
   }
 }
-// The click popup: what's missing in this grid square, then where and how far to scan. Shared by both maps.
-function scanPopupEl(lat, lng, done) {
-  const el = document.createElement('div'); el.className = 'scanpop';
-  const k = cellKey(lat, lng, .25), mine = S.M.cells25.get(k), sq = layerOn('miss') ? (map3d?.__sq || map?.__sq || []).find(c => c.k === k) : null;
-  const fr = layerOn('front') ? frontierCounts().get(k) : null;
-  let km = scanKm(), per = scanPer();
-  const draw = () => {
-    el.innerHTML = `<b>📍 ${cellLabel({ lat, lng })}</b>
-      ${sq ? `<div class="lab">MISSING IN THIS GRID SQUARE</div>${sq.g.slice(0, 4).map(g => `<div class="pg"><a href="#" data-g="${g.id}"><i>${esc(S.nodes[g.id]?.n || '?')}</i></a> ${rarityChip(g.r)}
-        <span class="muted">${g.p?.now ? '<b class="inseason">🌡 in season</b> · ' : g.p && !g.p.few ? `peak ${esc(g.p.text)} · ` : ''}last record ${esc(agoTxt(g.last))}</span></div>`).join('')}
-        ${sq.g.length > 4 ? `<div class="muted">and ${sq.g.length - 4} more: scan to see them all</div>` : ''}` : ''}
-      ${fr ? `<div class="muted">${isFrontier(fr) ? '<b style="color:' + FRONT.col + '">Frontier</b>: ' : ''}${fmt(fr[0])} jumping spider record${fr[0] === 1 ? '' : 's'} among ${fmt(fr[1])} iNat records here</div>` : ''}
-      ${mine && layerOn('mine') ? `<div class="muted">Your square: ${fmt(mine.n)} obs · ${mine.g.size} genera</div>` : ''}
-      <div class="lab">AREA: THIS GRID SQUARE, OR HOW FAR OUT EACH WAY</div><div class="chips">${SCAN_KM.map(v => `<button type="button" data-km="${v}" class="${v === km ? 'on' : ''}">${kmChip(v)}</button>`).join('')}</div>
-      <div class="lab">RECORDED</div><div class="chips">${SCAN_PER.map(([v, l]) => `<button type="button" data-per="${v}" class="${v === per ? 'on' : ''}">${v === 'month' ? `${MONTHS[new Date().getMonth()]}, any year` : l.replace(' days', ' d')}</button>`).join('')}</div>
-      <button type="button" class="primary go">📡 Scan this ${km === 'sq' ? 'grid square' : `${sqTxt(km)} square`}</button>
-      <a href="#" class="home">Make this my home base</a>`;
-    el.querySelectorAll('[data-km]').forEach(b => b.onclick = () => { km = kmVal(b.dataset.km); drawScanArea({ lat, lng }, km); draw(); });
-    el.querySelectorAll('[data-per]').forEach(b => b.onclick = () => { per = b.dataset.per; draw(); });
-    el.querySelectorAll('a[data-g]').forEach(a => a.onclick = e => { e.preventDefault(); openGenus(+a.dataset.g); });
-    el.querySelector('.go').onclick = () => {
-      done(true); runScan(lat, lng, km, per);
-      if (matchMedia('(max-width:820px)').matches) $('#mapSide')?.scrollIntoView({ behavior:'smooth', block:'start' });
-    };
-    el.querySelector('.home').onclick = e => { e.preventDefault(); done(true); setBase(lat, lng, 'Map point'); };
-  };
-  draw();
-  return el;
-}
 function initMap() {
   if (use3d()) { initMap3d(); return; }
   dropMap3d();
@@ -1703,21 +1692,15 @@ function initMap() {
   const holes = [...M.cells25.keys()].map(k => { const [[s, w], [n, e]] = cellBox(k); return [[s, w], [s, e], [n, e], [n, w]]; });
   map2d = {
     fog:L.layerGroup([L.polygon([[[-85, -180], [-85, 180], [85, 180], [85, -180]], ...holes], { stroke:false, fillColor:fog, fillOpacity:FOG_OPACITY, interactive:false })]),
-    front:L.layerGroup(), miss:L.layerGroup(),
+    front:L.layerGroup(),
     mine:L.layerGroup([...M.cells25.keys()].map(k => L.rectangle(cellBox(k), { color:lit, weight:2, dashArray:'1 6', lineCap:'round', fill:false, interactive:false }))),
     home:L.layerGroup(h ? [L.rectangle(boxBounds(h, 25), { color:'#3f6b3a', weight:2.5, dashArray:'6 6', fill:false, interactive:false })] : []),
   };
   const Ctl = L.Control.extend({ onAdd() { const d = L.DomUtil.create('div', 'mapctrls'); d.appendChild(layerSwitchEl()); L.DomEvent.disableClickPropagation(d); return d; } });
   new Ctl({ position:'topleft' }).addTo(map);
   applyLayers();
-  // Leaflet popups swallow document clicks, so the popup's buttons are wired directly
-  map.on('click', e => {
-    const lat = e.latlng.lat, lng = L.Util.wrapNum(e.latlng.lng, [-180, 180], true);
-    let scanned = false;
-    drawScanArea({ lat, lng }, scanKm());
-    const pop = L.popup({ maxWidth:310 }).setLatLng(e.latlng).setContent(scanPopupEl(lat, lng, v => { scanned = v; map.closePopup(); })).openOn(map);
-    pop.on('remove', () => { if (!scanned) { const D = scanPending || S.u.mscan; drawScanArea(D, D?.km); } });
-  });
+  // Tap anywhere: scan around that point (results in the side panel)
+  map.on('click', e => runScan(e.latlng.lat, L.Util.wrapNum(e.latlng.lng, [-180, 180], true)));
   map.on('moveend', () => { if (layerOn('front')) frontierSoon(); });
   if (h) map.setView([h.lat, h.lng], 9); else map.setView([0, 135], 2);
   setTimeout(() => {
@@ -1725,7 +1708,7 @@ function initMap() {
     const near = [...M.cells25.values()].filter(c => !h || (Math.abs(c.lat - h.lat) < 12 && Math.abs(c.lng - h.lng) < 12)).flatMap(c => cellBox(c.k));
     if (near.length && !S.u.base) map.fitBounds(near, { padding:[20, 20], maxZoom:9 });
   }, 80);
-  drawSquares(); drawFrontier(); fillSquares(); afterMapInit();
+  drawFrontier(); afterMapInit();
 }
 // Both maps: redraw the last scan, or scan around home the first time the tab opens
 function afterMapInit() {
@@ -1757,8 +1740,8 @@ const TERRAIN_ATTR = 'Terrain: ArcticDEM terrain data DEM(s) were created from D
   + 'United Kingdom terrain data © Environment Agency copyright and/or database right 2015. All rights reserved; United States 3DEP (formerly NED) and global GMTED2010 and SRTM terrain data courtesy of the U.S. Geological Survey.';
 const ESRI_TOPO = ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', 'Tiles © Esri — Esri, HERE, Garmin, USGS, NGA, and other contributors'];
 const ESRI_IMG = ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', 'Imagery © Esri, Maxar, Earthstar Geographics'];
-const TERRAIN_X = 1.5, SQ_GENERA = 25, FOG_OPACITY = .72;
-let map3d = null, map3dSeq = 0, map3dBase = 'topo', mlLoad = null, mlFailed = false, gl2 = null, sqBusy = false;
+const TERRAIN_X = 1.5, FOG_OPACITY = .72;
+let map3d = null, map3dSeq = 0, map3dBase = 'topo', mlLoad = null, mlFailed = false, gl2 = null;
 const hasGL2 = () => gl2 ??= (() => { try { const c = document.createElement('canvas').getContext('webgl2'); c?.getExtension('WEBGL_lose_context')?.loseContext(); return !!c; } catch { return false; } })();
 const use3d = () => !mlFailed && S.prefs.map3d !== false && hasGL2();
 function loadMapLibre() {
@@ -1771,7 +1754,7 @@ function loadMapLibre() {
   });
 }
 // WebGL contexts are scarce (browsers cap them), so the 3D map is torn down whenever the Map tab isn't showing
-function dropMap3d() { map3dSeq++; if (map3d) { map3d.remove(); map3d = null; } }
+function dropMap3d() { map3dSeq++; const m = map3d; map3d = null; m?.remove(); }
 const mixHex = (a, b, t) => /^#[0-9a-f]{6}$/i.test(a) ? '#' + [1, 3, 5].map(i => Math.round(parseInt(a.substr(i, 2), 16) * (1 - t) + parseInt(b.substr(i, 2), 16) * t).toString(16).padStart(2, '0')).join('') : a;
 const cssVar = n => getComputedStyle(document.body).getPropertyValue(n).trim();
 const ring = (k, inset = 0) => { const c = cellCenter(k), d = .125 - inset; return [[c.lng - d, c.lat - d], [c.lng + d, c.lat - d], [c.lng + d, c.lat + d], [c.lng - d, c.lat + d], [c.lng - d, c.lat - d]]; };
@@ -1789,65 +1772,6 @@ function gridEdges(keys) {
   }
   return fc([...edges.values()]);
 }
-// Squares around home holding recent records of genera you're missing (top of the home wanted list), from the haunts cache.
-// Each takes the colour of its rarest genus; it's filled when one of them is in season.
-function squareCells() {
-  const ctx = homeCtx(), list = wantedList(ctx); if (!list) return [];
-  const cells = new Map();
-  for (const x of list.slice(0, SQ_GENERA)) {
-    const hn = S.haunts[hauntKey(x.id, ctx)]; if (!hn || hn.wide) continue;
-    const r = rarityOf(x.id), p = peakInfo(x.id, ctx.pid);
-    for (const [k, n, last] of hn.cells) {
-      const c = cells.get(k) || { k, g:[], season:false, last:'' };
-      c.g.push({ id:x.id, n, last, r, p }); c.season ||= !!p?.now;
-      if (last > c.last) c.last = last;
-      cells.set(k, c);
-    }
-  }
-  return [...cells.values()].map(c => {
-    c.g.sort((a, b) => rarityIdx(a.r) - rarityIdx(b.r) || (b.last > a.last) - (b.last < a.last));
-    return { ...c, tier:c.g[0].r || RARITY[RARITY.length - 1] };
-  });
-}
-function drawSquares() {
-  const cells = squareCells().sort((a, b) => rarityIdx(b.tier) - rarityIdx(a.tier));   // rarest drawn last, so its outline sits on top
-  const src = map3d?.getSource('sq');
-  if (src) { src.setData(fc(cells.map(c => square(c.k, { col:c.tier.c, season:c.season ? 1 : 0 }, .006)))); map3d.__sq = cells; }
-  if (map && map2d) {
-    map2d.miss.clearLayers();
-    for (const c of cells) {
-      const b = cellBox(c.k, .006);
-      L.rectangle(b, { color:'#2b2419', weight:5, opacity:.5, fill:false, interactive:false }).addTo(map2d.miss);   // casing, so pale tiers show
-      L.rectangle(b, { color:c.tier.c, weight:3, fillColor:c.tier.c, fillOpacity:c.season ? .3 : .05, interactive:false }).addTo(map2d.miss);
-    }
-    map.__sq = cells;
-  }
-}
-// Background: season curves first (they change the ranking), then haunts for the top genera, redrawing as each arrives
-async function fillSquares() {
-  const ctx = homeCtx(), login = S.login;
-  if (sqBusy || !ctx.pid || !ctx.centre) return;
-  sqBusy = true;
-  try {
-    await ensureRef('state');
-    const h = S.M.homeCell;
-    if (!S.u.scans[h.k]) await fetchScan(h.k);
-    await scanActive(h.k);
-    const ids = (wantedList(ctx) || []).map(x => x.id);
-    ensureInfo(ids); ensurePheno(ids, ctx.pid);
-    while (phenoBusy) await sleep(1000);
-    drawSquares();
-    const done = new Set();
-    while (S.login === login) {
-      const x = (wantedList(ctx) || []).slice(0, SQ_GENERA).find(x => !done.has(x.id));
-      if (!x) break;
-      done.add(x.id);
-      await ensureHaunts(x.id, ctx);
-      drawSquares();
-    }
-  } catch (e) { console.warn(e); }
-  sqBusy = false;
-}
 // Fog of war: everything outside your recorded 25 km squares. Squares cleared since the last look fade out once.
 function paintMap3d() {
   const m = map3d; if (!m?.getSource('fog')) return;
@@ -1860,7 +1784,6 @@ function paintMap3d() {
   m.getSource('lit').setData(gridEdges(keys));
   const h = M.homeCell;
   paintHome();
-  drawSquares();
   S.u.fog = keys; saveUser();
   if (!fresh.length) return;
   const badge = $('#mapBadge');
@@ -1881,14 +1804,14 @@ function paintHome() {
   const h = S.M.homeCell, D = scanPending || S.u.mscan, src = map3d?.getSource('home'); if (!src) return;
   src.setData(fc(h && !sameArea(D, h, 25) ? [{ type:'Feature', properties:{}, geometry:{ type:'LineString', coordinates:boxRing(h, 25) } }] : []));
 }
-const LAYER_IDS = { miss:['sqFill', 'sqCase', 'sqLine'], fog:['fog', 'fogNew'], mine:['lit'], front:['frontFill', 'frontLine'] };
+const LAYER_IDS = { fog:['fog', 'fogNew'], mine:['lit'], front:['frontFill', 'frontLine'] };
 function applyLayers() {
   const m = map3d;
   if (m?.getLayer('fog')) for (const [k, ids] of Object.entries(LAYER_IDS)) ids.forEach(id => m.setLayoutProperty(id, 'visibility', layerOn(k) ? 'visible' : 'none'));
   if (map && map2d) {
-    // re-add in a fixed order (fog lowest, then frontier, squares, your squares, home, the scan on top)
-    for (const k of ['fog', 'front', 'miss', 'mine', 'home']) map2d[k].remove();
-    for (const k of ['fog', 'front', 'miss', 'mine']) if (layerOn(k)) map2d[k].addTo(map);
+    // re-add in a fixed order (fog lowest, then frontier, your squares, home, the scan on top)
+    for (const k of ['fog', 'front', 'mine', 'home']) map2d[k].remove();
+    for (const k of ['fog', 'front', 'mine']) if (layerOn(k)) map2d[k].addTo(map);
     map2d.home.addTo(map);
     if (mapArea) { mapArea.remove(); mapArea.addTo(map); }
   }
@@ -1904,8 +1827,7 @@ function layerSwitchEl() {
     const k = b.dataset.l, on = !layerOn(k);
     S.prefs.mapLayers = { ...(S.prefs.mapLayers || {}), [k]:on }; savePrefs();
     b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
-    if (k === 'miss' && !on) { map3d?.__popup?.remove(); map?.closePopup(); }
-    applyLayers();
+    applyLayers(); if (k === 'front') paintScan();
   });
   return d;
 }
@@ -1914,7 +1836,7 @@ async function initMap3d() {
   try { await loadMapLibre(); } catch (e) { console.warn(e); mlFailed = true; mlLoad = null; if (S.tab === 'map') render(); return; }
   const el = $('#map'); if (seq !== map3dSeq || S.tab !== 'map' || !el) return;
   if (map) { map.remove(); map = null; }
-  if (map3d) { map3d.remove(); map3d = null; }
+  if (map3d) { const old = map3d; map3d = null; old.remove(); }
   mapPin = null;
   const fog = mixHex(cssVar('--panel') || '#f5ecd6', '#a88752', .3), lit = cssVar('--lit') || '#2f6b3a', accent = cssVar('--accent') || '#a8412a';
   const geo = () => ({ type:'geojson', data:fc([]) });
@@ -1923,14 +1845,15 @@ async function initMap3d() {
   const dem = { type:'raster-dem', tiles:[TERRAIN_TILES], tileSize:256, maxzoom:lite ? 12 : 15, encoding:'terrarium' };
   const raster = ([url, attribution]) => ({ type:'raster', tiles:[url], tileSize:256, maxzoom:13, attribution });
   const vis = k => ({ visibility:layerOn(k) ? 'visible' : 'none' });
-  // thicker when zoomed out, so squares still read from far away (zoom has to be the top-level expression, so the casing gets its own)
-  const wide = ['interpolate', ['linear'], ['zoom'], 6, 4, 11, 2.5], casing = ['interpolate', ['linear'], ['zoom'], 6, 5.6, 11, 4.1];
-  const m = map3d = new maplibregl.Map({
+  // Browsers refuse new WebGL contexts after too many (or after a GPU reset): then this session uses the 2D map
+  const to2d = e => { console.warn('SPOODEX map: 3D unavailable,', e?.message || e?.type || e); mlFailed = true; dropMap3d(); if (S.tab === 'map') render(); };
+  let m;
+  try { m = map3d = new maplibregl.Map({
     container:el, maxZoom:13, maxPitch:70, attributionControl:{ compact:true }, pixelRatio:Math.min(devicePixelRatio || 1, lite ? 1.5 : 2),
     center:h ? [h.lng, h.lat] : [134, -25], zoom:h ? (lite ? 8 : 8.5) : 2, pitch:h ? 55 : 0, bearing:h ? -12 : 0,
     style:{ version:8,
       sources:{ topo:raster(ESRI_TOPO), img:raster(ESRI_IMG), dem:{ ...dem, attribution:TERRAIN_ATTR }, ...(lite ? {} : { hs:dem }),
-        fog:geo(), fogNew:geo(), lit:geo(), sel:geo(), sq:geo(), front:geo(), home:geo(), scan:geo() },
+        fog:geo(), fogNew:geo(), lit:geo(), front:geo(), home:geo(), scan:geo() },
       layers:[
         { id:'topo', type:'raster', source:'topo', layout:{ visibility:map3dBase === 'topo' ? 'visible' : 'none' } },
         { id:'img', type:'raster', source:'img', layout:{ visibility:map3dBase === 'img' ? 'visible' : 'none' } },
@@ -1940,19 +1863,15 @@ async function initMap3d() {
         { id:'hs', type:'hillshade', source:lite ? 'dem' : 'hs', paint:{ 'hillshade-exaggeration':.35, 'hillshade-shadow-color':'#4a3b26', 'hillshade-highlight-color':'rgba(255,248,230,.45)' } },
         { id:'frontFill', type:'fill', source:'front', layout:vis('front'), paint:{ 'fill-color':FRONT.col, 'fill-opacity':.2 } },
         { id:'frontLine', type:'line', source:'front', layout:vis('front'), paint:{ 'line-color':FRONT.col, 'line-width':2, 'line-dasharray':[2.5, 2] } },
-        // missing-genus squares: a tint when something's in season, a dark casing so pale tiers show on pale ground, then the tier colour
-        { id:'sqFill', type:'fill', source:'sq', layout:vis('miss'), paint:{ 'fill-color':['get', 'col'], 'fill-opacity':['case', ['==', ['get', 'season'], 1], .3, .05] } },
-        { id:'sqCase', type:'line', source:'sq', layout:vis('miss'), paint:{ 'line-color':'#2b2419', 'line-opacity':.55, 'line-width':casing } },
-        { id:'sqLine', type:'line', source:'sq', layout:vis('miss'), paint:{ 'line-color':['get', 'col'], 'line-width':wide } },
         // your squares: a dotted outline on the ground
         { id:'lit', type:'line', source:'lit', layout:{ ...vis('mine'), 'line-cap':'round' }, paint:{ 'line-color':lit, 'line-width':['interpolate', ['linear'], ['zoom'], 7, 1.5, 12, 3], 'line-dasharray':[0, 2.2] } },
-        { id:'sel', type:'line', source:'sel', paint:{ 'line-color':'#fff6dc', 'line-width':2, 'line-dasharray':[2, 1.5] } },
         { id:'home', type:'line', source:'home', paint:{ 'line-color':'#3f6b3a', 'line-width':2.5, 'line-dasharray':[3, 2] } },
         { id:'scanHalo', type:'line', source:'scan', paint:{ 'line-color':'#fff6dc', 'line-width':5, 'line-opacity':.7 } },
         { id:'scan', type:'line', source:'scan', paint:{ 'line-color':accent, 'line-width':2.5, 'line-dasharray':[2, 1.6] } },
       ],
       terrain:{ source:'dem', exaggeration:TERRAIN_X } },
-  });
+  }); } catch (e) { map3d = null; to2d(e); return; }
+  m.on('webglcontextlost', e => { if (m === map3d) to2d(e); });
   m.addControl(new maplibregl.NavigationControl({ visualizePitch:true }), 'top-right');
   if (h) m.addControl({
     onAdd() {
@@ -1978,7 +1897,7 @@ async function initMap3d() {
     },
     onRemove() {},
   }, 'top-left');
-  m.on('load', () => { paintMap3d(); drawFrontier(); fillSquares(); afterMapInit(); if (layerOn('front')) frontierSoon(); });
+  m.on('load', () => { paintMap3d(); drawFrontier(); afterMapInit(); if (layerOn('front')) frontierSoon(); });
   m.on('moveend', () => { if (layerOn('front')) frontierSoon(); });
   m.on('error', e => console.warn('SPOODEX map:', e.error?.message || e));   // a bad style or layer fails silently otherwise
   // The terrain credit is long: keep it behind the ⓘ button. MapLibre opens compact attribution once, when it first fills.
@@ -1987,24 +1906,8 @@ async function initMap3d() {
     a.removeAttribute('open'); a.classList.remove('maplibregl-compact-show'); m.off('sourcedata', shut);
   };
   m.on('sourcedata', shut);
-  // Click anywhere: pin, the outline of the square that would be scanned, and the scan popup (which also lists what's missing in
-  // that grid square). Popups stop clicks reaching the document listener, so its buttons get direct handlers.
-  m.on('click', e => {
-    m.__popup?.remove();
-    const lat = e.lngLat.lat, lng = e.lngLat.wrap().lng, k = cellKey(lat, lng, .25);
-    const sq = layerOn('miss') && (m.__sq || []).find(c => c.k === k);
-    m.getSource('sel').setData(sq ? gridEdges([k]) : fc([]));
-    let scanned = false;
-    drawScanArea({ lat, lng }, scanKm());
-    const pop = m.__popup = new maplibregl.Popup({ maxWidth:'310px', offset:[0, -36] }).setLngLat([lng, lat])
-      .setDOMContent(scanPopupEl(lat, lng, v => { scanned = v; pop.remove(); })).addTo(m);
-    pop.on('close', () => {
-      m.getSource('sel')?.setData(fc([]));
-      if (!scanned) { const D = scanPending || S.u.mscan; drawScanArea(D, D?.km); }
-    });
-  });
-  m.on('mouseenter', 'sqFill', () => m.getCanvas().style.cursor = 'pointer');
-  m.on('mouseleave', 'sqFill', () => m.getCanvas().style.cursor = '');
+  // Tap anywhere: scan around that point (results in the side panel)
+  m.on('click', e => runScan(e.lngLat.lat, e.lngLat.wrap().lng));
 }
 
 /* ---------------- elevation: height above sea level of your records, read from the same terrain tiles as the 3D map ---------------- */
@@ -2124,7 +2027,6 @@ function phenoUpdated() {
   document.querySelectorAll('[data-pheno]').forEach(el => el.innerHTML = phenoHtml(+el.dataset.pheno));
   document.querySelectorAll('[data-phenochart]').forEach(el => { const d = el.dataset;
     el.innerHTML = phenoChart(+d.phenochart, d.phenopid ? +d.phenopid : undefined, d.phenom ? +d.phenom : undefined); });
-  const wg = $('#wxGenera'); if (wg) wg.innerHTML = wxGeneraHtml();
   if (['wanted', 'trip'].includes(S.tab) && !$('#modalRoot').innerHTML) softRender();
 }
 
@@ -2648,7 +2550,7 @@ function viewCrewMain() {
     <p class="small muted">Prestige ✦ weights rarity in ${where}. Change the scope on the SPOODEX tab.</p></div>
 
   <h2 style="margin-top:22px">Only one of you has these</h2>
-  <div class="grid2">${stats.map(x => `<div class="panel"><h3>${name(x.m)} <span class="small muted">${x.og.length} genera</span></h3>
+  <div class="grid2">${stats.map(x => `<div class="panel"><h3>${name(x.m)} <span class="small muted">${x.og.length} ${x.og.length === 1 ? 'genus' : 'genera'}</span></h3>
     ${x.og.map(id => `<div>${rarityChip(tierIn(refFor(scope)?.g, id))} <a href="#" data-genus="${id}"><i>${esc(S.nodes[id]?.n || '?')}</i></a> <span class="small muted">${fmt(x.m.g[id])} obs</span></div>`).join('') || '<p class="muted small">Nothing exclusive yet.</p>'}</div>`).join('')}</div>
 
   <h2 style="margin-top:22px">Nobody in the crew has these</h2>
@@ -3182,7 +3084,7 @@ function evBlitzHtml(E, R) {
       ${taxonomicOrder([...found.keys()]).order.map(id => { const f = found.get(id); return `<div class="small">✓ ${tgt.has(id) ? '🎯 ' : ''}<a href="#" data-genus="${id}">${gName(id)}</a> · first by <b>${esc(f.login)}</b>, ${obsLink(f.o, esc(dShort(f.o.d)))}</div>`; }).join('') || '<p class="small muted">Nothing inked yet.</p>'}
       ${[...pencil].filter(id => !found.has(id)).map(id => `<div class="small muted">✏️ <a href="#" data-genus="${id}">${gName(id)}</a> waiting for an ID</div>`).join('')}</div>
     <div class="panel"><h3>Still missing <span class="small muted">most-recorded first</span></h3>
-      ${ref ? missing.slice(0, 60).map(id => `<div class="small">${tgt.has(id) ? '🎯 ' : ''}<a href="#" data-genus="${id}">${gName(id)}</a> <span class="muted">${fmt(ref.g[id])} records in ${where}</span></div>`).join('') + (missing.length > 60 ? `<p class="small muted">…and ${missing.length - 60} more.</p>` : '') : '<p class="small muted">Loading the checklist…</p>'}</div></div>`;
+      ${ref ? missing.slice(0, 60).map(id => `<div class="small">${tgt.has(id) ? '🎯 ' : ''}<a href="#" data-genus="${id}">${gName(id)}</a> <span class="muted">${fmt(ref.g[id])} record${ref.g[id] === 1 ? '' : 's'} in ${where}</span></div>`).join('') + (missing.length > 60 ? `<p class="small muted">…and ${missing.length - 60} more.</p>` : '') : '<p class="small muted">Loading the checklist…</p>'}</div></div>`;
 }
 function evDuelHtml(E, R) {
   const [a, b] = E.ev.r.map(l => R.rows.find(r => r.k === l.toLowerCase()));
@@ -4163,12 +4065,11 @@ const BOUNTY_TTL = 3600e3, BOUNTY_KM = 50;
 const BOUNTY_FIELDS = '(id:!t,observed_on:!t,created_at:!t,obscured:!t,geojson:!t,taxon:(id:!t,name:!t,rank:!t,ancestor_ids:!t),user:(login:!t),photos:(url:!t),identifications:(current:!t,user:(login:!t)))';
 const BOUNTY_RANKS = [[1, 'Deputy'], [5, 'Bounty hunter'], [15, 'Marshal'], [40, 'Sheriff'], [100, 'Legend of the ID frontier']];
 let bountyBusy = false, bountyErr = null;
-// S.bountyArea (this session only): a scanned square from the Map tab, instead of the home area
-const bountyWhere = () => { const A = S.bountyArea, h = S.M.homeCell, pid = S.M.home.state || S.M.home.country;
-  return A ? boxQ(A, A.km) : h ? boxQ(h, BOUNTY_KM) : pid ? { place_id:pid } : null; };
+const bountyWhere = () => { const h = S.M.homeCell, pid = S.M.home.state || S.M.home.country;
+  return h ? boxQ(h, BOUNTY_KM) : pid ? { place_id:pid } : null; };
 const bountyNeedsLoad = () => { const b = S.u.bounty?.data; return !b || Date.now() - b.ts > BOUNTY_TTL || b.k !== JSON.stringify(bountyWhere()); };
 function trimBounty(o) {
-  const c = o.geojson?.coordinates, h = S.bountyArea || S.M.homeCell, me = String(S.login).toLowerCase(), t = o.taxon || {};
+  const c = o.geojson?.coordinates, h = S.M.homeCell, me = String(S.login).toLowerCase(), t = o.taxon || {};
   return { id:o.id, d:o.observed_on || '', up:(o.created_at || '').slice(0, 10), t:t.name || '?', r:t.rank || '', tid:t.id,
     ph:photoSize(o.photos?.[0]?.url || '', 'small'), n:(o.identifications || []).filter(i => i.current).length,
     mine:(o.identifications || []).some(i => i.user?.login?.toLowerCase() === me),
@@ -4201,9 +4102,7 @@ async function loadBounties() {
 function bountyRank(n) { let r = null; for (const x of BOUNTY_RANKS) if (n >= x[0]) r = x; return r; }
 function viewBounty() {
   const M = S.M, b = S.u.bounty?.data, helped = S.u.bounty?.helped?.length || 0, rank = bountyRank(helped), next = BOUNTY_RANKS.find(x => x[0] > helped);
-  const A = S.bountyArea;
-  const where = A ? `in the ${esc(sqTxt(A.km))} ${A.km === 'sq' ? '' : 'square '}you scanned at ${esc(A.label)} (<a href="#" data-act="bountyHome">back to your home area</a>)`
-    : M.homeCell ? `within ${BOUNTY_KM} km of your home base` : `in ${esc(S.places[M.home.state || M.home.country]?.n || 'your region')}`;
+  const where = M.homeCell ? `within ${BOUNTY_KM} km of your home base` : `in ${esc(S.places[M.home.state || M.home.country]?.n || 'your region')}`;
   const card = x => `<a class="card bounty" href="https://www.inaturalist.org/observations/${x.id}" target="_blank" rel="noopener" title="Open on iNaturalist to add an ID">
       ${x.mine ? '<span class="badge b-supp">✓ YOU IDed</span>' : ''}<div class="ph" style="background-image:url('${esc(x.ph)}')"></div>
       <div class="meta"><div class="nm">${x.r === 'genus' || x.r === 'species' ? `<i>${esc(x.t)}</i>` : esc(x.t)}</div>
@@ -4484,7 +4383,7 @@ function showWrapped() {
       <p class="line">Best discovery streak: <b>${W.best}</b> field day${W.best === 1 ? '' : 's'} in a row with a new genus</p>
       ${W.beh ? `<p class="line">${W.beh} behaviour record${W.beh === 1 ? '' : 's'}: feeding, courtship, silk & brood</p>` : ''}`),
     () => s('WHERE YOU WENT', `${W.newCells} <span class="unit">new 25 km square${W.newCells === 1 ? '' : 's'}</span>`,
-      `${W.topLocal.length ? `<p class="line">Favourite patches:</p>${W.topLocal.map((l, i) => `<p class="line">${['🥇','🥈','🥉'][i]} ${esc(l.n)} <span class="small muted">${l.c} records</span></p>`).join('')}` : ''}`),
+      `${W.topLocal.length ? `<p class="line">Favourite patches:</p>${W.topLocal.map((l, i) => `<p class="line">${['🥇','🥈','🥉'][i]} ${esc(l.n)} <span class="small muted">${l.c} record${l.c === 1 ? '' : 's'}</span></p>`).join('')}` : ''}`),
     () => s('YOUR MARK ON THE RECORD', W.share === undefined ? '…' : W.share?.total ? pctTxt(W.share.mine / W.share.total) : '—',
       `${W.share === undefined ? loading : W.share?.total ? `<p class="line">of all verifiable salticid records on iNat in ${esc(W.share.where)} in ${esc(W.Y)} were yours (${fmt(W.share.mine)} of ${fmt(W.share.total)})</p>` : ''}
       ${W.pioneers.length ? `<p class="line">🏅 <b>${W.pioneers.length}</b> pioneer badge${W.pioneers.length === 1 ? '' : 's'}: ${W.pioneers.slice(0, 4).map(p => `${gLink(p.gid)} in ${esc(S.places[p.pid]?.n)}`).join(', ')}${W.pioneers.length > 4 ? '…' : ''}</p>` : ''}
@@ -4632,7 +4531,7 @@ function wxInner() {
   const f = S.wx[wxKey(c)];
   if (!f) return head + (wxErr ? `<p class="small">${esc(wxErr)}. <button data-act="wxRetry">Try again</button></p>` : '<p class="small muted">Fetching the 7-day forecast…</p>');
   return `${head}${wxErr ? `<p class="small">${esc(wxErr)}; showing the forecast from ${agoShort(f.ts)}. <button data-act="wxRetry">Try again</button></p>` : ''}
-    <div class="wxgrid"><div style="min-width:0">${wxCardsHtml(f, wxDays(f))}</div><div id="wxGenera">${wxGeneraHtml()}</div></div>`;
+    ${wxCardsHtml(f, wxDays(f))}`;
 }
 // The day cards, best bet and key; shared by the Map tab (home, 7 days) and the Trip planner (the trip's dates)
 function wxCardsHtml(f, days) {
@@ -4648,19 +4547,6 @@ function wxCardsHtml(f, days) {
     ${top ? `<p class="wxbest">Best bet: <b>${day(top.d)} ${wxSpan(top.from, top.to)}</b> ${wxStars(top.stars)} ${top.temp}° · ${top.sky}${top.why.length ? ` · ${esc(top.why[0])}` : ''}</p>` : ''}
     <p class="small muted" style="margin:0">Stars rate each day's best stretch for warmth, sun, rain and wind, and rise when it clears after rain, wind or a cool spell, or turns warm and humid. The bar is the day hour by hour; the outlined part is that stretch.</p>`;
 }
-// Missing genera worth the trip: in season this month, or recorded within 25 km of home in the last 30 days
-function wxGeneraHtml() {
-  const ctx = homeCtx(), list = wantedList(ctx);
-  if (!list) return '';
-  ensurePheno(list.map(x => x.id), ctx.pid);
-  const top = list.filter(x => x.season >= .6 || x.recent).slice(0, 5);
-  return `<h3 style="margin:0 0 4px">Missing genera, in season or active near home</h3>
-    ${top.map(x => `<div class="wxg">${x.recent ? '🔥 ' : ''}<a href="#" data-genus="${x.id}"><i>${esc(S.nodes[x.id]?.n || '?')}</i></a>
-      <span class="small muted">${x.recent ? `${x.recent} record${x.recent === 1 ? '' : 's'} within ${ctx.km} km in ${ACTIVE_DAYS} days` : x.peak && !x.few ? `peak ${esc(x.peak.text)}` : ''}</span>
-      <a href="#" class="small" data-act="wanted" data-v="${x.id}">case file</a></div>`).join('')
-    || `<p class="small muted">${phenoBusy ? 'Checking seasons…' : `None of your missing genera is in season in ${MONTHS[ctx.month]}.`}</p>`}`;
-}
-
 /* ---------------- field compass: where you are, what's around, and a needle to the nearest recent records of missing genera ---------------- */
 // The live position lives only in F, for this session: never saved, logged, tracked or put in a link. It reaches iNat only as a
 // 25 km scan point rounded to 0.1°, like a map scan. The needle points at 25 km square centres (the 25 km rule), never at records.
@@ -5093,9 +4979,6 @@ document.addEventListener('click', e => {
   if (a === 'sets') { e.preventDefault(); S.prefs.layer = 'sets'; savePrefs(); S.tab = 'dex'; render(); }
   if (a === 'wview') { S.prefs.wantedView = val; savePrefs(); render(); }
   if (a === 'bountyGo') { e.preventDefault(); S.prefs.wantedView = 'bounty'; savePrefs(); S.tab = 'wanted'; render(); }
-  if (a === 'bountyHome') { e.preventDefault(); S.bountyArea = null; render(); }
-  if (a === 'scanBounty' && S.u.mscan) { const D = S.u.mscan; S.bountyArea = { lat:D.lat, lng:D.lng, km:D.km, label:D.near || cellLabel(D) };
-    S.prefs.wantedView = 'bounty'; savePrefs(); S.tab = 'wanted'; render(); }
   if (a === 'scanHist') { const H = S.u.scanHist?.[+val]; if (H) { if (Date.now() - H.ts < SCAN_TTL) { S.u.mscan = H; saveUser(); drawScanArea(H, H.km); paintScan(); } else runScan(H.lat, H.lng, H.km, H.per); } }
   if (a === 'bountyRefresh') { e.preventDefault(); bountyErr = null; loadBounties(); render(); }
   if (a === 'newsDismiss') { S.u.news.dismissed = true; saveUser(); render(); }
@@ -5115,6 +4998,7 @@ document.addEventListener('click', e => {
     if (P) runScan(P.lat, P.lng, a === 'scanKm' ? kmVal(val) : P.km, a === 'scanPer' ? val : P.per); }
   if (a === 'scanTab') { S.prefs.scanTab = val; savePrefs(); paintScan(); }
   if (a === 'scanHome' && S.M.homeCell) runScan(S.M.homeCell.lat, S.M.homeCell.lng);
+  if (a === 'pinHome' && S.u.mscan) { e.preventDefault(); setBase(S.u.mscan.lat, S.u.mscan.lng, S.u.mscan.near?.split(',')[0] || 'Map point'); }
   if (a === 'map3d') { S.prefs.map3d = val === '1'; savePrefs(); render(); }
   if (a === 'field') openField();
   if (a === 'fieldStart') fieldStart();
