@@ -237,7 +237,7 @@ a.lcard:hover { border-color:var(--accent); }
 .rcard.on::after { opacity:0; }
 @keyframes flip { from { transform:rotateY(90deg); } to { transform:none; } }
 .revend h2 { font-size:30px; margin:2px 0 0; }
-.finds { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:12px; }
+.finds { display:grid; grid-template-columns:repeat(3, minmax(0, 280px)); gap:12px; }
 .fcard { display:flex; flex-direction:column; background:var(--panel2); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; cursor:pointer; color:inherit; min-width:0; }
 .fcard:hover { border-color:var(--accent); }
 .fcard .ph { aspect-ratio:4/3; background:var(--dim) center/cover no-repeat; }
@@ -1690,7 +1690,7 @@ function scanInfo(P) {
 }
 function scanPanelHtml() {
   const D = S.u.mscan, P = scanPending || D, M = S.M;
-  const home = `<details class="scfoot"><summary>🏠 Home base: <b>${M.homeCell ? cellLabel(M.homeCell) : 'not set'}</b> · change</summary>${baseWidget()}</details>`;
+  const home = M.homeCell ? `<details class="scfoot"><summary>🏠 Home base: <b>${cellLabel(M.homeCell)}</b> · change</summary>${baseWidget()}</details>` : '';
   const hist = (S.u.scanHist || []).filter(h => h !== D);
   // chips named after the place, or by coordinates when two would read the same
   const chipName = h => `${(h.near || '').split(',')[0]} · ${h.km === 'sq' ? '▣' : h.km * 2 + ' km'}`;
@@ -1794,7 +1794,8 @@ function mapLegendHtml() {
 }
 function viewMapShell() {
   const d3 = use3d();
-  return `${wxPanelHtml()}<div class="maplayout"><div><div class="mapwrap"><div id="map"></div>
+  // no home base yet (a guest, or no records): asking where comes first, in place of the weather
+  return `${S.M.homeCell ? wxPanelHtml() : `<div class="panel" style="margin-bottom:16px"><h2>Where do you look for spiders?</h2>${baseWidget()}</div>`}<div class="maplayout"><div><div class="mapwrap"><div id="map"></div>
       ${hasGL2() ? `<div class="mapmode">${[['0', '2D'], ['1', '3D']].map(([v, l]) => `<button type="button" data-act="map3d" data-v="${v}" class="${d3 === (v === '1') ? 'on' : ''}">${l}</button>`).join('')}</div>` : ''}
       <div id="mapBadge" class="mapbadge hidden"></div></div>
     <div class="maplegend small" id="mapLegend">${mapLegendHtml()}</div></div>
@@ -2334,7 +2335,7 @@ function viewCompare() {
   const form = `<div class="panel" style="margin-bottom:16px"><h2>Compare SPOODEXes</h2>
     <p class="muted small">Enter another iNaturalist username to see what they've found that you haven't, and the other way round.</p>
     <form class="row" data-form="compare"><input name="login" value="${esc(C?.login || '')}" placeholder="their iNaturalist username" autocomplete="off" style="flex:1;min-width:180px"><button class="primary" ${C?.loading ? 'disabled' : ''}>Compare</button></form>
-    ${C?.loading ? `<div id="cmpLog" class="term" style="height:120px">${esc(C.log.slice(-6).join('\n'))}</div>` : ''}
+    ${C?.loading ? `<p id="cmpLog" class="small" style="margin:10px 0 0">${esc(C.log[C.log.length - 1] || '')}</p>` : ''}
     ${C?.error ? `<p>${esc(C.error)}</p>` : ''}</div>`;
   if (!C || !C.M || C.loading) return form;
   const T = C.M, me = esc(who()), them = esc(C.login), where = esc(scopeLabel(S.prefs.scope));
@@ -2460,7 +2461,7 @@ async function loadCompare(login) {
   const save = cached && cached.login.toLowerCase() === login.toLowerCase() ? cached.save : { obs:{}, meta:{} };
   S.cmp = { login, save, loading:true, log:[] };
   if (S.tab === 'compare') render();
-  const log = line => { S.cmp.log.push(line); const el = $('#cmpLog'); if (el) { el.textContent = S.cmp.log.slice(-6).join('\n'); el.scrollTop = el.scrollHeight; } };
+  const log = line => { S.cmp.log.push(line); const el = $('#cmpLog'); if (el) el.textContent = line; };   // one plain progress line
   try {
     await importRecords(login, save, { log });
     saveShared();
@@ -3978,6 +3979,9 @@ async function loadNextThree(redraw) {
     await ensureRef('state');
     if (h) { if (!S.u.scans[h.k]) await fetchScan(h.k); await scanActive(h.k); }
     redraw();
+    // pictures first (one call each covers the ten likeliest), so the cards fill in before the season curves arrive
+    const likely = wantedList(homeCtx()).slice(0, 10).map(x => x.id);
+    await ensureInfo(likely); await ownerPhotos(likely); redraw();
     // season curves re-rank the likeliest few; repeat until the three on show all have theirs
     for (let round = 0, ids = wantedList(homeCtx()).slice(0, 8).map(x => x.id); round < 3 && ids.length; round++) {
       ensurePheno(ids);

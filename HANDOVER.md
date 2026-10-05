@@ -1,6 +1,6 @@
 # SPOODEX — handover
 
-**As of 2026-10-06 · v1.19 · live at https://themoojuice.github.io/spoodex/?u=themoojuice**
+**As of 2026-10-06 · v1.20 (branch `feature/spood-frenzy`, not yet merged) · live (v1.19) at https://themoojuice.github.io/spoodex/?u=themoojuice**
 
 This is the single source of truth for anyone (human or Claude) picking up the project. Read §0 first; it's enough
 to start safely. The rest is reference. When you change something, update this file in the same commit.
@@ -28,6 +28,7 @@ to start safely. The rest is reference. When you change something, update this f
      dates, taxon ids and iNat **place ids** (owner-approved, v1.16), never coordinates (§9). Field mode's live position
      stays in memory for the session (§9).
   6. After every edit, syntax-check (§10). Before shipping, run the smoke test (§10).
+  7. Other people's photos only under CC0, CC BY or CC BY-NC, always credited and linked; the owner's own photos first (§9, v1.20).
 - **Ship**: bump `VERSION` in `sw.js` → copy the site files to `site/` → `git commit` → `git push` (§10). GitHub Pages updates in ~30 s.
   Commit and push only when the owner asks, or as part of a task he asked you to build.
 - **Two invariants that bite silently**:
@@ -77,7 +78,7 @@ python -m http.server 8765        # any static server works
 
 | File | What it is |
 |---|---|
-| `spoodex.html` | **The entire app**: HTML + CSS + JS (~3,700 lines). Script sections are marked `/* ---------------- <name>` |
+| `spoodex.html` | **The entire app**: HTML + CSS + JS (~5,500 lines). Script sections are marked `/* ---------------- <name>` |
 | `index.html` | Redirects to `spoodex.html`, keeping `?query`, so `/spoodex/?u=x` works |
 | `sw.js` | Service worker (v1.15), registered as `./sw.js` so its scope is `/spoodex/`. Caching rules in §5 "offline & install". **Bump `VERSION` on every release** |
 | `manifest.webmanifest` | Web app manifest: `start_url ./spoodex.html` (boot reopens `lastLogin`), `scope ./`, `display standalone`, background and theme `#e7d8b9` (notebook `--bg`) |
@@ -198,10 +199,12 @@ Search for `/* ---------------- <name>` to jump. Line numbers drift; names don't
 **UI event wiring**: one delegated `click` listener on `document` dispatches on data attributes, checked in this order:
 `data-genus` (genus modal) · `data-close` · `data-tab` · `data-filter` · `data-layer` · `data-scan` · `data-base` (`lat|lng|label`) ·
 `data-trip` (`lat|lng|area|label`) · `data-act` with its argument in `data-v`. Current actions:
-`bountyGo bountyRefresh card cardPng cardShare clearBase crewAdd crewDel crewRefresh evBack evCancel evCard evCopy evCreate
-evDareBack evDarePick evDel evMode evNew evOpen evPlaceClear evPlacePick evPreset evRefresh evRematch field fieldClose fieldNext
-fieldRescan fieldStart full geo guest install ladderRefresh leadFilter lscope lsort needsid newsDismiss peek reportRefresh sample
-sets share switch tripCase tripClear tripRefresh tripRetry vs wanted wantedRetry wipe wrapped wrNext wrPrev wrYear wview wxRetry`. Clicking the Crew tab button closes any open event. Because `data-tab` is checked before `data-layer`, a link that must switch tab **and**
+`bountyGo bountyRefresh card cardPng cardShare clearBase crewAdd crewDel crewRefresh dexImage evBack evCancel evCard evCopy evCreate
+evDareBack evDarePick evDel evHunt evMode evNew evOpen evPlaceClear evPlacePick evPostCopy evPostText evPreset evRefresh evRematch field
+fieldClose fieldNext fieldRescan fieldStart full geo guest install ladderRefresh leadFilter lscope lsort needsid newsDismiss openDex
+reportRefresh sample sets share switch tipsDone tripCase tripClear tripRefresh tripRetry vs wanted wantedRetry wipe wrapped wrNext wrPrev
+wrYear wview wxRetry` (v1.20 added `dexImage evHunt evPostCopy evPostText openDex tipsDone` and dropped `peek`, whose locked-tab plate
+is gone). The reveal's **Skip** has its own listener (`#revSkip`). Clicking the Crew tab button closes any open event. Because `data-tab` is checked before `data-layer`, a link that must switch tab **and**
 view needs its own `data-act` (see `sets`, `needsid`, `bountyGo`).
 Forms: `data-form` = `compare | crew | evDare | evPlace | placeSearch | tripSearch` (delegated `submit`). Prefs: `data-pref` on `change`; the trip
 month select uses `data-tripm`. The event form keeps its state in `S.evDraft`: `data-evf` fields update it on `input` without redrawing
@@ -401,7 +404,8 @@ Scan-point keys: a 0.25° cell `"lat:lng"` (integers) or an arbitrary point `"pt
 - **No backend** yet; public read-only iNat data; no OAuth. Third parties: GoatCounter (anonymous counts, §5) and Open-Meteo (weather, §3).
   Single file plus the approved offline sidecars until it clearly outgrows that (then Vite + TS).
 - **Mobile matters**: most visitors will be on phones. No horizontal page scroll at 375 px.
-- Never help find or enter the owner's credentials.
+- Never help find or enter the owner's credentials (or anyone's).
+- **GoatCounter** gets event names only (§5 "analytics"): never usernames, places or coordinates.
 - Tone: plain and useful. Playfulness lives in names (tiers, quests, sets, bounty ranks), not in extra sentences.
 
 ## 10. How to work on it
@@ -433,11 +437,19 @@ for (const id of Object.keys(S.events)) run('ev:'+id, ()=>{S.tab='crew'; S.evOpe
 S.evOpen=null;
 for (const m of ['blitz','bingo','turf','duel','dare']) run('evform:'+m, ()=>{S.tab='crew'; S.evDraft=evDraftNew(m); render();});
 S.evDraft=null;
-for (const [n,f] of [['genus',()=>openGenus(S.M.genera[0].id)],['case',()=>openCase(wantedList()[0].id)],['settings',settings],['card',openTitleCard],['wrapped',()=>openWrapped()],['field',()=>{openField(); closeField();}],['evcard',()=>openEventCard(Object.keys(S.events).find(id => S.events[id].obs))]]) { run('modal:'+n,f); $('#modalRoot').innerHTML=''; }
+for (const [n,f] of [['genus',()=>openGenus(S.M.genera[0].id)],['case',()=>openCase(wantedList()[0].id)],['settings',settings],['card',openTitleCard],['dexImage',()=>openDexImage()],['wrapped',()=>openWrapped()],['field',()=>{openField(); closeField();}],['evcard',()=>openEventCard(Object.keys(S.events).find(id => S.events[id].obs))]]) { run('modal:'+n,f); $('#modalRoot').innerHTML=''; }
 S.prefs.layer='genus'; S.prefs.wantedView='bounty'; savePrefs(); ({out, errs:__errs})
 ```
 Then repeat the tab loop at phone width (375 px) and check `document.documentElement.scrollWidth === innerWidth`, and try guest mode
-("Explore near me") on a fresh load.
+("See what jumping spiders live near you") on a fresh load.
+**Seeing it as a stranger** (v1.20): storage is per origin, so `http://127.0.0.1:8765/spoodex.html` starts empty even when
+`localhost:8765` has saves: the landing page, then guest mode or a username. The service worker serves the shell network-first but the
+browser's HTTP cache can hand it a stale `spoodex.html` from `python -m http.server`; add `?nc=<n>` to the URL (any unknown parameter is
+ignored) or unregister the worker (`navigator.serviceWorker.getRegistrations()`) while testing. If the preview's port is taken by another
+session, the second configuration in `.claude/launch.json` (`spoodex-alt`, port 8766) serves the same folder.
+**Testing the v1.20 moments without waiting for iNat**: the ID celebration:
+`const o = structuredClone(S.M.leads[0].obs[0]); o.anc.push(S.M.genera[0].id); revealQueue(celebrations([], [o]))`;
+a tab unlock: `S.u.tabsSeen = ['profile','dex','map','crew','quests']; render()`; the photo checklist again: `S.prefs.tipsDone = false`.
 
 **Testing events** (console, on `?u=themoojuice`): build one without the form and open it:
 ```js
@@ -521,7 +533,8 @@ does the rest. Clear old caches with `caches.keys().then(ks => ks.forEach(k => c
 
 **Before posting publicly (discussed 2026-09-28)**:
 - **Usage analytics**: DONE in v1.11 (GoatCounter, see §5 "analytics"). Stats: https://themoojuice.goatcounter.com (owner signs in).
-- **Mobile navigation**: group the 11 tabs into ~4 sections (e.g. Collection / Explore / Social / Quests).
+- **Mobile navigation**: group the 11 tabs into ~4 sections (e.g. Collection / Explore / Social / Quests). v1.20 shows new players five
+  tabs and opens the rest with their level, and the phone header is one line; grouping is still open.
 - **Test outside Australia**; consider showing progress as a % of the regional total for low-diversity regions (e.g. the UK has ~20 genera).
 - **Full-photo share cards** via an image proxy (see §11).
 
@@ -607,6 +620,15 @@ does the rest. Clear old caches with `caches.keys().then(ks => ks.forEach(k => c
      ID inks it, and judged missed only once final.
 - Bingo cards for open events aren't supported (bingo, turf, duels and dares need a roster).
 
+**Awaiting the owner's decision (v1.20, photo licences in older views)**:
+- The v1.20 rule (other people's photos only under CC0/CC BY/CC BY-NC, credited) is applied to everything new: the landing page, Three
+  to find, mystery spoods (your own photos), the share image (your own), and event best finds, thumbnails and the result card. Older
+  views still show iNat's taxon photo (`S.info[id].p`, with its attribution where there's room) whatever its licence: blurred
+  silhouettes on unknown dex cards and species cards, the genus page hero for a genus you haven't got, wanted posters (credited), and
+  species thumbnails. Of Australia's 80 genera, 49 taxon photos are not CC0/CC BY/CC BY-NC (28 other CC licences, 21 all rights
+  reserved or none). Retrofitting is one helper (`taxonPhoto`, which also swaps in your photo where you have one) but those 49 would
+  lose their silhouette or poster photo unless you have one. Your call.
+
 **Awaiting the owner's decision (v1.20, public spood hunt)**:
 - **Post text** (`evPostText`), for Reddit and the iNat forum (the first line doubles as a Reddit title):
   > Spood hunt · Oct 2026: a jumping spider hunt on iNaturalist, 1 Oct – 31 Oct 2026
@@ -641,6 +663,7 @@ cards progressively during a first import; generalising beyond jumping spiders (
 | v1.7 | IndexedDB storage (with migration), v2 imports with `fields=` (~6% of the download), Trip planner |
 | v1.8 | Sets (themed + complete-the-lineage), Bounty board, "since your last visit" |
 | v1.9 | Most Wanted tab renamed Bounty board (bounties first), SPOODEX › Needs ID layer, fixed-height quest tiles |
+| v1.20 | Spood frenzy (branch `feature/spood-frenzy`): a landing page with real jumping spiders (the owner's photos first, licence-checked others) and three starts; a photo reveal instead of the boot log; iNat common names and one Wikipedia line per genus; the photo checklist, mystery spoods (was Needs ID) and a celebration when one is identified; a beginner-first Profile (Your spoods, Three to find next, tiny stats hidden); tabs that open with level and a one-line phone header; a My SPOODEX share image (portrait/square); the monthly spood hunt (open worldwide events, post text, best-find photos, refresh/page caps); guests are asked where they look before the map |
 | v1.19 | Map streamlined into the side panel: tap the map to scan (no popup), coloured missing-genus squares removed, weather panel is weather only, "Needs ID in this square" removed; the 3D map falls back to 2D instead of going blank when WebGL fails; singular labels ("1 record", "1 genus") |
 | v1.18 | One rarity language: five colour tiers (red, blue, yellow, green, white) replace ★1–3 everywhere, including prestige, events and share cards; scan exactly a grid square; Frontier layer (iNat map grid); recent-scan chips; 2D map with the same layers and switches as 3D; scan list by most records with both ends shown; "Needs ID in this square" opens the Bounty board for a scan; weather adds humidity and a flood penalty, fetches 16 days; trips can have dates, with the trip's weather when the forecast reaches them |
 | v1.17 | Map & scanner redesign: weather cards per day with stars, hour stripes and rebound days (rain, wind, cool spell; `past_days=2`); missing-genus squares outlined by six rarity tiers instead of pillars, filled when in season; Missing genera / Fog of war / Your squares switches; click popup with size (5–100 km each way) and window (all time, 90/60/30 days, this month any year); every "within N km" search and outline is now a square (bounding box); new scan panel with genera/species tabs, new-to-you first and rarest first; home base folded into the panel |
