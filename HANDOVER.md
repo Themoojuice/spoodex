@@ -115,6 +115,11 @@ External services besides iNat:
 
 ## 4. What the app does, tab by tab
 
+**Landing** (`#onboard`, shown to anyone with no saved user): the pitch line, a strip of 12 real jumping spiders (photo, genus, iNat
+common name, credit; each links to its iNat record), then three starts in this order: **🧭 See what jumping spiders live near you**
+(guest mode, no account), **Already on iNaturalist? Enter your username**, **👀 Peek at a full collection** (`SAMPLE_LOGIN`). On phones
+the strip scrolls sideways under the pitch so the first start is on the first screen.
+
 | Tab (key) | What the user sees |
 |---|---|
 | **Profile** (`profile`) | "Since your last visit" panel (after 3+ h away); level, title, stats incl. sets complete; chassis/tier progress; regions; favourite lineages; field style; rarest finds; share of the record; pioneer badges; new genera per year. Title card 🪪 and Wrapped 🎁 buttons |
@@ -176,6 +181,7 @@ Search for `/* ---------------- <name>` to jump. Line numbers drift; names don't
 | analytics | `GOATCOUNTER`, `track(path, event=true)` | Anonymous counts on https://themoojuice.goatcounter.com (owner's dashboard). **Deliberately not GoatCounter's `count.js`**: it always sends `location.search`, which holds `?u=`/`?vs=`/`?crew=` usernames. `track` sends only `p` (path or event name), `t`, `s` (screen width), `r` (referrer with query stripped, page views only), `e`, `rnd`, via `sendBeacon` or an image. Skips localhost/`.test`/`file:`. Page view in `boot()`; events: `new-spoodex` (first import), `guest-mode`, `trip-planned`, `compare`, `card-download`, `card-share`. Settings says so. **Never add usernames, places or coordinates to a tracked path** |
 | cards | `cardKit`, `cardPhotos`, `mountCard`, `cardBlob`, `cardExport`, `rarestFirst` | 1080×1350 canvas kit; see §11 on photo CORS |
 | title card / wrapped | `drawTitleCard`, `openTitleCard` / `wrappedData`, `wrappedExtras`, `openWrapped`, `showWrapped`, `drawWrappedCard` | |
+| landing (v1.20) | `OWNER`, `LAND`, `LAND_PIN`, `LAND_TTL`, `OK_LIC`, `PH_FIELDS`, `byName`, `creditTxt`, `genusIn`, `loadLanding`, `paintLanding` | `LAND` = 12 hand-picked genus ids (§12). One v2 call for the owner's most-faved research-grade record of each (`order_by=votes`, `photos=true`), plus `LAND_PIN` (genus → one of his observation ids) if he pins any; then, only for genera he hasn't photographed, one v2 call each with `photo_license=cc0,cc-by,cc-by-nc` whose photo is used only if its `license_code` is one of those three; then `/v1/taxa/{ids}` for names and common names. Cached in store key `landing` for 14 days. Boot calls it unless `?u=`/`?ev=` is opening something |
 | boot / flows | `loadUser`, `updateUrl`, `copyLink`, `doSync`, `onboard`, `enterApp`, `startGuest`, `toast`, `settings`, event handlers, `PERSISTED`, `boot()` | `boot()` awaits `store.init()`, re-reads `PERSISTED`, then opens a cached user (and syncs quietly) or onboards `?u=`. `?ev=` is kept in `S.pendingEv` and opened by `enterApp` (before `vs`/`crew`); someone with no saved user who opens an event link becomes a guest. `updateUrl()` writes `ev` while an event with a link is open on the Crew tab (instead of `crew`) |
 
 **UI event wiring**: one delegated `click` listener on `document` dispatches on data attributes, checked in this order:
@@ -239,7 +245,8 @@ JSON strings, so `store.get` returns a fresh copy just like localStorage did. `s
 `pagehide`/hidden (`store.flush()` returns a promise, e.g. `wipe` awaits it before navigating). The first run moved old `spoodex:*`
 localStorage saves across and deleted them only once written. With no IndexedDB (some private modes) it falls back to localStorage.
 Settings shows usage via `navigator.storage.estimate()`. Other keys: `nodes places info ref observers pheno cmp ladder crew pioneer
-haunts report trip elev wx events`. The owner's save is ~1 MB of JSON. `HAUNT_KEEP` (newest haunts kept) is 120 since v1.14: the 3D map keeps
+haunts report trip elev wx events landing` (`landing` = `{ts, items:[{g genus, n, cn, o observation, u photo url, by, lic}]}`, read on demand,
+so not in `PERSISTED`). The owner's save is ~1 MB of JSON. `HAUNT_KEEP` (newest haunts kept) is 120 since v1.14: the 3D map keeps
 25 home genera cached, the wanted posters share them, and a trip adds up to ~40.
 The service worker's Cache Storage (shell, libraries, ≤600 tiles, ≤400 photos)
 is separate from IndexedDB and never holds app data.
@@ -253,6 +260,11 @@ Scan-point keys: a 0.25° cell `"lat:lng"` (integers) or an arbitrary point `"pt
 - `GET /v1/observations/taxonomy?taxon_id=48139&…` returns a whole tree (`rank`, `parent_id`, `descendant_obs_count`) for any
   `user_login`, `place_id`, or `lat/lng/radius`, with `d1` (observed) or `created_d1` (uploaded) windows. **`created_d1` accepts a full
   ISO datetime.** One call gives genus + species counts. The worldwide tree (`verifiable=true`) is ~2,700 nodes / ~60 KB gzipped.
+- **Photo licences** (checked 2026-10-06): v2 `photos:(url,license_code,attribution)`; `license_code` is `cc0`, `cc-by`, `cc-by-nc`,
+  `cc-by-sa`, `cc-by-nc-sa`, `cc-by-nd`, `cc-by-nc-nd`, or null for all rights reserved. `photo_license=cc0,cc-by,cc-by-nc` filters
+  observations on v2. All the owner's photos are all rights reserved (null) on `static.inaturalist.org`, which sends no CORS header
+  (rechecked: 200, no `Access-Control-Allow-Origin`). `attribution` reads "(c) Name, some rights reserved (CC BY-NC)" (`byName` parses it).
+  Of the 80 Australian genera's default taxon photos: 31 are CC0/CC BY/CC BY-NC, 28 other CC licences, 21 all rights reserved or none.
 - v2 `GET /v2/observations?fields=…` returns only the requested fields. Nested fields use RISON, e.g.
   `(id:!t,taxon:(id:!t,name:!t),photos:(url:!t))`. v2 honours `id_above`, `updated_since`, `hrank`/`lrank`, `quality_grade`,
   `created_d1`, lat/lng/radius, and `per_page=0` for a bare count.
@@ -281,6 +293,8 @@ Scan-point keys: a 0.25° cell `"lat:lng"` (integers) or an arbitrary point `"pt
 - **Rate limits**: iNat asks for ~1 req/s and ≤10k/day per client, and returns 429s with no CORS header. Bursts from `curl` plus the
   app sharing an IP get empty responses: wait a minute. Rough call costs: fresh import ≈ 1 per 200 obs + 3; ladder ≈ 26; pioneer ≈ 180;
   wanted posters ≈ 40; a trip ≈ 55; bounties 3; news 3; sets 1–2 (world tree).
+  **Landing page** (v1.20): 2 calls when the owner has photos of all but one or two `LAND` genera (measured: 1 owner call + 2 CC calls
+  for *Phidippus* and *Salticus* + 1 `/taxa` = 4), once per 14 days per browser; 0 for anyone who has opened a SPOODEX before.
   **Map scan** (v1.17): 2 calls (the chosen window + the last 30 days; 1 for a 30-day scan) plus a place-name lookup (≤ 3, once per 0.1°
   cell per session); a 100 km scan is still one call per window. The first Map-tab visit scans around home automatically.
   **Frontier layer** (v1.18): 2 calls per z7 tile in view (≤ 6 tiles per map move, 30-day cache); nothing while the switch is off.
@@ -479,6 +493,20 @@ does the rest. Clear old caches with `caches.keys().then(ks => ks.forEach(k => c
 - **Mobile navigation**: group the 11 tabs into ~4 sections (e.g. Collection / Explore / Social / Quests).
 - **Test outside Australia**; consider showing progress as a % of the regional total for low-diversity regions (e.g. the UK has ~20 genera).
 - **Full-photo share cards** via an image proxy (see §11).
+
+**Awaiting the owner's decision (v1.20, spood frenzy)**:
+- **Pitch** (top of the landing page). Using the first; alternatives:
+  1. "A Pokédex for jumping spiders, filled in from your own iNaturalist photos." (yours, lightly kept)
+  2. "Collect every jumping spider genus. Your iNaturalist photos fill in the cards."
+  3. "Photograph a jumping spider, post it on iNaturalist, and its card lights up here."
+  "Pokédex" is a Nintendo trademark; using it descriptively in a tagline is common, and 2 and 3 avoid it if that worries you.
+- **Landing genera** (`LAND`, proposed): the world's most-recorded salticid genera on iNat plus favourites: *Maratus*, *Phidippus*,
+  *Portia*, *Mopsus*, *Cosmophasis*, *Myrmarachne*, *Salticus*, *Menemerus*, *Plexippus*, *Hasarius*, *Evarcha*, *Zenodorus*. Your
+  research-grade photos cover 10 of them (your most-faved record of each; pin a favourite per genus in `LAND_PIN`). You have no
+  research-grade *Phidippus* (no records) or *Salticus* (one casual record), so those two use the most-faved CC BY-NC research-grade photo
+  by someone else (currently Lily Fulton and Thomas Shahan), credited on the card. Swap either genus out if you'd rather show only yours.
+  Your photos are all rights reserved; they're shown because you asked for them, credited "© themoojuice".
+- The landing page doesn't guess where a stranger is, so it always shows this global set; their own area comes with the first start.
 
 **Awaiting the owner's decision (v1.14)**:
 - **Highlanders threshold**: `HIGHLAND_M = 700` m is a proposal (about the height of the Atherton Tablelands; with it 6 of the owner's
