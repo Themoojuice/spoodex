@@ -190,7 +190,7 @@ header.top .wrap { padding-top:10px; padding-bottom:0; }
 nav.tabs { display:flex; gap:4px; margin-top:8px; overflow-x:auto; scrollbar-width:none; }
 nav.tabs button { border-bottom:none; border-radius:var(--radius) var(--radius) 0 0; background:transparent; white-space:nowrap; }
 nav.tabs button.on { background:var(--panel); border-color:var(--line); font-weight:600; }
-nav.tabs button .lock { opacity:.6; font-size:11px; }
+.lvl .lbs { display:none; }
 main { padding-top:18px; }
 
 /* ---------- Onboarding ---------- */
@@ -382,9 +382,6 @@ details > summary.scsec { cursor:pointer; }
 .quest h3 { margin-bottom:2px; }
 .reward { font-size:12px; color:var(--lit); }
 
-/* ---------- Locked module plate ---------- */
-.plate { text-align:center; padding:40px 16px; border:2px dashed var(--line); border-radius:var(--radius); }
-.plate h2 { font-size:22px; }
 
 /* ---------- Spooding weather & field mode ---------- */
 .wxpanel { margin-bottom:16px; }
@@ -479,8 +476,17 @@ body.fieldon { overflow:hidden; }
 @media (max-width:600px) { table.evboard td, table.evboard th { padding:5px 4px; } table.evboard td.who { white-space:normal; overflow-wrap:break-word; font-size:13px; } table.evboard td .small { display:block; } }
 
 @media (max-width:600px) {
-  .brand h1 { font-size:20px; }
-  .lvl { margin-left:0; }
+  /* phones: one line for the name, level and icon buttons, then the tabs as one sideways scroller */
+  header.top .wrap { padding-top:6px; }
+  .brand { flex-wrap:nowrap; align-items:center; gap:6px; }
+  .brand h1 { font-size:17px; flex:1 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .brand .sub, #whoami, .lvl .lbl { display:none; }
+  .lvl { margin-left:auto; gap:4px; flex-wrap:nowrap; flex:none; }
+  .lvl .lbs { display:inline; }
+  .lvl b { font-size:15px; white-space:nowrap; margin-right:2px; }
+  .lvl button { padding:4px 9px; min-height:34px; }
+  nav.tabs { margin-top:6px; }
+  nav.tabs button { padding:5px 10px; font-size:13px; }
   .modal .hero { height:200px; }
   #reveal h2 { font-size:30px; }
 }
@@ -525,10 +531,10 @@ body.fieldon { overflow:hidden; }
         <span class="muted" id="whoami"></span>
         <b id="lvlBadge"></b>
         <span class="chip hidden" id="offChip">Offline</span>
-        <button data-act="field" title="Field compass: where you are, what's around, and the nearest recent records of genera you're missing">🧭 Field</button>
-        <button id="syncBtn" title="Fetch new/updated observations since last sync">⟳ Sync</button>
-        <button id="shareBtn" title="Copy a link to this SPOODEX">🔗 Share</button>
-        <button id="menuBtn" title="Settings">⚙</button>
+        <button data-act="field" aria-label="Field compass" title="Field compass: where you are, what's around, and the nearest recent records of genera you're missing">🧭<span class="lbl"> Field</span></button>
+        <button id="syncBtn" aria-label="Sync with iNaturalist" title="Fetch new/updated observations since last sync">⟳<span class="lbl"> Sync</span></button>
+        <button id="shareBtn" aria-label="Copy a link to this SPOODEX" title="Copy a link to this SPOODEX">🔗<span class="lbl"> Share</span></button>
+        <button id="menuBtn" aria-label="Settings" title="Settings">⚙</button>
       </div>
     </div>
     <nav class="tabs" id="tabs"></nav>
@@ -1226,19 +1232,38 @@ function questDone(q, M) {
 }
 
 /* ---------------- views ---------------- */
+// Tabs open up with the collection: `at` = genera needed (owner to confirm, HANDOVER §12). A tab also opens for good once a link or
+// button takes you there (a Compare or event link, "Bounty board →"), and ⚙ "Show every tab" opens them all.
 const TABS = [
   { k:'profile', label:'Profile' },
   { k:'dex', label:'SPOODEX' },
-  { k:'tree', label:'Lineage tree', tier:2 },
+  { k:'tree', label:'Lineage tree', at:15 },
   { k:'map', label:'Map & scanner' },
-  { k:'report', label:'This week' },
-  { k:'wanted', label:'Bounty board' },
-  { k:'trip', label:'Trip planner' },
-  { k:'compare', label:'Compare' },
-  { k:'ladder', label:'Ladder' },
+  { k:'report', label:'This week', at:3 },
+  { k:'wanted', label:'Bounty board', at:10 },
+  { k:'trip', label:'Trip planner', at:5 },
+  { k:'compare', label:'Compare', at:5 },
+  { k:'ladder', label:'Ladder', at:10 },
   { k:'crew', label:'Crew' },
   { k:'quests', label:'Quests' },
 ];
+const tabEarned = t => !t.at || S.M.G.size >= t.at || (S.u.tabs || []).includes(t.k);
+const tabOn = t => S.prefs.peek || tabEarned(t);
+// New tabs since last time get a toast and a dot until opened; the first look at a collection counts everything open as seen
+function tabNews() {
+  const cur = TABS.find(t => t.k === S.tab);
+  if (cur && !tabEarned(cur)) { S.u.tabs = [...(S.u.tabs || []), cur.k]; saveUser(); }
+  const vis = TABS.filter(tabEarned).map(t => t.k);
+  if (!S.u.tabsSeen) { S.u.tabsSeen = vis; saveUser(); }
+  const fresh = vis.filter(k => !S.u.tabsSeen.includes(k));
+  if (fresh.length) {
+    S.u.tabsSeen = [...S.u.tabsSeen, ...fresh];
+    S.u.tabNew = [...new Set([...(S.u.tabNew || []), ...fresh.filter(k => k !== S.tab)])];
+    saveUser();
+    toast(`New tab unlocked: ${fresh.map(k => TABS.find(t => t.k === k).label).join(', ')}`);
+  }
+  if (S.u.tabNew?.includes(S.tab)) { S.u.tabNew = S.u.tabNew.filter(k => k !== S.tab); saveUser(); }
+}
 let renderPending = false;
 function softRender() { if (renderPending) return; renderPending = true; setTimeout(() => { renderPending = false; if (S.tab !== 'map') render(); }, 400); }
 
@@ -1251,11 +1276,11 @@ function render() {
   $('#chassisSub').textContent = tier.sub;
   $('#whoami').textContent = who();
   $('#shareBtn').classList.toggle('hidden', isGuest());
-  $('#lvlBadge').textContent = `LEVEL ${M.G.size}`;
-  $('#tabs').innerHTML = TABS.map(t => `<button data-tab="${t.k}" class="${S.tab===t.k?'on':''}">${t.label}${t.tier && !moduleOn(t.tier) ? ' <span class="lock">🔒</span>' : ''}${t.k === 'crew' && S.tab !== 'crew' && crewUnseen() ? ' <span class="news">●</span>' : ''}</button>`).join('');
+  $('#lvlBadge').innerHTML = `<span class="lbl">LEVEL </span><span class="lbs">Lv </span>${M.G.size}`;
+  tabNews();
+  $('#tabs').innerHTML = TABS.filter(tabOn).map(t => `<button data-tab="${t.k}" class="${S.tab===t.k?'on':''}">${t.label}${(t.k === 'crew' && S.tab !== 'crew' && crewUnseen()) || S.u.tabNew?.includes(t.k) ? ' <span class="news">●</span>' : ''}</button>`).join('');
+  $('#tabs .on')?.scrollIntoView({ block:'nearest', inline:'nearest' });
   const v = $('#view');
-  const locked = TABS.find(t => t.k === S.tab)?.tier;
-  if (locked && !moduleOn(locked)) { v.innerHTML = lockedPlate(locked); return; }
   // Ladder and crew fetch lazily when opened (errors stop the auto-retry until the player asks again)
   if (S.tab === 'ladder' && !ladderBusy && !ladderErr && ladderKey() && ladderNeedsLoad(S.ladder[ladderKey()])) loadLadder();
   if (S.tab === 'crew' && !crewBusy && !crewErr && crewNeedsLoad()) loadCrew();
@@ -1273,13 +1298,6 @@ function render() {
   if (S.tab === 'map') { initMap(); loadWx(); }
   if (S.tab === 'trip') mountTripMap();
   if (S.tab === 'crew') { mountEventMap(); evAnimate(); }
-}
-function lockedPlate(t) {
-  const need = TIERS[t].min - S.M.G.size;
-  return `<div class="plate panel"><h2>MODULE NOT INSTALLED</h2>
-    <p><b>${esc(TIERS[t].module)}</b> ships with the <b>${esc(TIERS[t].name)}</b> chassis.</p>
-    <p class="muted">Record ${need} more genera to upgrade.</p>
-    <button data-act="peek">Peek anyway (prototype)</button></div>`;
 }
 
 // Profile, beginner first: who and what level, your own photos, three genera to find next; then the ledgers. Numbers that are
@@ -5117,7 +5135,7 @@ async function copyLink() {
   catch { window.prompt('Copy this link:', url); }
 }
 async function doSync(full) {
-  const btn = $('#syncBtn'); btn.disabled = true; btn.textContent = '⟳ Syncing…';
+  const btn = $('#syncBtn'); btn.disabled = true; btn.innerHTML = '⟳<span class="lbl"> Syncing…</span>';
   const prevQuests = S.M ? buildQuests(S.M) : [];
   const prevSeen = new Set(S.u.seen), prevLeads = S.M ? S.M.leads.flatMap(l => l.obs.map(o => o.id)) : [];
   try {
@@ -5135,7 +5153,7 @@ async function doSync(full) {
     const items = celebrations(fresh, solved);
     if (items.length) revealQueue(items); else if (!isGuest()) toast('Synced. No new genera this time.');
   } catch (e) { toast(e.message); }
-  btn.disabled = false; btn.textContent = '⟳ Sync';
+  btn.disabled = false; btn.innerHTML = '⟳<span class="lbl"> Sync</span>';
   loadNews();
   if (S.crew.logins.length && !crewBusy && crewNeedsLoad()) loadCrew().then(() => { if (S.tab !== 'map') render(); });
 }
@@ -5234,7 +5252,7 @@ function settings() {
     <h2>Settings</h2>
     <p>${isGuest() ? 'Browsing as a guest.' : `Viewing <b>${esc(S.login)}</b> (public data only). Last sync ${esc((S.u.meta.lastSync||'').slice(0,16).replace('T',' '))}.`}</p>
     <div class="row"><label>Chassis skin <select data-pref="chassis">${['auto','notebook','kit','cabinet'].map(c => `<option ${S.prefs.chassis===c?'selected':''}>${c}</option>`).join('')}</select></label>
-    <label><input type="checkbox" data-pref="peek" ${S.prefs.peek?'checked':''}> Unlock all modules (prototype peek)</label></div>
+    <label><input type="checkbox" data-pref="peek" ${S.prefs.peek?'checked':''}> Show every tab and module</label></div>
     <div class="row" style="margin-top:14px">
       ${isGuest() ? '' : '<button data-act="share">🔗 Copy share link</button><button data-act="full">Full resync</button>'}
       <button data-act="switch">Switch user</button>
@@ -5260,7 +5278,6 @@ document.addEventListener('click', e => {
   if (t.dataset.base) { e.preventDefault(); const [lat, lng, ...rest] = t.dataset.base.split('|'); setBase(lat, lng, rest.join('|')); return; }
   if (t.dataset.trip) { e.preventDefault(); const [lat, lng, area, ...rest] = t.dataset.trip.split('|'); setTrip(lat, lng, rest.join('|'), +area || null); return; }
   const a = t.dataset.act;
-  if (a === 'peek') { S.prefs.peek = true; savePrefs(); render(); }
   if (a === 'full') { $('#modalRoot').innerHTML = ''; doSync(true); }
   if (a === 'share') copyLink();
   const val = t.dataset.v;
