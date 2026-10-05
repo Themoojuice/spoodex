@@ -208,10 +208,30 @@ a.lcard:hover { border-color:var(--accent); }
 .landstarts button.big { min-height:58px; font-size:17px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
 .landstarts button.big small { font-weight:400; font-size:13px; }
 #loginForm label { display:block; font-weight:600; margin-bottom:8px; }
-.term { background:#f9f3e3; color:#3a2f22; border:1px solid var(--line); font:12px/1.6 'Special Elite', 'Courier New', monospace; border-radius:6px; padding:12px; height:220px; overflow:auto; margin-top:14px; white-space:pre-wrap; }
-.cascade { display:flex; flex-wrap:wrap; gap:6px; margin-top:14px; min-height:40px; }
-.cascade span { font-family:var(--head); padding:3px 8px; border:1px solid var(--line); background:var(--panel); border-radius:var(--radius); animation:pop .4s ease-out both; }
-@keyframes pop { from { transform:scale(.3) rotate(-8deg); opacity:0; } to { transform:none; opacity:1; } }
+#impBox h2 { margin-bottom:4px; }
+#impLine { margin:0 0 10px; }
+.revgrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:10px; margin:12px 0 8px; perspective:900px; }
+@media (max-width:600px) { .revgrid { grid-template-columns:repeat(3, minmax(0, 1fr)); gap:6px; } }
+.rcard { position:relative; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; min-width:0; }
+.rcard .ph { display:block; aspect-ratio:1; background:var(--panel2) center/cover no-repeat; filter:grayscale(1) sepia(.6) blur(7px) brightness(.6) contrast(1.2); transition:filter .8s ease-out; }
+.rcard::after { content:'?'; position:absolute; top:0; left:0; right:0; aspect-ratio:1; display:grid; place-items:center; font:44px var(--head); color:var(--ink); opacity:.55; transition:opacity .3s; pointer-events:none; }
+.rcard .nm { padding:5px 7px 0; font:italic 600 14px var(--head); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rcard .nm.q { font-style:normal; letter-spacing:.2em; color:var(--muted); }
+.rcard .cn { display:block; padding:0 7px 6px; min-height:1.4em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rcard.on { cursor:pointer; border-color:var(--accent); animation:flip .6s ease-out; }
+.rcard.on .ph { filter:none; }
+.rcard.on::after { opacity:0; }
+@keyframes flip { from { transform:rotateY(90deg); } to { transform:none; } }
+.revend h2 { font-size:30px; margin:2px 0 0; }
+.finds { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:12px; }
+.fcard { display:flex; flex-direction:column; background:var(--panel2); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; cursor:pointer; color:inherit; min-width:0; }
+.fcard:hover { border-color:var(--accent); }
+.fcard .ph { aspect-ratio:4/3; background:var(--dim) center/cover no-repeat; }
+.fcard .ph.none { display:grid; place-items:center; font:40px var(--head); color:var(--muted); }
+.fcard .meta { padding:8px 10px 10px; display:flex; flex-direction:column; gap:2px; }
+.fcard .nm { font:italic 600 18px var(--head); }
+.fcard .cr { font-size:10px; color:var(--muted); margin-top:2px; }
+@media (max-width:600px) { .finds { grid-template-columns:1fr; gap:8px; } .fcard { flex-direction:row; } .fcard .ph { width:104px; flex:none; aspect-ratio:1; } }
 
 /* ---------- Dex grid ---------- */
 .dexgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
@@ -467,12 +487,12 @@ body.fieldon { overflow:hidden; }
       <button type="button" data-act="sample">👀 Peek at a full collection</button>
     </div>
   </div>
-  <div class="box panel hidden" id="onboardWork">
-    <div id="scanLog" class="term hidden"></div>
-    <div id="cascade" class="cascade"></div>
-    <div id="initDone" class="hidden" style="margin-top:14px;text-align:center">
-      <h2 id="initTitle"></h2>
-      <button class="primary" id="openDex">Open SPOODEX</button>
+  <div class="box hidden" id="onboardWork">
+    <div class="panel" id="impBox"><h2 id="impHead"></h2><p id="impLine"></p><div class="bar"><i id="impBar" style="width:0"></i></div></div>
+    <div id="revBox" class="hidden">
+      <div class="row" style="justify-content:space-between"><h2 id="revHead" style="margin:0"></h2><button type="button" id="revSkip">Skip</button></div>
+      <div id="revGrid" class="revgrid"></div><p id="revMore" class="small"></p>
+      <div id="revEnd"></div>
     </div>
   </div>
 </section>
@@ -725,7 +745,7 @@ const who = () => isGuest() ? 'Guest naturalist' : S.login;
 
 async function fetchPlaces(ids, log = () => {}) {
   const need = [...new Set(ids)].filter(id => !S.places[id]);
-  if (need.length) log(`Mapping ${need.length} places…`);
+  if (need.length) log(`Looking up ${need.length} places…`);
   for (let i = 0; i < need.length; i += 100) {
     const batch = need.slice(i, i+100);
     const d = await api('/places/' + batch.join(','));
@@ -744,20 +764,20 @@ async function importRecords(login, save, { full=false, log=()=>{} } = {}) {
   const since = full ? null : save.meta.lastSync;
   const obs = full ? {} : (save.obs || {});
   let idAbove = 0, got = 0, total = null;
-  log(full ? `Scanning naturalist records for ${login}…` : `Checking ${login} for records updated since ${since.slice(0,16).replace('T',' ')}…`);
+  log(full ? `Asking iNaturalist for ${login}'s jumping spider records…` : `Checking ${login} for records updated since ${since.slice(0,16).replace('T',' ')}…`, 0);
   while (true) {
     const d = await api('/observations', { taxon_id:SALTICIDAE, user_login:login, per_page:200, order_by:'id', order:'asc', id_above:idAbove || null, updated_since:since, fields:OBS_FIELDS }, API2);
-    if (total == null) { total = d.total_results; log(`${fmt(total)} Salticidae observation${total===1?'':'s'} ${full?'found':'updated'}.`); }
+    if (total == null) { total = d.total_results; log(`${fmt(total)} jumping spider record${total===1?'':'s'} ${full?'found':'updated'}.`, 0); }
     for (const o of d.results) obs[o.id] = trimObs(o);
     got += d.results.length;
-    if (d.results.length) log(`  …received ${fmt(got)} / ${fmt(total)}`);
+    if (d.results.length) log(`Read ${fmt(got)} of ${fmt(total)} records`, got / total);
     if (d.results.length < 200) break;
     idAbove = d.results[d.results.length - 1].id;
   }
   save.obs = obs;
-  if (full && !Object.keys(obs).length) log(`No public Salticidae observations for "${login}". Check the spelling, or go find a spood!`);
+  if (full && !Object.keys(obs).length) log(`No public jumping spider records for "${login}" yet.`, 1);
   // Taxonomy tree of these records gives names/ranks for every ancestor (tribes, subfamilies, genera).
-  log('Resolving lineages…');
+  log('Sorting them into genera…');
   const tree = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, user_login:login });
   tree.results.forEach(addNode);
   await fetchPlaces(Object.values(obs).flatMap(o => o.pl), log);
@@ -767,7 +787,7 @@ async function importRecords(login, save, { full=false, log=()=>{} } = {}) {
 }
 
 async function loadRefs(log = () => {}) {
-  log('Loading regional reference collections…');
+  log('Loading the regional checklists…');
   for (const sc of new Set(['country', 'state', S.prefs.scope])) if (sc === 'world' || scopePlace(sc)) await ensureRef(sc);
 }
 async function sync({ full=false, log=()=>{} } = {}) {
@@ -792,7 +812,7 @@ async function placesNear(lat, lng, far = 50) {
 // Home base: lets beginners and guests scan before they have recorded anything.
 async function resolveBasePlaces(log = () => {}) {
   const b = S.u.base; if (!b) return;
-  log('Locating home base…');
+  log('Finding your home base…');
   const p = await placesNear(b.lat, b.lng);
   b.places = { country:p.country, state:p.state };
   // Only generic labels need a "near …" hint; searched place names already say where they are
@@ -857,17 +877,19 @@ function refFor(scope) {
 // Background: genus portraits + natural history blurbs (default photo & Wikipedia summary via iNat)
 let infoBusy = false;
 async function ensureInfo(ids) {
-  const need = [...new Set(ids)].filter(id => !S.info[id]);
+  // re-asks once for taxa cached before v1.20, which have no common name or photo licence yet
+  const need = [...new Set(ids)].filter(id => !S.info[id] || (S.nodes[id] && S.nodes[id].c === undefined));
   if (!need.length || infoBusy) return;
   infoBusy = true;
   try {
     for (let i = 0; i < need.length; i += 30) {
       const batch = need.slice(i, i+30);
       const d = await api('/taxa/' + batch.join(','));
-      batch.forEach(id => S.info[id] = S.info[id] || {});
+      batch.forEach(id => { S.info[id] = S.info[id] || {}; if (S.nodes[id] && S.nodes[id].c === undefined) S.nodes[id].c = ''; });
       d.results.forEach(t => {
         const dp = t.default_photo || {};
-        S.info[t.id] = { p:dp.medium_url || dp.url || '', a:dp.attribution || '', s:stripHtml(t.wikipedia_summary || ''), w:t.wikipedia_url || '', c:t.observations_count || 0 };
+        cnFrom(t);
+        S.info[t.id] = { p:dp.medium_url || dp.url || '', a:dp.attribution || '', lc:dp.license_code || null, s:stripHtml(t.wikipedia_summary || ''), w:t.wikipedia_url || '', c:t.observations_count || 0 };
       });
       saveShared();
       softRender();
@@ -1182,6 +1204,7 @@ let renderPending = false;
 function softRender() { if (renderPending) return; renderPending = true; setTimeout(() => { renderPending = false; if (S.tab !== 'map') render(); }, 400); }
 
 function render() {
+  if ($('#app').classList.contains('hidden')) return;   // still on the landing page or the reveal: enterApp() renders
   const M = S.M, tier = TIERS[M.tier];
   if (S.tab !== 'map') dropMap3d();
   document.body.dataset.chassis = S.prefs.chassis === 'auto' ? tier.chassis : S.prefs.chassis;
@@ -3760,6 +3783,69 @@ function drawCaseMap(hn, ranked, ctx = homeCtx()) {
   setTimeout(() => { caseMap.invalidateSize(); if (bounds.length) caseMap.fitBounds(bounds, { padding:[16, 16], maxZoom:10 }); else caseMap.setView([-25, 134], 4); }, 60);
 }
 
+/* ---------------- three to find next: missing genera recorded near home, in season ---------------- */
+// The owner's photos stand in for other people's wherever a missing genus needs a picture (his request): one call per batch of
+// genera, cached 30 days. Otherwise iNat's taxon photo, only if its licence is CC0, CC BY or CC BY-NC, credited.
+const OWNPH_TTL = 30 * 864e5, NEXT_N = 3;
+S.ownph = store.get('ownph', {});   // genus id -> {ts, o observation, u photo url}; {ts} alone = he has no research-grade photo of it
+async function ownerPhotos(ids) {
+  const need = [...new Set(ids)].filter(id => !S.ownph[id] || Date.now() - S.ownph[id].ts > OWNPH_TTL);
+  if (!need.length) return;
+  for (let i = 0; i < need.length; i += 30) {
+    const batch = need.slice(i, i + 30);
+    const d = isMe(OWNER) ? { results:[] } : await api('/observations', { user_login:OWNER, taxon_id:batch.join(','), quality_grade:'research', photos:true,
+      order_by:'votes', order:'desc', per_page:200, fields:'(id:!t,taxon:(id:!t,ancestor_ids:!t),photos:(url:!t))' }, API2);
+    batch.forEach(id => S.ownph[id] = { ts:Date.now() });
+    for (const o of d.results) { const g = genusIn(o, batch); if (g && !S.ownph[g].u && o.photos?.[0]) S.ownph[g] = { ts:Date.now(), o:o.id, u:o.photos[0].url }; }
+  }
+  store.set('ownph', S.ownph);
+}
+function taxonPhoto(id) {
+  const o = S.ownph[id], i = S.info[id];
+  if (o?.u) return { u:photoSize(o.u, 'medium'), o:o.o, cr:creditTxt(OWNER) };
+  if (i?.p && OK_LIC[i.lc]) return { u:i.p, cr:creditTxt(byName(i.a) || 'iNaturalist user', i.lc) };
+  return null;
+}
+// Recorded within 25 km of home first, then in season, then the wanted score (which already weighs recent records and season)
+function nextThree() {
+  const list = wantedList(homeCtx()); if (!list) return null;
+  const rank = x => (x.near ? 2 : 0) + ((x.season ?? 0) >= .4 ? 1 : 0);
+  return [...list].sort((a, b) => rank(b) - rank(a) || b.score - a.score).slice(0, NEXT_N);
+}
+let nextBusy = false;
+async function loadNextThree(redraw) {
+  const M = S.M, h = M.homeCell;
+  if (nextBusy || !(M.home.state || M.home.country)) return;
+  nextBusy = true; redraw();
+  try {
+    await ensureRef('state');
+    if (h) { if (!S.u.scans[h.k]) await fetchScan(h.k); await scanActive(h.k); }
+    redraw();
+    ensurePheno(wantedList(homeCtx()).slice(0, 8).map(x => x.id));   // season curves re-rank the likeliest few
+    while (phenoBusy) await sleep(800);
+    const ids = nextThree().map(x => x.id);
+    await ensureInfo(ids); await ownerPhotos(ids);
+  } catch (e) { console.warn(e); }
+  nextBusy = false; redraw();
+}
+function findCard(x) {
+  const ph = taxonPhoto(x.id), where = ctxWhere(homeCtx()), p = x.peak;
+  const near = x.recent ? `🔥 Recorded within 25 km of home in the last ${ACTIVE_DAYS} days` : x.near ? `📍 ${fmt(x.near)} record${x.near === 1 ? '' : 's'} within 25 km of home`
+    : `📚 ${fmt(x.state)} record${x.state === 1 ? '' : 's'} in ${where}`;
+  const when = !p || p.few ? '' : p.text === 'year-round' ? '🌡 Recorded all year round' : p.now ? `🌡 In season now · peak ${esc(p.text)}` : `🗓 Peak ${esc(p.text)}`;
+  return `<div class="fcard" data-act="wanted" data-v="${x.id}" title="Where and when to look">
+    ${ph ? `<div class="ph" style="background-image:url('${esc(ph.u)}')"></div>` : '<div class="ph none">?</div>'}
+    <div class="meta"><div class="nm"><i>${esc(S.nodes[x.id]?.n || '?')}</i></div>${cnOf(x.id) ? `<div class="cn">${esc(cnOf(x.id))}</div>` : ''}
+      <div class="small">${near}</div>${when ? `<div class="small">${when}</div>` : ''}${ph ? `<div class="cr">${esc(ph.cr)}</div>` : ''}</div></div>`;
+}
+function nextThreeHtml() {
+  const ctx = homeCtx(); if (!ctx.pid) return '';
+  const xs = nextThree();
+  if (!xs || (nextBusy && !xs.length)) return '<p class="small muted">Checking what has been recorded near you…</p>';
+  if (!xs.length) return '';
+  return `<h3 style="margin-top:14px">Three to find next <span class="small muted">· ${MONTHS[ctx.month]}</span></h3><div class="finds">${xs.map(findCard).join('')}</div>`;
+}
+
 /* ---------------- trip planner: Most Wanted for anywhere you're going ---------------- */
 const TRIP_KM = 50, TRIP_TTL = 24 * 3600e3, TRIP_POSTERS = 10, TRIP_RECENT = 6;
 // cur: {label, lat, lng, area (place id when the destination is a whole country/state, else null), pid (region for seasons and counts),
@@ -4904,7 +4990,7 @@ function paintLanding(L) {
   if (!L) return;
   el.innerHTML = L.items.map(x => `<a class="lcard" href="https://www.inaturalist.org/observations/${+x.o}" target="_blank" rel="noopener" title="Open this record on iNaturalist">
     <span class="ph" style="background-image:url('${esc(photoSize(x.u, 'medium'))}')"></span><span class="nm"><i>${esc(x.n)}</i></span>
-    ${x.cn ? `<span class="cn">${esc(x.cn)}</span>` : ''}<span class="cr">${esc(creditTxt(x.by, x.lic))}</span></a>`).join('');
+    ${x.cn ? `<span class="cn">${esc(x.cn)}</span>` : ''}<span class="cr" title="${esc(creditTxt(x.by, x.lic))}">${esc(creditTxt(x.by, x.lic))}</span></a>`).join('');
 }
 
 /* ---------------- boot / flows ---------------- */
@@ -4956,27 +5042,63 @@ async function doSync(full) {
 async function onboard(login) {
   loadUser(login);
   $('#landStarts').classList.add('hidden'); $('#onboardWork').classList.remove('hidden');
-  const log = $('#scanLog'); log.classList.remove('hidden'); log.textContent = '';
-  const w = s => { log.textContent += s + '\n'; log.scrollTop = log.scrollHeight; };
-  w('beep.'); w('SPOODEX Mk 0 booting…');
-  document.querySelectorAll('#onboard button').forEach(b => b.disabled = true);
+  $('#impBox').classList.remove('hidden'); $('#revBox').classList.add('hidden');
+  $('#impHead').textContent = `Reading ${login}'s jumping spiders`;
+  const line = $('#impLine'), bar = $('#impBar');
+  const w = (t, f) => { line.textContent = t; if (f != null) bar.style.width = Math.round(100 * f) + '%'; };
+  w('Asking iNaturalist…', 0);
   try {
     const fresh = !S.u.meta.lastSync;
     await sync({ full:fresh, log:w });
     if (fresh) track('new-spoodex');
     fillElev();
-    const M = S.M;
-    w(`Identifying unique genera… ${M.G.size} found.`);
-    const cas = $('#cascade'); cas.innerHTML = '';
-    for (const [i, g] of M.genera.entries()) {
-      const s = document.createElement('span'); s.innerHTML = `<i>${esc(g.name)}</i>`; s.style.animationDelay = (i * 60) + 'ms'; cas.appendChild(s);
-    }
-    await sleep(Math.min(4000, M.genera.length * 60 + 600));
-    S.u.seen = M.genera.map(g => g.id); saveUser();
-    $('#initTitle').textContent = M.G.size ? `SPOODEX INITIALISED — ${M.G.size} GENERA DISCOVERED` : 'SPOODEX INITIALISED — NO GENERA YET. LET\'S FIX THAT.';
-    $('#initDone').classList.remove('hidden');
-  } catch (e) { w('ERROR: ' + e.message); }
-  document.querySelectorAll('#onboard button').forEach(b => b.disabled = false);
+    S.u.seen = S.M.genera.map(g => g.id); saveUser();
+    await revealGenera();
+  } catch (e) {
+    w(`Couldn't finish: ${e.message}`);
+    $('#landStarts').classList.remove('hidden');
+  }
+}
+// The first look at a collection: each genus flips from a blurred silhouette to the naturalist's own photo
+const REVEAL_ALL = 20, REVEAL_TOP = 12;
+let revSkip = false;
+async function revealGenera() {
+  const M = S.M, all = M.genera, big = all.length > REVEAL_ALL;
+  const list = big ? [...all].filter(g => g.cover).sort(rarestFirst).slice(0, REVEAL_TOP) : all;
+  $('#impLine').textContent = 'Developing the photos…';
+  await ensureInfo(list.map(g => g.id));   // common names
+  revSkip = false;
+  $('#impBox').classList.add('hidden'); $('#revBox').classList.remove('hidden');
+  $('#revSkip').classList.toggle('hidden', list.length < 2);
+  $('#revHead').textContent = !all.length ? 'No genera yet' : big ? `Your ${list.length} rarest of ${all.length} genera` : `${all.length} ${all.length === 1 ? 'genus' : 'genera'} found`;
+  $('#revGrid').innerHTML = list.map(g => `<div class="rcard" data-g="${g.id}"><span class="ph" style="background-image:url('${esc(photoSize(g.cover, 'medium'))}')"></span>
+    <div class="nm q">???</div><span class="cn"></span></div>`).join('');
+  $('#revMore').textContent = big ? `…and ${all.length - list.length} more in your SPOODEX.` : '';
+  $('#revEnd').innerHTML = '';
+  loadNextThree(() => { const el = $('#revNext'); if (el) el.innerHTML = nextThreeHtml(); });
+  const cards = [...document.querySelectorAll('#revGrid .rcard')];
+  for (const [i, el] of cards.entries()) {
+    if (!revSkip) await sleep(i ? 380 : 500);
+    flipCard(el);
+  }
+  $('#revSkip').classList.add('hidden');
+  $('#revEnd').innerHTML = revEndHtml();
+}
+function flipCard(el) {
+  if (el.classList.contains('on')) return;
+  const id = +el.dataset.g;
+  el.classList.add('on'); el.dataset.genus = id;
+  const nm = el.querySelector('.nm'); nm.classList.remove('q'); nm.innerHTML = `<i>${esc(S.nodes[id]?.n || '?')}</i>`;
+  el.querySelector('.cn').textContent = cnOf(id);
+}
+function revEndHtml() {
+  const M = S.M, n = M.G.size, sc = scopeGenera();
+  return `<div class="panel revend" style="margin-top:8px">
+    <div class="small muted">${esc(who().toUpperCase())}'S SPOODEX</div>
+    <h2>Level ${n}</h2><div class="hand">${esc(generatedTitle(M))}</div>
+    <p>${n && sc.ref ? `<b>${n}</b> of the <b>${sc.inScope.length}</b> genera on iNat in ${esc(scopeLabel(S.prefs.scope))}.` : n ? '' : 'No public jumping spider records identified to genus yet.'}</p>
+    <p class="row"><button class="primary big" data-act="openDex">Open your SPOODEX</button></p>
+    <div id="revNext">${nextThreeHtml()}</div></div>`;
 }
 function enterApp(tab) {
   $('#onboard').classList.add('hidden'); $('#app').classList.remove('hidden');
@@ -5108,6 +5230,7 @@ document.addEventListener('click', e => {
   if (a === 'evDel') { delete S.events[val]; evSave(); render(); }
   if (a === 'clearBase') { delete S.u.base; saveUser(); S.M = buildModel(); render(); }
   if (a === 'guest') startGuest();
+  if (a === 'openDex') enterApp();
   if (a === 'sample') { $('#loginInput').value = SAMPLE_LOGIN; onboard(SAMPLE_LOGIN); }
   if (a === 'switch') { store.del('lastLogin'); location.href = location.pathname; }
   if (a === 'wipe') { store.del(ukey(S.login)); store.del('lastLogin'); store.flush().finally(() => location.href = location.pathname); }
@@ -5191,13 +5314,13 @@ document.addEventListener('change', async e => {
 $('#syncBtn').addEventListener('click', () => doSync(false));
 $('#shareBtn').addEventListener('click', copyLink);
 $('#menuBtn').addEventListener('click', settings);
+$('#revSkip').addEventListener('click', () => { revSkip = true; document.querySelectorAll('#revGrid .rcard').forEach(flipCard); });
 $('#loginForm').addEventListener('submit', e => { e.preventDefault(); const v = $('#loginInput').value.trim().replace(/^@/, ''); if (v) onboard(v); });
-$('#openDex').addEventListener('click', () => enterApp());
 
 // ?u=<login> opens that SPOODEX (importing it if needed); ?vs=<login> jumps to Compare.
 // Otherwise a returning player opens straight from cache, then quietly syncs.
 // Shared caches get their defaults when the script loads, before IndexedDB is open; re-read them once it is.
-const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladder', 'crew', 'pioneer', 'report', 'haunts', 'trip', 'elev', 'wx', 'events', 'frontier'];
+const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladder', 'crew', 'pioneer', 'report', 'haunts', 'trip', 'elev', 'wx', 'events', 'frontier', 'ownph'];
 (async function boot() {
   track(location.pathname, false);
   registerSW(); netState();

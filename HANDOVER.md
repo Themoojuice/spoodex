@@ -161,7 +161,9 @@ Search for `/* ---------------- <name>` to jump. Line numbers drift; names don't
 | best months | `phenoKey(gid,pid)`, `ensurePheno(ids,pid)`, `peakInfo(gid,pid,month)`, `phenoHtml`, `phenoTag`, `phenoChart(gid,pid,month)`, `phenoUpdated` | Month-of-year histograms for any place. `[data-pheno]`/`[data-phenochart]` placeholders update in place |
 | mastery fix-it | `fixIt(g, criterionKey)` | Links to the exact records that could tick a box |
 | genus page | `openGenus(id)` | Modal in `#modalRoot` |
-| reveal ceremony | `revealQueue(genera)` | |
+| reveal ceremony | `revealQueue(genera)` | New genera after a sync, one full-screen photo each |
+| first reveal (v1.20) | `onboard`, `REVEAL_ALL` 20, `REVEAL_TOP` 12, `revealGenera`, `flipCard`, `revEndHtml` | Replaces the old boot log and name chips. While importing: one plain line ("Read 400 of 1,543 records") and a bar (`importRecords`' `log(text, fraction)`). Then each genus flips from a blurred silhouette to the naturalist's own cover photo with its name and common name, ~0.4 s apart; **Skip** flips the rest at once. Over 20 genera it reveals the 12 rarest (`rarestFirst`) and says how many more. Ends with the level, the generated title, "N of the M genera on iNat in <scope>", **Open your SPOODEX** (`data-act=openDex`) and Three to find next. Revealed cards open the genus page. `render()` does nothing while `#app` is hidden, so background `softRender`s can't switch the chassis colours under the landing page |
+| three to find next (v1.20) | `OWNPH_TTL`, `NEXT_N`, `S.ownph`, `ownerPhotos(ids)`, `taxonPhoto(id)`, `nextThree`, `loadNextThree(redraw)`, `findCard`, `nextThreeHtml` | Three missing genera from `wantedList(homeCtx())`, recorded within 25 km of home first, then in season (`season` ≥ 0.4), then by the wanted score. Each card: photo, name, common name, where ("🔥 Recorded within 25 km of home in the last 30 days" / "📍 N records within 25 km of home" / "📚 N records in <region>") and when (peak months); a tap opens the case file. **Photos**: the owner's most-faved research-grade photo of the genus (`ownerPhotos`, one v2 call per ≤ 30 genera, cached 30 days in `ownph`; skipped when the viewer is the owner), else iNat's taxon photo only if `S.info[id].lc` is CC0/CC BY/CC BY-NC, else a "?" plate. Used by the reveal and Profile |
 | compare | `viewCompare`, `lineageRows`, `loadCompare(login)` | Most recent rival cached as `cmp` |
 | regional ladder | `loadLadder`, `ladderRows`, `viewLadder`, `myStanding`, `starsIn`, `idPrestige` | One `observers` call + one in-place `taxonomy` call per person; streams; 24 h cache |
 | crew mode | `setCrew`, `loadCrew`, `crewMembers`, `viewCrew` (broken link / one event / events + `viewCrewMain`), `crewFeedHtml`, `crewUnseen` | One all-time `taxonomy` call (`captive=false`) each; 6 h refresh; feed = diff vs previous snapshot, plus event news entries `{kind:'ev', id, n, m, txt}` (they light the tab's ● too) |
@@ -198,10 +200,11 @@ month select uses `data-tripm`. The event form keeps its state in `S.evDraft`: `
 
 ## 6. State and storage
 
-`S` (global): `login`, `u` (per-user save), `nodes` (taxon id → `{n,r,l,p}`), `places` (id → `{n,l}` admin level),
-`info` (taxon id → `{p photo, s summary, w wiki, a attribution, c count}`), `ref` (`'p<place>'` or `'world'` →
+`S` (global): `login`, `u` (per-user save), `nodes` (taxon id → `{n,r,l,p,c}`; `c` = iNat's English common name, '' if none, set only by
+`/taxa` calls via `cnFrom` and kept by `addNode`), `places` (id → `{n,l}` admin level),
+`info` (taxon id → `{p photo, s summary, w wiki, a attribution, lc photo licence code, c count}`), `ref` (`'p<place>'` or `'world'` →
 `{ts, g:{genusId:count}, s:{speciesId:count}, t:familyTotal}`), `observers`, `pheno` (`'gid:place'` → `{ts, m:[12]}`),
-`prefs`, `tab`, `M` (model), `cmp`, `ladder`, `crew`, `pioneer`, `report`, `haunts`, `trip`, `elev` (observation id → metres above
+`prefs`, `tab`, `M` (model), `ownph` (genus id → the owner's photo of it, §5 "three to find next"), `cmp`, `ladder`, `crew`, `pioneer`, `report`, `haunts`, `trip`, `elev` (observation id → metres above
 sea level, from the terrain tiles; shared across users since ids are global), `wx` (home base rounded to 0.1°, `"lat,lng"` →
 `{ts, v:3, off: UTC offset in s, h:{time, t, pp, p, cc, w, sw, rh, day}}`, the hourly Open-Meteo arrays, 2 past days + 16 ahead; also the
 destination of a dated trip; 1 h fresh, newest 4 kept), `frontier` (z7 tile `"x/y"` → `{ts, c:{square: [salticid, all life]}}`, 30 days, newest 60), `events`, `pendingVs`, `pendingCrew`, `pendingEv`,
@@ -293,6 +296,8 @@ Scan-point keys: a 0.25° cell `"lat:lng"` (integers) or an arbitrary point `"pt
 - **Rate limits**: iNat asks for ~1 req/s and ≤10k/day per client, and returns 429s with no CORS header. Bursts from `curl` plus the
   app sharing an IP get empty responses: wait a minute. Rough call costs: fresh import ≈ 1 per 200 obs + 3; ladder ≈ 26; pioneer ≈ 180;
   wanted posters ≈ 40; a trip ≈ 55; bounties 3; news 3; sets 1–2 (world tree).
+  **Three to find next** (v1.20): the home scan and last-30-days scan if not cached (2), season curves for the 8 likeliest (30-day cache,
+  shared with the posters), 1 `/taxa` for names and photos, 1 for the owner's photos (30-day cache): ≈ 12 the first time, then 0–2.
   **Landing page** (v1.20): 2 calls when the owner has photos of all but one or two `LAND` genera (measured: 1 owner call + 2 CC calls
   for *Phidippus* and *Salticus* + 1 `/taxa` = 4), once per 14 days per browser; 0 for anyone who has opened a SPOODEX before.
   **Map scan** (v1.17): 2 calls (the chosen window + the last 30 days; 1 for a 30-day scan) plus a place-name lookup (≤ 3, once per 0.1°
@@ -353,6 +358,9 @@ Scan-point keys: a 0.25° cell `"lat:lng"` (integers) or an arbitrary point `"pt
   field-mode start screen, photo and weather attribution, and the chassis tier names and subtitles (game flavour).
   Event screens explain what inked/pencilled and the points mean (it's what makes the numbers readable); keep those.
   "Spooding weather" scores the weather and the season; keep its wording from suggesting it predicts spiders.
+- **Photos from other people** (owner, v1.20): licence-checked and credited every time. Prefer the owner's own photos (`themoojuice`,
+  ~14k observations); use someone else's only where he has no suitable one, and then only CC0, CC BY or CC BY-NC (`OK_LIC`), credited
+  "© name, licence" and linked to the record. Existing views that still show iNat's taxon photo without the check are listed in §12.
 - **Taxonomic care**: propose curated taxon lists to the owner; don't present them as settled. Check names against the live iNat tree.
 - **Privacy**: ≥25 km squares only, no exact coordinates (bounty distances rounded to 5 km), home base rounded to ~0.01° and kept in
   the browser, trips kept in the browser. Share links carry only `?u=`, `?vs=`, `?crew=` (usernames) and `?ev=` (event links, below).
