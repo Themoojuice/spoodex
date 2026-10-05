@@ -165,6 +165,13 @@ table.cal tr[data-act]:hover td { background:var(--panel2); }
 details.set > summary, .set details > summary { cursor:pointer; }
 .card.bounty, .card.lead { color:inherit; text-decoration:none; }
 .card.lead .nm { font-style:normal; }
+.card.lead .ph { display:block; }
+.card.lead .few { color:var(--accent); }
+.lacts { display:flex; flex-wrap:wrap; gap:4px 10px; margin-top:4px; font-size:12px; font-weight:600; }
+details.tips { background:var(--panel2); border:1px solid var(--line); border-radius:var(--radius); padding:8px 12px; margin-top:8px; }
+details.tips summary { cursor:pointer; }
+.tiplist { margin:8px 0 2px; padding-left:0; list-style:none; display:grid; gap:4px; }
+.tiplist span { display:inline-block; width:1.6em; text-align:center; }
 .card .nophoto { position:absolute; inset:0; display:grid; place-items:center; font-size:12px; color:var(--muted); }
 .card.bounty .badge { z-index:1; }
 .news-panel { border-left:4px solid var(--accent); }
@@ -1174,8 +1181,8 @@ function buildQuests(M) {
     targets:ns.ids.filter(id => !M.G.has(id)), reward:200 });
   if (M.leads.length) {
     const n = M.leads.reduce((s,l) => s + l.obs.length, 0);
-    q.push({ id:'resolve', kind:'resolve', icon:'👁', title:'Something Is Lurking',
-      text:`${n} of your observations are stuck above genus (${M.leads.slice(0,3).map(l => l.name).join(', ')}…). Add better photos, annotate, or ask for IDs.`,
+    q.push({ id:'resolve', kind:'resolve', icon:'❓', title:'Something Is Lurking',
+      text:`${n} mystery spood${n === 1 ? '' : 's'}: records not yet identified to genus (${M.leads.slice(0,3).map(l => l.name).join(', ')}…). Add face-on, top and side photos, or ask for an ID.`,
       obs:M.leads.flatMap(l => l.obs.map(o => o.id)).slice(0,50), reward:100 });
   }
   const near = M.genera.filter(g => g.state !== 'MASTERED').sort((a,b) => b.level - a.level || b.obs.length - a.obs.length)[0];
@@ -1289,7 +1296,7 @@ function viewProfile() {
     <button data-tab="map">${M.homeCell ? '📡 See what lives near your home base' : '🏠 Set a home base'}</button>
     ${isGuest() ? '<button data-act="switch">I have an iNaturalist account</button>' : ''}</div></div>` : '';
   const setsAll = setStats(refFor(S.prefs.scope)), setsDone = setsAll.filter(x => !x.left);
-  return `${newsHtml()}${starter}
+  return `${newsHtml()}${starter}${tipsOnce(true)}
   <div class="grid2">
     <div class="panel">
       <div class="muted small">${esc(who().toUpperCase())}'S SPOODEX</div>
@@ -1307,7 +1314,7 @@ function viewProfile() {
         <dt>Behaviour records</dt><dd>${M.behObs.feed} feeding · ${M.behObs.court} courtship · ${M.behObs.egg} silk/brood</dd>
         <dt>New genera ${new Date().getFullYear()}</dt><dd>${M.newThisYear}</dd>
         <dt>Naturalist XP</dt><dd>${fmt(M.xp)}</dd>
-        <dt>Unresolved leads</dt><dd>${fmt(M.leads.reduce((s,l)=>s+l.obs.length,0))} obs above genus</dd>
+        <dt>Mystery spoods</dt><dd>${fmt(mysteryCount())} not yet identified to genus <a href="#" class="small" data-act="needsid">see them</a></dd>
       </div>
     </div>
     <div class="panel">
@@ -1402,8 +1409,8 @@ function viewDex() {
   <div class="dexgrid">${shown.map(id => cardHtml(id, num.get(id))).join('')}</div>
   ${sc.extras.length ? `<h2 style="margin-top:22px">Recorded outside ${esc(scopeLabel(P.scope))} (+${sc.extras.length})</h2>
     <div class="dexgrid">${sc.extras.map(id => cardHtml(id, 0)).join('')}</div>` : ''}
-  ${M.leads.length ? `<div class="panel" style="margin-top:22px">👁 <b>${fmt(M.leads.reduce((n, l) => n + l.obs.length, 0))}</b> of your observations are stuck above genus. Any of them could be a genus you haven't unlocked.
-    <a href="#" data-layer="needsid">See them under 🔎 Needs ID →</a></div>` : ''}`;
+  ${M.leads.length ? `<div class="panel" style="margin-top:22px">❓ <b>${fmt(mysteryCount())}</b> mystery spood${mysteryCount() === 1 ? '' : 's'}: records not yet identified to genus. Any of them could be a genus you haven't unlocked.
+    <a href="#" data-layer="needsid">See them →</a></div>` : ''}`;
 }
 
 /* ---------------- species layer: an optional side collection (level stays = genera) ---------------- */
@@ -1465,27 +1472,42 @@ function leadsUrl(lead) {
   const base = `https://www.inaturalist.org/observations?user_id=${encodeURIComponent(S.login)}&captive=false&verifiable=any`;
   return lead ? `${base}&taxon_id=${lead.id}&rank=${encodeURIComponent(lead.rank)}` : `${base}&taxon_id=${SALTICIDAE}&hrank=family&lrank=subtribe`;
 }
+// The photo checklist for getting a jumping spider to genus (owner to check, HANDOVER §12)
+const PHOTO_TIPS = [
+  ['👁', 'Face on', 'the big front eyes and the face'],
+  ['⬆', 'From above', 'the whole body and its pattern'],
+  ['↔', 'From the side', 'the legs and the body in profile'],
+  ['📏', 'Something for scale', 'a fingertip, coin or ruler beside it'],
+  ['📸', 'Several sharp shots', 'all in the same iNaturalist record'],
+];
+const tipsHtml = (open = true) => `<details class="tips" ${open ? 'open' : ''}><summary><b>📸 Photos that get a genus ID</b></summary>
+  <ol class="tiplist">${PHOTO_TIPS.map(([i, t, d]) => `<li><span aria-hidden="true">${i}</span> <b>${t}</b>: ${d}</li>`).join('')}</ol></details>`;
+const mysteryCount = () => S.M.leads.reduce((n, l) => n + l.obs.length, 0);
+// Mystery spoods: records stuck above genus (Needs ID layer). Each one could be a genus you haven't unlocked.
 function viewNeedsId() {
   const M = S.M, f = S.prefs.leadFilter, lead = M.leads.find(l => String(l.id) === String(f));
   const all = M.leads.flatMap(l => l.obs), obs = (lead ? lead.obs : all).slice().sort((a,b) => (b.d || '').localeCompare(a.d || '') || b.id - a.id);
-  const tile = o => `<a class="card lead" href="https://www.inaturalist.org/observations/${o.id}" target="_blank" rel="noopener" title="Open on iNaturalist">
-      <div class="ph" style="background-image:url('${esc(photoSize(o.ph[0] || '', 'medium'))}')">${o.ph.length ? '' : '<span class="nophoto">no photo</span>'}</div>
-      <div class="meta"><div class="nm">${esc(o.t.n || 'Unknown')}</div>
-      <div class="small muted">${esc(o.t.r || '')} · ${esc(o.d || 'no date')}${o.q === 'casual' ? ' · casual' : ''}${o.ph.length > 1 ? ` · ${o.ph.length} photos` : ''}</div></div></a>`;
+  const tile = o => { const url = `https://www.inaturalist.org/observations/${o.id}`, n = o.ph.length;
+    return `<div class="card lead"><a class="ph" href="${url}" target="_blank" rel="noopener" title="Open on iNaturalist" style="background-image:url('${esc(photoSize(o.ph[0] || '', 'medium'))}')">${n ? '' : '<span class="nophoto">no photo</span>'}</a>
+      <div class="meta"><div class="nm">Mystery spood</div>
+      <div class="small muted">${esc(o.t.n || 'Unknown')} (${esc(o.t.r || '')}) · ${esc(o.d || 'no date')}${o.q === 'casual' ? ' · casual' : ''}</div>
+      <div class="small ${n < 3 ? 'few' : ''}">📸 ${n >= 3 ? '3 or more photos' : n === 1 ? '1 photo' : `${n} photos`}</div>
+      <div class="lacts"><a href="${url}" target="_blank" rel="noopener" title="Open it on iNaturalist and @mention an identifier in a comment">Ask for an ID ↗</a>
+        <a href="${url}/edit" target="_blank" rel="noopener">Add photos ↗</a></div></div></div>`; };
   const chip = (k, label, n) => `<span class="chip ${String(f || 'all') === String(k) ? 'on' : ''}" data-act="leadFilter" data-v="${k}" style="cursor:pointer">${esc(label)} (${n})</span>`;
   return `<div class="panel row" style="margin-bottom:14px">${layerSwitch()}</div>
-    <div class="panel" style="margin-bottom:14px"><h2>Needs further identification</h2>
-      <p class="small muted">Your salticid observations identified only above genus, newest first.
-        Click a tile to open it on iNaturalist: add sharper photos, annotate sex and life stage, or tag an identifier. Once it's identified to genus, sync and the card unlocks.</p>
-      ${M.leads.length ? `<div class="row" style="gap:6px">${chip('all', 'All', all.length)}${M.leads.map(l => chip(l.id, l.name, l.obs.length)).join('')}</div>` : ''}
+    <div class="panel" style="margin-bottom:14px"><h2>❓ Mystery spoods</h2>
+      <p class="small muted">Your jumping spider records that aren't identified to genus yet, newest first. Once one is, sync and its card unlocks.</p>
+      ${tipsHtml(M.G.size < 15)}
+      ${M.leads.length ? `<div class="row" style="gap:6px;margin-top:10px">${chip('all', 'All', all.length)}${M.leads.map(l => chip(l.id, l.name, l.obs.length)).join('')}</div>` : ''}
       <p class="row" style="margin:10px 0 0;gap:8px">${M.leads.length && !isGuest() ? `<a class="btnlink" href="${esc(leadsUrl(lead))}" target="_blank" rel="noopener">Open ${lead ? `these ${fmt(obs.length)}` : `all ${fmt(obs.length)}`} on iNaturalist ↗</a>` : ''}${idAidBtn()}</p></div>
     ${isGuest() ? '<div class="panel"><p>Guests have no records yet. Open SPOODEX with your iNaturalist username to see yours here.</p><button data-act="switch">I have an iNaturalist account</button></div>'
       : obs.length ? `<div class="dexgrid">${obs.map(tile).join('')}</div>`
-      : '<div class="panel"><p>Nothing stuck above genus.</p></div>'}`;
+      : '<div class="panel"><p>No mystery spoods: every record is identified to genus or below.</p></div>'}`;
 }
 // Opens the Identification aid in one reused popup window (a tab on phones, or if popups are blocked)
 const idAidBtn = () => `<a class="btnlink" href="${ID_AID}" target="spoodex-idaid" data-act="idaid">🔑 Identification aid ↗</a>`;
-const layerSwitch = () => `<span>${[['genus','Genera'],['species','Species'],['sets','Sets'],['needsid',`🔎 Needs ID (${S.M.leads.reduce((n, l) => n + l.obs.length, 0)})`]].map(([k,l]) => `<span class="chip ${(S.prefs.layer||'genus')===k?'on':''}" data-layer="${k}" style="cursor:pointer">${l}</span>`).join(' ')}</span>`;
+const layerSwitch = () => `<span>${[['genus','Genera'],['species','Species'],['sets','Sets'],['needsid',`❓ Mystery spoods (${mysteryCount()})`]].map(([k,l]) => `<span class="chip ${(S.prefs.layer||'genus')===k?'on':''}" data-layer="${k}" style="cursor:pointer">${l}</span>`).join(' ')}</span>`;
 function speciesSection(gid) {
   const M = S.M, ref = refFor(S.prefs.scope), cm = S.cmp?.M;
   const ids = new Set();
@@ -2156,7 +2178,7 @@ function viewQuests() {
     ${q.kind === 'scan' ? `<button class="primary" data-scan="${esc(M.homeCell.k)}">📡 Scan home base</button>` : ''}
     ${q.kind === 'first' ? '<a class="btnlink" href="https://www.inaturalist.org/observations/upload" target="_blank" rel="noopener">Upload to iNaturalist ↗</a>' : ''}
     ${q.kind === 'base' ? '<button class="primary" data-tab="map">Set home base</button>' : ''}
-    ${q.kind === 'resolve' ? `<a href="${esc(leadsUrl())}" target="_blank" rel="noopener">Open these on iNaturalist ↗</a> · <a href="#" data-act="needsid">see them in SPOODEX</a>` : ''}
+    ${q.kind === 'resolve' ? `<a href="${esc(leadsUrl())}" target="_blank" rel="noopener">Open these on iNaturalist ↗</a> · <a href="#" data-act="needsid">see your mystery spoods</a>` : ''}
     </div>${q.reward ? `<div class="reward">Reward: +${q.reward} Naturalist XP</div>` : ''}</div>`).join('')}</div>
   <p class="muted small" style="margin-top:14px">Quests check themselves each time you sync.</p>`;
 }
@@ -2233,15 +2255,31 @@ async function openGenus(id) {
 }
 
 /* ---------------- reveal ceremony ---------------- */
+// After a sync: a full-screen photo for each new genus, and for each mystery spood that has been identified to genus since.
+// Items: {g genus, isNew, o the record that was a mystery spood, more (identified records not shown)}.
+const SOLVED_SHOWN = 3;
+function celebrations(fresh, solved) {
+  const freshIds = new Set(fresh.map(g => g.id));
+  const items = fresh.map(g => ({ g, isNew:true, o:solved.find(o => genusOf(o.anc) === g.id) }));
+  const old = solved.filter(o => !freshIds.has(genusOf(o.anc)));
+  old.slice(0, SOLVED_SHOWN).forEach(o => items.push({ g:S.M.G.get(genusOf(o.anc)), o }));
+  const out = items.filter(x => x.g);
+  if (old.length > SOLVED_SHOWN && out.length) out[out.length - 1].more = old.length - SOLVED_SHOWN;
+  return out;
+}
+const aGenus = n => (/^[AEIOU]/i.test(n) ? 'an ' : 'a ') + n;
 function revealQueue(list) {
   if (!list.length) return;
-  const g = list.shift();
+  const it = list.shift(), g = it.g, o = it.o;
   const el = document.createElement('div');
   el.id = 'reveal';
-  el.innerHTML = `<div class="rph" style="background-image:url('${esc(photoSize(g.cover,'large'))}')"></div>
-    <div class="k">NEW GENUS RECORDED</div><h2>${esc(g.name.toUpperCase())}</h2>${cnOf(g.id) ? `<p class="rcn">${esc(cnOf(g.id))}</p>` : ''}
+  el.innerHTML = `<div class="rph" style="background-image:url('${esc(photoSize(o?.ph[0] || g.cover, 'large'))}')"></div>
+    <div class="k">${o ? 'MYSTERY SPOOD IDENTIFIED' : 'NEW GENUS RECORDED'}</div><h2>${esc(g.name.toUpperCase())}</h2>${cnOf(g.id) ? `<p class="rcn">${esc(cnOf(g.id))}</p>` : ''}
     ${wowLine(g.id) ? `<p class="rwow">${esc(wowLine(g.id))}</p>` : ''}
-    <p>Your ${ordinal(g.discIndex)} Salticidae genus</p><p>First observed ${esc(g.first.d)}${g.first.pg ? ' · ' + esc(g.first.pg) : ''}</p>
+    ${o ? `<p class="rcn">Your mystery spood is ${esc(aGenus(g.name))}!${it.isNew ? ' Card unlocked.' : ''}</p>` : ''}
+    ${it.isNew ? `<p>Your ${ordinal(g.discIndex)} Salticidae genus</p>` : ''}
+    ${o ? `<p>Observed ${esc(o.d)}</p>` : `<p>First observed ${esc(g.first.d)}${g.first.pg ? ' · ' + esc(g.first.pg) : ''}</p>`}
+    ${it.more ? `<p>…and ${plural(it.more, 'more mystery spood')} identified.</p>` : ''}
     <p style="margin-top:18px;font-size:12px">${list.length ? `${list.length} more… ` : ''}tap to continue</p>`;
   el.addEventListener('click', () => { el.remove(); revealQueue(list); });
   document.body.appendChild(el);
@@ -4853,11 +4891,12 @@ function paintField() {
     body._h = null;
     body.innerHTML = `<div class="panel"><p>Points you at the nearest 25 km square with a record from the last ${FIELD.recentDays} days of a genus you're missing, and lists what's been recorded around you.</p>
       <button class="primary big" data-act="fieldStart">Start field mode</button>
-      <p class="small muted" style="margin-bottom:0">Uses your location (kept on this device, for this session only), the compass, and keeps the screen awake.</p></div>`;
+      <p class="small muted" style="margin-bottom:0">Uses your location (kept on this device, for this session only), the compass, and keeps the screen awake.</p></div>
+      <div class="panel">${tipsHtml(false)}</div>`;
     return;
   }
   if (!$('#fDial')) body.innerHTML = `<div id="fStatus" class="fstatus"></div><div class="panel" id="fWhere"></div>
-    <div class="panel">${fieldDial()}<div id="fTarget" class="ftarget"></div></div><div class="panel" id="fAround"></div>`;
+    <div class="panel">${fieldDial()}<div id="fTarget" class="ftarget"></div></div><div class="panel" id="fAround"></div><div class="panel">${tipsHtml(false)}</div>`;
   const p = F.pos, M = S.M;
   setHtml($('#fStatus'), !navigator.onLine ? '📴 Offline: using cached data.' : F.geo && F.geo !== 'wait' ? esc(F.geo) : '');
   // Where you are
@@ -5051,7 +5090,7 @@ async function copyLink() {
 async function doSync(full) {
   const btn = $('#syncBtn'); btn.disabled = true; btn.textContent = '⟳ Syncing…';
   const prevQuests = S.M ? buildQuests(S.M) : [];
-  const prevSeen = new Set(S.u.seen);
+  const prevSeen = new Set(S.u.seen), prevLeads = S.M ? S.M.leads.flatMap(l => l.obs.map(o => o.id)) : [];
   try {
     await sync({ full });
     if (S.M.homeCell) try { await scanActive(S.M.homeCell.k); } catch (e) { console.warn(e); }
@@ -5062,7 +5101,10 @@ async function doSync(full) {
     S.u.seen = S.M.genera.map(g => g.id); saveUser();
     if (S.tab !== 'map') render(); else paintMap3d();
     fillElev();
-    if (fresh.length) revealQueue(fresh); else if (!isGuest()) toast('Synced. No new genera this time.');
+    // mystery spoods identified since the last sync: records that were above genus and now sit in a genus (no extra call)
+    const solved = prevLeads.map(id => S.u.obs[id]).filter(o => o && !o.cap && genusOf(o.anc));
+    const items = celebrations(fresh, solved);
+    if (items.length) revealQueue(items); else if (!isGuest()) toast('Synced. No new genera this time.');
   } catch (e) { toast(e.message); }
   btn.disabled = false; btn.textContent = '⟳ Sync';
   loadNews();
@@ -5126,8 +5168,15 @@ function revEndHtml() {
     <div class="small muted">${esc(who().toUpperCase())}'S SPOODEX</div>
     <h2>Level ${n}</h2><div class="hand">${esc(generatedTitle(M))}</div>
     <p>${n && sc.ref ? `<b>${n}</b> of the <b>${sc.inScope.length}</b> genera on iNat in ${esc(scopeLabel(S.prefs.scope))}.` : n ? '' : 'No public jumping spider records identified to genus yet.'}</p>
+    ${M.leads.length ? `<p>❓ ${plural(mysteryCount(), 'mystery spood')} not yet identified to genus: they're waiting under SPOODEX › Mystery spoods.</p>` : ''}
     <p class="row"><button class="primary big" data-act="openDex">Open your SPOODEX</button></p>
-    <div id="revNext">${nextThreeHtml()}</div></div>`;
+    <div id="revNext">${nextThreeHtml()}</div>${tipsOnce()}</div>`;
+}
+// The photo checklist, shown once to anyone with fewer than 15 genera (the reveal, or Profile until "Got it")
+function tipsOnce(dismiss = false) {
+  if (S.prefs.tipsDone || S.M.G.size >= 15) return '';
+  if (!dismiss) { S.prefs.tipsDone = true; savePrefs(); return `<div style="margin-top:14px">${tipsHtml(true)}</div>`; }
+  return `<div class="panel" style="margin-bottom:16px">${tipsHtml(true)}<p style="margin:8px 0 0"><button class="small" data-act="tipsDone">Got it</button></p></div>`;
 }
 function enterApp(tab) {
   $('#onboard').classList.add('hidden'); $('#app').classList.remove('hidden');
@@ -5260,6 +5309,7 @@ document.addEventListener('click', e => {
   if (a === 'clearBase') { delete S.u.base; saveUser(); S.M = buildModel(); render(); }
   if (a === 'guest') startGuest();
   if (a === 'openDex') enterApp();
+  if (a === 'tipsDone') { S.prefs.tipsDone = true; savePrefs(); render(); }
   if (a === 'sample') { $('#loginInput').value = SAMPLE_LOGIN; onboard(SAMPLE_LOGIN); }
   if (a === 'switch') { store.del('lastLogin'); location.href = location.pathname; }
   if (a === 'wipe') { store.del(ukey(S.login)); store.del('lastLogin'); store.flush().finally(() => location.href = location.pathname); }
