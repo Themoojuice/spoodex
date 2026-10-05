@@ -215,6 +215,12 @@ a.lcard:hover { border-color:var(--accent); }
 .landstarts button.big { min-height:58px; font-size:17px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
 .landstarts button.big small { font-weight:400; font-size:13px; }
 #loginForm label { display:block; font-weight:600; margin-bottom:8px; }
+.profhero h1 { font-size:36px; margin:4px 0 0; }
+.herobtns { gap:6px; margin:10px 0 0; }
+.herobtns button { padding:5px 10px; font-size:13px; }
+.spoods { display:grid; grid-auto-flow:column; grid-auto-columns:116px; gap:8px; overflow-x:auto; padding-bottom:6px; scrollbar-width:thin; }
+.spoods .lcard { cursor:pointer; }
+.spoods .lcard .cn { padding-bottom:6px; }
 #impBox h2 { margin-bottom:4px; }
 #impLine { margin:0 0 10px; }
 .revgrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:10px; margin:12px 0 8px; perspective:900px; }
@@ -1276,8 +1282,11 @@ function lockedPlate(t) {
     <button data-act="peek">Peek anyway (prototype)</button></div>`;
 }
 
+// Profile, beginner first: who and what level, your own photos, three genera to find next; then the ledgers. Numbers that are
+// still zero or tiny (no behaviour records, no streak, no style, under 1% of the record, no pioneer badges) stay hidden until they mean something.
+let nextKey = '', nextAt = 0;
 function viewProfile() {
-  const M = S.M, sc = scopeGenera(), tier = M.tier;
+  const M = S.M, sc = scopeGenera(), tier = M.tier, n = M.G.size;
   const regions = {};
   M.genera.forEach(g => g.places.forEach(p => { const pl = S.places[p]; if (pl && pl.l != null && [0,10,20].includes(pl.l)) { (regions[p] = regions[p] || { id:p, n:pl.n, l:pl.l, g:0 }).g++; } }));
   const regionRows = lvl => Object.values(regions).filter(r => r.l === lvl).sort((a,b) => b.g - a.g);
@@ -1289,76 +1298,87 @@ function viewProfile() {
   const rare = M.genera.map(g => ({ g, r:rarityTier(g.id) })).filter(x => x.r).sort((a,b) => a.r.count - b.r.count).slice(0,5);
   const years = {}; M.genera.forEach(g => { const y = (g.first.d||'????').slice(0,4); years[y] = (years[y]||0) + 1; });
   const ys = Object.keys(years).sort(), maxY = Math.max(1, ...Object.values(years));
-  const starter = !M.G.size ? `<div class="panel" style="margin-bottom:16px"><h2>Your SPOODEX is empty, for now</h2>
+  const setsAll = setStats(refFor(S.prefs.scope)), setsDone = setsAll.filter(x => !x.left);
+  // three to find: refreshed when home or the month changes, or every 6 hours
+  const nk = `${M.homeCell?.k}:${homeCtx().pid}:${new Date().getMonth()}`;
+  if (homeCtx().pid && !nextBusy && (nk !== nextKey || Date.now() - nextAt > 6 * 3600e3)) {
+    nextKey = nk; nextAt = Date.now();
+    setTimeout(() => loadNextThree(() => { if (S.tab === 'profile') softRender(); }), 0);
+  }
+  const hero = `<div class="panel profhero">
+      <div class="muted small">${esc(who().toUpperCase())}'S SPOODEX</div>
+      <h1>Level ${n}</h1><div class="hand">${esc(generatedTitle(M))}</div>
+      ${sc.ref && sc.inScope.length ? `<div class="row" style="gap:8px;margin-top:6px"><span><b>${sc.found} / ${sc.inScope.length}</b> genera on iNat in ${esc(scopeLabel(S.prefs.scope))}</span>${bar(sc.found, sc.inScope.length)}</div>` : ''}
+      ${isGuest() || !n ? '' : `<p class="row herobtns"><button data-act="dexImage">📤 My SPOODEX image</button><button data-act="card">🪪 Title card</button>${M.fieldDays.length ? `<button data-act="wrapped">🎁 ${esc(wrappedYears()[0])} in spoods</button>` : ''}</p>`}
+    </div>`;
+  const spoods = n ? `<div class="panel" style="margin-top:16px"><h2>Your spoods <span class="small muted">newest first</span></h2>
+      <div class="spoods">${[...M.genera].filter(g => g.cover).sort((a, b) => (b.first.d || '').localeCompare(a.first.d || '') || b.first.id - a.first.id).map(g =>
+        `<div class="lcard" data-genus="${g.id}" title="Open the card"><span class="ph" style="background-image:url('${esc(photoSize(g.cover, 'small'))}')"></span>
+          <span class="nm"><i>${esc(g.name)}</i></span>${cnOf(g.id) ? `<span class="cn">${esc(cnOf(g.id))}</span>` : ''}</div>`).join('')}</div></div>` : '';
+  const three = nextThreeHtml();
+  const finds = homeCtx().pid ? (three ? `<div class="panel" style="margin-top:16px">${three}</div>` : '')
+    : `<div class="panel" style="margin-top:16px"><h3>Three to find next</h3><p>Set a home base and SPOODEX picks three jumping spiders recorded near you that you haven't found.</p>
+        <button class="primary" data-tab="map">🏠 Set a home base</button></div>`;
+  const starter = !n ? `<div class="panel" style="margin-top:16px"><h2>Your SPOODEX is empty, for now</h2>
     <p>Every card is unlocked by a real jumping spider you have found:</p>
     <p class="hand">explore → photograph → upload to iNaturalist → get an ID → sync → unlock</p>
     <div class="row"><a class="btnlink" href="https://www.inaturalist.org/observations/upload" target="_blank" rel="noopener">Upload to iNaturalist ↗</a>
-    <button data-tab="map">${M.homeCell ? '📡 See what lives near your home base' : '🏠 Set a home base'}</button>
+    ${M.homeCell ? '<button data-tab="map">📡 See what lives near your home base</button>' : ''}
     ${isGuest() ? '<button data-act="switch">I have an iNaturalist account</button>' : ''}</div></div>` : '';
-  const setsAll = setStats(refFor(S.prefs.scope)), setsDone = setsAll.filter(x => !x.left);
-  return `${newsHtml()}${starter}${tipsOnce(true)}
-  <div class="grid2">
-    <div class="panel">
-      <div class="muted small">${esc(who().toUpperCase())}'S SPOODEX</div>
-      <h1 style="font-size:34px;margin:4px 0">SPOOD NATURALIST — LEVEL ${M.G.size}</h1>
-      <div class="hand">${esc(generatedTitle(M))}</div>
-      ${isGuest() ? '' : `<p class="row" style="gap:8px"><button data-act="card">🪪 Title card</button>${M.fieldDays.length ? `<button data-act="wrapped">🎁 ${esc(wrappedYears()[0])} in spoods</button>` : ''}</p>`}
-      <p><b>${M.G.size}</b> Salticidae genera recorded${sc.ref ? ` · <b>${sc.found} / ${sc.inScope.length}</b> of those on iNat in ${esc(scopeLabel(S.prefs.scope))}` : ''}</p>
-      <div class="kv">
-        <dt>Observations</dt><dd>${fmt(M.obs.length)}</dd>
-        <dt>Species (side collection)</dt><dd>${fmt(M.S.size)}${refFor(S.prefs.scope)?.s ? ` · ${speciesInScope().filter(id => M.S.has(id)).length} / ${speciesInScope().length} on iNat in ${esc(scopeLabel(S.prefs.scope))}` : ''}</dd>
-        <dt>Sets complete</dt><dd>${setsDone.length} / ${setsAll.length} ${setsDone.length ? setsDone.slice(0, 4).map(x => x.icon || '🏆').join('') : ''} <a href="#" class="small" data-act="sets">view sets</a></dd>
-        <dt>Collection prestige</dt><dd>${fmt(prestige(M))} ✦ <span class="small muted">(rarity-weighted)</span></dd>
-        <dt>Localities (~10 km)</dt><dd>${fmt(M.cellsAll01.size)}</dd>
-        <dt>Field days</dt><dd>${fmt(M.fieldDays.length)}</dd>
-        <dt>Behaviour records</dt><dd>${M.behObs.feed} feeding · ${M.behObs.court} courtship · ${M.behObs.egg} silk/brood</dd>
-        <dt>New genera ${new Date().getFullYear()}</dt><dd>${M.newThisYear}</dd>
-        <dt>Naturalist XP</dt><dd>${fmt(M.xp)}</dd>
-        <dt>Mystery spoods</dt><dd>${fmt(mysteryCount())} not yet identified to genus <a href="#" class="small" data-act="needsid">see them</a></dd>
-      </div>
-    </div>
-    <div class="panel">
-      <h2>Chassis</h2>
-      <p><b>${esc(TIERS[tier].name)}</b> — <span class="muted">${esc(TIERS[tier].sub)}</span></p>
-      ${next ? `<div class="row"><span class="small">Next: ${esc(next.name)} at ${next.min} genera</span>${bar(M.G.size - TIERS[tier].min, next.min - TIERS[tier].min)}<span class="small">${next.min - M.G.size} to go</span></div>` : '<p>Fully upgraded.</p>'}
-      <ul class="checks" style="margin-top:10px">${TIERS.map((t,i) => `<li class="${i<=tier?'done':''}">${i<=tier?'☑':'☐'} ${esc(t.module)} <span class="muted small">(${t.min}+)</span></li>`).join('')}</ul>
-      <h3 style="margin-top:14px">Discovery streak</h3>
-      <p>${'🔥'.repeat(Math.min(M.streak,10)) || '—'} <b>${M.streak}</b> consecutive field day${M.streak===1?'':'s'} with a new genus <span class="muted">(best ${M.bestStreak})</span></p>
-    </div>
-  </div>
-  <div class="grid2" style="margin-top:16px">
-    <div class="panel">
+  const kv = [
+    ['Observations', M.obs.length && fmt(M.obs.length)],
+    ['Species (side collection)', M.S.size && `${fmt(M.S.size)}${refFor(S.prefs.scope)?.s ? ` · ${speciesInScope().filter(id => M.S.has(id)).length} / ${speciesInScope().length} on iNat in ${esc(scopeLabel(S.prefs.scope))}` : ''}`],
+    ['Sets complete', setsDone.length && `${setsDone.length} / ${setsAll.length} ${setsDone.slice(0, 4).map(x => x.icon || '🏆').join('')} <a href="#" class="small" data-act="sets">view sets</a>`],
+    ['Collection prestige', n && `${fmt(prestige(M))} ✦ <span class="small muted">(rarity-weighted)</span>`],
+    ['Localities (~10 km)', M.cellsAll01.size && fmt(M.cellsAll01.size)],
+    ['Field days', M.fieldDays.length && fmt(M.fieldDays.length)],
+    ['Behaviour records', [['feed', 'feeding'], ['court', 'courtship'], ['egg', 'silk/brood']].filter(([k]) => M.behObs[k]).map(([k, l]) => `${M.behObs[k]} ${l}`).join(' · ')],
+    [`New genera ${new Date().getFullYear()}`, M.newThisYear],
+    ['Naturalist XP', M.xp && fmt(M.xp)],
+    ['Mystery spoods', mysteryCount() && `${fmt(mysteryCount())} not yet identified to genus <a href="#" class="small" data-act="needsid">see them</a>`],
+  ].filter(([, v]) => v);
+  const streak = M.streak ? `<p>${'🔥'.repeat(Math.min(M.streak,10))} <b>${M.streak}</b> consecutive field day${M.streak===1?'':'s'} with a new genus <span class="muted">(best ${M.bestStreak})</span></p>`
+    : M.bestStreak >= 2 ? `<p>Best: <b>${M.bestStreak}</b> field days in a row with a new genus</p>` : '';
+  const share = isGuest() ? '' : shareHtml(), pio = isGuest() ? '' : myPioneers().length ? pioneerHtml() : '';
+  const regionsHtml = moduleOn(1) && Object.keys(regions).length ? `<div class="panel">
       <h2>Regions</h2>
-      ${moduleOn(1) ? `
       ${refC ? `<div class="row"><span style="min-width:150px">${esc(S.places[M.home.country]?.n)}</span>${bar(Object.keys(refC.g).filter(id => M.G.has(+id)).length, Object.keys(refC.g).length)}<span class="small">${Object.keys(refC.g).filter(id => M.G.has(+id)).length}/${Object.keys(refC.g).length}</span></div>` : ''}
       ${refS && M.home.state !== M.home.country ? `<div class="row"><span style="min-width:150px">${esc(S.places[M.home.state]?.n)}</span>${bar(Object.keys(refS.g).filter(id => M.G.has(+id)).length, Object.keys(refS.g).length)}<span class="small">${Object.keys(refS.g).filter(id => M.G.has(+id)).length}/${Object.keys(refS.g).length}</span></div>` : ''}
-      ${!refC || !refS ? `<p class="small muted">Switch the SPOODEX scope to country/state once to load regional totals.</p>` : ''}
-      <h3 style="margin-top:10px">Countries</h3>${regionRows(0).map(r => `<div class="small">${esc(r.n)}: <b>${r.g}</b> ${r.g === 1 ? 'genus' : 'genera'}</div>`).join('') || '<div class="muted small">—</div>'}
-      <h3 style="margin-top:10px">States / provinces</h3>${regionRows(10).slice(0,8).map(r => `<div class="small">${esc(r.n)}: <b>${r.g}</b> ${r.g === 1 ? 'genus' : 'genera'}</div>`).join('') || '<div class="muted small">—</div>'}
-      <h3 style="margin-top:10px">Local areas</h3>${regionRows(20).slice(0,10).map(r => `<div class="small">${esc(r.n)}: <b>${r.g}</b> ${r.g === 1 ? 'genus' : 'genera'}</div>`).join('') || '<div class="muted small">—</div>'}
-      ` : `<p class="muted">Region statistics install with SPOODEX Mk II (15 genera).</p>`}
-    </div>
-    <div class="panel">
-      <h2>Favourite lineages</h2>
-      ${favs.map(f => `<div class="row"><span style="min-width:140px">${esc(f.n)}</span><div class="bar"><i style="width:${pct(f.g,maxFav)}%"></i></div><span class="small">${f.g} gen.</span></div>`).join('') || '<p class="muted">None yet.</p>'}
-      <h2 style="margin-top:14px">Field style</h2>
-      ${style.map(s => `<div>${s[0]} <b>${esc(s[1])}</b> <span class="muted small">${esc(s[2])}</span></div>`).join('') || '<p class="muted">Still developing a style. Keep spooding.</p>'}
-      ${moduleOn(3) ? `<h2 style="margin-top:14px">Rarest discoveries</h2>
+      ${[[0, 'Countries', 99], [10, 'States / provinces', 8], [20, 'Local areas', 10]].map(([l, h, k]) => { const rs = regionRows(l).slice(0, k);
+        return rs.length ? `<h3 style="margin-top:10px">${h}</h3>${rs.map(r => `<div class="small">${esc(r.n)}: <b>${r.g}</b> ${r.g === 1 ? 'genus' : 'genera'}</div>`).join('')}` : ''; }).join('')}
+    </div>` : '';
+  const lineHtml = favs[0]?.g >= 2 || style.length || (moduleOn(3) && rare.length) ? `<div class="panel">
+      ${favs[0]?.g >= 2 ? `<h2>Favourite lineages</h2>${favs.map(f => `<div class="row"><span style="min-width:140px">${esc(f.n)}</span><div class="bar"><i style="width:${pct(f.g,maxFav)}%"></i></div><span class="small">${f.g} gen.</span></div>`).join('')}` : ''}
+      ${style.length ? `<h2 style="margin-top:14px">Field style</h2>${style.map(s => `<div>${s[0]} <b>${esc(s[1])}</b> <span class="muted small">${esc(s[2])}</span></div>`).join('')}` : ''}
+      ${moduleOn(3) && rare.length ? `<h2 style="margin-top:14px">Rarest discoveries</h2>
         <p class="small muted">Fewest iNat records in ${esc(scopeLabel(S.prefs.scope))}.</p>
         ${rare.map(x => `<div><a href="#" data-genus="${x.g.id}"><i>${esc(x.g.name)}</i></a> <span class="small muted">${fmt(x.r.count)} record${x.r.count === 1 ? '' : 's'}</span></div>`).join('')}` : ''}
-    </div>
-  </div>
-  ${isGuest() ? '' : `<div class="grid2" style="margin-top:16px">
-    <div class="panel"><h2>Your share of the record</h2>${shareHtml()}</div>
-    <div class="panel"><h2>Pioneer badges</h2><div data-pioneer>${pioneerHtml()}</div></div>
-  </div>`}
+    </div>` : '';
+  const news = newsHtml(), tips = tipsOnce(true);
+  return `${hero}${n ? spoods + finds : finds + starter}${news ? `<div style="margin-top:16px">${news}</div>` : ''}
+  ${tips ? `<div style="margin-top:16px">${tips}</div>` : ''}
+  ${kv.length || n ? `<div class="grid2">
+    ${kv.length ? `<div class="panel"><h2>Ledger</h2><div class="kv">${kv.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</div></div>` : ''}
+    ${n ? `<div class="panel">
+      <h2>Chassis</h2>
+      <p><b>${esc(TIERS[tier].name)}</b> — <span class="muted">${esc(TIERS[tier].sub)}</span></p>
+      ${next ? `<div class="row"><span class="small">Next: ${esc(next.name)} at ${next.min} genera</span>${bar(n - TIERS[tier].min, next.min - TIERS[tier].min)}<span class="small">${next.min - n} to go</span></div>` : '<p>Fully upgraded.</p>'}
+      <ul class="checks" style="margin-top:10px">${TIERS.map((t,i) => `<li class="${i<=tier?'done':''}">${i<=tier?'☑':'☐'} ${esc(t.module)} <span class="muted small">(${t.min}+)</span></li>`).join('')}</ul>
+      ${streak ? `<h3 style="margin-top:14px">Discovery streak</h3>${streak}` : ''}
+    </div>` : ''}
+  </div>` : ''}
+  ${regionsHtml || lineHtml ? `<div class="grid2" style="margin-top:16px">${regionsHtml}${lineHtml}</div>` : ''}
+  ${share || pio ? `<div class="grid2" style="margin-top:16px">
+    ${share ? `<div class="panel"><h2>Your share of the record</h2>${share}</div>` : ''}
+    ${pio ? `<div class="panel"><h2>Pioneer badges</h2><div data-pioneer>${pio}</div></div>` : ''}
+  </div>` : ''}
   ${trophyHtml()}
-  <div class="panel" style="margin-top:16px">
+  ${ys.length >= 2 ? `<div class="panel" style="margin-top:16px">
     <h2>New genera per year</h2>
     <div class="row" style="align-items:flex-end;gap:6px;height:120px">
       ${ys.map(y => `<div style="text-align:center;flex:1;min-width:28px"><div class="small">${years[y]}</div><div style="height:${Math.round(80*years[y]/maxY)}px;background:var(--lit);border-radius:3px 3px 0 0;box-shadow:var(--glow)"></div><div class="small muted">${y}</div></div>`).join('')}
     </div>
-  </div>`;
+  </div>` : ''}`;
 }
 
 function cardHtml(id, num) {
@@ -3450,11 +3470,12 @@ function recordShare(pid) {
 function shareHtml() {
   const M = S.M, st = M.home.state, co = M.home.country;
   const A = recordShare(st || co);
-  if (!A) return '<p class="muted small">Waiting for regional totals… (set a home base if you have no records yet)</p>';
+  if (!A) return '';
   const B = co && st && co !== st ? recordShare(co) : null, where = esc(A.where);
-  const partial = A.rows.filter(r => r.mine < r.all).slice(0, 8);
-  return `<div class="envy"><div class="big">You've made <b>${pctTxt(A.pc)}</b> of all verifiable salticid records on iNat in ${where}.</div>
-      <div class="small muted">${fmt(A.mine)} of ${fmt(A.total)}${B ? ` · and ${pctTxt(B.pc)} of ${esc(B.where)}'s (${fmt(B.mine)} of ${fmt(B.total)})` : ''}</div></div>
+  const partial = A.rows.filter(r => r.mine < r.all && r.pc >= .01).slice(0, 8);
+  if (A.pc < .01 && !A.sole.length && !partial.length) return '';   // nothing worth showing yet
+  return `${A.pc >= .01 ? `<div class="envy"><div class="big">You've made <b>${pctTxt(A.pc)}</b> of all verifiable salticid records on iNat in ${where}.</div>
+      <div class="small muted">${fmt(A.mine)} of ${fmt(A.total)}${B && B.pc >= .01 ? ` · and ${pctTxt(B.pc)} of ${esc(B.where)}'s (${fmt(B.mine)} of ${fmt(B.total)})` : ''}</div></div>` : ''}
     ${A.sole.length ? `<p>🗝 Every ${where} record of ${A.sole.length === 1 ? 'this genus' : `these ${A.sole.length} genera`} is yours: ${A.sole.map(r => gLink(r.g.id)).join(', ')}</p>` : ''}
     ${A.spSole ? `<p class="small">…plus ${A.spSole} species where every ${where} record is yours.</p>` : ''}
     ${partial.length ? `<h3 style="margin-top:10px">Biggest shares in ${where}</h3>
@@ -3521,7 +3542,11 @@ function pioneerLine(gid) {
   if (!xs.length) return '';
   return `<dt>Earliest on iNat</dt><dd>${xs.map(x => `${isMe(x.p.u) ? '🏅 <b>you</b>' : esc(x.p.u)} in ${esc(S.places[x.pid]?.n)} (${esc(x.p.d)})`).join('<br>')}</dd>`;
 }
-function pioneerUpdated() { document.querySelectorAll('[data-pioneer]').forEach(el => el.innerHTML = pioneerHtml()); }
+function pioneerUpdated() {
+  const els = document.querySelectorAll('[data-pioneer]');
+  els.forEach(el => el.innerHTML = pioneerHtml());
+  if (!els.length && S.tab === 'profile' && myPioneers().length) softRender();   // the panel appears with the first badge
+}
 
 /* ---------------- the spood report: this week's salticid news for your state ---------------- */
 const REPORT_TTL = 6 * 3600e3, REPORT_DAYS = 7, REPORT_TOP = 8;
@@ -3875,7 +3900,7 @@ function taxonPhoto(id) {
 // Recorded within 25 km of home first, then in season, then the wanted score (which already weighs recent records and season)
 function nextThree() {
   const list = wantedList(homeCtx()); if (!list) return null;
-  const rank = x => (x.near ? 2 : 0) + ((x.season ?? 0) >= .4 ? 1 : 0);
+  const rank = x => (x.near ? 2 : 0) + ((x.season ?? .5) >= .4 ? 1 : 0);   // an unknown season counts as middling, as in the wanted score
   return [...list].sort((a, b) => rank(b) - rank(a) || b.score - a.score).slice(0, NEXT_N);
 }
 let nextBusy = false;
@@ -3887,8 +3912,12 @@ async function loadNextThree(redraw) {
     await ensureRef('state');
     if (h) { if (!S.u.scans[h.k]) await fetchScan(h.k); await scanActive(h.k); }
     redraw();
-    ensurePheno(wantedList(homeCtx()).slice(0, 8).map(x => x.id));   // season curves re-rank the likeliest few
-    while (phenoBusy) await sleep(800);
+    // season curves re-rank the likeliest few; repeat until the three on show all have theirs
+    for (let round = 0, ids = wantedList(homeCtx()).slice(0, 8).map(x => x.id); round < 3 && ids.length; round++) {
+      ensurePheno(ids);
+      while (phenoBusy) await sleep(800);
+      ids = nextThree().map(x => x.id).filter(id => !S.pheno[phenoKey(id)]);
+    }
     const ids = nextThree().map(x => x.id);
     await ensureInfo(ids); await ownerPhotos(ids);
   } catch (e) { console.warn(e); }
