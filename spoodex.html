@@ -241,6 +241,10 @@ a.lcard:hover { border-color:var(--accent); }
 .card.unknown .ph, .modal .hero.unknown { filter:grayscale(1) sepia(.6) blur(7px) brightness(.6) contrast(1.2); }
 .card.unknown::after { content:'?'; position:absolute; top:0; left:0; right:0; aspect-ratio:1; display:grid; place-items:center; font:52px var(--head); color:var(--ink); opacity:.55; pointer-events:none; }
 .card .meta { padding:6px 8px 8px; }
+.card .cn { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cnbig { font:400 19px Fraunces, Georgia, serif; margin:-2px 0 2px; }
+.gwow { font:italic 400 16px/1.45 Fraunces, Georgia, serif; margin:8px 0 2px; max-width:46em; }
+.scrow .cn { font-size:12px; color:var(--ink); }
 .card .num { font-size:11px; color:var(--muted); }
 .card .nm { font-family:var(--head); font-size:15px; font-style:italic; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .card.unknown .nm { font-style:normal; letter-spacing:.2em; color:var(--muted); }
@@ -270,6 +274,8 @@ a.lcard:hover { border-color:var(--accent); }
 #reveal .k { letter-spacing:.35em; font-size:12px; color:#d9b56a; margin-top:18px; animation:fadein 1s .8s both; }
 #reveal h2 { font-family:'Fraunces', Georgia, serif; font-size:48px; color:#f6eedb; margin:6px 0; font-style:italic; animation:fadein 1s 1.1s both; text-shadow:none; }
 #reveal p { color:#cdbd9c; margin:2px; animation:fadein 1s 1.4s both; }
+#reveal .rcn { color:#f3e9d2; font:400 20px Fraunces, Georgia, serif; }
+#reveal .rwow { max-width:30em; font:italic 400 15px/1.45 Fraunces, Georgia, serif; margin:8px auto 4px; }
 @keyframes zoom { from { transform:scale(.2); filter:brightness(0); } 60% { filter:brightness(0); } to { transform:none; filter:none; } }
 @keyframes fadein { from { opacity:0; } to { opacity:1; } }
 
@@ -908,6 +914,26 @@ function lineage(id) {
   return out;
 }
 const lineageText = id => lineage(id).map(n => n.n).join(' › ') || 'Salticidae';
+// One line about the animal: the first sentence of its Wikipedia summary (via iNat) that says more than "X is a genus of jumping
+// spiders" or who described it and when. Empty when there's no such sentence (hand-written lines are the owner's call, HANDOVER §12).
+const WOW_SKIP = /first described|described by|synonym|was (named|erected|described)|named (in|by|after)|type species|\bcontains? .{0,30}\bspecies\b|\bas of \d{4}|\buntil \d{4}|moved to|transferred to|formerly/i;
+const GENUS_NOTES = {};   // genus id -> one line written by the owner; replaces the Wikipedia line (HANDOVER §12)
+function wowLine(id) {
+  if (GENUS_NOTES[id]) return GENUS_NOTES[id];
+  const s = (S.info[id]?.s || '').replace(/\s+/g, ' ').trim(), name = S.nodes[id]?.n || ''; if (!s) return '';
+  const sents = [];
+  for (const p of s.split(/(?<=[.!?])\s+(?=[A-Z])/)) {   // glue back splits after initials and abbreviations ("C. L. Koch", "e.g. Portia")
+    const prev = sents[sents.length - 1];
+    if (prev && /(\b[A-Z]|\b(e\.g|i\.e|etc|sp|spp|cf|ca|approx|St|Mt|Dr|Prof|al|vs|no))\.$/.test(prev)) sents[sents.length - 1] = prev + ' ' + p; else sents.push(p);
+  }
+  for (const t of sents) {
+    if (WOW_SKIP.test(t)) continue;
+    const rest = t.split(name).join('').replace(/\b(is|was|are|a|an|the|of|in|genus|genera|spiders?|family|salticidae|jumping|or|and|its|this|monotypic)\b|[(),.;:]/gi, '').trim();
+    if (rest.length >= 4) return t.length > 240 ? t.slice(0, t.lastIndexOf(' ', 230)) + '…' : t;
+  }
+  return '';
+}
+const cnHtml = (id, cls = 'cn') => cnOf(id) ? `<div class="${cls}">${esc(cnOf(id))}</div>` : '';
 
 function buildModel(obsMap = S.u.obs, base = S.u.base) {
   const all = Object.values(obsMap).filter(o => !o.cap).sort((a,b) => (a.d||'').localeCompare(b.d||'') || a.id - b.id);
@@ -1334,12 +1360,12 @@ function cardHtml(id, num) {
   if (!g) {
     const name = S.prefs.reveal ? `<i>${esc(S.nodes[id]?.n)}</i>` : '???';
     return `<div class="card unknown" data-genus="${id}"><div class="ph" style="background-image:url('${esc(info.p||'')}')"></div>
-      <div class="meta"><div class="num">#${String(num).padStart(3,'0')} · ${esc(tribe)}</div><div class="nm">${name}</div><div class="pips">${'<i></i>'.repeat(10)}</div></div></div>`;
+      <div class="meta"><div class="num">#${String(num).padStart(3,'0')} · ${esc(tribe)}</div><div class="nm">${name}</div>${S.prefs.reveal ? cnHtml(id) : ''}<div class="pips">${'<i></i>'.repeat(10)}</div></div></div>`;
   }
   const cls = g.state === 'MASTERED' ? 'b-mast' : g.state === 'SUPPORTED' ? 'b-supp' : 'b-disc';
   return `<div class="card ${g.state === 'MASTERED' && moduleOn(5) ? 'gilded' : ''}" data-genus="${id}"><span class="badge ${cls}">${g.state}</span>
     <div class="ph" style="background-image:url('${esc(photoSize(g.cover,'small') || info.p || '')}')"></div>
-    <div class="meta"><div class="num">#${String(num).padStart(3,'0')} · ${esc(tribe)}</div><div class="nm">${esc(g.name)}</div>
+    <div class="meta"><div class="num">#${String(num).padStart(3,'0')} · ${esc(tribe)}</div><div class="nm">${esc(g.name)}</div>${cnHtml(id)}
     <div class="small muted">${g.obs.length} obs · ${g.c01.size} loc. · ${g.sp.size} sp.</div>
     <div class="pips">${CRITERIA.map(c => `<i class="${g.f[c.k]?'on':''}"></i>`).join('')}</div></div></div>`;
 }
@@ -1623,7 +1649,7 @@ function scanPanelHtml() {
   const nG = D.G.filter(x => !M.G.has(x.id)).length, nS = D.Sp.filter(x => !M.S.has(x.id)).length;
   const row = x => {
     const gid = isG ? x.id : genusOfNode(x.id), pk = isG ? peakInfo(x.id) : null, nm = `<i>${esc(S.nodes[x.id]?.n || '?')}</i>`;
-    return `<div class="scrow">${gid ? `<a href="#" data-genus="${gid}" class="nm">${nm}</a>` : `<span class="nm">${nm}</span>`}${rarityChip(rarityOf(x.id, tab))}
+    return `<div class="scrow">${gid ? `<a href="#" data-genus="${gid}" class="nm">${nm}</a>` : `<span class="nm">${nm}</span>`}${cnOf(x.id) ? `<span class="cn">${esc(cnOf(x.id))}</span>` : ''}${rarityChip(rarityOf(x.id, tab))}
       <span class="meta">${x.r ? `🔥 ${x.r} in the last ${ACTIVE_DAYS} days · ` : ''}${fmt(x.c)} record${x.c === 1 ? '' : 's'} here${pk && !pk.few ? ` · ${pk.now ? '<b class="inseason">🌡 in season</b>' : `peak ${esc(pk.text)}`}` : ''}${!isG && gid ? ` · genus <i>${esc(S.nodes[gid]?.n || '')}</i>${M.G.has(gid) ? ' (yours)' : ' (new too)'}` : ''}</span></div>`;
   };
   const N = SCAN_ENDS, split = fresh.length > 2 * N + 1;
@@ -2141,10 +2167,11 @@ async function openGenus(id) {
   const rt = rarityTier(id), scopeP = scopePlace(S.prefs.scope);
   const lin = lineageText(id);
   const firstPlace = g ? (g.first.pg || '') : '';
+  const wl = wowLine(id), wow = wl ? `<p class="gwow">${esc(wl)}${GENUS_NOTES[id] ? '' : ` <a class="small" href="${esc(info.w || `https://www.inaturalist.org/taxa/${id}`)}" target="_blank" rel="noopener">Wikipedia ↗</a>`}</p>` : '';
   const body = g ? `
     <div class="small" style="letter-spacing:.2em">DISCOVERY LEVEL ${g.level} · ${g.state}</div>
-    <h1 style="font-size:36px;font-style:italic;margin:2px 0">${esc(name)}</h1>
-    <div class="muted">${esc(lin)}</div>
+    <h1 style="font-size:36px;font-style:italic;margin:2px 0">${esc(name)}</h1>${cnHtml(id, 'cnbig')}
+    <div class="muted">${esc(lin)}</div>${wow}
     <div class="pips" style="max-width:320px;margin:8px 0">${CRITERIA.map(c => `<i class="${g.f[c.k]?'on':''}"></i>`).join('')}</div>
     <div class="grid2">
       <div><h3>Your records</h3><dl class="kv">
@@ -2167,8 +2194,8 @@ async function openGenus(id) {
     ${moduleOn(4) ? `<h3 style="margin-top:12px">XP ledger (${fmt(g.xp)} XP)</h3><div class="small" style="max-height:140px;overflow:auto">${g.xpLog.slice().reverse().map(e => `<div>${esc(e.d)} · ${esc(e.label)} <span class="reward">+${e.xp}</span></div>`).join('')}</div>` : ''}
   ` : `
     <div class="small" style="letter-spacing:.2em">UNKNOWN</div>
-    <h1 style="font-size:36px;font-style:italic;margin:2px 0">${esc(name)}</h1>
-    <div class="muted">${esc(lin)}</div>
+    <h1 style="font-size:36px;font-style:italic;margin:2px 0">${esc(name)}</h1>${cnHtml(id, 'cnbig')}
+    <div class="muted">${esc(lin)}</div>${wow}
     <p>You haven't recorded this genus. ${rt ? `iNat has ${fmt(rt.count)} verifiable record${rt.count===1?'':'s'} of it in ${esc(scopeLabel(S.prefs.scope))}.` : ''}</p>
     <p><a href="https://www.inaturalist.org/observations?taxon_id=${id}${scopeP ? '&place_id='+scopeP : ''}" target="_blank" rel="noopener">See where others have found it ↗</a></p>`;
   const when = `<h3 style="margin-top:12px">When to look</h3><div data-phenochart="${id}">${phenoChart(id)}</div>`;
@@ -2212,7 +2239,8 @@ function revealQueue(list) {
   const el = document.createElement('div');
   el.id = 'reveal';
   el.innerHTML = `<div class="rph" style="background-image:url('${esc(photoSize(g.cover,'large'))}')"></div>
-    <div class="k">NEW GENUS RECORDED</div><h2>${esc(g.name.toUpperCase())}</h2>
+    <div class="k">NEW GENUS RECORDED</div><h2>${esc(g.name.toUpperCase())}</h2>${cnOf(g.id) ? `<p class="rcn">${esc(cnOf(g.id))}</p>` : ''}
+    ${wowLine(g.id) ? `<p class="rwow">${esc(wowLine(g.id))}</p>` : ''}
     <p>Your ${ordinal(g.discIndex)} Salticidae genus</p><p>First observed ${esc(g.first.d)}${g.first.pg ? ' · ' + esc(g.first.pg) : ''}</p>
     <p style="margin-top:18px;font-size:12px">${list.length ? `${list.length} more… ` : ''}tap to continue</p>`;
   el.addEventListener('click', () => { el.remove(); revealQueue(list); });
@@ -3702,7 +3730,7 @@ function posterHtml(x, ctx, act) {
     <div class="wtitle">WANTED</div><div class="wtier">${x.tier.toUpperCase()} · ${esc(tag.toUpperCase())}</div>
     <div class="wph" style="background-image:url('${esc(info.p || '')}')"></div>
     ${info.a ? `<div class="wcredit">${esc(info.a)}</div>` : ''}
-    <div class="wname">${esc(S.nodes[x.id]?.n || '?')}</div><div class="wtribe">${esc(tribeOf(x.id))}</div>
+    <div class="wname">${esc(S.nodes[x.id]?.n || '?')}</div>${cnHtml(x.id, 'wtribe')}<div class="wtribe">${esc(tribeOf(x.id))}</div>
     <ul class="wwhy">${wantedReasons(x, ctx).map(r => `<li>${r}</li>`).join('')}</ul>
     <div class="wreward">REWARD · LEVEL ${S.M.G.size + 1} · +100 XP</div></div>`;
 }
@@ -4351,6 +4379,7 @@ function cardKit(cv) {
         text(tr.n.toUpperCase(), cx + tw - 20, cy + 33, '600 20px "IBM Plex Mono", monospace', tr.lv === 5 || tr.lv === 4 ? '#fff' : '#2b2419', 'right'); }
       x.shadowBlur = 0;
       text(t.g.name, cx + tw / 2, cy + th + 44, 'italic 400 34px Fraunces, Georgia, serif', C.ink, 'center', tw - 10);
+      if (cnOf(t.g.id)) text(cnOf(t.g.id), cx + tw / 2, cy + th + 70, '400 20px "IBM Plex Mono", monospace', C.muted, 'center', tw - 10);
     } else text('not yet found', cx + tw / 2, cy + th + 42, '400 22px "IBM Plex Mono", monospace', C.muted, 'center', tw);
   };
   K.stats = (stats, y) => {

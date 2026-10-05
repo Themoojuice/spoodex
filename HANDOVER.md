@@ -160,7 +160,8 @@ Search for `/* ---------------- <name>` to jump. Line numbers drift; names don't
 | active now | `scanActive(k, force, into)` | ±25 km square, last 30 days |
 | best months | `phenoKey(gid,pid)`, `ensurePheno(ids,pid)`, `peakInfo(gid,pid,month)`, `phenoHtml`, `phenoTag`, `phenoChart(gid,pid,month)`, `phenoUpdated` | Month-of-year histograms for any place. `[data-pheno]`/`[data-phenochart]` placeholders update in place |
 | mastery fix-it | `fixIt(g, criterionKey)` | Links to the exact records that could tick a box |
-| genus page | `openGenus(id)` | Modal in `#modalRoot` |
+| genus page | `openGenus(id)` | Modal in `#modalRoot`. Under the name: iNat's common name (`cnHtml(id, 'cnbig')`) and one line about the animal (`wowLine`) with a Wikipedia ↗ link |
+| common names & one line (v1.20) | `cnFrom`, `cnOf`, `cnHtml`, `GENUS_NOTES`, `WOW_SKIP`, `wowLine` | Common names come from `/v1/taxa` (`ensureInfo`, the landing call) into `S.nodes[id].c`; `ensureInfo` re-asks once for taxa cached before v1.20. Shown on dex cards (recorded genera; unknown ones only with "reveal names"), the genus page, scanner rows, wanted posters, both reveals, Three to find and the canvas tiles (title card, Wrapped, event card, My SPOODEX image). **`wowLine`**: the first sentence of the genus's Wikipedia summary (`S.info[id].s`, via iNat) that says more than "X is a genus of jumping spiders" and isn't taxonomic history (`WOW_SKIP`: who described it, synonyms, species counts, "as of 2017", "moved to"). Shown on the genus page and the new-genus reveal, not on grid cards (at card width only "X is a genus of…" fitted). `GENUS_NOTES` (genus id → a line the owner writes) replaces it, without the Wikipedia link |
 | reveal ceremony | `revealQueue(genera)` | New genera after a sync, one full-screen photo each |
 | first reveal (v1.20) | `onboard`, `REVEAL_ALL` 20, `REVEAL_TOP` 12, `revealGenera`, `flipCard`, `revEndHtml` | Replaces the old boot log and name chips. While importing: one plain line ("Read 400 of 1,543 records") and a bar (`importRecords`' `log(text, fraction)`). Then each genus flips from a blurred silhouette to the naturalist's own cover photo with its name and common name, ~0.4 s apart; **Skip** flips the rest at once. Over 20 genera it reveals the 12 rarest (`rarestFirst`) and says how many more. Ends with the level, the generated title, "N of the M genera on iNat in <scope>", **Open your SPOODEX** (`data-act=openDex`) and Three to find next. Revealed cards open the genus page. `render()` does nothing while `#app` is hidden, so background `softRender`s can't switch the chassis colours under the landing page |
 | three to find next (v1.20) | `OWNPH_TTL`, `NEXT_N`, `S.ownph`, `ownerPhotos(ids)`, `taxonPhoto(id)`, `nextThree`, `loadNextThree(redraw)`, `findCard`, `nextThreeHtml` | Three missing genera from `wantedList(homeCtx())`, recorded within 25 km of home first, then in season (`season` ≥ 0.4), then by the wanted score. Each card: photo, name, common name, where ("🔥 Recorded within 25 km of home in the last 30 days" / "📍 N records within 25 km of home" / "📚 N records in <region>") and when (peak months); a tap opens the case file. **Photos**: the owner's most-faved research-grade photo of the genus (`ownerPhotos`, one v2 call per ≤ 30 genera, cached 30 days in `ownph`; skipped when the viewer is the owner), else iNat's taxon photo only if `S.info[id].lc` is CC0/CC BY/CC BY-NC, else a "?" plate. Used by the reveal and Profile |
@@ -275,7 +276,13 @@ Scan-point keys: a 0.25° cell `"lat:lng"` (integers) or an arbitrary point `"pt
 - `GET /v1/observations/observers?taxon_id=…&place_id=…` → top observers.
 - `GET /v1/places/autocomplete?q=` → `location "lat,lng"`, `admin_level` (0 country, 10 state, 20 county/LGA, null for parks etc.),
   `bbox_area` (deg²). `GET /v1/places/{ids}`.
-- `GET /v1/taxa/{≤30 ids}` → `default_photo`, `wikipedia_summary`.
+- `GET /v1/taxa/{≤30 ids}` → `default_photo` (with `license_code`, `attribution`), `wikipedia_summary`, `preferred_common_name`.
+- **Common names** (checked 2026-10-06): `/v1/taxa/{ids}` returns `preferred_common_name` in English with no `locale` (identical to
+  `locale=en`; `preferred_place_id=6744` changed nothing for these genera; `locale=fr` gives null plus `english_common_name`). The key
+  is missing when there's none. `/v1/observations/taxonomy` never carries common names. v2 `/taxa?fields=preferred_common_name` and v2
+  observations `taxon:(preferred_common_name:!t)` work too (unused). Only 15 of the 80 Australian genera have one (e.g. *Maratus*
+  Peacock Spiders, *Portia* Dandy Spiders, *Myrmarachne* Ant-mimic Spiders, *Cosmophasis* Iridescent Jumping Spiders); *Phidippus*
+  has none at genus level. SPOODEX shows iNat's capitalisation as is.
 - Annotations: **Sex = 9** (Female 10, **Male 11**), **Life stage = 1** (Adult 2, Nymph 5, Juvenile 8), **Evidence = 22** (Egg 30, Molt 28, Construction 35).
 - Pagination: `per_page=200&order_by=id&order=asc&id_above=<last>` avoids the 10k page cap.
 - **Map grid** (checked 2026-10-06): `/v1/grid/{z}/{x}/{y}.grid.json?taxon_id=…&verifiable=true` returns a UTFGrid: `grid` (64 rows of
@@ -514,6 +521,11 @@ does the rest. Clear old caches with `caches.keys().then(ks => ks.forEach(k => c
   research-grade *Phidippus* (no records) or *Salticus* (one casual record), so those two use the most-faved CC BY-NC research-grade photo
   by someone else (currently Lily Fulton and Thomas Shahan), credited on the card. Swap either genus out if you'd rather show only yours.
   Your photos are all rights reserved; they're shown because you asked for them, credited "© themoojuice".
+- **One line per genus** (`wowLine`): of your 54 genera, 24 get a Wikipedia line, and only about 5 say something about the animal
+  (*Maratus* courtship colours, *Myrmarachne* waving its front legs as antennae, *Portia* eating other spiders, *Abracadabrella*
+  "appear to mimic flies", *Menemerus* "found worldwide in warmer climates"); most of the rest say where the genus lives, and 30 get
+  nothing. Hand-written lines would be better for kids: write them into `GENUS_NOTES` (genus id → one sentence) and they replace
+  Wikipedia's. They're quoted as written on Wikipedia, so a line can say "endemic" or "native"; tell me if you'd rather skip those.
 - The landing page doesn't guess where a stranger is, so it always shows this global set; their own area comes with the first start.
 
 **Awaiting the owner's decision (v1.14)**:
