@@ -2318,6 +2318,7 @@ function revealQueue(list) {
     ${it.isNew ? `<p>Your ${ordinal(g.discIndex)} Salticidae genus</p>` : ''}
     ${o ? `<p>Observed ${esc(o.d)}</p>` : `<p>First observed ${esc(g.first.d)}${g.first.pg ? ' · ' + esc(g.first.pg) : ''}</p>`}
     ${it.more ? `<p>…and ${plural(it.more, 'more mystery spood')} identified.</p>` : ''}
+    ${!list.length && it.isNew && !isGuest() ? '<p style="margin-top:14px"><button class="primary" data-act="dexImage">📤 Share my SPOODEX</button></p>' : ''}
     <p style="margin-top:18px;font-size:12px">${list.length ? `${list.length} more… ` : ''}tap to continue</p>`;
   el.addEventListener('click', () => { el.remove(); revealQueue(list); });
   document.body.appendChild(el);
@@ -4427,8 +4428,8 @@ async function cardPhotos(list) {
     return { g, open, any: open || await loadImg(url, false) };
   }));
 }
-function cardKit(cv) {
-  const W = 1080, H = 1350, x = cv.getContext('2d');
+function cardKit(cv, H = 1350) {
+  const W = 1080, x = cv.getContext('2d');
   cv.width = W; cv.height = H;
   const css = getComputedStyle(document.body), v = n => css.getPropertyValue(n).trim();
   const C = { bg:v('--bg'), panel:v('--panel'), panel2:v('--panel2'), ink:v('--ink'), muted:v('--muted'), accent:v('--accent'), line:v('--line'), dim:v('--dim') };
@@ -4537,6 +4538,35 @@ async function openTitleCard() {
   const tiles = await cardPhotos([...S.M.genera].filter(g => g.cover).sort(rarestFirst).slice(0, 6));
   const out = $('#cardOut'); if (!out) return;
   await mountCard(out, (cv, po) => drawTitleCard(cv, tiles, po), `spoodex-${S.login}`);
+}
+
+/* ---------------- my SPOODEX image: a grid of your own genus photos for sharing (Reddit-sized, square or portrait) ---------------- */
+// Only the naturalist's own photos, the level, "N / M genera on iNat in <country or state>" and the ?u= link: no places below
+// state level, no map, no squares, nothing about where.
+function drawDexImage(cv, tiles, square, photosOnly) {
+  const M = S.M, H = square ? 1080 : 1350, K = cardKit(cv, H), { C, text } = K, sc = scopeGenera();
+  const cols = 4, rows = square ? 2 : 3, tw = 215, gap = 20, rowH = tw + 84, top = 286;
+  K.frame(`SPOODEX · ${TIERS[M.tier].name.toUpperCase()}`);
+  text(who(), 80, 196, '600 64px Fraunces, Georgia, serif', C.ink, 'left', 640);
+  text(`Level ${M.G.size}`, 1000, 196, '600 64px Fraunces, Georgia, serif', C.accent, 'right', 300);
+  text(sc.ref && S.prefs.scope !== 'world' ? `${sc.found} / ${sc.inScope.length} genera on iNat in ${scopeLabel(S.prefs.scope)}`
+    : `${M.G.size} jumping spider ${M.G.size === 1 ? 'genus' : 'genera'}`, 80, 252, '600 44px Caveat, cursive', C.accent);
+  for (let i = 0; i < cols * rows; i++) K.tile(tiles[i], 80 + (i % cols) * (tw + gap), top + Math.floor(i / cols) * rowH, tw, tw, photosOnly);
+  const y = top + rows * rowH + 6;
+  K.rule(y);
+  K.footer(y + 44);
+  return K.tainted;
+}
+async function openDexImage(square = !!S.dexSq) {
+  S.dexSq = square;
+  track('dex-image');
+  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(640px,100%)"><button class="x" data-close="1">✕</button><div class="body">
+    <h2>My SPOODEX image</h2>
+    <div class="row" style="gap:6px;margin-bottom:10px">${[['0', 'Portrait'], ['1', 'Square']].map(([v, l]) => `<span class="chip ${String(+square) === v ? 'on' : ''}" data-act="dexImage" data-v="${v}" style="cursor:pointer">${l}</span>`).join('')}</div>
+    <div id="cardOut"><p class="muted">Developing the print…</p></div></div></div></div>`;
+  const tiles = await cardPhotos([...S.M.genera].filter(g => g.cover).sort(rarestFirst).slice(0, square ? 8 : 12));
+  const out = $('#cardOut'); if (!out || S.dexSq !== square) return;
+  await mountCard(out, (cv, po) => drawDexImage(cv, tiles, square, po), `spoodex-${S.login}${square ? '-square' : ''}`);
 }
 
 /* ---------------- wrapped: a year in spoods ---------------- */
@@ -5216,7 +5246,7 @@ function revEndHtml() {
     <h2>Level ${n}</h2><div class="hand">${esc(generatedTitle(M))}</div>
     <p>${n && sc.ref ? `<b>${n}</b> of the <b>${sc.inScope.length}</b> genera on iNat in ${esc(scopeLabel(S.prefs.scope))}.` : n ? '' : 'No public jumping spider records identified to genus yet.'}</p>
     ${M.leads.length ? `<p>❓ ${plural(mysteryCount(), 'mystery spood')} not yet identified to genus: they're waiting under SPOODEX › Mystery spoods.</p>` : ''}
-    <p class="row"><button class="primary big" data-act="openDex">Open your SPOODEX</button></p>
+    <p class="row"><button class="primary big" data-act="openDex">Open your SPOODEX</button>${n && !isGuest() ? '<button data-act="dexImage">📤 Share my SPOODEX</button>' : ''}</p>
     <div id="revNext">${nextThreeHtml()}</div>${tipsOnce()}</div>`;
 }
 // The photo checklist, shown once to anyone with fewer than 15 genera (the reveal, or Profile until "Got it")
@@ -5293,6 +5323,7 @@ document.addEventListener('click', e => {
   if (a === 'crewDel') setCrew(S.crew.logins.filter(l => l !== val));
   if (a === 'crewRefresh') { crewErr = null; loadCrew(true); }
   if (a === 'card') openTitleCard();
+  if (a === 'dexImage') openDexImage(val == null ? undefined : val === '1');
   if (a === 'wanted') { e.preventDefault(); openCase(+val); }
   if (a === 'wantedRetry') { wantedErr = null; wantedTs = 0; loadWanted(); }
   if (a === 'idaid' && !matchMedia('(pointer:coarse)').matches) {
