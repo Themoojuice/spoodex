@@ -211,7 +211,7 @@ a.lcard:hover { border-color:var(--accent); }
 .lcard .nm { padding:6px 8px 0; font:italic 600 15px var(--head); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .lcard .cn, .card .cn, .rcard .cn { font-size:11.5px; line-height:1.3; color:var(--ink); }
 .lcard .cn { padding:0 8px; }
-.lcard .cr { margin-top:auto; padding:3px 8px 6px; font-size:10px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.lcard .cr { margin-top:auto; padding:3px 8px 6px; font-size:10px; line-height:1.3; color:var(--muted); overflow-wrap:anywhere; }
 .landstarts { display:flex; flex-direction:column; gap:12px; max-width:560px; }
 .landstarts button.big { min-height:58px; font-size:17px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
 .landstarts button.big small { font-weight:400; font-size:13px; }
@@ -221,6 +221,7 @@ a.lcard:hover { border-color:var(--accent); }
 .herobtns button { padding:5px 10px; font-size:13px; }
 .spoods { display:grid; grid-auto-flow:column; grid-auto-columns:116px; gap:8px; overflow-x:auto; padding-bottom:6px; scrollbar-width:thin; }
 .spoods .lcard { cursor:pointer; }
+.spoods .lcard.myst { border-style:dashed; }
 .spoods .lcard .cn { padding-bottom:6px; }
 #impBox h2 { margin-bottom:4px; }
 #impLine { margin:0 0 10px; }
@@ -231,7 +232,7 @@ a.lcard:hover { border-color:var(--accent); }
 .rcard::after { content:'?'; position:absolute; top:0; left:0; right:0; aspect-ratio:1; display:grid; place-items:center; font:44px var(--head); color:var(--ink); opacity:.55; transition:opacity .3s; pointer-events:none; }
 .rcard .nm { padding:5px 7px 0; font:italic 600 14px var(--head); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .rcard .nm.q { font-style:normal; letter-spacing:.2em; color:var(--muted); }
-.rcard .cn { display:block; padding:0 7px 6px; min-height:1.4em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rcard .cn { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; margin:0 7px 6px; min-height:1.3em; overflow:hidden; }
 .rcard.on { cursor:pointer; border-color:var(--accent); animation:flip .6s ease-out; }
 .rcard.on .ph { filter:none; }
 .rcard.on::after { opacity:0; }
@@ -849,6 +850,7 @@ async function resolveBasePlaces(log = () => {}) {
   saveUser(); saveShared();
 }
 async function setBase(lat, lng, label) {
+  const first = !S.u.base;
   S.u.base = { lat:+(+lat).toFixed(2), lng:+(+lng).toFixed(2), label };
   saveUser();
   try {
@@ -857,7 +859,8 @@ async function setBase(lat, lng, label) {
     await loadRefs();
     S.M = buildModel();
     toast(`Home base set: ${label}${S.u.base.near ? ' (near ' + S.u.base.near + ')' : ''}`);
-    S.tab = 'map'; render();
+    // a guest or new player's first base: Profile's three to find (photos) before the map and its weather
+    S.tab = first && !S.M.G.size ? 'profile' : 'map'; render();
     runScan(S.M.homeCell.lat, S.M.homeCell.lng);
   } catch (e) { toast(e.message); }
 }
@@ -1264,7 +1267,7 @@ function tabNews() {
     S.u.tabsSeen = [...S.u.tabsSeen, ...fresh];
     S.u.tabNew = [...new Set([...(S.u.tabNew || []), ...fresh.filter(k => k !== S.tab)])];
     saveUser();
-    toast(`New tab unlocked: ${fresh.map(k => TABS.find(t => t.k === k).label).join(', ')}`);
+    toast(`New tab${fresh.length === 1 ? '' : 's'} unlocked: ${fresh.map(k => TABS.find(t => t.k === k).label).join(', ')}`);
   }
   if (S.u.tabNew?.includes(S.tab)) { S.u.tabNew = S.u.tabNew.filter(k => k !== S.tab); saveUser(); }
 }
@@ -1333,10 +1336,15 @@ function viewProfile() {
       ${sc.ref && sc.inScope.length ? `<div class="row" style="gap:8px;margin-top:6px"><span><b>${sc.found} / ${sc.inScope.length}</b> genera on iNat in ${esc(scopeLabel(S.prefs.scope))}</span>${bar(sc.found, sc.inScope.length)}</div>` : ''}
       ${isGuest() || !n ? '' : `<p class="row herobtns"><button data-act="dexImage">📤 My SPOODEX image</button><button data-act="card">🪪 Title card</button>${M.fieldDays.length ? `<button data-act="wrapped">🎁 ${esc(wrappedYears()[0])} in spoods</button>` : ''}</p>`}
     </div>`;
-  const spoods = n ? `<div class="panel" style="margin-top:16px"><h2>Your spoods <span class="small muted">newest first</span></h2>
-      <div class="spoods">${[...M.genera].filter(g => g.cover).sort((a, b) => (b.first.d || '').localeCompare(a.first.d || '') || b.first.id - a.first.id).map(g =>
-        `<div class="lcard" data-genus="${g.id}" title="Open the card"><span class="ph" style="background-image:url('${esc(photoSize(g.cover, 'small'))}')"></span>
-          <span class="nm"><i>${esc(g.name)}</i></span>${cnOf(g.id) ? `<span class="cn">${esc(cnOf(g.id))}</span>` : ''}</div>`).join('')}</div></div>` : '';
+  // your genera, newest first, then a few mystery spoods (records not yet identified to genus) with their photos
+  const myst = M.leads.flatMap(l => l.obs).filter(o => o.ph.length).sort((a, b) => (b.d || '').localeCompare(a.d || '') || b.id - a.id).slice(0, 6);
+  const spoodCards = [...M.genera].filter(g => g.cover).sort((a, b) => (b.first.d || '').localeCompare(a.first.d || '') || b.first.id - a.first.id).map(g =>
+      `<div class="lcard" data-genus="${g.id}" title="Open the card"><span class="ph" style="background-image:url('${esc(photoSize(g.cover, 'small'))}')"></span>
+        <span class="nm"><i>${esc(g.name)}</i></span>${cnOf(g.id) ? `<span class="cn">${esc(cnOf(g.id))}</span>` : ''}</div>`).join('')
+    + myst.map(o => `<div class="lcard myst" data-act="needsid" title="Mystery spoods: get them identified to genus"><span class="ph" style="background-image:url('${esc(photoSize(o.ph[0], 'small'))}')"></span>
+        <span class="nm" style="font-style:normal;white-space:normal">❓ Mystery spood</span><span class="cn">${esc(o.t.n || '')}</span></div>`).join('');
+  const spoods = spoodCards ? `<div class="panel" style="margin-top:16px"><h2>Your spoods${n ? ' <span class="small muted">newest first</span>' : ''}</h2>
+      <div class="spoods">${spoodCards}</div></div>` : '';
   const three = nextThreeHtml();
   const finds = homeCtx().pid ? (three ? `<div class="panel" style="margin-top:16px">${three}</div>` : '')
     : `<div class="panel" style="margin-top:16px"><h3>Three to find next</h3><p>Set a home base and SPOODEX picks three jumping spiders recorded near you that you haven't found.</p>
@@ -1377,7 +1385,7 @@ function viewProfile() {
         ${rare.map(x => `<div><a href="#" data-genus="${x.g.id}"><i>${esc(x.g.name)}</i></a> <span class="small muted">${fmt(x.r.count)} record${x.r.count === 1 ? '' : 's'}</span></div>`).join('')}` : ''}
     </div>` : '';
   const news = newsHtml(), tips = tipsOnce(true);
-  return `${hero}${n ? spoods + finds : finds + starter}${news ? `<div style="margin-top:16px">${news}</div>` : ''}
+  return `${hero}${spoods}${finds}${n ? '' : starter}${news ? `<div style="margin-top:16px">${news}</div>` : ''}
   ${tips ? `<div style="margin-top:16px">${tips}</div>` : ''}
   ${kv.length || n ? `<div class="grid2">
     ${kv.length ? `<div class="panel"><h2>Ledger</h2><div class="kv">${kv.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</div></div>` : ''}
@@ -2320,7 +2328,7 @@ function revealQueue(list) {
     <div class="k">${o ? 'MYSTERY SPOOD IDENTIFIED' : 'NEW GENUS RECORDED'}</div><h2>${esc(g.name.toUpperCase())}</h2>${cnOf(g.id) ? `<p class="rcn">${esc(cnOf(g.id))}</p>` : ''}
     ${wowLine(g.id) ? `<p class="rwow">${esc(wowLine(g.id))}</p>` : ''}
     ${o ? `<p class="rcn">Your mystery spood is ${esc(aGenus(g.name))}!${it.isNew ? ' Card unlocked.' : ''}</p>` : ''}
-    ${it.isNew ? `<p>Your ${ordinal(g.discIndex)} Salticidae genus</p>` : ''}
+    ${it.isNew ? `<p>Your ${ordinal(g.discIndex)} jumping spider genus</p>` : ''}
     ${o ? `<p>Observed ${esc(o.d)}</p>` : `<p>First observed ${esc(g.first.d)}${g.first.pg ? ' · ' + esc(g.first.pg) : ''}</p>`}
     ${it.more ? `<p>…and ${plural(it.more, 'more mystery spood')} identified.</p>` : ''}
     ${!list.length && it.isNew && !isGuest() ? '<p style="margin-top:14px"><button class="primary" data-act="dexImage">📤 Share my SPOODEX</button></p>' : ''}
@@ -3471,7 +3479,7 @@ function evFormHtml() {
   const chip = (act, v, on, label) => `<span class="chip ${on ? 'on' : ''}" data-act="${act}" data-v="${v}" style="cursor:pointer">${label}</span>`;
   const presets = m === 'duel' ? [['d1', '1 day'], ['d2', '2 days'], ['d3', '3 days']] : m === 'dare' ? [['weekend', 'By Sunday'], ['week', '7 days'], ['month', 'End of month']] : [['weekend', 'This weekend'], ['week', 'Next 7 days'], ['month', 'This month'], ['nextmonth', 'Next month']];
   const ref = D.p && S.ref['p' + D.p];
-  const scopeName = D.p ? esc(D.pn) : esc(S.places[S.M.home.state || S.M.home.country]?.n || 'your region');
+  const scopeName = D.p ? esc(D.pn) : m === 'blitz' && D.open ? 'the world' : esc(S.places[S.M.home.state || S.M.home.country]?.n || 'your region');
   const opts = {
     blitz:`<label class="small"><input type="checkbox" data-evf="open" ${D.open ? 'checked' : ''}> Open to anyone: the ${EV_OPEN_N} most active salticid observers ${D.p ? 'in the place' : 'anywhere (or pick a place)'} are the players</label>
       ${D.p ? ref ? `<details style="margin-top:6px"><summary class="small">🎯 Target genera (score ×${EV_POINTS.target}): ${D.t.length ? D.t.map(gName).join(', ') : 'none'}</summary>
@@ -4498,7 +4506,7 @@ function cardKit(cv, H = 1350) {
     try { x.letterSpacing = '0px'; } catch {}
   };
   // A specimen tile: photo (or name plate), rarity stars, italic genus name underneath
-  K.tile = (t, cx, cy, tw, th, photosOnly) => {
+  K.tile = (t, cx, cy, tw, th, photosOnly, cnLines = 1) => {
     x.fillStyle = C.panel2; x.fillRect(cx, cy, tw, th);
     const im = t && (photosOnly ? t.open : t.any);
     if (im) {
@@ -4515,9 +4523,22 @@ function cardKit(cv, H = 1350) {
         x.fillStyle = tr.c; x.fillRect(cx + tw - w - 10, cy + 10, w, 32); x.strokeStyle = '#2b2419'; x.lineWidth = 2; x.strokeRect(cx + tw - w - 10, cy + 10, w, 32);
         text(tr.n.toUpperCase(), cx + tw - 20, cy + 33, '600 20px "IBM Plex Mono", monospace', tr.lv === 5 || tr.lv === 4 ? '#fff' : '#2b2419', 'right'); }
       x.shadowBlur = 0;
-      text(t.g.name, cx + tw / 2, cy + th + 44, 'italic 400 34px Fraunces, Georgia, serif', C.ink, 'center', tw - 10);
-      if (cnOf(t.g.id)) text(cnOf(t.g.id), cx + tw / 2, cy + th + 70, '400 20px "IBM Plex Mono", monospace', C.muted, 'center', tw - 10);
+      let fs = 34;   // a long genus name shrinks to fit rather than losing letters
+      for (x.font = `italic 400 ${fs}px Fraunces, Georgia, serif`; fs > 24 && x.measureText(t.g.name).width > tw - 10; ) x.font = `italic 400 ${--fs}px Fraunces, Georgia, serif`;
+      text(t.g.name, cx + tw / 2, cy + th + 44, x.font, C.ink, 'center', tw - 10);
+      if (cnOf(t.g.id)) K.lines(cnOf(t.g.id), cx + tw / 2, cy + th + 70, '400 20px Fraunces, Georgia, serif', C.muted, tw - 10, cnLines, 21);
     } else text('not yet found', cx + tw / 2, cy + th + 42, '400 22px "IBM Plex Mono", monospace', C.muted, 'center', tw);
+  };
+  // Centred text on up to n lines, split between words where the longer line is shortest; still too long ends in …
+  K.lines = (t, px, py, font, color, max, n, lh) => {
+    x.font = font;
+    const w = s => x.measureText(s).width, words = String(t).split(' ');
+    let ls = [String(t)];
+    if (n > 1 && w(ls[0]) > max && words.length > 1) {
+      const cuts = words.slice(1).map((_, k) => [words.slice(0, k + 1).join(' '), words.slice(k + 1).join(' ')]);
+      ls = cuts.reduce((a, b) => Math.max(w(b[0]), w(b[1])) < Math.max(w(a[0]), w(a[1])) ? b : a);
+    }
+    ls.forEach((s, i) => text(s, px, py + i * lh, font, color, 'center', max));
   };
   K.stats = (stats, y) => {
     const cw = 920 / stats.length;
@@ -4570,9 +4591,11 @@ async function cardExport(share) {
 const rarestFirst = (a,b) => starsFor(b.id) - starsFor(a.id) || (refCount(a.id) ?? -1) - (refCount(b.id) ?? -1) || b.obs.length - a.obs.length;
 
 /* ---------------- title card: a shareable picture of your collection ---------------- */
+// "SPOODEX · FIELD NOTEBOOK", but "SPOODEX MK II" rather than "SPOODEX · SPOODEX MK II"
+const tierKicker = M => { const n = TIERS[M.tier].name; return (/^SPOODEX/i.test(n) ? n : 'SPOODEX · ' + n).toUpperCase(); };
 function drawTitleCard(cv, tiles, photosOnly) {
   const M = S.M, K = cardKit(cv), { C, text } = K;
-  K.frame(`SPOODEX · ${TIERS[M.tier].name.toUpperCase()}`);
+  K.frame(tierKicker(M));
   text(who(), 80, 200, '600 72px Fraunces, Georgia, serif', C.ink);
   text(generatedTitle(M), 80, 260, '600 48px Caveat, cursive', C.accent);
   for (let i = 0; i < 6; i++) K.tile(tiles[i], 80 + (i % 3) * 313, 300 + Math.floor(i / 3) * 371, 293, 293, photosOnly);
@@ -4596,16 +4619,17 @@ async function openTitleCard() {
 // state level, no map, no squares, nothing about where.
 function drawDexImage(cv, tiles, square, photosOnly) {
   const M = S.M, H = square ? 1080 : 1350, K = cardKit(cv, H), { C, text } = K, sc = scopeGenera();
-  const cols = 4, rows = square ? 2 : 3, tw = 215, gap = 20, rowH = tw + 84, top = 286;
-  K.frame(`SPOODEX · ${TIERS[M.tier].name.toUpperCase()}`);
-  text(who(), 80, 196, '600 64px Fraunces, Georgia, serif', C.ink, 'left', 640);
-  text(`Level ${M.G.size}`, 1000, 196, '600 64px Fraunces, Georgia, serif', C.accent, 'right', 300);
+  // room under each photo for the name and a common name on up to two lines
+  const cols = 4, rows = square ? 2 : 3, tw = 200, gap = (920 - cols * tw) / (cols - 1), rowH = tw + 104, top = 272;
+  K.frame(tierKicker(M));
+  text(who(), 80, 190, '600 64px Fraunces, Georgia, serif', C.ink, 'left', 640);
+  text(`Level ${M.G.size}`, 1000, 190, '600 64px Fraunces, Georgia, serif', C.accent, 'right', 300);
   text(sc.ref && S.prefs.scope !== 'world' ? `${sc.found} / ${sc.inScope.length} genera on iNat in ${scopeLabel(S.prefs.scope)}`
-    : `${M.G.size} jumping spider ${M.G.size === 1 ? 'genus' : 'genera'}`, 80, 252, '600 44px Caveat, cursive', C.accent);
-  for (let i = 0; i < cols * rows; i++) K.tile(tiles[i], 80 + (i % cols) * (tw + gap), top + Math.floor(i / cols) * rowH, tw, tw, photosOnly);
+    : `${M.G.size} jumping spider ${M.G.size === 1 ? 'genus' : 'genera'}`, 80, 244, '600 44px Caveat, cursive', C.accent);
+  for (let i = 0; i < cols * rows; i++) K.tile(tiles[i], 80 + (i % cols) * (tw + gap), top + Math.floor(i / cols) * rowH, tw, tw, photosOnly, 2);
   const y = top + rows * rowH + 6;
   K.rule(y);
-  K.footer(y + 44);
+  K.footer(y + 40);
   return K.tainted;
 }
 async function openDexImage(square = !!S.dexSq) {
@@ -5267,6 +5291,8 @@ async function revealGenera() {
   $('#impLine').textContent = 'Developing the photos…';
   await ensureInfo(list.map(g => g.id));   // common names
   revSkip = false;
+  // the naturalist's own photos take over from the landing strip
+  $('#landPhotos').classList.add('hidden'); $('.landhead .pitch').classList.add('hidden'); scrollTo(0, 0);
   $('#impBox').classList.add('hidden'); $('#revBox').classList.remove('hidden');
   $('#revSkip').classList.toggle('hidden', list.length < 2);
   $('#revHead').textContent = !all.length ? 'No genera yet' : big ? `Your ${list.length} rarest of ${all.length} genera` : `${all.length} ${all.length === 1 ? 'genus' : 'genera'} found`;
@@ -5288,6 +5314,7 @@ function flipCard(el) {
   const id = +el.dataset.g;
   el.classList.add('on'); el.dataset.genus = id;
   const nm = el.querySelector('.nm'); nm.classList.remove('q'); nm.innerHTML = `<i>${esc(S.nodes[id]?.n || '?')}</i>`;
+  for (let px = 14; nm.scrollWidth > nm.clientWidth && px > 10; ) nm.style.fontSize = --px + 'px';   // long names shrink rather than lose letters
   el.querySelector('.cn').textContent = cnOf(id);
 }
 function revEndHtml() {
@@ -5296,7 +5323,7 @@ function revEndHtml() {
     <div class="small muted">${esc(who().toUpperCase())}'S SPOODEX</div>
     <h2>Level ${n}</h2><div class="hand">${esc(generatedTitle(M))}</div>
     <p>${n && sc.ref ? `<b>${n}</b> of the <b>${sc.inScope.length}</b> genera on iNat in ${esc(scopeLabel(S.prefs.scope))}.` : n ? '' : 'No public jumping spider records identified to genus yet.'}</p>
-    ${M.leads.length ? `<p>❓ ${plural(mysteryCount(), 'mystery spood')} not yet identified to genus: they're waiting under SPOODEX › Mystery spoods.</p>` : ''}
+    ${M.leads.length ? `<p>❓ ${plural(mysteryCount(), 'mystery spood')} not yet identified to genus. <a href="#" data-act="needsid">See them →</a></p>` : ''}
     <p class="row"><button class="primary big" data-act="openDex">Open your SPOODEX</button>${n && !isGuest() ? '<button data-act="dexImage">📤 Share my SPOODEX</button>' : ''}</p>
     <div id="revNext">${nextThreeHtml()}</div>${tipsOnce()}</div>`;
 }
@@ -5309,7 +5336,7 @@ function tipsOnce(dismiss = false) {
 function enterApp(tab) {
   $('#onboard').classList.add('hidden'); $('#app').classList.remove('hidden');
   markVisit();
-  S.tab = tab || (S.M.G.size ? 'profile' : 'map');
+  S.tab = tab || (S.M.G.size || S.u.base ? 'profile' : 'map');
   updateUrl(); render();
   if (S.pendingEv) { const c = S.pendingEv; S.pendingEv = null; openEventCode(c, true); }
   else if (S.pendingVs) { const v = S.pendingVs; S.pendingVs = null; S.tab = 'compare'; render(); loadCompare(v); }
@@ -5319,7 +5346,7 @@ function startGuest() {
   track('guest-mode');
   loadUser(GUEST);
   S.M = buildModel();
-  enterApp('map');
+  enterApp();
   if (S.u.base) loadRefs().then(() => { S.M = buildModel(); loadNews(); }).catch(() => {});
 }
 function toast(msg) {
@@ -5381,7 +5408,7 @@ document.addEventListener('click', e => {
     const w = window.open(ID_AID, 'spoodex-idaid', 'popup,width=1280,height=880');
     if (w) { e.preventDefault(); w.focus(); }
   }
-  if (a === 'needsid') { e.preventDefault(); S.prefs.layer = 'needsid'; savePrefs(); S.tab = 'dex'; render(); }
+  if (a === 'needsid') { e.preventDefault(); S.prefs.layer = 'needsid'; savePrefs(); if ($('#app').classList.contains('hidden')) enterApp('dex'); else { S.tab = 'dex'; render(); } }
   if (a === 'leadFilter') { S.prefs.leadFilter = val === 'all' ? null : val; savePrefs(); render(); }
   if (a === 'sets') { e.preventDefault(); S.prefs.layer = 'sets'; savePrefs(); S.tab = 'dex'; render(); }
   if (a === 'wview') { S.prefs.wantedView = val; savePrefs(); render(); }
@@ -5539,6 +5566,8 @@ const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladd
   registerSW(); netState();
   await store.init();
   for (const k of PERSISTED) S[k] = store.get(k, S[k]);
+  // a read cut short by closing the page is saved as still queued, which would block every later refresh
+  for (const E of Object.values(S.events)) delete E.queued;
   const q = new URLSearchParams(location.search);
   const u = (q.get('u') || '').trim().replace(/^@/, '');
   S.pendingVs = (q.get('vs') || '').trim() || null;
