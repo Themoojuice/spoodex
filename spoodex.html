@@ -2328,7 +2328,7 @@ function revealQueue(list) {
     <div class="k">${o ? 'MYSTERY SPOOD IDENTIFIED' : 'NEW GENUS RECORDED'}</div><h2>${esc(g.name.toUpperCase())}</h2>${cnOf(g.id) ? `<p class="rcn">${esc(cnOf(g.id))}</p>` : ''}
     ${wowLine(g.id) ? `<p class="rwow">${esc(wowLine(g.id))}</p>` : ''}
     ${o ? `<p class="rcn">Your mystery spood is ${esc(aGenus(g.name))}!${it.isNew ? ' Card unlocked.' : ''}</p>` : ''}
-    ${it.isNew ? `<p>Your ${ordinal(g.discIndex)} jumping spider genus</p>` : ''}
+    ${it.isNew && !o ? `<p>Your ${ordinal(g.discIndex)} jumping spider genus</p>` : ''}
     ${o ? `<p>Observed ${esc(o.d)}</p>` : `<p>First observed ${esc(g.first.d)}${g.first.pg ? ' · ' + esc(g.first.pg) : ''}</p>`}
     ${it.more ? `<p>…and ${plural(it.more, 'more mystery spood')} identified.</p>` : ''}
     ${!list.length && it.isNew && !isGuest() ? '<p style="margin-top:14px"><button class="primary" data-act="dexImage">📤 Share my SPOODEX</button></p>' : ''}
