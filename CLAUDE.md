@@ -15,6 +15,7 @@ Quick rules:
   no exact coordinates, and never put locations in share links (event links may carry an iNat place id, never coordinates; HANDOVER §9);
   field mode's live position never leaves memory.
   Propose hand-picked taxon lists to the owner rather than asserting them.
+  Other people's photos only under CC0 / CC BY / CC BY-NC, credited and linked; prefer the owner's own (`themoojuice`).
 - Test via the `spoodex` preview server (port 8765; recreate `.claude/launch.json` from HANDOVER.md §2 if missing) with
   `?u=themoojuice` and `&vs=laz`. Check phone width (375 px) too.
 - Ship: bump `VERSION` in `sw.js`, `cp index.html spoodex.html sw.js manifest.webmanifest icon-192.png icon-512.png site/`, then `git commit`,

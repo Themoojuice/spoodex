@@ -114,6 +114,7 @@ table.ladder td.acts button { padding:3px 8px; font-size:12px; }
 table.ladder tr.me td { background:var(--panel2); font-weight:600; }
 table.ladder tr.me td:first-child { box-shadow:inset 4px 0 0 var(--accent); }
 table.ladder tr.pending td { color:var(--muted); }
+.avatar.sq { border-radius:4px; width:32px; height:32px; }
 .avatar { width:28px; height:28px; border-radius:50%; background:var(--panel2) center/cover; display:inline-block; vertical-align:middle; margin-right:8px; border:1px solid var(--line); }
 table.matrix td.have, table.matrix th.have { text-align:center; color:var(--lit); white-space:nowrap; }
 table.matrix tr.solo td { background:var(--panel2); }
@@ -165,6 +166,13 @@ table.cal tr[data-act]:hover td { background:var(--panel2); }
 details.set > summary, .set details > summary { cursor:pointer; }
 .card.bounty, .card.lead { color:inherit; text-decoration:none; }
 .card.lead .nm { font-style:normal; }
+.card.lead .ph { display:block; }
+.card.lead .few { color:var(--accent); }
+.lacts { display:flex; flex-wrap:wrap; gap:4px 10px; margin-top:4px; font-size:12px; font-weight:600; }
+details.tips { background:var(--panel2); border:1px solid var(--line); border-radius:var(--radius); padding:8px 12px; margin-top:8px; }
+details.tips summary { cursor:pointer; }
+.tiplist { margin:8px 0 2px; padding-left:0; list-style:none; display:grid; gap:4px; }
+.tiplist span { display:inline-block; width:1.6em; text-align:center; }
 .card .nophoto { position:absolute; inset:0; display:grid; place-items:center; font-size:12px; color:var(--muted); }
 .card.bounty .badge { z-index:1; }
 .news-panel { border-left:4px solid var(--accent); }
@@ -183,17 +191,62 @@ header.top .wrap { padding-top:10px; padding-bottom:0; }
 nav.tabs { display:flex; gap:4px; margin-top:8px; overflow-x:auto; scrollbar-width:none; }
 nav.tabs button { border-bottom:none; border-radius:var(--radius) var(--radius) 0 0; background:transparent; white-space:nowrap; }
 nav.tabs button.on { background:var(--panel); border-color:var(--line); font-weight:600; }
-nav.tabs button .lock { opacity:.6; font-size:11px; }
+.lvl .lbs { display:none; }
 main { padding-top:18px; }
 
 /* ---------- Onboarding ---------- */
-#onboard { min-height:100vh; display:grid; place-items:center; padding:16px; }
-#onboard .box { width:min(620px,100%); }
-#onboard h1 { font-size:44px; }
-.term { background:#f9f3e3; color:#3a2f22; border:1px solid var(--line); font:12px/1.6 'Special Elite', 'Courier New', monospace; border-radius:6px; padding:12px; height:220px; overflow:auto; margin-top:14px; white-space:pre-wrap; }
-.cascade { display:flex; flex-wrap:wrap; gap:6px; margin-top:14px; min-height:40px; }
-.cascade span { font-family:var(--head); padding:3px 8px; border:1px solid var(--line); background:var(--panel); border-radius:var(--radius); animation:pop .4s ease-out both; }
-@keyframes pop { from { transform:scale(.3) rotate(-8deg); opacity:0; } to { transform:none; opacity:1; } }
+#onboard { min-height:100vh; padding:20px 16px 40px; }
+#onboard .land, #onboard .box { max-width:920px; margin:0 auto; }
+#onboard .land { display:flex; flex-direction:column; gap:16px; }
+#onboard .box { margin-top:16px; }
+#onboard h1 { font-size:44px; margin:0; }
+.landhead .pitch { font:500 21px/1.35 Fraunces, Georgia, serif; margin:4px 0 0; max-width:34em; }
+.landstrip { display:grid; grid-auto-flow:column; grid-auto-columns:136px; gap:10px; overflow-x:auto; scroll-snap-type:x mandatory; margin:0 -16px; padding:0 16px 6px; scrollbar-width:thin; }
+@media (min-width:760px) { .landstrip { grid-auto-flow:row; grid-template-columns:repeat(6, minmax(0, 1fr)); overflow:visible; margin:0; padding:0; } }
+.lcard { scroll-snap-align:start; display:flex; flex-direction:column; min-width:0; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; color:inherit; text-decoration:none; }
+a.lcard:hover { border-color:var(--accent); }
+.lcard .ph { display:block; aspect-ratio:1; background:var(--panel2) center/cover no-repeat; }
+.lcard.blank .ph { animation:pulse 1.4s ease-in-out infinite alternate; }
+@keyframes pulse { to { opacity:.55; } }
+.lcard .nm { padding:6px 8px 0; font:italic 600 15px var(--head); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.lcard .cn, .card .cn, .rcard .cn { font-size:11.5px; line-height:1.3; color:var(--ink); }
+.lcard .cn { padding:0 8px; }
+.lcard .cr { margin-top:auto; padding:3px 8px 6px; font-size:10px; line-height:1.3; color:var(--muted); overflow-wrap:anywhere; }
+.landstarts { display:flex; flex-direction:column; gap:12px; max-width:560px; }
+.landstarts button.big { min-height:58px; font-size:17px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
+.landstarts button.big small { font-weight:400; font-size:13px; }
+#loginForm label { display:block; font-weight:600; margin-bottom:8px; }
+.profhero h1 { font-size:36px; margin:4px 0 0; }
+.herobtns { gap:6px; margin:10px 0 0; }
+.herobtns button { padding:5px 10px; font-size:13px; }
+.spoods { display:grid; grid-auto-flow:column; grid-auto-columns:116px; gap:8px; overflow-x:auto; padding-bottom:6px; scrollbar-width:thin; }
+.spoods .lcard { cursor:pointer; }
+.spoods .lcard.myst { border-style:dashed; }
+.spoods .lcard .cn { padding-bottom:6px; }
+#impBox h2 { margin-bottom:4px; }
+#impLine { margin:0 0 10px; }
+.revgrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:10px; margin:12px 0 8px; perspective:900px; }
+@media (max-width:600px) { .revgrid { grid-template-columns:repeat(3, minmax(0, 1fr)); gap:6px; } }
+.rcard { position:relative; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; min-width:0; }
+.rcard .ph { display:block; aspect-ratio:1; background:var(--panel2) center/cover no-repeat; filter:grayscale(1) sepia(.6) blur(7px) brightness(.6) contrast(1.2); transition:filter .8s ease-out; }
+.rcard::after { content:'?'; position:absolute; top:0; left:0; right:0; aspect-ratio:1; display:grid; place-items:center; font:44px var(--head); color:var(--ink); opacity:.55; transition:opacity .3s; pointer-events:none; }
+.rcard .nm { padding:5px 7px 0; font:italic 600 14px var(--head); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rcard .nm.q { font-style:normal; letter-spacing:.2em; color:var(--muted); }
+.rcard .cn { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; margin:0 7px 6px; min-height:1.3em; overflow:hidden; }
+.rcard.on { cursor:pointer; border-color:var(--accent); animation:flip .6s ease-out; }
+.rcard.on .ph { filter:none; }
+.rcard.on::after { opacity:0; }
+@keyframes flip { from { transform:rotateY(90deg); } to { transform:none; } }
+.revend h2 { font-size:30px; margin:2px 0 0; }
+.finds { display:grid; grid-template-columns:repeat(3, minmax(0, 280px)); gap:12px; }
+.fcard { display:flex; flex-direction:column; background:var(--panel2); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; cursor:pointer; color:inherit; min-width:0; }
+.fcard:hover { border-color:var(--accent); }
+.fcard .ph { aspect-ratio:4/3; background:var(--dim) center/cover no-repeat; }
+.fcard .ph.none { display:grid; place-items:center; font:40px var(--head); color:var(--muted); }
+.fcard .meta { padding:8px 10px 10px; display:flex; flex-direction:column; gap:2px; }
+.fcard .nm { font:italic 600 18px var(--head); }
+.fcard .cr { font-size:10px; color:var(--muted); margin-top:2px; }
+@media (max-width:600px) { .finds { grid-template-columns:1fr; gap:8px; } .fcard { flex-direction:row; } .fcard .ph { width:104px; flex:none; aspect-ratio:1; } }
 
 /* ---------- Dex grid ---------- */
 .dexgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
@@ -203,6 +256,14 @@ main { padding-top:18px; }
 .card.unknown .ph, .modal .hero.unknown { filter:grayscale(1) sepia(.6) blur(7px) brightness(.6) contrast(1.2); }
 .card.unknown::after { content:'?'; position:absolute; top:0; left:0; right:0; aspect-ratio:1; display:grid; place-items:center; font:52px var(--head); color:var(--ink); opacity:.55; pointer-events:none; }
 .card .meta { padding:6px 8px 8px; }
+.card .cn { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cnbig { font:400 19px Fraunces, Georgia, serif; margin:-2px 0 2px; }
+.gwow { font:italic 400 16px/1.45 Fraunces, Georgia, serif; margin:8px 0 2px; max-width:46em; }
+.noterow { display:grid; grid-template-columns:72px minmax(0, 1fr); gap:10px; padding:10px 0; border-top:1px solid var(--line); }
+.noterow .ph { width:72px; aspect-ratio:1; border-radius:var(--radius); background:var(--panel2) center/cover no-repeat; }
+.noterow textarea { width:100%; margin-top:4px; font:15px/1.4 Fraunces, Georgia, serif; padding:6px 8px; resize:vertical; }
+.noterow.done textarea { border-color:var(--lit); }
+.scrow .cn { font-size:12px; color:var(--ink); }
 .card .num { font-size:11px; color:var(--muted); }
 .card .nm { font-family:var(--head); font-size:15px; font-style:italic; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .card.unknown .nm { font-style:normal; letter-spacing:.2em; color:var(--muted); }
@@ -232,6 +293,8 @@ main { padding-top:18px; }
 #reveal .k { letter-spacing:.35em; font-size:12px; color:#d9b56a; margin-top:18px; animation:fadein 1s .8s both; }
 #reveal h2 { font-family:'Fraunces', Georgia, serif; font-size:48px; color:#f6eedb; margin:6px 0; font-style:italic; animation:fadein 1s 1.1s both; text-shadow:none; }
 #reveal p { color:#cdbd9c; margin:2px; animation:fadein 1s 1.4s both; }
+#reveal .rcn { color:#f3e9d2; font:400 20px Fraunces, Georgia, serif; }
+#reveal .rwow { max-width:30em; font:italic 400 15px/1.45 Fraunces, Georgia, serif; margin:8px auto 4px; }
 @keyframes zoom { from { transform:scale(.2); filter:brightness(0); } 60% { filter:brightness(0); } to { transform:none; filter:none; } }
 @keyframes fadein { from { opacity:0; } to { opacity:1; } }
 
@@ -325,9 +388,6 @@ details > summary.scsec { cursor:pointer; }
 .quest h3 { margin-bottom:2px; }
 .reward { font-size:12px; color:var(--lit); }
 
-/* ---------- Locked module plate ---------- */
-.plate { text-align:center; padding:40px 16px; border:2px dashed var(--line); border-radius:var(--radius); }
-.plate h2 { font-size:22px; }
 
 /* ---------- Spooding weather & field mode ---------- */
 .wxpanel { margin-bottom:16px; }
@@ -411,6 +471,9 @@ body.fieldon { overflow:hidden; }
 .blines line { stroke:var(--accent); stroke-width:3; stroke-linecap:round; opacity:.85; stroke-dasharray:160; stroke-dashoffset:160; animation:sweep .9s ease-out .2s forwards; }
 @keyframes sweep { to { stroke-dashoffset:0; } }
 .evturf { height:420px; border-radius:var(--radius); border:1px solid var(--line); isolation:isolate; }
+.posttxt { width:100%; font:13px/1.5 var(--body); padding:8px 10px; resize:vertical; }
+.lcard .pts { padding:2px 8px 0; font-size:12px; }
+.lcard .ph.noph { display:grid; place-items:center; font:40px var(--head); color:var(--muted); }
 .swatch { display:inline-block; width:14px; height:14px; border-radius:3px; flex:none; }
 #reveal .podium { display:flex; align-items:flex-end; justify-content:center; gap:10px; margin:18px 0 6px; }
 #reveal .podium > div { width:min(110px, 28vw); text-align:center; animation:fadein 1s 1.2s both; }
@@ -419,11 +482,20 @@ body.fieldon { overflow:hidden; }
 .trophies { display:flex; flex-wrap:wrap; gap:8px; }
 .trophy { border:1px solid #b08a45; background:var(--panel2); border-radius:var(--radius); padding:6px 10px; font-size:13px; box-shadow:inset 0 0 0 1px #e2bf7a; }
 @media (max-width:820px) { .evturf { height:320px; } }
-@media (max-width:600px) { table.evboard td, table.evboard th { padding:5px 4px; } table.evboard td.who { white-space:normal; overflow-wrap:break-word; font-size:13px; } table.evboard td .small { display:block; } }
+@media (max-width:600px) { table.evboard .avatar.sq { width:24px; height:24px; margin-right:4px; } table.evboard td, table.evboard th { padding:5px 4px; } table.evboard td.who { white-space:normal; overflow-wrap:anywhere; font-size:13px; } table.evboard td .small { display:block; } }
 
 @media (max-width:600px) {
-  .brand h1 { font-size:20px; }
-  .lvl { margin-left:0; }
+  /* phones: one line for the name, level and icon buttons, then the tabs as one sideways scroller */
+  header.top .wrap { padding-top:6px; }
+  .brand { flex-wrap:nowrap; align-items:center; gap:6px; }
+  .brand h1 { font-size:17px; flex:1 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .brand .sub, #whoami, .lvl .lbl { display:none; }
+  .lvl { margin-left:auto; gap:4px; flex-wrap:nowrap; flex:none; }
+  .lvl .lbs { display:inline; }
+  .lvl b { font-size:15px; white-space:nowrap; margin-right:2px; }
+  .lvl button { padding:4px 9px; min-height:34px; }
+  nav.tabs { margin-top:6px; }
+  nav.tabs button { padding:5px 10px; font-size:13px; }
   .modal .hero { height:200px; }
   #reveal h2 { font-size:30px; }
 }
@@ -433,23 +505,28 @@ body.fieldon { overflow:hidden; }
 
 <!-- ================= ONBOARDING ================= -->
 <section id="onboard">
-  <div class="box panel">
-    <h1>SPOODEX</h1>
-    <p class="hand">a living field guide built from the jumping spiders you've actually found</p>
-    <p class="muted">Enter your iNaturalist username. SPOODEX reads your public Salticidae observations (read-only, no login), collapses them to genus, and builds your collection. Your iNat account is the save file.</p>
-    <form id="loginForm" class="row">
-      <input id="loginInput" placeholder="iNaturalist username" autocomplete="off" required style="flex:1;min-width:180px">
-      <button class="primary" type="submit">Scan records</button>
-    </form>
-    <div class="row" style="margin-top:10px">
-      <button type="button" data-act="sample">👀 Try a sample naturalist</button>
-      <button type="button" data-act="guest">🧭 No records yet? Explore near me</button>
+  <div class="land">
+    <div class="landhead">
+      <h1>SPOODEX</h1>
+      <p class="pitch">A Pokédex for jumping spiders, filled in from your own iNaturalist photos.</p>
     </div>
-    <div id="scanLog" class="term hidden"></div>
-    <div id="cascade" class="cascade"></div>
-    <div id="initDone" class="hidden" style="margin-top:14px;text-align:center">
-      <h2 id="initTitle"></h2>
-      <button class="primary" id="openDex">Open SPOODEX</button>
+    <div id="landPhotos" class="landstrip" aria-label="Jumping spiders recorded on iNaturalist"><span class="lcard blank"><span class="ph"></span></span><span class="lcard blank"><span class="ph"></span></span><span class="lcard blank"><span class="ph"></span></span><span class="lcard blank"><span class="ph"></span></span><span class="lcard blank"><span class="ph"></span></span><span class="lcard blank"><span class="ph"></span></span></div>
+    <div id="landStarts" class="landstarts">
+      <button type="button" class="primary big" data-act="guest">🧭 See what jumping spiders live near you<small>No iNaturalist account needed</small></button>
+      <form id="loginForm" class="panel">
+        <label for="loginInput">Already on iNaturalist? Enter your username</label>
+        <div class="row"><input id="loginInput" placeholder="iNaturalist username" autocomplete="off" autocapitalize="off" spellcheck="false" required style="flex:1;min-width:150px">
+        <button class="primary" type="submit">Open my SPOODEX</button></div>
+      </form>
+      <button type="button" data-act="sample">👀 Peek at a full collection</button>
+    </div>
+  </div>
+  <div class="box hidden" id="onboardWork">
+    <div class="panel" id="impBox"><h2 id="impHead"></h2><p id="impLine"></p><div class="bar"><i id="impBar" style="width:0"></i></div></div>
+    <div id="revBox" class="hidden">
+      <div class="row" style="justify-content:space-between"><h2 id="revHead" style="margin:0"></h2><button type="button" id="revSkip">Skip</button></div>
+      <div id="revGrid" class="revgrid"></div><p id="revMore" class="small"></p>
+      <div id="revEnd"></div>
     </div>
   </div>
 </section>
@@ -463,10 +540,10 @@ body.fieldon { overflow:hidden; }
         <span class="muted" id="whoami"></span>
         <b id="lvlBadge"></b>
         <span class="chip hidden" id="offChip">Offline</span>
-        <button data-act="field" title="Field compass: where you are, what's around, and the nearest recent records of genera you're missing">🧭 Field</button>
-        <button id="syncBtn" title="Fetch new/updated observations since last sync">⟳ Sync</button>
-        <button id="shareBtn" title="Copy a link to this SPOODEX">🔗 Share</button>
-        <button id="menuBtn" title="Settings">⚙</button>
+        <button data-act="field" aria-label="Field compass" title="Field compass: where you are, what's around, and the nearest recent records of genera you're missing">🧭<span class="lbl"> Field</span></button>
+        <button id="syncBtn" aria-label="Sync with iNaturalist" title="Fetch new/updated observations since last sync">⟳<span class="lbl"> Sync</span></button>
+        <button id="shareBtn" aria-label="Copy a link to this SPOODEX" title="Copy a link to this SPOODEX">🔗<span class="lbl"> Share</span></button>
+        <button id="menuBtn" aria-label="Settings" title="Settings">⚙</button>
       </div>
     </div>
     <nav class="tabs" id="tabs"></nav>
@@ -655,8 +732,13 @@ if (S.prefs.chassis === 'console') S.prefs.chassis = 'auto';
 
 function addNode(t) {
   if (!t || !t.id || !t.rank) return;
+  const c = S.nodes[t.id]?.c;   // the common name: only /taxa calls fill it in (cnFrom), so keep it when other calls re-add the taxon
   S.nodes[t.id] = { n:t.name, r:t.rank, l:t.rank_level, p:t.parent_id };
+  if (c != null) S.nodes[t.id].c = c;
 }
+// From a /taxa result: iNat's English common name, or '' when it has none (so it isn't asked for again)
+function cnFrom(t) { addNode(t); if (S.nodes[t.id]) S.nodes[t.id].c = t.preferred_common_name || ''; }
+const cnOf = id => S.nodes[id]?.c || '';
 
 /* ---------------- sync: full import, then incremental via updated_since ---------------- */
 function trimObs(o) {
@@ -697,7 +779,7 @@ const who = () => isGuest() ? 'Guest naturalist' : S.login;
 
 async function fetchPlaces(ids, log = () => {}) {
   const need = [...new Set(ids)].filter(id => !S.places[id]);
-  if (need.length) log(`Mapping ${need.length} places…`);
+  if (need.length) log(`Looking up ${need.length} places…`);
   for (let i = 0; i < need.length; i += 100) {
     const batch = need.slice(i, i+100);
     const d = await api('/places/' + batch.join(','));
@@ -716,20 +798,20 @@ async function importRecords(login, save, { full=false, log=()=>{} } = {}) {
   const since = full ? null : save.meta.lastSync;
   const obs = full ? {} : (save.obs || {});
   let idAbove = 0, got = 0, total = null;
-  log(full ? `Scanning naturalist records for ${login}…` : `Checking ${login} for records updated since ${since.slice(0,16).replace('T',' ')}…`);
+  log(full ? `Asking iNaturalist for ${login}'s jumping spider records…` : `Checking ${login} for records updated since ${since.slice(0,16).replace('T',' ')}…`, 0);
   while (true) {
     const d = await api('/observations', { taxon_id:SALTICIDAE, user_login:login, per_page:200, order_by:'id', order:'asc', id_above:idAbove || null, updated_since:since, fields:OBS_FIELDS }, API2);
-    if (total == null) { total = d.total_results; log(`${fmt(total)} Salticidae observation${total===1?'':'s'} ${full?'found':'updated'}.`); }
+    if (total == null) { total = d.total_results; log(`${fmt(total)} jumping spider record${total===1?'':'s'} ${full?'found':'updated'}.`, 0); }
     for (const o of d.results) obs[o.id] = trimObs(o);
     got += d.results.length;
-    if (d.results.length) log(`  …received ${fmt(got)} / ${fmt(total)}`);
+    if (d.results.length) log(`Read ${fmt(got)} of ${fmt(total)} records`, got / total);
     if (d.results.length < 200) break;
     idAbove = d.results[d.results.length - 1].id;
   }
   save.obs = obs;
-  if (full && !Object.keys(obs).length) log(`No public Salticidae observations for "${login}". Check the spelling, or go find a spood!`);
+  if (full && !Object.keys(obs).length) log(`No public jumping spider records for "${login}" yet.`, 1);
   // Taxonomy tree of these records gives names/ranks for every ancestor (tribes, subfamilies, genera).
-  log('Resolving lineages…');
+  log('Sorting them into genera…');
   const tree = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, user_login:login });
   tree.results.forEach(addNode);
   await fetchPlaces(Object.values(obs).flatMap(o => o.pl), log);
@@ -739,7 +821,7 @@ async function importRecords(login, save, { full=false, log=()=>{} } = {}) {
 }
 
 async function loadRefs(log = () => {}) {
-  log('Loading regional reference collections…');
+  log('Loading the regional checklists…');
   for (const sc of new Set(['country', 'state', S.prefs.scope])) if (sc === 'world' || scopePlace(sc)) await ensureRef(sc);
 }
 async function sync({ full=false, log=()=>{} } = {}) {
@@ -764,7 +846,7 @@ async function placesNear(lat, lng, far = 50) {
 // Home base: lets beginners and guests scan before they have recorded anything.
 async function resolveBasePlaces(log = () => {}) {
   const b = S.u.base; if (!b) return;
-  log('Locating home base…');
+  log('Finding your home base…');
   const p = await placesNear(b.lat, b.lng);
   b.places = { country:p.country, state:p.state };
   // Only generic labels need a "near …" hint; searched place names already say where they are
@@ -772,6 +854,7 @@ async function resolveBasePlaces(log = () => {}) {
   saveUser(); saveShared();
 }
 async function setBase(lat, lng, label) {
+  const first = !S.u.base;
   S.u.base = { lat:+(+lat).toFixed(2), lng:+(+lng).toFixed(2), label };
   saveUser();
   try {
@@ -780,7 +863,8 @@ async function setBase(lat, lng, label) {
     await loadRefs();
     S.M = buildModel();
     toast(`Home base set: ${label}${S.u.base.near ? ' (near ' + S.u.base.near + ')' : ''}`);
-    S.tab = 'map'; render();
+    // a guest or new player's first base: Profile's three to find (photos) before the map and its weather
+    S.tab = first && !S.M.G.size ? 'profile' : 'map'; render();
     runScan(S.M.homeCell.lat, S.M.homeCell.lng);
   } catch (e) { toast(e.message); }
 }
@@ -829,17 +913,19 @@ function refFor(scope) {
 // Background: genus portraits + natural history blurbs (default photo & Wikipedia summary via iNat)
 let infoBusy = false;
 async function ensureInfo(ids) {
-  const need = [...new Set(ids)].filter(id => !S.info[id]);
+  // re-asks once for taxa cached before v1.20, which have no common name or photo licence yet
+  const need = [...new Set(ids)].filter(id => !S.info[id] || (S.nodes[id] && S.nodes[id].c === undefined));
   if (!need.length || infoBusy) return;
   infoBusy = true;
   try {
     for (let i = 0; i < need.length; i += 30) {
       const batch = need.slice(i, i+30);
       const d = await api('/taxa/' + batch.join(','));
-      batch.forEach(id => S.info[id] = S.info[id] || {});
+      batch.forEach(id => { S.info[id] = S.info[id] || {}; if (S.nodes[id] && S.nodes[id].c === undefined) S.nodes[id].c = ''; });
       d.results.forEach(t => {
         const dp = t.default_photo || {};
-        S.info[t.id] = { p:dp.medium_url || dp.url || '', a:dp.attribution || '', s:stripHtml(t.wikipedia_summary || ''), w:t.wikipedia_url || '', c:t.observations_count || 0 };
+        cnFrom(t);
+        S.info[t.id] = { p:dp.medium_url || dp.url || '', a:dp.attribution || '', lc:dp.license_code || null, s:stripHtml(t.wikipedia_summary || ''), w:t.wikipedia_url || '', c:t.observations_count || 0 };
       });
       saveShared();
       softRender();
@@ -858,6 +944,28 @@ function lineage(id) {
   return out;
 }
 const lineageText = id => lineage(id).map(n => n.n).join(' › ') || 'Salticidae';
+// One line about the animal: the first sentence of its Wikipedia summary (via iNat) that says more than "X is a genus of jumping
+// spiders" or who described it and when. Empty when there's no such sentence (hand-written lines are the owner's call, HANDOVER §12).
+const WOW_SKIP = /first described|described by|synonym|was (named|erected|described)|named (in|by|after)|type species|\bcontains? .{0,30}\bspecies\b|\bas of \d{4}|\buntil \d{4}|moved to|transferred to|formerly/i;
+const GENUS_NOTES = {};   // genus id -> one line written by the owner; replaces the Wikipedia line for everyone (HANDOVER §12)
+S.notes = store.get('notes', {});   // the owner's drafts from the genus-lines editor (this browser only) until they're baked into GENUS_NOTES
+const ownNote = id => S.notes[id] || GENUS_NOTES[id] || '';
+const wowLine = id => ownNote(id) || wikiLine(id);
+function wikiLine(id) {
+  const s = (S.info[id]?.s || '').replace(/\s+/g, ' ').trim(), name = S.nodes[id]?.n || ''; if (!s) return '';
+  const sents = [];
+  for (const p of s.split(/(?<=[.!?])\s+(?=[A-Z])/)) {   // glue back splits after initials and abbreviations ("C. L. Koch", "e.g. Portia")
+    const prev = sents[sents.length - 1];
+    if (prev && /(\b[A-Z]|\b(e\.g|i\.e|etc|sp|spp|cf|ca|approx|St|Mt|Dr|Prof|al|vs|no))\.$/.test(prev)) sents[sents.length - 1] = prev + ' ' + p; else sents.push(p);
+  }
+  for (const t of sents) {
+    if (WOW_SKIP.test(t)) continue;
+    const rest = t.split(name).join('').replace(/\b(is|was|are|a|an|the|of|in|genus|genera|spiders?|family|salticidae|jumping|or|and|its|this|monotypic)\b|[(),.;:]/gi, '').trim();
+    if (rest.length >= 4) return t.length > 240 ? t.slice(0, t.lastIndexOf(' ', 230)) + '…' : t;
+  }
+  return '';
+}
+const cnHtml = (id, cls = 'cn') => cnOf(id) ? `<div class="${cls}">${esc(cnOf(id))}</div>` : '';
 
 function buildModel(obsMap = S.u.obs, base = S.u.base) {
   const all = Object.values(obsMap).filter(o => !o.cap).sort((a,b) => (a.d||'').localeCompare(b.d||'') || a.id - b.id);
@@ -933,8 +1041,8 @@ function buildModel(obsMap = S.u.obs, base = S.u.base) {
     g.state = g.level >= MASTERY_AT ? 'MASTERED' : g.f.supported ? 'SUPPORTED' : 'DISCOVERED';
     g.last = g.obs[g.obs.length-1];
     // cover photo: prefer research-grade record photo
-    const rg = g.obs.find(o => o.q === 'research' && o.ph.length);
-    g.cover = rg ? rg.ph[0] : (g.photos[0]?.url || '');
+    const rg = g.obs.find(o => o.q === 'research' && o.ph.length), pk = OWNER_PICKS[g.id];
+    g.cover = pk && g.obs.some(o => o.id === pk[0]) ? pickUrl(g.id, 'square') : rg ? rg.ph[0] : (g.photos[0]?.url || '');   // the owner's pick, in his own collection
   }
   for (const g of genera) g.sp = g.sp || new Set();
   for (const sp of SP.values()) { const rgo = sp.obs.find(o => o.q === 'research' && o.ph.length); sp.cover = rgo ? rgo.ph[0] : (sp.photos[0]?.url || ''); }
@@ -1048,14 +1156,25 @@ function favouriteLineages(M) {
   M.genera.forEach(g => { const L = lineage(g.id); const tribe = L.find(n => n.r === 'tribe') || L.find(n => n.r === 'subfamily'); if (tribe) { c[tribe.n] = c[tribe.n] || { n:tribe.n, g:0, o:0 }; c[tribe.n].g++; c[tribe.n].o += g.obs.length; } });
   return Object.values(c).sort((a,b) => b.g - a.g || b.o - a.o);
 }
-function generatedTitle(M) {
-  const fav = favouriteLineages(M)[0];
-  const nouns = ['Notebook Scribbler','Spood Apprentice','Spood Naturalist','Spood Wrangler','Spood Wizard','Arachno-Sage','Station Chief'];
-  const noun = nouns[Math.min(M.tier, nouns.length-1)];
-  if (!fav) return 'Aspiring Spooder';
-  const adj = fav.n.replace(/ini$/, 'ine').replace(/inae$/, 'ine');
-  return `${adj} ${noun}`;
+// Titles (owner, 2026-10-07): an empowering adjective and a genus, alliterative where it can be ("Magnificent Mopsus"). The genus
+// climbs from the most-recorded on iNat to rarer, more celebrated ones as the collection grows (genera needed); each naturalist
+// keeps one of its three adjectives, picked from their username so it doesn't change. Genera checked on iNat (HANDOVER §12).
+const TITLE_GEN = [
+  [0, 'Phidippus', ['Plucky', 'Proud', 'Fearless']], [1, 'Salticus', ['Spirited', 'Swift', 'Spunky']],
+  [3, 'Menemerus', ['Mighty', 'Mettlesome', 'Marvellous']], [5, 'Plexippus', ['Powerful', 'Peerless', 'Plucky']],
+  [8, 'Hasarius', ['Heroic', 'Hardy', 'Headstrong']], [12, 'Marpissa', ['Masterful', 'Mighty', 'Magnificent']],
+  [15, 'Myrmarachne', ['Mighty', 'Mysterious', 'Majestic']], [20, 'Philaeus', ['Fearless', 'Fierce', 'Formidable']],
+  [25, 'Cosmophasis', ['Courageous', 'Cosmic', 'Commanding']], [30, 'Hyllus', ['Heroic', 'Herculean', 'High-flying']],
+  [40, 'Maratus', ['Magnificent', 'Majestic', 'Marvellous']], [50, 'Mopsus', ['Magnificent', 'Mighty', 'Masterful']],
+  [60, 'Euophrys', ['Exalted', 'Epic', 'Elite']], [75, 'Bagheera', ['Bold', 'Brilliant', 'Brave']],
+  [90, 'Spartaeus', ['Splendid', 'Sovereign', 'Stalwart']], [100, 'Portia', ['Peerless', 'Prodigious', 'Phenomenal']],
+];
+function titleParts(M, login = S.login) {
+  const [, genus, adjs] = TITLE_GEN.filter(([at]) => M.G.size >= at).pop();
+  return [adjs[hash32(String(login || '').toLowerCase()) % adjs.length], genus];
 }
+const generatedTitle = (M, login) => titleParts(M, login).join(' ');
+const titleHtml = (M, login) => { const [a, g] = titleParts(M, login); return `${esc(a)} <i>${esc(g)}</i>`; };
 
 /* ---------------- quests: generated from genuine gaps ---------------- */
 function scanFor(cell) { return cell ? S.u.scans[cell.k] : null; }
@@ -1098,8 +1217,8 @@ function buildQuests(M) {
     targets:ns.ids.filter(id => !M.G.has(id)), reward:200 });
   if (M.leads.length) {
     const n = M.leads.reduce((s,l) => s + l.obs.length, 0);
-    q.push({ id:'resolve', kind:'resolve', icon:'👁', title:'Something Is Lurking',
-      text:`${n} of your observations are stuck above genus (${M.leads.slice(0,3).map(l => l.name).join(', ')}…). Add better photos, annotate, or ask for IDs.`,
+    q.push({ id:'resolve', kind:'resolve', icon:'❓', title:'Something Is Lurking',
+      text:`${n} mystery spood${n === 1 ? '' : 's'}: records not yet identified to genus (${M.leads.slice(0,3).map(l => l.name).join(', ')}…). Add face-on, top and side photos, or ask for an ID.`,
       obs:M.leads.flatMap(l => l.obs.map(o => o.id)).slice(0,50), reward:100 });
   }
   const near = M.genera.filter(g => g.state !== 'MASTERED').sort((a,b) => b.level - a.level || b.obs.length - a.obs.length)[0];
@@ -1137,23 +1256,43 @@ function questDone(q, M) {
 }
 
 /* ---------------- views ---------------- */
+// Tabs open up with the collection: `at` = genera needed (owner to confirm, HANDOVER §12). A tab also opens for good once a link or
+// button takes you there (a Compare or event link, "Bounty board →"), and ⚙ "Show every tab" opens them all.
 const TABS = [
   { k:'profile', label:'Profile' },
   { k:'dex', label:'SPOODEX' },
-  { k:'tree', label:'Lineage tree', tier:2 },
+  { k:'tree', label:'Lineage tree', at:15 },
   { k:'map', label:'Map & scanner' },
-  { k:'report', label:'This week' },
-  { k:'wanted', label:'Bounty board' },
-  { k:'trip', label:'Trip planner' },
-  { k:'compare', label:'Compare' },
-  { k:'ladder', label:'Ladder' },
+  { k:'report', label:'This week', at:3 },
+  { k:'wanted', label:'Bounty board', at:10 },
+  { k:'trip', label:'Trip planner', at:5 },
+  { k:'compare', label:'Compare', at:5 },
+  { k:'ladder', label:'Ladder', at:10 },
   { k:'crew', label:'Crew' },
   { k:'quests', label:'Quests' },
 ];
+const tabEarned = t => !t.at || S.M.G.size >= t.at || (S.u.tabs || []).includes(t.k);
+const tabOn = t => S.prefs.peek || tabEarned(t);
+// New tabs since last time get a toast and a dot until opened; the first look at a collection counts everything open as seen
+function tabNews() {
+  const cur = TABS.find(t => t.k === S.tab);
+  if (cur && !tabEarned(cur)) { S.u.tabs = [...(S.u.tabs || []), cur.k]; saveUser(); }
+  const vis = TABS.filter(tabEarned).map(t => t.k);
+  if (!S.u.tabsSeen) { S.u.tabsSeen = vis; saveUser(); }
+  const fresh = vis.filter(k => !S.u.tabsSeen.includes(k));
+  if (fresh.length) {
+    S.u.tabsSeen = [...S.u.tabsSeen, ...fresh];
+    S.u.tabNew = [...new Set([...(S.u.tabNew || []), ...fresh.filter(k => k !== S.tab)])];
+    saveUser();
+    toast(`New tab${fresh.length === 1 ? '' : 's'} unlocked: ${fresh.map(k => TABS.find(t => t.k === k).label).join(', ')}`);
+  }
+  if (S.u.tabNew?.includes(S.tab)) { S.u.tabNew = S.u.tabNew.filter(k => k !== S.tab); saveUser(); }
+}
 let renderPending = false;
 function softRender() { if (renderPending) return; renderPending = true; setTimeout(() => { renderPending = false; if (S.tab !== 'map') render(); }, 400); }
 
 function render() {
+  if ($('#app').classList.contains('hidden')) return;   // still on the landing page or the reveal: enterApp() renders
   const M = S.M, tier = TIERS[M.tier];
   if (S.tab !== 'map') dropMap3d();
   document.body.dataset.chassis = S.prefs.chassis === 'auto' ? tier.chassis : S.prefs.chassis;
@@ -1161,11 +1300,11 @@ function render() {
   $('#chassisSub').textContent = tier.sub;
   $('#whoami').textContent = who();
   $('#shareBtn').classList.toggle('hidden', isGuest());
-  $('#lvlBadge').textContent = `LEVEL ${M.G.size}`;
-  $('#tabs').innerHTML = TABS.map(t => `<button data-tab="${t.k}" class="${S.tab===t.k?'on':''}">${t.label}${t.tier && !moduleOn(t.tier) ? ' <span class="lock">🔒</span>' : ''}${t.k === 'crew' && S.tab !== 'crew' && crewUnseen() ? ' <span class="news">●</span>' : ''}</button>`).join('');
+  $('#lvlBadge').innerHTML = `<span class="lbl">LEVEL </span><span class="lbs">Lv </span>${M.G.size}`;
+  tabNews();
+  $('#tabs').innerHTML = TABS.filter(tabOn).map(t => `<button data-tab="${t.k}" class="${S.tab===t.k?'on':''}">${t.label}${(t.k === 'crew' && S.tab !== 'crew' && crewUnseen()) || S.u.tabNew?.includes(t.k) ? ' <span class="news">●</span>' : ''}</button>`).join('');
+  $('#tabs .on')?.scrollIntoView({ block:'nearest', inline:'nearest' });
   const v = $('#view');
-  const locked = TABS.find(t => t.k === S.tab)?.tier;
-  if (locked && !moduleOn(locked)) { v.innerHTML = lockedPlate(locked); return; }
   // Ladder and crew fetch lazily when opened (errors stop the auto-retry until the player asks again)
   if (S.tab === 'ladder' && !ladderBusy && !ladderErr && ladderKey() && ladderNeedsLoad(S.ladder[ladderKey()])) loadLadder();
   if (S.tab === 'crew' && !crewBusy && !crewErr && crewNeedsLoad()) loadCrew();
@@ -1184,16 +1323,12 @@ function render() {
   if (S.tab === 'trip') mountTripMap();
   if (S.tab === 'crew') { mountEventMap(); evAnimate(); }
 }
-function lockedPlate(t) {
-  const need = TIERS[t].min - S.M.G.size;
-  return `<div class="plate panel"><h2>MODULE NOT INSTALLED</h2>
-    <p><b>${esc(TIERS[t].module)}</b> ships with the <b>${esc(TIERS[t].name)}</b> chassis.</p>
-    <p class="muted">Record ${need} more genera to upgrade.</p>
-    <button data-act="peek">Peek anyway (prototype)</button></div>`;
-}
 
+// Profile, beginner first: who and what level, your own photos, three genera to find next; then the ledgers. Numbers that are
+// still zero or tiny (no behaviour records, no streak, no style, under 1% of the record, no pioneer badges) stay hidden until they mean something.
+let nextKey = '', nextAt = 0;
 function viewProfile() {
-  const M = S.M, sc = scopeGenera(), tier = M.tier;
+  const M = S.M, sc = scopeGenera(), tier = M.tier, n = M.G.size;
   const regions = {};
   M.genera.forEach(g => g.places.forEach(p => { const pl = S.places[p]; if (pl && pl.l != null && [0,10,20].includes(pl.l)) { (regions[p] = regions[p] || { id:p, n:pl.n, l:pl.l, g:0 }).g++; } }));
   const regionRows = lvl => Object.values(regions).filter(r => r.l === lvl).sort((a,b) => b.g - a.g);
@@ -1205,76 +1340,92 @@ function viewProfile() {
   const rare = M.genera.map(g => ({ g, r:rarityTier(g.id) })).filter(x => x.r).sort((a,b) => a.r.count - b.r.count).slice(0,5);
   const years = {}; M.genera.forEach(g => { const y = (g.first.d||'????').slice(0,4); years[y] = (years[y]||0) + 1; });
   const ys = Object.keys(years).sort(), maxY = Math.max(1, ...Object.values(years));
-  const starter = !M.G.size ? `<div class="panel" style="margin-bottom:16px"><h2>Your SPOODEX is empty, for now</h2>
+  const setsAll = setStats(refFor(S.prefs.scope)), setsDone = setsAll.filter(x => !x.left);
+  // three to find: refreshed when home or the month changes, or every 6 hours
+  const nk = `${M.homeCell?.k}:${homeCtx().pid}:${new Date().getMonth()}`;
+  if (homeCtx().pid && !nextBusy && (nk !== nextKey || Date.now() - nextAt > 6 * 3600e3)) {
+    nextKey = nk; nextAt = Date.now();
+    setTimeout(() => loadNextThree(() => { if (S.tab === 'profile') softRender(); }), 0);
+  }
+  const hero = `<div class="panel profhero">
+      <div class="muted small">${esc(who().toUpperCase())}'S SPOODEX</div>
+      <h1>Level ${n}</h1><div class="hand">${titleHtml(M)}</div>
+      ${sc.ref && sc.inScope.length ? `<div class="row" style="gap:8px;margin-top:6px"><span><b>${sc.found} / ${sc.inScope.length}</b> genera on iNat in ${esc(scopeLabel(S.prefs.scope))}</span>${bar(sc.found, sc.inScope.length)}</div>` : ''}
+      ${isGuest() || !n ? '' : `<p class="row herobtns"><button data-act="dexImage">📤 My SPOODEX image</button><button data-act="card">🪪 Title card</button>${M.fieldDays.length ? `<button data-act="wrapped">🎁 ${esc(wrappedYears()[0])} in spoods</button>` : ''}</p>`}
+    </div>`;
+  // your genera, newest first, then a few mystery spoods (records not yet identified to genus) with their photos
+  const myst = M.leads.flatMap(l => l.obs).filter(o => o.ph.length).sort((a, b) => (b.d || '').localeCompare(a.d || '') || b.id - a.id).slice(0, 6);
+  const spoodCards = [...M.genera].filter(g => g.cover).sort((a, b) => (b.first.d || '').localeCompare(a.first.d || '') || b.first.id - a.first.id).map(g =>
+      `<div class="lcard" data-genus="${g.id}" title="Open the card"><span class="ph" style="background-image:url('${esc(photoSize(g.cover, 'small'))}')"></span>
+        <span class="nm"><i>${esc(g.name)}</i></span>${cnOf(g.id) ? `<span class="cn">${esc(cnOf(g.id))}</span>` : ''}</div>`).join('')
+    + myst.map(o => `<div class="lcard myst" data-act="needsid" title="Mystery spoods: get them identified to genus"><span class="ph" style="background-image:url('${esc(photoSize(o.ph[0], 'small'))}')"></span>
+        <span class="nm" style="font-style:normal;white-space:normal">❓ Mystery spood</span><span class="cn">${esc(o.t.n || '')}</span></div>`).join('');
+  const spoods = spoodCards ? `<div class="panel" style="margin-top:16px"><h2>Your spoods${n ? ' <span class="small muted">newest first</span>' : ''}</h2>
+      <div class="spoods">${spoodCards}</div></div>` : '';
+  const three = nextThreeHtml();
+  const finds = homeCtx().pid ? (three ? `<div class="panel" style="margin-top:16px">${three}</div>` : '')
+    : `<div class="panel" style="margin-top:16px"><h3>Three to find next</h3><p>Set a home base and SPOODEX picks three jumping spiders recorded near you that you haven't found.</p>
+        <button class="primary" data-tab="map">🏠 Set a home base</button></div>`;
+  const starter = !n ? `<div class="panel" style="margin-top:16px"><h2>Your SPOODEX is empty, for now</h2>
     <p>Every card is unlocked by a real jumping spider you have found:</p>
     <p class="hand">explore → photograph → upload to iNaturalist → get an ID → sync → unlock</p>
     <div class="row"><a class="btnlink" href="https://www.inaturalist.org/observations/upload" target="_blank" rel="noopener">Upload to iNaturalist ↗</a>
-    <button data-tab="map">${M.homeCell ? '📡 See what lives near your home base' : '🏠 Set a home base'}</button>
+    ${M.homeCell ? '<button data-tab="map">📡 See what lives near your home base</button>' : ''}
     ${isGuest() ? '<button data-act="switch">I have an iNaturalist account</button>' : ''}</div></div>` : '';
-  const setsAll = setStats(refFor(S.prefs.scope)), setsDone = setsAll.filter(x => !x.left);
-  return `${newsHtml()}${starter}
-  <div class="grid2">
-    <div class="panel">
-      <div class="muted small">${esc(who().toUpperCase())}'S SPOODEX</div>
-      <h1 style="font-size:34px;margin:4px 0">SPOOD NATURALIST — LEVEL ${M.G.size}</h1>
-      <div class="hand">${esc(generatedTitle(M))}</div>
-      ${isGuest() ? '' : `<p class="row" style="gap:8px"><button data-act="card">🪪 Title card</button>${M.fieldDays.length ? `<button data-act="wrapped">🎁 ${esc(wrappedYears()[0])} in spoods</button>` : ''}</p>`}
-      <p><b>${M.G.size}</b> Salticidae genera recorded${sc.ref ? ` · <b>${sc.found} / ${sc.inScope.length}</b> of those on iNat in ${esc(scopeLabel(S.prefs.scope))}` : ''}</p>
-      <div class="kv">
-        <dt>Observations</dt><dd>${fmt(M.obs.length)}</dd>
-        <dt>Species (side collection)</dt><dd>${fmt(M.S.size)}${refFor(S.prefs.scope)?.s ? ` · ${speciesInScope().filter(id => M.S.has(id)).length} / ${speciesInScope().length} on iNat in ${esc(scopeLabel(S.prefs.scope))}` : ''}</dd>
-        <dt>Sets complete</dt><dd>${setsDone.length} / ${setsAll.length} ${setsDone.length ? setsDone.slice(0, 4).map(x => x.icon || '🏆').join('') : ''} <a href="#" class="small" data-act="sets">view sets</a></dd>
-        <dt>Collection prestige</dt><dd>${fmt(prestige(M))} ✦ <span class="small muted">(rarity-weighted)</span></dd>
-        <dt>Localities (~10 km)</dt><dd>${fmt(M.cellsAll01.size)}</dd>
-        <dt>Field days</dt><dd>${fmt(M.fieldDays.length)}</dd>
-        <dt>Behaviour records</dt><dd>${M.behObs.feed} feeding · ${M.behObs.court} courtship · ${M.behObs.egg} silk/brood</dd>
-        <dt>New genera ${new Date().getFullYear()}</dt><dd>${M.newThisYear}</dd>
-        <dt>Naturalist XP</dt><dd>${fmt(M.xp)}</dd>
-        <dt>Unresolved leads</dt><dd>${fmt(M.leads.reduce((s,l)=>s+l.obs.length,0))} obs above genus</dd>
-      </div>
-    </div>
-    <div class="panel">
-      <h2>Chassis</h2>
-      <p><b>${esc(TIERS[tier].name)}</b> — <span class="muted">${esc(TIERS[tier].sub)}</span></p>
-      ${next ? `<div class="row"><span class="small">Next: ${esc(next.name)} at ${next.min} genera</span>${bar(M.G.size - TIERS[tier].min, next.min - TIERS[tier].min)}<span class="small">${next.min - M.G.size} to go</span></div>` : '<p>Fully upgraded.</p>'}
-      <ul class="checks" style="margin-top:10px">${TIERS.map((t,i) => `<li class="${i<=tier?'done':''}">${i<=tier?'☑':'☐'} ${esc(t.module)} <span class="muted small">(${t.min}+)</span></li>`).join('')}</ul>
-      <h3 style="margin-top:14px">Discovery streak</h3>
-      <p>${'🔥'.repeat(Math.min(M.streak,10)) || '—'} <b>${M.streak}</b> consecutive field day${M.streak===1?'':'s'} with a new genus <span class="muted">(best ${M.bestStreak})</span></p>
-    </div>
-  </div>
-  <div class="grid2" style="margin-top:16px">
-    <div class="panel">
+  const kv = [
+    ['Observations', M.obs.length && fmt(M.obs.length)],
+    ['Species (side collection)', M.S.size && `${fmt(M.S.size)}${refFor(S.prefs.scope)?.s ? ` · ${speciesInScope().filter(id => M.S.has(id)).length} / ${speciesInScope().length} on iNat in ${esc(scopeLabel(S.prefs.scope))}` : ''}`],
+    ['Sets complete', setsDone.length && `${setsDone.length} / ${setsAll.length} ${setsDone.slice(0, 4).map(x => x.icon || '🏆').join('')} <a href="#" class="small" data-act="sets">view sets</a>`],
+    ['Collection prestige', n && `${fmt(prestige(M))} ✦ <span class="small muted">(rarity-weighted)</span>`],
+    ['Localities (~10 km)', M.cellsAll01.size && fmt(M.cellsAll01.size)],
+    ['Field days', M.fieldDays.length && fmt(M.fieldDays.length)],
+    ['Behaviour records', [['feed', 'feeding'], ['court', 'courtship'], ['egg', 'silk/brood']].filter(([k]) => M.behObs[k]).map(([k, l]) => `${M.behObs[k]} ${l}`).join(' · ')],
+    [`New genera ${new Date().getFullYear()}`, M.newThisYear],
+    ['Naturalist XP', M.xp && fmt(M.xp)],
+    ['Mystery spoods', mysteryCount() && `${fmt(mysteryCount())} not yet identified to genus <a href="#" class="small" data-act="needsid">see them</a>`],
+  ].filter(([, v]) => v);
+  const streak = M.streak ? `<p>${'🔥'.repeat(Math.min(M.streak,10))} <b>${M.streak}</b> consecutive field day${M.streak===1?'':'s'} with a new genus <span class="muted">(best ${M.bestStreak})</span></p>`
+    : M.bestStreak >= 2 ? `<p>Best: <b>${M.bestStreak}</b> field days in a row with a new genus</p>` : '';
+  const share = isGuest() ? '' : shareHtml(), pio = isGuest() ? '' : myPioneers().length ? pioneerHtml() : '';
+  const regionsHtml = moduleOn(1) && Object.keys(regions).length ? `<div class="panel">
       <h2>Regions</h2>
-      ${moduleOn(1) ? `
       ${refC ? `<div class="row"><span style="min-width:150px">${esc(S.places[M.home.country]?.n)}</span>${bar(Object.keys(refC.g).filter(id => M.G.has(+id)).length, Object.keys(refC.g).length)}<span class="small">${Object.keys(refC.g).filter(id => M.G.has(+id)).length}/${Object.keys(refC.g).length}</span></div>` : ''}
       ${refS && M.home.state !== M.home.country ? `<div class="row"><span style="min-width:150px">${esc(S.places[M.home.state]?.n)}</span>${bar(Object.keys(refS.g).filter(id => M.G.has(+id)).length, Object.keys(refS.g).length)}<span class="small">${Object.keys(refS.g).filter(id => M.G.has(+id)).length}/${Object.keys(refS.g).length}</span></div>` : ''}
-      ${!refC || !refS ? `<p class="small muted">Switch the SPOODEX scope to country/state once to load regional totals.</p>` : ''}
-      <h3 style="margin-top:10px">Countries</h3>${regionRows(0).map(r => `<div class="small">${esc(r.n)}: <b>${r.g}</b> ${r.g === 1 ? 'genus' : 'genera'}</div>`).join('') || '<div class="muted small">—</div>'}
-      <h3 style="margin-top:10px">States / provinces</h3>${regionRows(10).slice(0,8).map(r => `<div class="small">${esc(r.n)}: <b>${r.g}</b> ${r.g === 1 ? 'genus' : 'genera'}</div>`).join('') || '<div class="muted small">—</div>'}
-      <h3 style="margin-top:10px">Local areas</h3>${regionRows(20).slice(0,10).map(r => `<div class="small">${esc(r.n)}: <b>${r.g}</b> ${r.g === 1 ? 'genus' : 'genera'}</div>`).join('') || '<div class="muted small">—</div>'}
-      ` : `<p class="muted">Region statistics install with SPOODEX Mk II (15 genera).</p>`}
-    </div>
-    <div class="panel">
-      <h2>Favourite lineages</h2>
-      ${favs.map(f => `<div class="row"><span style="min-width:140px">${esc(f.n)}</span><div class="bar"><i style="width:${pct(f.g,maxFav)}%"></i></div><span class="small">${f.g} gen.</span></div>`).join('') || '<p class="muted">None yet.</p>'}
-      <h2 style="margin-top:14px">Field style</h2>
-      ${style.map(s => `<div>${s[0]} <b>${esc(s[1])}</b> <span class="muted small">${esc(s[2])}</span></div>`).join('') || '<p class="muted">Still developing a style. Keep spooding.</p>'}
-      ${moduleOn(3) ? `<h2 style="margin-top:14px">Rarest discoveries</h2>
+      ${[[0, 'Countries', 99], [10, 'States / provinces', 8], [20, 'Local areas', 10]].map(([l, h, k]) => { const rs = regionRows(l).slice(0, k);
+        return rs.length ? `<h3 style="margin-top:10px">${h}</h3>${rs.map(r => `<div class="small">${esc(r.n)}: <b>${r.g}</b> ${r.g === 1 ? 'genus' : 'genera'}</div>`).join('')}` : ''; }).join('')}
+    </div>` : '';
+  const lineHtml = favs[0]?.g >= 2 || style.length || (moduleOn(3) && rare.length) ? `<div class="panel">
+      ${favs[0]?.g >= 2 ? `<h2>Favourite lineages</h2>${favs.map(f => `<div class="row"><span style="min-width:140px">${esc(f.n)}</span><div class="bar"><i style="width:${pct(f.g,maxFav)}%"></i></div><span class="small">${f.g} gen.</span></div>`).join('')}` : ''}
+      ${style.length ? `<h2 style="margin-top:14px">Field style</h2>${style.map(s => `<div>${s[0]} <b>${esc(s[1])}</b> <span class="muted small">${esc(s[2])}</span></div>`).join('')}` : ''}
+      ${moduleOn(3) && rare.length ? `<h2 style="margin-top:14px">Rarest discoveries</h2>
         <p class="small muted">Fewest iNat records in ${esc(scopeLabel(S.prefs.scope))}.</p>
         ${rare.map(x => `<div><a href="#" data-genus="${x.g.id}"><i>${esc(x.g.name)}</i></a> <span class="small muted">${fmt(x.r.count)} record${x.r.count === 1 ? '' : 's'}</span></div>`).join('')}` : ''}
-    </div>
-  </div>
-  ${isGuest() ? '' : `<div class="grid2" style="margin-top:16px">
-    <div class="panel"><h2>Your share of the record</h2>${shareHtml()}</div>
-    <div class="panel"><h2>Pioneer badges</h2><div data-pioneer>${pioneerHtml()}</div></div>
-  </div>`}
+    </div>` : '';
+  const news = newsHtml(), tips = tipsOnce(true);
+  return `${hero}${spoods}${finds}${n ? '' : starter}${news ? `<div style="margin-top:16px">${news}</div>` : ''}
+  ${tips ? `<div style="margin-top:16px">${tips}</div>` : ''}
+  ${kv.length || n ? `<div class="grid2">
+    ${kv.length ? `<div class="panel"><h2>Ledger</h2><div class="kv">${kv.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</div></div>` : ''}
+    ${n ? `<div class="panel">
+      <h2>Chassis</h2>
+      <p><b>${esc(TIERS[tier].name)}</b> — <span class="muted">${esc(TIERS[tier].sub)}</span></p>
+      ${next ? `<div class="row"><span class="small">Next: ${esc(next.name)} at ${next.min} genera</span>${bar(n - TIERS[tier].min, next.min - TIERS[tier].min)}<span class="small">${next.min - n} to go</span></div>` : '<p>Fully upgraded.</p>'}
+      <ul class="checks" style="margin-top:10px">${TIERS.map((t,i) => `<li class="${i<=tier?'done':''}">${i<=tier?'☑':'☐'} ${esc(t.module)} <span class="muted small">(${t.min}+)</span></li>`).join('')}</ul>
+      ${streak ? `<h3 style="margin-top:14px">Discovery streak</h3>${streak}` : ''}
+    </div>` : ''}
+  </div>` : ''}
+  ${regionsHtml || lineHtml ? `<div class="grid2" style="margin-top:16px">${regionsHtml}${lineHtml}</div>` : ''}
+  ${share || pio ? `<div class="grid2" style="margin-top:16px">
+    ${share ? `<div class="panel"><h2>Your share of the record</h2>${share}</div>` : ''}
+    ${pio ? `<div class="panel"><h2>Pioneer badges</h2><div data-pioneer>${pio}</div></div>` : ''}
+  </div>` : ''}
   ${trophyHtml()}
-  <div class="panel" style="margin-top:16px">
+  ${ys.length >= 2 ? `<div class="panel" style="margin-top:16px">
     <h2>New genera per year</h2>
     <div class="row" style="align-items:flex-end;gap:6px;height:120px">
       ${ys.map(y => `<div style="text-align:center;flex:1;min-width:28px"><div class="small">${years[y]}</div><div style="height:${Math.round(80*years[y]/maxY)}px;background:var(--lit);border-radius:3px 3px 0 0;box-shadow:var(--glow)"></div><div class="small muted">${y}</div></div>`).join('')}
     </div>
-  </div>`;
+  </div>` : ''}`;
 }
 
 function cardHtml(id, num) {
@@ -1282,13 +1433,13 @@ function cardHtml(id, num) {
   const lin = lineage(id), tribe = (lin.find(n => n.r === 'tribe') || lin.find(n => n.r === 'subfamily') || {}).n || 'Salticidae';
   if (!g) {
     const name = S.prefs.reveal ? `<i>${esc(S.nodes[id]?.n)}</i>` : '???';
-    return `<div class="card unknown" data-genus="${id}"><div class="ph" style="background-image:url('${esc(info.p||'')}')"></div>
-      <div class="meta"><div class="num">#${String(num).padStart(3,'0')} · ${esc(tribe)}</div><div class="nm">${name}</div><div class="pips">${'<i></i>'.repeat(10)}</div></div></div>`;
+    return `<div class="card unknown" data-genus="${id}"><div class="ph" style="background-image:url('${esc(photoSize(stockPh(id), 'small'))}')"></div>
+      <div class="meta"><div class="num">#${String(num).padStart(3,'0')} · ${esc(tribe)}</div><div class="nm">${name}</div>${S.prefs.reveal ? cnHtml(id) : ''}<div class="pips">${'<i></i>'.repeat(10)}</div></div></div>`;
   }
   const cls = g.state === 'MASTERED' ? 'b-mast' : g.state === 'SUPPORTED' ? 'b-supp' : 'b-disc';
   return `<div class="card ${g.state === 'MASTERED' && moduleOn(5) ? 'gilded' : ''}" data-genus="${id}"><span class="badge ${cls}">${g.state}</span>
     <div class="ph" style="background-image:url('${esc(photoSize(g.cover,'small') || info.p || '')}')"></div>
-    <div class="meta"><div class="num">#${String(num).padStart(3,'0')} · ${esc(tribe)}</div><div class="nm">${esc(g.name)}</div>
+    <div class="meta"><div class="num">#${String(num).padStart(3,'0')} · ${esc(tribe)}</div><div class="nm">${esc(g.name)}</div>${cnHtml(id)}
     <div class="small muted">${g.obs.length} obs · ${g.c01.size} loc. · ${g.sp.size} sp.</div>
     <div class="pips">${CRITERIA.map(c => `<i class="${g.f[c.k]?'on':''}"></i>`).join('')}</div></div></div>`;
 }
@@ -1325,8 +1476,8 @@ function viewDex() {
   <div class="dexgrid">${shown.map(id => cardHtml(id, num.get(id))).join('')}</div>
   ${sc.extras.length ? `<h2 style="margin-top:22px">Recorded outside ${esc(scopeLabel(P.scope))} (+${sc.extras.length})</h2>
     <div class="dexgrid">${sc.extras.map(id => cardHtml(id, 0)).join('')}</div>` : ''}
-  ${M.leads.length ? `<div class="panel" style="margin-top:22px">👁 <b>${fmt(M.leads.reduce((n, l) => n + l.obs.length, 0))}</b> of your observations are stuck above genus. Any of them could be a genus you haven't unlocked.
-    <a href="#" data-layer="needsid">See them under 🔎 Needs ID →</a></div>` : ''}`;
+  ${M.leads.length ? `<div class="panel" style="margin-top:22px">❓ <b>${fmt(mysteryCount())}</b> mystery spood${mysteryCount() === 1 ? '' : 's'}: records not yet identified to genus. Any of them could be a genus you haven't unlocked.
+    <a href="#" data-layer="needsid">See them →</a></div>` : ''}`;
 }
 
 /* ---------------- species layer: an optional side collection (level stays = genera) ---------------- */
@@ -1388,27 +1539,42 @@ function leadsUrl(lead) {
   const base = `https://www.inaturalist.org/observations?user_id=${encodeURIComponent(S.login)}&captive=false&verifiable=any`;
   return lead ? `${base}&taxon_id=${lead.id}&rank=${encodeURIComponent(lead.rank)}` : `${base}&taxon_id=${SALTICIDAE}&hrank=family&lrank=subtribe`;
 }
+// The photo checklist for getting a jumping spider to genus (owner to check, HANDOVER §12)
+const PHOTO_TIPS = [
+  ['👁', 'Face on', 'the big front eyes and the face'],
+  ['⬆', 'From above', 'the whole body and its pattern'],
+  ['↔', 'From the side', 'the legs and the body in profile'],
+  ['📏', 'Something for scale', 'a fingertip, coin or ruler beside it'],
+  ['📸', 'Several sharp shots', 'all in the same iNaturalist record'],
+];
+const tipsHtml = (open = true) => `<details class="tips" ${open ? 'open' : ''}><summary><b>📸 Photos that get a genus ID</b></summary>
+  <ol class="tiplist">${PHOTO_TIPS.map(([i, t, d]) => `<li><span aria-hidden="true">${i}</span> <b>${t}</b>: ${d}</li>`).join('')}</ol></details>`;
+const mysteryCount = () => S.M.leads.reduce((n, l) => n + l.obs.length, 0);
+// Mystery spoods: records stuck above genus (Needs ID layer). Each one could be a genus you haven't unlocked.
 function viewNeedsId() {
   const M = S.M, f = S.prefs.leadFilter, lead = M.leads.find(l => String(l.id) === String(f));
   const all = M.leads.flatMap(l => l.obs), obs = (lead ? lead.obs : all).slice().sort((a,b) => (b.d || '').localeCompare(a.d || '') || b.id - a.id);
-  const tile = o => `<a class="card lead" href="https://www.inaturalist.org/observations/${o.id}" target="_blank" rel="noopener" title="Open on iNaturalist">
-      <div class="ph" style="background-image:url('${esc(photoSize(o.ph[0] || '', 'medium'))}')">${o.ph.length ? '' : '<span class="nophoto">no photo</span>'}</div>
-      <div class="meta"><div class="nm">${esc(o.t.n || 'Unknown')}</div>
-      <div class="small muted">${esc(o.t.r || '')} · ${esc(o.d || 'no date')}${o.q === 'casual' ? ' · casual' : ''}${o.ph.length > 1 ? ` · ${o.ph.length} photos` : ''}</div></div></a>`;
+  const tile = o => { const url = `https://www.inaturalist.org/observations/${o.id}`, n = o.ph.length;
+    return `<div class="card lead"><a class="ph" href="${url}" target="_blank" rel="noopener" title="Open on iNaturalist" style="background-image:url('${esc(photoSize(o.ph[0] || '', 'medium'))}')">${n ? '' : '<span class="nophoto">no photo</span>'}</a>
+      <div class="meta"><div class="nm">Mystery spood</div>
+      <div class="small muted">${esc(o.t.n || 'Unknown')} (${esc(o.t.r || '')}) · ${esc(o.d || 'no date')}${o.q === 'casual' ? ' · casual' : ''}</div>
+      <div class="small ${n < 3 ? 'few' : ''}">📸 ${n >= 3 ? '3 or more photos' : n === 1 ? '1 photo' : `${n} photos`}</div>
+      <div class="lacts"><a href="${url}" target="_blank" rel="noopener" title="Open it on iNaturalist and @mention an identifier in a comment">Ask for an ID ↗</a>
+        <a href="${url}/edit" target="_blank" rel="noopener">Add photos ↗</a></div></div></div>`; };
   const chip = (k, label, n) => `<span class="chip ${String(f || 'all') === String(k) ? 'on' : ''}" data-act="leadFilter" data-v="${k}" style="cursor:pointer">${esc(label)} (${n})</span>`;
   return `<div class="panel row" style="margin-bottom:14px">${layerSwitch()}</div>
-    <div class="panel" style="margin-bottom:14px"><h2>Needs further identification</h2>
-      <p class="small muted">Your salticid observations identified only above genus, newest first.
-        Click a tile to open it on iNaturalist: add sharper photos, annotate sex and life stage, or tag an identifier. Once it's identified to genus, sync and the card unlocks.</p>
-      ${M.leads.length ? `<div class="row" style="gap:6px">${chip('all', 'All', all.length)}${M.leads.map(l => chip(l.id, l.name, l.obs.length)).join('')}</div>` : ''}
+    <div class="panel" style="margin-bottom:14px"><h2>❓ Mystery spoods</h2>
+      <p class="small muted">Your jumping spider records that aren't identified to genus yet, newest first. Once one is, sync and its card unlocks.</p>
+      ${tipsHtml(M.G.size < 15)}
+      ${M.leads.length ? `<div class="row" style="gap:6px;margin-top:10px">${chip('all', 'All', all.length)}${M.leads.map(l => chip(l.id, l.name, l.obs.length)).join('')}</div>` : ''}
       <p class="row" style="margin:10px 0 0;gap:8px">${M.leads.length && !isGuest() ? `<a class="btnlink" href="${esc(leadsUrl(lead))}" target="_blank" rel="noopener">Open ${lead ? `these ${fmt(obs.length)}` : `all ${fmt(obs.length)}`} on iNaturalist ↗</a>` : ''}${idAidBtn()}</p></div>
     ${isGuest() ? '<div class="panel"><p>Guests have no records yet. Open SPOODEX with your iNaturalist username to see yours here.</p><button data-act="switch">I have an iNaturalist account</button></div>'
       : obs.length ? `<div class="dexgrid">${obs.map(tile).join('')}</div>`
-      : '<div class="panel"><p>Nothing stuck above genus.</p></div>'}`;
+      : '<div class="panel"><p>No mystery spoods: every record is identified to genus or below.</p></div>'}`;
 }
 // Opens the Identification aid in one reused popup window (a tab on phones, or if popups are blocked)
 const idAidBtn = () => `<a class="btnlink" href="${ID_AID}" target="spoodex-idaid" data-act="idaid">🔑 Identification aid ↗</a>`;
-const layerSwitch = () => `<span>${[['genus','Genera'],['species','Species'],['sets','Sets'],['needsid',`🔎 Needs ID (${S.M.leads.reduce((n, l) => n + l.obs.length, 0)})`]].map(([k,l]) => `<span class="chip ${(S.prefs.layer||'genus')===k?'on':''}" data-layer="${k}" style="cursor:pointer">${l}</span>`).join(' ')}</span>`;
+const layerSwitch = () => `<span>${[['genus','Genera'],['species','Species'],['sets','Sets'],['needsid',`❓ Mystery spoods (${mysteryCount()})`]].map(([k,l]) => `<span class="chip ${(S.prefs.layer||'genus')===k?'on':''}" data-layer="${k}" style="cursor:pointer">${l}</span>`).join(' ')}</span>`;
 function speciesSection(gid) {
   const M = S.M, ref = refFor(S.prefs.scope), cm = S.cmp?.M;
   const ids = new Set();
@@ -1549,7 +1715,7 @@ function scanInfo(P) {
 }
 function scanPanelHtml() {
   const D = S.u.mscan, P = scanPending || D, M = S.M;
-  const home = `<details class="scfoot"><summary>🏠 Home base: <b>${M.homeCell ? cellLabel(M.homeCell) : 'not set'}</b> · change</summary>${baseWidget()}</details>`;
+  const home = M.homeCell ? `<details class="scfoot"><summary>🏠 Home base: <b>${cellLabel(M.homeCell)}</b> · change</summary>${baseWidget()}</details>` : '';
   const hist = (S.u.scanHist || []).filter(h => h !== D);
   // chips named after the place, or by coordinates when two would read the same
   const chipName = h => `${(h.near || '').split(',')[0]} · ${h.km === 'sq' ? '▣' : h.km * 2 + ' km'}`;
@@ -1572,7 +1738,7 @@ function scanPanelHtml() {
   const nG = D.G.filter(x => !M.G.has(x.id)).length, nS = D.Sp.filter(x => !M.S.has(x.id)).length;
   const row = x => {
     const gid = isG ? x.id : genusOfNode(x.id), pk = isG ? peakInfo(x.id) : null, nm = `<i>${esc(S.nodes[x.id]?.n || '?')}</i>`;
-    return `<div class="scrow">${gid ? `<a href="#" data-genus="${gid}" class="nm">${nm}</a>` : `<span class="nm">${nm}</span>`}${rarityChip(rarityOf(x.id, tab))}
+    return `<div class="scrow">${gid ? `<a href="#" data-genus="${gid}" class="nm">${nm}</a>` : `<span class="nm">${nm}</span>`}${cnOf(x.id) ? `<span class="cn">${esc(cnOf(x.id))}</span>` : ''}${rarityChip(rarityOf(x.id, tab))}
       <span class="meta">${x.r ? `🔥 ${x.r} in the last ${ACTIVE_DAYS} days · ` : ''}${fmt(x.c)} record${x.c === 1 ? '' : 's'} here${pk && !pk.few ? ` · ${pk.now ? '<b class="inseason">🌡 in season</b>' : `peak ${esc(pk.text)}`}` : ''}${!isG && gid ? ` · genus <i>${esc(S.nodes[gid]?.n || '')}</i>${M.G.has(gid) ? ' (yours)' : ' (new too)'}` : ''}</span></div>`;
   };
   const N = SCAN_ENDS, split = fresh.length > 2 * N + 1;
@@ -1653,7 +1819,8 @@ function mapLegendHtml() {
 }
 function viewMapShell() {
   const d3 = use3d();
-  return `${wxPanelHtml()}<div class="maplayout"><div><div class="mapwrap"><div id="map"></div>
+  // no home base yet (a guest, or no records): asking where comes first, in place of the weather
+  return `${S.M.homeCell ? wxPanelHtml() : `<div class="panel" style="margin-bottom:16px"><h2>Where do you look for spiders?</h2>${baseWidget()}</div>`}<div class="maplayout"><div><div class="mapwrap"><div id="map"></div>
       ${hasGL2() ? `<div class="mapmode">${[['0', '2D'], ['1', '3D']].map(([v, l]) => `<button type="button" data-act="map3d" data-v="${v}" class="${d3 === (v === '1') ? 'on' : ''}">${l}</button>`).join('')}</div>` : ''}
       <div id="mapBadge" class="mapbadge hidden"></div></div>
     <div class="maplegend small" id="mapLegend">${mapLegendHtml()}</div></div>
@@ -2079,7 +2246,7 @@ function viewQuests() {
     ${q.kind === 'scan' ? `<button class="primary" data-scan="${esc(M.homeCell.k)}">📡 Scan home base</button>` : ''}
     ${q.kind === 'first' ? '<a class="btnlink" href="https://www.inaturalist.org/observations/upload" target="_blank" rel="noopener">Upload to iNaturalist ↗</a>' : ''}
     ${q.kind === 'base' ? '<button class="primary" data-tab="map">Set home base</button>' : ''}
-    ${q.kind === 'resolve' ? `<a href="${esc(leadsUrl())}" target="_blank" rel="noopener">Open these on iNaturalist ↗</a> · <a href="#" data-act="needsid">see them in SPOODEX</a>` : ''}
+    ${q.kind === 'resolve' ? `<a href="${esc(leadsUrl())}" target="_blank" rel="noopener">Open these on iNaturalist ↗</a> · <a href="#" data-act="needsid">see your mystery spoods</a>` : ''}
     </div>${q.reward ? `<div class="reward">Reward: +${q.reward} Naturalist XP</div>` : ''}</div>`).join('')}</div>
   <p class="muted small" style="margin-top:14px">Quests check themselves each time you sync.</p>`;
 }
@@ -2090,10 +2257,12 @@ async function openGenus(id) {
   const rt = rarityTier(id), scopeP = scopePlace(S.prefs.scope);
   const lin = lineageText(id);
   const firstPlace = g ? (g.first.pg || '') : '';
+  const wl = wowLine(id), edit = notesOn() ? ` <a href="#" class="small" data-act="notes" data-v="${id}">✏️ ${ownNote(id) ? 'edit' : 'write your own line'}</a>` : '';
+  const wow = wl ? `<p class="gwow">${esc(wl)}${ownNote(id) ? '' : ` <a class="small" href="${esc(info.w || `https://www.inaturalist.org/taxa/${id}`)}" target="_blank" rel="noopener">Wikipedia ↗</a>`}${edit}</p>` : edit ? `<p class="small">${edit}</p>` : '';
   const body = g ? `
     <div class="small" style="letter-spacing:.2em">DISCOVERY LEVEL ${g.level} · ${g.state}</div>
-    <h1 style="font-size:36px;font-style:italic;margin:2px 0">${esc(name)}</h1>
-    <div class="muted">${esc(lin)}</div>
+    <h1 style="font-size:36px;font-style:italic;margin:2px 0">${esc(name)}</h1>${cnHtml(id, 'cnbig')}
+    <div class="muted">${esc(lin)}</div>${wow}
     <div class="pips" style="max-width:320px;margin:8px 0">${CRITERIA.map(c => `<i class="${g.f[c.k]?'on':''}"></i>`).join('')}</div>
     <div class="grid2">
       <div><h3>Your records</h3><dl class="kv">
@@ -2116,8 +2285,8 @@ async function openGenus(id) {
     ${moduleOn(4) ? `<h3 style="margin-top:12px">XP ledger (${fmt(g.xp)} XP)</h3><div class="small" style="max-height:140px;overflow:auto">${g.xpLog.slice().reverse().map(e => `<div>${esc(e.d)} · ${esc(e.label)} <span class="reward">+${e.xp}</span></div>`).join('')}</div>` : ''}
   ` : `
     <div class="small" style="letter-spacing:.2em">UNKNOWN</div>
-    <h1 style="font-size:36px;font-style:italic;margin:2px 0">${esc(name)}</h1>
-    <div class="muted">${esc(lin)}</div>
+    <h1 style="font-size:36px;font-style:italic;margin:2px 0">${esc(name)}</h1>${cnHtml(id, 'cnbig')}
+    <div class="muted">${esc(lin)}</div>${wow}
     <p>You haven't recorded this genus. ${rt ? `iNat has ${fmt(rt.count)} verifiable record${rt.count===1?'':'s'} of it in ${esc(scopeLabel(S.prefs.scope))}.` : ''}</p>
     <p><a href="https://www.inaturalist.org/observations?taxon_id=${id}${scopeP ? '&place_id='+scopeP : ''}" target="_blank" rel="noopener">See where others have found it ↗</a></p>`;
   const when = `<h3 style="margin-top:12px">When to look</h3><div data-phenochart="${id}">${phenoChart(id)}</div>`;
@@ -2134,14 +2303,14 @@ async function openGenus(id) {
   const theirs = cg ? `<h3 style="margin-top:12px">${esc(S.cmp.login)}'s records</h3>
     <p class="small">${cg.obs.length} obs · level ${cg.level}/10 · ${cg.state.toLowerCase()} · first ${esc(cg.first.d)}</p>
     <div class="gallery">${cg.photos.slice(0,8).map(p => `<a href="https://www.inaturalist.org/observations/${p.id}" target="_blank" rel="noopener" style="background-image:url('${esc(photoSize(p.url,'small'))}')"></a>`).join('')}</div>` : '';
-  const hero = g ? photoSize(g.cover, 'large') : info.p;
+  const hero = g ? photoSize(g.cover, 'large') : photoSize(stockPh(id), 'large');
   $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal">
     <button class="x" data-close="1">✕</button>
     <div class="hero ${g ? '' : 'unknown'}" style="background-image:url('${esc(hero||'')}')"></div>
     <div class="body">${body}${when}${speciesSection(id)}${theirs}${rarity}${hist}
       <p class="small"><a href="https://www.inaturalist.org/taxa/${id}" target="_blank" rel="noopener">iNaturalist taxon page ↗</a>
       ${g ? ` · <a href="https://www.inaturalist.org/observations?user_id=${encodeURIComponent(S.login)}&taxon_id=${id}" target="_blank" rel="noopener">your records ↗</a>` : ''}
-      ${!g && info.a ? ` · <span class="muted">Silhouette from photo ${esc(info.a)}</span>` : ''}</p>
+      ${!g && stockCr(id) ? ` · <span class="muted">Silhouette from photo ${esc(stockCr(id))}</span>` : ''}</p>
     </div></div></div>`;
   if (!info.s && !info.p) ensureInfo([id]).then(() => { if ($('#modalRoot').innerHTML && S.info[id]?.s) openGenus(id); });
   if (moduleOn(3)) {
@@ -2155,14 +2324,32 @@ async function openGenus(id) {
 }
 
 /* ---------------- reveal ceremony ---------------- */
+// After a sync: a full-screen photo for each new genus, and for each mystery spood that has been identified to genus since.
+// Items: {g genus, isNew, o the record that was a mystery spood, more (identified records not shown)}.
+const SOLVED_SHOWN = 3;
+function celebrations(fresh, solved) {
+  const freshIds = new Set(fresh.map(g => g.id));
+  const items = fresh.map(g => ({ g, isNew:true, o:solved.find(o => genusOf(o.anc) === g.id) }));
+  const old = solved.filter(o => !freshIds.has(genusOf(o.anc)));
+  old.slice(0, SOLVED_SHOWN).forEach(o => items.push({ g:S.M.G.get(genusOf(o.anc)), o }));
+  const out = items.filter(x => x.g);
+  if (old.length > SOLVED_SHOWN && out.length) out[out.length - 1].more = old.length - SOLVED_SHOWN;
+  return out;
+}
+const aGenus = n => (/^[AEIOU]/i.test(n) ? 'an ' : 'a ') + n;
 function revealQueue(list) {
   if (!list.length) return;
-  const g = list.shift();
+  const it = list.shift(), g = it.g, o = it.o;
   const el = document.createElement('div');
   el.id = 'reveal';
-  el.innerHTML = `<div class="rph" style="background-image:url('${esc(photoSize(g.cover,'large'))}')"></div>
-    <div class="k">NEW GENUS RECORDED</div><h2>${esc(g.name.toUpperCase())}</h2>
-    <p>Your ${ordinal(g.discIndex)} Salticidae genus</p><p>First observed ${esc(g.first.d)}${g.first.pg ? ' · ' + esc(g.first.pg) : ''}</p>
+  el.innerHTML = `<div class="rph" style="background-image:url('${esc(photoSize(o?.ph[0] || g.cover, 'large'))}')"></div>
+    <div class="k">${o ? 'MYSTERY SPOOD IDENTIFIED' : 'NEW GENUS RECORDED'}</div><h2>${esc(g.name.toUpperCase())}</h2>${cnOf(g.id) ? `<p class="rcn">${esc(cnOf(g.id))}</p>` : ''}
+    ${wowLine(g.id) ? `<p class="rwow">${esc(wowLine(g.id))}</p>` : ''}
+    ${o ? `<p class="rcn">Your mystery spood is ${esc(aGenus(g.name))}!${it.isNew ? ' Card unlocked.' : ''}</p>` : ''}
+    ${it.isNew && !o ? `<p>Your ${ordinal(g.discIndex)} jumping spider genus</p>` : ''}
+    ${o ? `<p>Observed ${esc(o.d)}</p>` : `<p>First observed ${esc(g.first.d)}${g.first.pg ? ' · ' + esc(g.first.pg) : ''}</p>`}
+    ${it.more ? `<p>…and ${plural(it.more, 'more mystery spood')} identified.</p>` : ''}
+    ${!list.length && it.isNew && !isGuest() ? '<p style="margin-top:14px"><button class="primary" data-act="dexImage">📤 Share my SPOODEX</button></p>' : ''}
     <p style="margin-top:18px;font-size:12px">${list.length ? `${list.length} more… ` : ''}tap to continue</p>`;
   el.addEventListener('click', () => { el.remove(); revealQueue(list); });
   document.body.appendChild(el);
@@ -2174,7 +2361,7 @@ function viewCompare() {
   const form = `<div class="panel" style="margin-bottom:16px"><h2>Compare SPOODEXes</h2>
     <p class="muted small">Enter another iNaturalist username to see what they've found that you haven't, and the other way round.</p>
     <form class="row" data-form="compare"><input name="login" value="${esc(C?.login || '')}" placeholder="their iNaturalist username" autocomplete="off" style="flex:1;min-width:180px"><button class="primary" ${C?.loading ? 'disabled' : ''}>Compare</button></form>
-    ${C?.loading ? `<div id="cmpLog" class="term" style="height:120px">${esc(C.log.slice(-6).join('\n'))}</div>` : ''}
+    ${C?.loading ? `<p id="cmpLog" class="small" style="margin:10px 0 0">${esc(C.log[C.log.length - 1] || '')}</p>` : ''}
     ${C?.error ? `<p>${esc(C.error)}</p>` : ''}</div>`;
   if (!C || !C.M || C.loading) return form;
   const T = C.M, me = esc(who()), them = esc(C.login), where = esc(scopeLabel(S.prefs.scope));
@@ -2195,7 +2382,7 @@ function viewCompare() {
     const covers = [...X.G.values()].sort(byRarity('g')).filter(g => g.cover).slice(0,4);
     return `<div class="side ${cls}"><div class="mosaic">${covers.map(g => `<i style="background-image:url('${esc(photoSize(g.cover,'small'))}')"></i>`).join('')}</div>
       <div style="font-family:var(--head);font-size:20px">${name}</div>
-      <div class="hand">${esc(generatedTitle(X))}</div>
+      <div class="hand">${titleHtml(X, S.cmp?.login)}</div>
       <div>LEVEL <b>${X.G.size}</b> · ${X.S.size} species</div>
       <div class="prestige">${fmt(prestige(X))} ✦</div><div class="small muted">collection prestige</div></div>`;
   };
@@ -2300,7 +2487,7 @@ async function loadCompare(login) {
   const save = cached && cached.login.toLowerCase() === login.toLowerCase() ? cached.save : { obs:{}, meta:{} };
   S.cmp = { login, save, loading:true, log:[] };
   if (S.tab === 'compare') render();
-  const log = line => { S.cmp.log.push(line); const el = $('#cmpLog'); if (el) { el.textContent = S.cmp.log.slice(-6).join('\n'); el.scrollTop = el.scrollHeight; } };
+  const log = line => { S.cmp.log.push(line); const el = $('#cmpLog'); if (el) el.textContent = line; };   // one plain progress line
   try {
     await importRecords(login, save, { log });
     saveShared();
@@ -2570,10 +2757,11 @@ function viewCrewMain() {
 // isn't a player puts it in its genus; until then its points show pencilled. Standings turn final a week after the window closes.
 const EV_POINTS = { genus:3, tier:2, newToYou:5, nobodyHad:3, pair:2, target:2, line:10, blackout:50, firstLine:5 };   // target = multiplier
 const EV_MODES = { blitz:{ i:'🏕', n:'Bioblitz' }, bingo:{ i:'🎲', n:'Spood Bingo' }, turf:{ i:'🗺', n:'Turf War' }, duel:{ i:'⚔️', n:'Duel' }, dare:{ i:'🎯', n:'Dare' }, cup:{ i:'🏆', n:'Crew Cup' } };
+const EV_OPEN_TTL = 2 * 3600e3, EV_OPEN_PAGES = 20;   // open events read up to 25 strangers' records: less often, and capped
 const EV_TTL = 30 * 60e3, EV_KEEP = 20, EV_FINAL_DAYS = 7, EV_LATE_UPLOAD = 2, EV_MAX_DAYS = 92, EV_LINK_MAX = 1500, EV_OPEN_N = 25, EV_ROSTER = 6, EV_TARGETS = 30;
 const EV_FIELDS = '(id:!t,observed_on:!t,created_at:!t,obscured:!t,geojson:!t,quality_grade:!t,community_taxon_id:!t,description:!t,tags:!t,user:(login:!t),'
   + 'taxon:(id:!t,rank:!t,ancestor_ids:!t),identifications:(current:!t,user:(id:!t,login:!t),taxon:(id:!t,ancestor_ids:!t)),'
-  + 'annotations:(controlled_attribute_id:!t,controlled_value_id:!t,votes:(vote_flag:!t)),photos:(url:!t))';
+  + 'annotations:(controlled_attribute_id:!t,controlled_value_id:!t,votes:(vote_flag:!t)),photos:(url:!t,license_code:!t))';
 const SQ_LABEL = { n:'A genus new to you', x:'A genus no player had', t:'A tribe new to you', M:'♂ A male', F:'♀ A female', J:'◦ A juvenile',
   s:'🔬 A species-level ID', q:'📍 3 different 25 km squares', bf:'🍴 Feeding', bc:'💃 Courtship or display', be:'🕸 Egg sac, retreat or moult' };
 const SQ_FIXED = ['n', 'x', 't', 'M', 'F', 'J', 's', 'q', 'bf', 'bc', 'be'], BINGO_POOL = 30, BINGO_TIERS = { 1:5, 2:5, 3:5, 4:3, 5:1 };   // white … red
@@ -2637,7 +2825,6 @@ function evCheck(o) {
   if (o.b != null && (!Array.isArray(o.b) || o.b.length < 24 || o.b.length > 40 || !o.b.every(c => typeof c === 'string' && SQ_RX.test(c) && c[0] !== 's' || c === 's') || new Set(o.b).size !== o.b.length)) return 'bad bingo pool';
   if (o.q != null && !(typeof o.q === 'string' && SQ_RX.test(o.q))) return 'bad dare';
   if (o.m !== 'blitz' && !o.r) return 'Add the players.';
-  if (o.m === 'blitz' && !o.r && !o.p) return 'An event open to anyone needs a place.';
   if (['duel', 'dare'].includes(o.m) && o.r.length !== 2) return o.m === 'duel' ? 'A duel is exactly 2 players.' : 'A dare is the challenger, then the dared player.';
   if (o.m === 'duel' && dayDiff(o.d1, o.d2) > 2) return 'A duel lasts 1 to 3 days (24–72 hours).';
   if (o.m === 'dare' && !o.q) return 'Pick what to dare them to find.';
@@ -2656,7 +2843,13 @@ function evParse(code) {
 
 // ---- fetching ----
 const evPlayers = E => E.ev.r || E.players || [];
-const evScope = ev => ev.p || ev.sc || null;   // rarity (and the bioblitz checklist): the place if set, otherwise the state the creator chose
+// rarity (and the bioblitz checklist): the place if set, otherwise the state the creator chose; an open event with no place: the world ('w')
+const evScope = ev => ev.p || ev.sc || (ev.r ? null : 'w');
+const scopeRef = pid => pid === 'w' ? S.ref.world : pid ? S.ref['p' + pid] : null;
+const scopeName = pid => pid === 'w' ? 'the world' : S.places[pid]?.n || 'the region';
+// Someone else's photo shows only with a CC0 / CC BY / CC BY-NC licence (the owner's and your own always do)
+const evPhOk = o => !!o?.ph && (!!OK_LIC[o.lc] || o.u.toLowerCase() === OWNER || isMe(o.u));
+const evPhCredit = o => creditTxt(o.u, OK_LIC[o.lc] ? o.lc : null);
 function evSave() {
   const ids = Object.keys(S.events);
   if (ids.length > EV_KEEP) {
@@ -2671,7 +2864,7 @@ const evRedraw = () => { if (S.tab === 'crew' && !document.activeElement?.closes
 // One event at a time, queued, so the Crew Cup and an opened event don't interleave their calls
 function loadEvent(id, force = false) {
   const E = S.events[id];
-  if (!E || (!force && E.at && (E.final || Date.now() - E.at < EV_TTL)) || evStatus(E.ev).k === 'soon') return evQueue;
+  if (!E || (!force && E.at && (E.final || Date.now() - E.at < (E.ev.r ? EV_TTL : EV_OPEN_TTL))) || evStatus(E.ev).k === 'soon') return evQueue;
   if (E.queued) return evQueue;
   E.queued = true;
   return evQueue = evQueue.then(() => evFetch(id)).catch(e => console.warn(e)).finally(() => { if (S.events[id]) S.events[id].queued = false; });
@@ -2683,7 +2876,7 @@ async function evFetch(id) {
   try {
     if (ev.p && !S.places[ev.p]?.n) { delete S.places[ev.p]; await fetchPlaces([ev.p]); }
     const scope = evScope(ev);
-    if (scope) await ensureRefPlace(scope);
+    if (scope) await ensureRefPlace(scope === 'w' ? null : scope);
     // Open bioblitz: the top observers of the place in the window are the players
     if (!ev.r) {
       const d = await api('/observations/observers', { taxon_id:SALTICIDAE, place_id:ev.p, d1:ev.d1, d2:ev.d2, captive:false, per_page:EV_OPEN_N });
@@ -2707,11 +2900,13 @@ async function evFetch(id) {
       const tree = await api('/observations/taxonomy', q);   // names and ranks for every taxon in the event
       tree.results.forEach(addNode);
       const late = addDays(ev.d2, EV_LATE_UPLOAD);
-      let idAbove = 0;
+      let idAbove = 0, pages = 0;
+      E.capped = false;
       while (true) {
         const d = await api('/observations', { ...q, per_page:200, order_by:'id', order:'asc', id_above:idAbove || null, fields:EV_FIELDS }, API2);
         for (const o of d.results) { const t = evTrim(o, lc, ev, late); if (t) obs.push(t); }
         if (d.results.length < 200) break;
+        if (!ev.r && ++pages >= EV_OPEN_PAGES) { E.capped = true; break; }
         idAbove = d.results[d.results.length - 1].id;
       }
     }
@@ -2737,13 +2932,13 @@ function evTrim(o, lc, ev, late) {
     .map(a => a.controlled_attribute_id + '|' + a.controlled_value_id);
   const text = [o.description || '', ...(o.tags || [])].join(' '), cc = o.geojson?.coordinates;
   return { id:o.id, u, d, c, g, sp, ink:backs(g), inkS:backs(sp), k:!o.obscured && cc ? cellKey(cc[1], cc[0], .25) : null,
-    a:ann, b:Object.keys(BEH_RX).filter(k => BEH_RX[k].test(text)), ph:o.photos?.[0]?.url || '' };
+    a:ann, b:Object.keys(BEH_RX).filter(k => BEH_RX[k].test(text)), ph:o.photos?.[0]?.url || '', lc:o.photos?.[0]?.license_code || null };
 }
 
 // ---- scoring (pure: the same records give the same standings on every device) ----
 const evOrder = (a, b) => a.d.localeCompare(b.d) || a.c.localeCompare(b.c) || a.id - b.id;
-function starsAt(id, pid) {   // rarity weight 1 (white) … 5 (red) in a place; absent = red
-  const t = tierIn(pid && S.ref['p' + pid]?.g, id);
+function starsAt(id, pid) {   // rarity weight 1 (white) … 5 (red) in a place ('w' = the world); absent = red
+  const t = tierIn(scopeRef(pid)?.g, id);
   return t ? t.lv : 1;
 }
 const tribeIdOf = gid => { const L = lineage(gid); return (L.find(n => n.r === 'tribe') || L.find(n => n.r === 'subfamily') || {}).id || null; };
@@ -3005,7 +3200,7 @@ function eventsHtml() {
   const all = Object.values(S.events).filter(E => E.code).sort((a, b) => b.ts - a.ts);
   const active = all.filter(E => !E.final), done = all.filter(E => E.final);
   return `${S.evDraft ? evFormHtml() : ''}<div class="panel" style="margin-bottom:16px">
-    <div class="row"><h2 style="margin:0">Events</h2>${S.evDraft ? '' : '<button class="primary" data-act="evNew" style="margin-left:auto">＋ New event</button>'}</div>
+    <div class="row"><h2 style="margin:0">Events</h2>${S.evDraft ? '' : `<span class="row" style="margin-left:auto;gap:6px"><button data-act="evHunt">🗓 This month's spood hunt</button><button class="primary" data-act="evNew">＋ New event</button></span>`}</div>
     ${active.length ? `<div class="evcards">${active.map(evCardHtml).join('')}</div>` : '<p class="small muted" style="margin-bottom:0">Bioblitzes, bingo, turf wars, duels and dares, scored from everyone\'s public iNaturalist records. Make one and send the link.</p>'}
     ${done.length ? `<h3 style="margin-top:14px">Finished</h3>${done.map(E => { const me = evMe(E), w = E.res?.rows[0];
       return `<div class="feed small">${EV_MODES[E.ev.m].i} <a href="#" data-act="evOpen" data-v="${esc(E.id)}">${esc(E.ev.n)}</a> · ${evDates(E.ev)}
@@ -3033,22 +3228,24 @@ function viewEvent(E) {
   <div class="panel evhead" style="margin-bottom:16px">
     <div class="small" style="letter-spacing:.15em">${mode.i} ${mode.n.toUpperCase()}${ev.m === 'cup' ? '' : ev.r ? '' : ' · OPEN TO ANYONE'}</div>
     <h2>${esc(ev.n)}</h2>
-    <div>${evDates(ev)}${ev.p ? ` · ${evPlaceTxt(ev)}` : ''} · <b>${st.txt}</b></div>
-    <div class="small muted">${P.length ? `${ev.r ? 'Players' : `Players (the ${EV_OPEN_N} most active salticid observers here in the window)`}: ${P.map(l => esc(l)).join(', ')}` : ev.r ? '' : 'Players are the top observers here once records come in.'}</div>
+    <div>${evDates(ev)}${ev.p ? ` · ${evPlaceTxt(ev)}` : ev.r ? '' : ' · anywhere'} · <b>${st.txt}</b></div>
+    <div class="small muted">${P.length ? `${ev.r ? 'Players' : `Players (the ${EV_OPEN_N} most active salticid observers ${ev.p ? 'here' : 'anywhere'} in the window)`}: ${P.map(l => esc(l)).join(', ')}` : ev.r ? '' : `Players are the top observers ${ev.p ? 'here' : 'anywhere'} once records come in.`}</div>
     <div class="row" style="margin-top:8px;gap:6px">
       ${!E.final && st.k !== 'soon' ? `<button data-act="evRefresh" data-v="${esc(E.id)}" ${busy ? 'disabled' : ''}>${busy ? 'Reading records…' : '⟳ Refresh'}</button>` : ''}
       ${E.code ? '<button data-act="evCopy">🔗 Copy event link</button>' : ''}
+      ${E.code && !ev.r ? `<button data-act="evPostText" class="${S.evPost ? 'on' : ''}">📋 Post text</button>` : ''}
       ${E.final && E.code && ev.m !== 'dare' ? `<button data-act="evRematch" data-v="${esc(E.id)}">🔁 Rematch</button>` : ''}
       ${ev.m === 'dare' && E.code ? `<button data-act="evDareBack" data-v="${esc(E.id)}">🎯 Dare back</button>` : ''}
       ${R && st.k !== 'soon' ? `<button data-act="evCard" data-v="${esc(E.id)}">🪪 ${E.final ? 'Result card' : 'Card so far'}</button>` : ''}
     </div>
-    ${E.at ? `<p class="small muted" style="margin:6px 0 0">Read ${esc(new Date(E.at).toLocaleString())}. ${E.final ? '' : 'Refreshes every 30 minutes while open.'}</p>` : ''}
+    ${E.at ? `<p class="small muted" style="margin:6px 0 0">Read ${esc(new Date(E.at).toLocaleString())}. ${E.final ? '' : `Refreshes every ${ev.r ? '30 minutes' : '2 hours'} while open.`}${E.capped ? ` Reading the first ${fmt(EV_OPEN_PAGES * 200)} records only.` : ''}</p>` : ''}
     ${evErr[E.id] ? `<p>${esc(evErr[E.id])} <button data-act="evRefresh" data-v="${esc(E.id)}">Try again</button></p>` : ''}
     ${Object.keys(E.gone || {}).length ? `<p class="small">⚠ No iNaturalist user: ${Object.keys(E.gone).map(esc).join(', ')}</p>` : ''}
+    ${S.evPost && E.code && !ev.r ? evPostHtml(E) : ''}
   </div>`;
   const rules = `<p class="small muted">Records count if observed ${evDates(ev)}, uploaded by ${dShort(addDays(ev.d2, EV_LATE_UPLOAD))}, not captive${ev.p ? `, in ${evPlaceTxt(ev)}` : ''}.
     A record is <b>inked</b> once someone outside the event agrees on its genus on iNaturalist; until then its points are <b>✏️ pencilled</b>.
-    ${['blitz', 'duel', 'cup'].includes(ev.m) ? `Points per genus: ${EV_POINTS.genus}, +${EV_POINTS.tier} for each rarity tier above Common (by iNat records in ${esc(S.places[evScope(ev)]?.n || 'the region')}: green +${EV_POINTS.tier}, up to red +${EV_POINTS.tier * 4}), +${EV_POINTS.newToYou} if new to you, +${EV_POINTS.nobodyHad} if no player had it, +${EV_POINTS.pair} for ♂ and ♀${ev.t ? `, ×${EV_POINTS.target} for 🎯 targets` : ''}.` : ''}</p>`;
+    ${['blitz', 'duel', 'cup'].includes(ev.m) ? `Points per genus: ${EV_POINTS.genus}, +${EV_POINTS.tier} for each rarity tier above Common (by iNat records in ${esc(scopeName(evScope(ev)))}: green +${EV_POINTS.tier}, up to red +${EV_POINTS.tier * 4}), +${EV_POINTS.newToYou} if new to you, +${EV_POINTS.nobodyHad} if no player had it, +${EV_POINTS.pair} for ♂ and ♀${ev.t ? `, ×${EV_POINTS.target} for 🎯 targets` : ''}.` : ''}</p>`;
   if (st.k === 'soon') return head + rules;
   if (!R) return head + (busy ? '<p class="muted">Reading the records…</p>' : '') + rules;
   const body = { blitz:evBlitzHtml, duel:evDuelHtml, cup:evBlitzHtml, bingo:evBingoHtml, turf:evTurfHtml, dare:evDareHtml }[ev.m](E, R);
@@ -3061,14 +3258,14 @@ function evBoardHtml(E, R, unit = 'Points', pencilled = true) {
   const cnt = (r, v) => from[r.k] != null && from[r.k] !== v ? ` data-from="${from[r.k]}" data-to="${v}"` : '';
   return `<div class="panel tablewrap"><table class="ladder evboard"><tr><th></th><th>Naturalist</th><th class="n">${unit}${pencilled ? ' <span class="small">(+ ✏️)</span>' : ''}</th><th class="n">Genera</th></tr>
     ${R.rows.map(r => { const gi = [...r.gen.values()].filter(x => x.inked).length, gp = r.gen.size - gi;
-      return `<tr class="${isMe(r.login) ? 'me' : ''}"><td class="rk">${r.val > 0 ? medal(r.rank) : '#' + r.rank}</td><td class="who">${esc(r.login)}${isMe(r.login) ? ' <span class="small muted">(you)</span>' : ''}</td>
+      return `<tr class="${isMe(r.login) ? 'me' : ''}"><td class="rk">${r.val > 0 ? medal(r.rank) : '#' + r.rank}</td><td class="who">${evThumb(r)}${esc(r.login)}${isMe(r.login) ? ' <span class="small muted">(you)</span>' : ''}</td>
         <td class="n"><b${cnt(r, r.val)}>${fmt(r.val)}</b>${pencilled && r.pencil ? ` <span class="small muted">+${fmt(r.pencil)} ✏️</span>` : ''}</td><td class="n">${gi}${gp ? ` <span class="small muted">+${gp} ✏️</span>` : ''}</td></tr>`; }).join('')}</table>
     ${R.rows.map(r => r.gen.size ? `<details style="margin-top:6px"><summary class="small">${esc(r.login)}: ${plural(r.obs.length, 'record')}, ${plural(r.gen.size, 'genus', 'genera')}</summary>
       ${[...r.gen.values()].sort((a, b) => b.inked - a.inked || b.pts - a.pts).map(x => `<div class="small">${x.inked ? '✓' : '✏️'} ${x.target ? '🎯 ' : ''}<a href="#" data-genus="${x.gid}">${gName(x.gid)}</a>
         <b>${x.pts}</b> <span class="muted">(${x.parts.map(p => `${esc(p[0])} ${p[1]}`).join(' + ')}${x.target ? ` ×${EV_POINTS.target}` : ''}) · ${obsLink(x.first, `${plural(x.obs.length, 'record')}, first ${esc(dShort(x.first.d))}`)}</span></div>`).join('')}</details>` : '').join('')}</div>`;
 }
 function evBlitzHtml(E, R) {
-  const ev = E.ev, pid = evScope(ev), ref = pid && S.ref['p' + pid], where = esc(S.places[pid]?.n || 'the region');
+  const ev = E.ev, pid = evScope(ev), ref = scopeRef(pid), where = esc(scopeName(pid));
   const found = new Map(), pencil = new Set();
   R.rows.forEach(r => r.gen.forEach(x => {
     if (!x.inked) { pencil.add(x.gid); return; }
@@ -3079,13 +3276,45 @@ function evBlitzHtml(E, R) {
   const missing = ref ? Object.keys(ref.g).map(Number).filter(id => !found.has(id) && !pencil.has(id)).sort((a, b) => (tgt.has(b) - tgt.has(a)) || ref.g[b] - ref.g[a]) : [];
   return `<div class="panel evbig" style="margin-bottom:16px"><b>${found.size}</b> ${found.size === 1 ? 'genus' : 'genera'} inked${ref ? ` of the <b style="font-size:inherit;color:inherit">${total}</b> on iNat in ${where}` : ''}${pencil.size ? ` <span class="muted">· ${[...pencil].filter(id => !found.has(id)).length} more pencilled</span>` : ''}
       ${ref ? `<div class="bar" style="max-width:420px;margin-top:6px"><i style="width:${pct(found.size, total)}%"></i></div>` : ''}</div>
-    ${evBoardHtml(E, R)}
+    ${bestFindsHtml(R)}${evBoardHtml(E, R)}
     <div class="grid2" style="margin-top:16px"><div class="panel"><h3>Found <span class="small muted">taxonomic order</span></h3>
       ${taxonomicOrder([...found.keys()]).order.map(id => { const f = found.get(id); return `<div class="small">✓ ${tgt.has(id) ? '🎯 ' : ''}<a href="#" data-genus="${id}">${gName(id)}</a> · first by <b>${esc(f.login)}</b>, ${obsLink(f.o, esc(dShort(f.o.d)))}</div>`; }).join('') || '<p class="small muted">Nothing inked yet.</p>'}
       ${[...pencil].filter(id => !found.has(id)).map(id => `<div class="small muted">✏️ <a href="#" data-genus="${id}">${gName(id)}</a> waiting for an ID</div>`).join('')}</div>
     <div class="panel"><h3>Still missing <span class="small muted">most-recorded first</span></h3>
       ${ref ? missing.slice(0, 60).map(id => `<div class="small">${tgt.has(id) ? '🎯 ' : ''}<a href="#" data-genus="${id}">${gName(id)}</a> <span class="muted">${fmt(ref.g[id])} record${ref.g[id] === 1 ? '' : 's'} in ${where}</span></div>`).join('') + (missing.length > 60 ? `<p class="small muted">…and ${missing.length - 60} more.</p>` : '') : '<p class="small muted">Loading the checklist…</p>'}</div></div>`;
 }
+// The best finds as photos, so an open leaderboard reads for strangers: the top-scoring inked genera, each by its first finder
+function bestFindsHtml(R) {
+  const best = new Map();
+  R.rows.forEach(r => r.gen.forEach(x => {
+    if (!x.inked) return;
+    const o = x.ink.find(evPhOk) || x.ink[0], b = best.get(x.gid);
+    if (!b || x.pts > b.pts || (x.pts === b.pts && evOrder(o, b.o) < 0)) best.set(x.gid, { gid:x.gid, pts:x.pts, login:r.login, o });
+  }));
+  const top = [...best.values()].sort((a, b) => b.pts - a.pts || evOrder(a.o, b.o)).slice(0, 8);
+  if (!top.length) return '';
+  ensureInfo(top.map(f => f.gid));   // common names
+  return `<div class="panel" style="margin-bottom:16px"><h3>Best finds</h3><div class="spoods">${top.map(f => `<a class="lcard" href="https://www.inaturalist.org/observations/${f.o.id}" target="_blank" rel="noopener" title="Open on iNaturalist">
+    ${evPhOk(f.o) ? `<span class="ph" style="background-image:url('${esc(photoSize(f.o.ph, 'small'))}')"></span>` : '<span class="ph noph">?</span>'}
+    <span class="nm"><i>${esc(S.nodes[f.gid]?.n || '?')}</i></span>${cnOf(f.gid) ? `<span class="cn">${esc(cnOf(f.gid))}</span>` : ''}
+    <span class="pts"><b>${f.pts} pts</b></span><span class="cr" title="${esc(evPhOk(f.o) ? evPhCredit(f.o) : f.login)}">${esc(evPhOk(f.o) ? evPhCredit(f.o) : `by ${f.login}`)}</span></a>`).join('')}</div></div>`;
+}
+function evThumb(r) {
+  const b = [...r.gen.values()].filter(x => x.inked).sort((a, b) => b.pts - a.pts).map(x => x.ink.find(evPhOk)).find(Boolean);
+  return b ? `<a class="avatar sq" href="https://www.inaturalist.org/observations/${b.id}" target="_blank" rel="noopener" title="${esc(`${S.nodes[b.g]?.n || ''} · ${evPhCredit(b)}`)}" style="background-image:url('${esc(photoSize(b.ph, 'thumb'))}')"></a>` : '';
+}
+// Ready to paste into a Reddit post or the iNat forum: a title, where and when, two lines of rules, the link. SPOODEX posts nothing.
+function evPostText(E) {
+  const ev = E.ev, where = ev.p ? S.places[ev.p]?.n || '' : '';
+  return `${ev.n}: a jumping spider hunt on iNaturalist, ${evDates(ev)}
+
+Photograph jumping spiders (Salticidae) ${where ? `in ${where}` : 'anywhere in the world'} between ${dShort(ev.d1)} and ${dShort(ev.d2)}, and upload them to iNaturalist by ${dShort(addDays(ev.d2, EV_LATE_UPLOAD))}.
+Each genus scores once someone outside the hunt agrees with its genus ID, rarer genera score more, and the ${EV_OPEN_N} most active observers make the leaderboard.
+
+Leaderboard and rules: ${evLink(E.code)}`;
+}
+const evPostHtml = E => `<div style="margin-top:10px"><textarea id="evPostTxt" class="posttxt" rows="9" readonly>${esc(evPostText(E))}</textarea>
+  <p class="row" style="margin:6px 0 0;gap:6px"><button class="primary" data-act="evPostCopy">Copy post text</button></p></div>`;
 function evDuelHtml(E, R) {
   const [a, b] = E.ev.r.map(l => R.rows.find(r => r.k === l.toLowerCase()));
   const side = r => `<div class="side"><div style="font-family:var(--head);font-size:22px">${esc(r.login)}</div><div class="prestige" style="font-size:54px">${fmt(r.pts)}</div>
@@ -3194,7 +3423,7 @@ async function openEventCard(id) {
   const R = evResult(E), top = evTopFind(E, R);
   $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(640px,100%)"><button class="x" data-close="1">✕</button><div class="body">
     <h2>${esc(E.ev.n)}</h2><div id="cardOut"><p class="muted">Developing the print…</p></div></div></div></div>`;
-  const tiles = top?.o?.ph ? await cardPhotos([{ id:top.x.gid, name:S.nodes[top.x.gid]?.n || '?', cover:top.o.ph }]) : [];
+  const tiles = evPhOk(top?.o) ? await cardPhotos([{ id:top.x.gid, name:S.nodes[top.x.gid]?.n || '?', cover:top.o.ph }]) : [];
   const out = $('#cardOut'); if (!out) return;
   await mountCard(out, (cv, po) => drawEventCard(cv, E, R, top, tiles[0], po), `spoodex-${E.ev.m}-${E.ev.d1}`);
 }
@@ -3230,7 +3459,7 @@ function drawEventCard(cv, E, R, top, tile, photosOnly) {
     text(`${dShort(top.o.d)} · inked on iNaturalist`, 410, 928, '400 26px "IBM Plex Mono", monospace', C.muted, 'left', 590);
   }
   K.rule(1150);
-  if (top?.o?.ph) text(`Photo © ${top.r.login} via iNaturalist`, 80, 1200, '400 19px "IBM Plex Mono", monospace', C.muted);
+  if (evPhOk(top?.o)) text(`Photo ${evPhCredit(top.o)} via iNaturalist`, 80, 1200, '400 19px "IBM Plex Mono", monospace', C.muted);
   text('Scored from public iNat records. Inked = genus agreed by a non-player.', 80, 1228, '400 19px "IBM Plex Mono", monospace', C.muted);
   text(location.host + location.pathname.replace(/(index|spoodex)\.html$/, ''), 80, 1256, '600 19px "IBM Plex Mono", monospace', C.ink);
   return K.tainted;
@@ -3258,18 +3487,19 @@ function evDraftNew(m = 'blitz') {
 function evPreset(D, k) {
   const t = todayIso(), dow = new Date(t + 'T12:00:00Z').getUTCDay();
   const sat = dow === 0 ? addDays(t, -1) : addDays(t, (6 - dow) % 7), end = isoDay(new Date(+t.slice(0, 4), +t.slice(5, 7), 0).getTime());
-  const set = { weekend:[sat < t ? t : sat, addDays(sat, 1)], week:[t, addDays(t, 6)], month:[t.slice(0, 8) + '01', end], d1:[t, t], d2:[t, addDays(t, 1)], d3:[t, addDays(t, 2)] }[k];
+  const y = +t.slice(0, 4), mo = +t.slice(5, 7), nx = [isoDay(new Date(y, mo, 1).getTime()), isoDay(new Date(y, mo + 1, 0).getTime())];
+  const set = { weekend:[sat < t ? t : sat, addDays(sat, 1)], week:[t, addDays(t, 6)], month:[t.slice(0, 8) + '01', end], nextmonth:nx, d1:[t, t], d2:[t, addDays(t, 1)], d3:[t, addDays(t, 2)] }[k];
   if (set) [D.d1, D.d2] = set;
   if (D.m === 'dare') D.d1 = t;
 }
 function evFormHtml() {
   const D = S.evDraft, m = D.m;
   const chip = (act, v, on, label) => `<span class="chip ${on ? 'on' : ''}" data-act="${act}" data-v="${v}" style="cursor:pointer">${label}</span>`;
-  const presets = m === 'duel' ? [['d1', '1 day'], ['d2', '2 days'], ['d3', '3 days']] : m === 'dare' ? [['weekend', 'By Sunday'], ['week', '7 days'], ['month', 'End of month']] : [['weekend', 'This weekend'], ['week', 'Next 7 days'], ['month', 'This month']];
+  const presets = m === 'duel' ? [['d1', '1 day'], ['d2', '2 days'], ['d3', '3 days']] : m === 'dare' ? [['weekend', 'By Sunday'], ['week', '7 days'], ['month', 'End of month']] : [['weekend', 'This weekend'], ['week', 'Next 7 days'], ['month', 'This month'], ['nextmonth', 'Next month']];
   const ref = D.p && S.ref['p' + D.p];
-  const scopeName = D.p ? esc(D.pn) : esc(S.places[S.M.home.state || S.M.home.country]?.n || 'your region');
+  const scopeName = D.p ? esc(D.pn) : m === 'blitz' && D.open ? 'the world' : esc(S.places[S.M.home.state || S.M.home.country]?.n || 'your region');
   const opts = {
-    blitz:`<label class="small"><input type="checkbox" data-evf="open" ${D.open ? 'checked' : ''} ${D.p ? '' : 'disabled'}> Open to anyone: the ${EV_OPEN_N} most active salticid observers in the place are the players${D.p ? '' : ' (pick a place first)'}</label>
+    blitz:`<label class="small"><input type="checkbox" data-evf="open" ${D.open ? 'checked' : ''}> Open to anyone: the ${EV_OPEN_N} most active salticid observers ${D.p ? 'in the place' : 'anywhere (or pick a place)'} are the players</label>
       ${D.p ? ref ? `<details style="margin-top:6px"><summary class="small">🎯 Target genera (score ×${EV_POINTS.target}): ${D.t.length ? D.t.map(gName).join(', ') : 'none'}</summary>
         <div class="evtargets">${taxonomicOrder(Object.keys(ref.g).map(Number)).order.map(id => `<label class="small"><input type="checkbox" data-evt="${id}" ${D.t.includes(id) ? 'checked' : ''}> ${gName(id)} <span class="muted">${fmt(ref.g[id])}</span></label>`).join('')}</div></details>`
         : '<p class="small muted">Loading the place\'s genera…</p>' : ''}`,
@@ -3302,7 +3532,7 @@ async function evCreate() {
   const msg = t => { D.msg = t; const el = $('#evMsg'); if (el) el.textContent = t; };
   const ev = { v:1, m:D.m, n:(D.n.trim() || EV_MODES[D.m].n).slice(0, 40), d1:D.m === 'dare' ? todayIso() : D.d1, d2:D.d2, p:D.m === 'dare' ? null : D.p,
     r:D.m === 'blitz' && D.open ? null : D.r.split(/[\s,;]+/).map(x => x.trim().replace(/^@/, '')).filter(Boolean), s:newSeed(),
-    sc:D.p && D.m !== 'dare' ? null : (S.M.home.state || S.M.home.country || null), t:D.m === 'blitz' && D.t.length ? D.t : null, b:null, q:D.m === 'dare' ? D.q : null };
+    sc:(D.p && D.m !== 'dare') || (D.m === 'blitz' && D.open) ? null : (S.M.home.state || S.M.home.country || null), t:D.m === 'blitz' && D.t.length ? D.t : null, b:null, q:D.m === 'dare' ? D.q : null };
   const why = evCheck({ ...ev, b:ev.m === 'bingo' ? SQ_FIXED.concat(Array.from({ length:19 }, (_, i) => 'g' + (i + 1))) : null });
   if (why) return msg(why);
   if (ev.m === 'bingo') {
@@ -3333,11 +3563,12 @@ function recordShare(pid) {
 function shareHtml() {
   const M = S.M, st = M.home.state, co = M.home.country;
   const A = recordShare(st || co);
-  if (!A) return '<p class="muted small">Waiting for regional totals… (set a home base if you have no records yet)</p>';
+  if (!A) return '';
   const B = co && st && co !== st ? recordShare(co) : null, where = esc(A.where);
-  const partial = A.rows.filter(r => r.mine < r.all).slice(0, 8);
-  return `<div class="envy"><div class="big">You've made <b>${pctTxt(A.pc)}</b> of all verifiable salticid records on iNat in ${where}.</div>
-      <div class="small muted">${fmt(A.mine)} of ${fmt(A.total)}${B ? ` · and ${pctTxt(B.pc)} of ${esc(B.where)}'s (${fmt(B.mine)} of ${fmt(B.total)})` : ''}</div></div>
+  const partial = A.rows.filter(r => r.mine < r.all && r.pc >= .01).slice(0, 8);
+  if (A.pc < .01 && !A.sole.length && !partial.length) return '';   // nothing worth showing yet
+  return `${A.pc >= .01 ? `<div class="envy"><div class="big">You've made <b>${pctTxt(A.pc)}</b> of all verifiable salticid records on iNat in ${where}.</div>
+      <div class="small muted">${fmt(A.mine)} of ${fmt(A.total)}${B && B.pc >= .01 ? ` · and ${pctTxt(B.pc)} of ${esc(B.where)}'s (${fmt(B.mine)} of ${fmt(B.total)})` : ''}</div></div>` : ''}
     ${A.sole.length ? `<p>🗝 Every ${where} record of ${A.sole.length === 1 ? 'this genus' : `these ${A.sole.length} genera`} is yours: ${A.sole.map(r => gLink(r.g.id)).join(', ')}</p>` : ''}
     ${A.spSole ? `<p class="small">…plus ${A.spSole} species where every ${where} record is yours.</p>` : ''}
     ${partial.length ? `<h3 style="margin-top:10px">Biggest shares in ${where}</h3>
@@ -3404,7 +3635,11 @@ function pioneerLine(gid) {
   if (!xs.length) return '';
   return `<dt>Earliest on iNat</dt><dd>${xs.map(x => `${isMe(x.p.u) ? '🏅 <b>you</b>' : esc(x.p.u)} in ${esc(S.places[x.pid]?.n)} (${esc(x.p.d)})`).join('<br>')}</dd>`;
 }
-function pioneerUpdated() { document.querySelectorAll('[data-pioneer]').forEach(el => el.innerHTML = pioneerHtml()); }
+function pioneerUpdated() {
+  const els = document.querySelectorAll('[data-pioneer]');
+  els.forEach(el => el.innerHTML = pioneerHtml());
+  if (!els.length && S.tab === 'profile' && myPioneers().length) softRender();   // the panel appears with the first badge
+}
 
 /* ---------------- the spood report: this week's salticid news for your state ---------------- */
 const REPORT_TTL = 6 * 3600e3, REPORT_DAYS = 7, REPORT_TOP = 8;
@@ -3649,9 +3884,9 @@ function posterHtml(x, ctx, act) {
   const info = S.info[x.id] || {}, tag = ctx.kind === 'trip' ? ctx.at : (S.places[ctx.pid]?.n || 'your region');
   return `<div class="poster" data-act="${act}" data-v="${x.id}" title="Open the case file">
     <div class="wtitle">WANTED</div><div class="wtier">${x.tier.toUpperCase()} · ${esc(tag.toUpperCase())}</div>
-    <div class="wph" style="background-image:url('${esc(info.p || '')}')"></div>
-    ${info.a ? `<div class="wcredit">${esc(info.a)}</div>` : ''}
-    <div class="wname">${esc(S.nodes[x.id]?.n || '?')}</div><div class="wtribe">${esc(tribeOf(x.id))}</div>
+    <div class="wph" style="background-image:url('${esc(stockPh(x.id))}')"></div>
+    ${stockCr(x.id) ? `<div class="wcredit">${esc(stockCr(x.id))}</div>` : ''}
+    <div class="wname">${esc(S.nodes[x.id]?.n || '?')}</div>${cnHtml(x.id, 'wtribe')}<div class="wtribe">${esc(tribeOf(x.id))}</div>
     <ul class="wwhy">${wantedReasons(x, ctx).map(r => `<li>${r}</li>`).join('')}</ul>
     <div class="wreward">REWARD · LEVEL ${S.M.G.size + 1} · +100 XP</div></div>`;
 }
@@ -3730,6 +3965,77 @@ function drawCaseMap(hn, ranked, ctx = homeCtx()) {
   const h = ctx.centre;
   if (h) { L.rectangle(boxBounds(h, ctx.km), { color:'#3f6b3a', weight:2, dashArray:'6 6', fill:false, interactive:false }).addTo(caseMap); bounds.push([h.lat - .25, h.lng - .25], [h.lat + .25, h.lng + .25]); }
   setTimeout(() => { caseMap.invalidateSize(); if (bounds.length) caseMap.fitBounds(bounds, { padding:[16, 16], maxZoom:10 }); else caseMap.setView([-25, 134], 4); }, 60);
+}
+
+/* ---------------- three to find next: missing genera recorded near home, in season ---------------- */
+// The owner's photos stand in for other people's wherever a missing genus needs a picture (his request): one call per batch of
+// genera, cached 30 days. Otherwise iNat's taxon photo, only if its licence is CC0, CC BY or CC BY-NC, credited.
+const OWNPH_TTL = 30 * 864e5, NEXT_N = 3;
+S.ownph = store.get('ownph', {});   // genus id -> {ts, o observation, u photo url}; {ts} alone = he has no research-grade photo of it
+async function ownerPhotos(ids) {
+  const need = [...new Set(ids)].filter(id => !OWNER_PICKS[id] && (!S.ownph[id] || Date.now() - S.ownph[id].ts > OWNPH_TTL));
+  if (!need.length) return;
+  for (let i = 0; i < need.length; i += 30) {
+    const batch = need.slice(i, i + 30);
+    const d = isMe(OWNER) ? { results:[] } : await api('/observations', { user_login:OWNER, taxon_id:batch.join(','), quality_grade:'research', photos:true,
+      order_by:'votes', order:'desc', per_page:200, fields:'(id:!t,taxon:(id:!t,ancestor_ids:!t),photos:(url:!t))' }, API2);
+    batch.forEach(id => S.ownph[id] = { ts:Date.now() });
+    for (const o of d.results) { const g = genusIn(o, batch); if (g && !S.ownph[g].u && o.photos?.[0]) S.ownph[g] = { ts:Date.now(), o:o.id, u:o.photos[0].url }; }
+  }
+  store.set('ownph', S.ownph);
+}
+function taxonPhoto(id) {
+  const o = S.ownph[id], i = S.info[id];
+  if (OWNER_PICKS[id]) return { u:pickUrl(id), o:OWNER_PICKS[id][0], cr:creditTxt(OWNER) };
+  if (o?.u) return { u:photoSize(o.u, 'medium'), o:o.o, cr:creditTxt(OWNER) };
+  if (i?.p && OK_LIC[i.lc]) return { u:i.p, cr:creditTxt(byName(i.a) || 'iNaturalist user', i.lc) };
+  return null;
+}
+// Recorded within 25 km of home first, then in season, then the wanted score (which already weighs recent records and season)
+function nextThree() {
+  const list = wantedList(homeCtx()); if (!list) return null;
+  const rank = x => (x.near ? 2 : 0) + ((x.season ?? .5) >= .4 ? 1 : 0);   // an unknown season counts as middling, as in the wanted score
+  return [...list].sort((a, b) => rank(b) - rank(a) || b.score - a.score).slice(0, NEXT_N);
+}
+let nextBusy = false;
+async function loadNextThree(redraw) {
+  const M = S.M, h = M.homeCell;
+  if (nextBusy || !(M.home.state || M.home.country)) return;
+  nextBusy = true; redraw();
+  try {
+    await ensureRef('state');
+    if (h) { if (!S.u.scans[h.k]) await fetchScan(h.k); await scanActive(h.k); }
+    redraw();
+    // pictures first (one call each covers the ten likeliest), so the cards fill in before the season curves arrive
+    const likely = wantedList(homeCtx()).slice(0, 10).map(x => x.id);
+    await ensureInfo(likely); await ownerPhotos(likely); redraw();
+    // season curves re-rank the likeliest few; repeat until the three on show all have theirs
+    for (let round = 0, ids = wantedList(homeCtx()).slice(0, 8).map(x => x.id); round < 3 && ids.length; round++) {
+      ensurePheno(ids);
+      while (phenoBusy) await sleep(800);
+      ids = nextThree().map(x => x.id).filter(id => !S.pheno[phenoKey(id)]);
+    }
+    const ids = nextThree().map(x => x.id);
+    await ensureInfo(ids); await ownerPhotos(ids);
+  } catch (e) { console.warn(e); }
+  nextBusy = false; redraw();
+}
+function findCard(x) {
+  const ph = taxonPhoto(x.id), where = ctxWhere(homeCtx()), p = x.peak;
+  const near = x.recent ? `🔥 Recorded within 25 km of home in the last ${ACTIVE_DAYS} days` : x.near ? `📍 ${fmt(x.near)} record${x.near === 1 ? '' : 's'} within 25 km of home`
+    : `📚 ${fmt(x.state)} record${x.state === 1 ? '' : 's'} in ${where}`;
+  const when = !p || p.few ? '' : p.text === 'year-round' ? '🌡 Recorded all year round' : p.now ? `🌡 In season now · peak ${esc(p.text)}` : `🗓 Peak ${esc(p.text)}`;
+  return `<div class="fcard" data-act="wanted" data-v="${x.id}" title="Where and when to look">
+    ${ph ? `<div class="ph" style="background-image:url('${esc(ph.u)}')"></div>` : '<div class="ph none">?</div>'}
+    <div class="meta"><div class="nm"><i>${esc(S.nodes[x.id]?.n || '?')}</i></div>${cnOf(x.id) ? `<div class="cn">${esc(cnOf(x.id))}</div>` : ''}
+      <div class="small">${near}</div>${when ? `<div class="small">${when}</div>` : ''}${ph ? `<div class="cr">${esc(ph.cr)}</div>` : ''}</div></div>`;
+}
+function nextThreeHtml() {
+  const ctx = homeCtx(); if (!ctx.pid) return '';
+  const xs = nextThree();
+  if (!xs || (nextBusy && !xs.length)) return '<p class="small muted">Checking what has been recorded near you…</p>';
+  if (!xs.length) return '';
+  return `<h3 style="margin-top:14px">Three to find next <span class="small muted">· ${MONTHS[ctx.month]}</span></h3><div class="finds">${xs.map(findCard).join('')}</div>`;
 }
 
 /* ---------------- trip planner: Most Wanted for anywhere you're going ---------------- */
@@ -4200,8 +4506,8 @@ async function cardPhotos(list) {
     return { g, open, any: open || await loadImg(url, false) };
   }));
 }
-function cardKit(cv) {
-  const W = 1080, H = 1350, x = cv.getContext('2d');
+function cardKit(cv, H = 1350) {
+  const W = 1080, x = cv.getContext('2d');
   cv.width = W; cv.height = H;
   const css = getComputedStyle(document.body), v = n => css.getPropertyValue(n).trim();
   const C = { bg:v('--bg'), panel:v('--panel'), panel2:v('--panel2'), ink:v('--ink'), muted:v('--muted'), accent:v('--accent'), line:v('--line'), dim:v('--dim') };
@@ -4219,7 +4525,7 @@ function cardKit(cv) {
     try { x.letterSpacing = '0px'; } catch {}
   };
   // A specimen tile: photo (or name plate), rarity stars, italic genus name underneath
-  K.tile = (t, cx, cy, tw, th, photosOnly) => {
+  K.tile = (t, cx, cy, tw, th, photosOnly, cnLines = 1) => {
     x.fillStyle = C.panel2; x.fillRect(cx, cy, tw, th);
     const im = t && (photosOnly ? t.open : t.any);
     if (im) {
@@ -4236,8 +4542,22 @@ function cardKit(cv) {
         x.fillStyle = tr.c; x.fillRect(cx + tw - w - 10, cy + 10, w, 32); x.strokeStyle = '#2b2419'; x.lineWidth = 2; x.strokeRect(cx + tw - w - 10, cy + 10, w, 32);
         text(tr.n.toUpperCase(), cx + tw - 20, cy + 33, '600 20px "IBM Plex Mono", monospace', tr.lv === 5 || tr.lv === 4 ? '#fff' : '#2b2419', 'right'); }
       x.shadowBlur = 0;
-      text(t.g.name, cx + tw / 2, cy + th + 44, 'italic 400 34px Fraunces, Georgia, serif', C.ink, 'center', tw - 10);
+      let fs = 34;   // a long genus name shrinks to fit rather than losing letters
+      for (x.font = `italic 400 ${fs}px Fraunces, Georgia, serif`; fs > 24 && x.measureText(t.g.name).width > tw - 10; ) x.font = `italic 400 ${--fs}px Fraunces, Georgia, serif`;
+      text(t.g.name, cx + tw / 2, cy + th + 44, x.font, C.ink, 'center', tw - 10);
+      if (cnOf(t.g.id)) K.lines(cnOf(t.g.id), cx + tw / 2, cy + th + 70, '400 20px Fraunces, Georgia, serif', C.muted, tw - 10, cnLines, 21);
     } else text('not yet found', cx + tw / 2, cy + th + 42, '400 22px "IBM Plex Mono", monospace', C.muted, 'center', tw);
+  };
+  // Centred text on up to n lines, split between words where the longer line is shortest; still too long ends in …
+  K.lines = (t, px, py, font, color, max, n, lh) => {
+    x.font = font;
+    const w = s => x.measureText(s).width, words = String(t).split(' ');
+    let ls = [String(t)];
+    if (n > 1 && w(ls[0]) > max && words.length > 1) {
+      const cuts = words.slice(1).map((_, k) => [words.slice(0, k + 1).join(' '), words.slice(k + 1).join(' ')]);
+      ls = cuts.reduce((a, b) => Math.max(w(b[0]), w(b[1])) < Math.max(w(a[0]), w(a[1])) ? b : a);
+    }
+    ls.forEach((s, i) => text(s, px, py + i * lh, font, color, 'center', max));
   };
   K.stats = (stats, y) => {
     const cw = 920 / stats.length;
@@ -4290,9 +4610,11 @@ async function cardExport(share) {
 const rarestFirst = (a,b) => starsFor(b.id) - starsFor(a.id) || (refCount(a.id) ?? -1) - (refCount(b.id) ?? -1) || b.obs.length - a.obs.length;
 
 /* ---------------- title card: a shareable picture of your collection ---------------- */
+// "SPOODEX · FIELD NOTEBOOK", but "SPOODEX MK II" rather than "SPOODEX · SPOODEX MK II"
+const tierKicker = M => { const n = TIERS[M.tier].name; return (/^SPOODEX/i.test(n) ? n : 'SPOODEX · ' + n).toUpperCase(); };
 function drawTitleCard(cv, tiles, photosOnly) {
   const M = S.M, K = cardKit(cv), { C, text } = K;
-  K.frame(`SPOODEX · ${TIERS[M.tier].name.toUpperCase()}`);
+  K.frame(tierKicker(M));
   text(who(), 80, 200, '600 72px Fraunces, Georgia, serif', C.ink);
   text(generatedTitle(M), 80, 260, '600 48px Caveat, cursive', C.accent);
   for (let i = 0; i < 6; i++) K.tile(tiles[i], 80 + (i % 3) * 313, 300 + Math.floor(i / 3) * 371, 293, 293, photosOnly);
@@ -4309,6 +4631,36 @@ async function openTitleCard() {
   const tiles = await cardPhotos([...S.M.genera].filter(g => g.cover).sort(rarestFirst).slice(0, 6));
   const out = $('#cardOut'); if (!out) return;
   await mountCard(out, (cv, po) => drawTitleCard(cv, tiles, po), `spoodex-${S.login}`);
+}
+
+/* ---------------- my SPOODEX image: a grid of your own genus photos for sharing (Reddit-sized, square or portrait) ---------------- */
+// Only the naturalist's own photos, the level, "N / M genera on iNat in <country or state>" and the ?u= link: no places below
+// state level, no map, no squares, nothing about where.
+function drawDexImage(cv, tiles, square, photosOnly) {
+  const M = S.M, H = square ? 1080 : 1350, K = cardKit(cv, H), { C, text } = K, sc = scopeGenera();
+  // room under each photo for the name and a common name on up to two lines
+  const cols = 4, rows = square ? 2 : 3, tw = 200, gap = (920 - cols * tw) / (cols - 1), rowH = tw + 104, top = 272;
+  K.frame(tierKicker(M));
+  text(who(), 80, 190, '600 64px Fraunces, Georgia, serif', C.ink, 'left', 640);
+  text(`Level ${M.G.size}`, 1000, 190, '600 64px Fraunces, Georgia, serif', C.accent, 'right', 300);
+  text(sc.ref && S.prefs.scope !== 'world' ? `${sc.found} / ${sc.inScope.length} genera on iNat in ${scopeLabel(S.prefs.scope)}`
+    : `${M.G.size} jumping spider ${M.G.size === 1 ? 'genus' : 'genera'}`, 80, 244, '600 44px Caveat, cursive', C.accent);
+  for (let i = 0; i < cols * rows; i++) K.tile(tiles[i], 80 + (i % cols) * (tw + gap), top + Math.floor(i / cols) * rowH, tw, tw, photosOnly, 2);
+  const y = top + rows * rowH + 6;
+  K.rule(y);
+  K.footer(y + 40);
+  return K.tainted;
+}
+async function openDexImage(square = !!S.dexSq) {
+  S.dexSq = square;
+  track('dex-image');
+  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(640px,100%)"><button class="x" data-close="1">✕</button><div class="body">
+    <h2>My SPOODEX image</h2>
+    <div class="row" style="gap:6px;margin-bottom:10px">${[['0', 'Portrait'], ['1', 'Square']].map(([v, l]) => `<span class="chip ${String(+square) === v ? 'on' : ''}" data-act="dexImage" data-v="${v}" style="cursor:pointer">${l}</span>`).join('')}</div>
+    <div id="cardOut"><p class="muted">Developing the print…</p></div></div></div></div>`;
+  const tiles = await cardPhotos([...S.M.genera].filter(g => g.cover).sort(rarestFirst).slice(0, square ? 8 : 12));
+  const out = $('#cardOut'); if (!out || S.dexSq !== square) return;
+  await mountCard(out, (cv, po) => drawDexImage(cv, tiles, square, po), `spoodex-${S.login}${square ? '-square' : ''}`);
 }
 
 /* ---------------- wrapped: a year in spoods ---------------- */
@@ -4710,11 +5062,12 @@ function paintField() {
     body._h = null;
     body.innerHTML = `<div class="panel"><p>Points you at the nearest 25 km square with a record from the last ${FIELD.recentDays} days of a genus you're missing, and lists what's been recorded around you.</p>
       <button class="primary big" data-act="fieldStart">Start field mode</button>
-      <p class="small muted" style="margin-bottom:0">Uses your location (kept on this device, for this session only), the compass, and keeps the screen awake.</p></div>`;
+      <p class="small muted" style="margin-bottom:0">Uses your location (kept on this device, for this session only), the compass, and keeps the screen awake.</p></div>
+      <div class="panel">${tipsHtml(false)}</div>`;
     return;
   }
   if (!$('#fDial')) body.innerHTML = `<div id="fStatus" class="fstatus"></div><div class="panel" id="fWhere"></div>
-    <div class="panel">${fieldDial()}<div id="fTarget" class="ftarget"></div></div><div class="panel" id="fAround"></div>`;
+    <div class="panel">${fieldDial()}<div id="fTarget" class="ftarget"></div></div><div class="panel" id="fAround"></div><div class="panel">${tipsHtml(false)}</div>`;
   const p = F.pos, M = S.M;
   setHtml($('#fStatus'), !navigator.onLine ? '📴 Offline: using cached data.' : F.geo && F.geo !== 'wait' ? esc(F.geo) : '');
   // Where you are
@@ -4829,6 +5182,123 @@ function track(path, event = true) {
   } catch {}
 }
 
+/* ---------------- genus lines editor: the owner writes one line per genus by clicking and typing ---------------- */
+// Shown to the owner (?u=themoojuice) or with ?notes in the URL. Drafts save as you type (store key `notes`, this browser) and show
+// in this browser at once; "Copy all" gives the GENUS_NOTES code that puts them in spoodex.html for everyone.
+const notesOn = () => (S.login || '').toLowerCase() === OWNER || new URLSearchParams(location.search).has('notes');
+let notesView = 'mine';
+function notesIds() {
+  const mine = S.M.genera.map(g => g.id), written = [...Object.keys(S.notes), ...Object.keys(GENUS_NOTES)].map(Number);
+  const all = [...new Set([...mine, ...scopeGenera().inScope, ...written])];
+  return taxonomicOrder(notesView === 'mine' ? mine : notesView === 'todo' ? all.filter(id => !ownNote(id)) : all).order;
+}
+const noteCount = () => Object.keys({ ...GENUS_NOTES, ...S.notes }).length;
+function openNotes(focus = null) {
+  if (focus && notesView === 'mine' && !S.M.G.has(focus)) notesView = 'all';
+  const ids = notesIds(), chip = (k, l) => `<span class="chip ${notesView === k ? 'on' : ''}" data-act="notesView" data-v="${k}" style="cursor:pointer">${l}</span>`;
+  const row = id => { const g = S.M.G.get(id), ph = g ? photoSize(g.cover, 'small') : photoSize(stockPh(id), 'small'), w = wikiLine(id);
+    return `<div class="noterow ${ownNote(id) ? 'done' : ''}" id="note${id}"><span class="ph" style="background-image:url('${esc(ph)}')"></span>
+      <div><a href="#" data-genus="${id}"><b><i>${esc(S.nodes[id]?.n || '?')}</i></b></a> ${cnOf(id) ? `<span class="small muted">${esc(cnOf(id))}</span>` : ''}
+      <textarea data-note="${id}" rows="2" maxlength="300" placeholder="${esc(w ? 'Wikipedia: ' + w : 'No Wikipedia line: nothing shows until you write one')}">${esc(ownNote(id))}</textarea></div></div>`; };
+  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(760px,100%)"><button class="x" data-close="1">✕</button><div class="body">
+    <h2>Genus lines</h2>
+    <p class="small">One line per genus, shown on its page and when it's first found. Empty boxes show the Wikipedia line in grey, which is what people see now. Saved as you type.</p>
+    <div class="row" style="gap:6px">${chip('mine', 'Your genera')}${chip('todo', 'Not written yet')}${chip('all', 'All')}<span class="small muted" id="noteN" style="margin-left:auto">${noteCount()} written</span></div>
+    <div id="notesList" style="margin-top:8px">${ids.map(row).join('')}</div>
+    <p class="row" style="gap:6px;margin-top:12px"><button class="primary" data-act="notesCopy">📋 Copy all for SPOODEX</button></p>
+    <details><summary class="small">Show the code</summary><textarea id="notesCode" class="posttxt" rows="8" readonly>${esc(notesCode())}</textarea></details>
+    </div></div></div>`;
+  if (focus) { const t = $(`[data-note="${focus}"]`); t?.closest('.noterow').scrollIntoView({ block:'center' }); t?.focus(); }
+  const need = ids.filter(id => !S.info[id]);
+  if (need.length) ensureInfo(need).then(() => document.querySelectorAll('[data-note]').forEach(t => { const w = wikiLine(+t.dataset.note); if (w) t.placeholder = 'Wikipedia: ' + w; }));
+}
+function noteInput(t) {
+  const id = +t.dataset.note, v = t.value.replace(/\s+/g, ' ').trim();
+  if (v) S.notes[id] = v; else delete S.notes[id];
+  store.set('notes', S.notes);
+  t.closest('.noterow')?.classList.toggle('done', !!ownNote(id));
+  const n = $('#noteN'); if (n) n.textContent = `${noteCount()} written`;
+  const c = $('#notesCode'); if (c) c.value = notesCode();
+}
+// The GENUS_NOTES block for spoodex.html, in taxonomic order with each genus named
+function notesCode() {
+  const all = { ...GENUS_NOTES, ...S.notes }, ids = taxonomicOrder(Object.keys(all).map(Number)).order;
+  return `const GENUS_NOTES = {\n${ids.map(id => `  ${id}: ${JSON.stringify(all[id])},   // ${S.nodes[id]?.n || ''}`).join('\n')}\n};`;
+}
+
+/* ---------------- landing: real jumping spiders before anyone types a username ---------------- */
+// Hand-picked (owner to confirm, HANDOVER §12): the world's most-recorded genera plus a few favourites. The owner's research-grade
+// photos come first; someone else's only for a genus he hasn't photographed, and only CC0, CC BY or CC BY-NC, always credited.
+const OWNER = 'themoojuice';
+const LAND = [53600, 53810, 51934, 194789, 362604, 51780, 68910, 68064, 125445, 244360, 61762, 858508];   // Maratus, Phidippus, Portia, Mopsus, Cosmophasis, Myrmarachne, Salticus, Menemerus, Plexippus, Hasarius, Evarcha, Zenodorus
+// The owner's best photo of each genus he has, picked by eye from all his salticid records (2026-10-07, HANDOVER §12):
+// genus id -> [observation id, photo file]. Shown before any other photo of that genus, to everyone, and as his own covers.
+const OWNER_PICKS = {
+  420230:[329023255,'596333629.jpg'],  420232:[317883955,'574457255.jpg'],  420245:[246455543,'439987001.jpeg'],
+  553128:[342008299,'622729751.jpg'],  420255:[241157102,'429755865.jpeg'],  420263:[338700816,'616015323.jpg'],
+  147458:[324281609,'586906967.jpg'],  375766:[317546415,'573814638.jpg'],  368224:[243638179,'434468419.jpeg'],
+  420317:[259532208,'465903203.jpeg'],  362604:[314116210,'567321899.jpg'],  347006:[319523615,'577598779.jpg'],
+  420327:[249621280,'446259826.jpeg'],  420355:[365203304,'666748786.jpg'],  61762:[325442756,'589237853.jpg'],  420372:[329190292,'596665443.jpg'],
+  244360:[384128877,'703127202.jpg'],  199168:[327637892,'593607394.jpg'],  368945:[314543473,'568120830.jpg'],  420396:[327118838,'592571470.jpg'],
+  420408:[323629392,'585620241.jpg'],  376739:[358338879,'653687673.jpg'],  420435:[343129893,'625088048.jpg'],
+  420443:[254324145,'455516695.jpeg'],  53600:[248862453,'444757421.jpeg'],  68064:[249475075,'445968161.jpeg'],
+  250072:[383764989,'702453385.jpg'],  420478:[328466816,'595212290.jpg'],  194789:[318158295,'574988415.jpg'],  51780:[254258996,'455385815.jpeg'],
+  420496:[323450559,'585264212.jpg'],  199976:[342008178,'622729644.jpg'],  820296:[292600261,'526572212.jpg'],
+  369839:[247709810,'442472442.jpeg'],  420521:[343186512,'625090141.jpg'],  154359:[281010169,'504762407.jpg'],
+  125445:[246081384,'439240723.jpeg'],  51934:[278719012,'500471839.jpeg'],  420553:[341828699,'622382970.jpg'],
+  828470:[247454513,'441963951.jpeg'],  804410:[318585969,'575808691.jpg'],  420567:[250883036,'448792103.jpeg'],
+  420570:[254274061,'455417056.jpeg'],  420583:[337857313,'614279564.jpg'],  68910:[320614752,'579710308.jpg'],  368365:[284144575,'510627133.jpg'],
+  420594:[321041446,'580550819.jpg'],  368389:[238707267,'425019030.jpeg'],  353531:[349644121,'637927326.jpg'],
+  420604:[241841388,'431076991.jpeg'],  420621:[383477933,'701874876.jpg'],  420628:[364603708,'665619937.jpg'],
+  420672:[377396401,'690135137.jpg'],  858508:[230455809,'409204126.jpeg'],
+};
+const pickUrl = (id, size = 'medium') => OWNER_PICKS[id] ? `https://static.inaturalist.org/photos/${OWNER_PICKS[id][1].replace('.', `/${size}.`)}` : '';
+// A genus the viewer hasn't got: the owner's pick, else iNat's taxon photo (with its own attribution)
+const stockPh = id => pickUrl(id) || S.info[id]?.p || '';
+const stockCr = id => OWNER_PICKS[id] ? creditTxt(OWNER) : S.info[id]?.a || '';
+const LAND_TTL = 14 * 864e5;
+const OK_LIC = { 'cc0':'CC0', 'cc-by':'CC BY', 'cc-by-nc':'CC BY-NC' };
+const PH_FIELDS = '(id:!t,taxon:(id:!t,ancestor_ids:!t),user:(login:!t,name:!t),photos:(url:!t,license_code:!t,attribution:!t))';
+// "(c) Jane Doe, some rights reserved (CC BY-NC)" -> "Jane Doe"
+const byName = (attr, user) => (/^\(c\)\s*(.+?),\s*(?:some|no|all) rights reserved/i.exec(attr || '') || [])[1] || user?.name || user?.login || '';
+const creditTxt = (by, lic) => `© ${by}${OK_LIC[lic] ? ', ' + OK_LIC[lic] : ''}`;
+const genusIn = (o, ids) => ids.find(id => o.taxon?.id === id || (o.taxon?.ancestor_ids || []).includes(id));
+let landBusy = false;
+async function loadLanding(fetch = true) {
+  let L = store.get('landing', 0);   // 0 = never fetched (keeps the placeholders)
+  if (L && L.v !== 2) L = 0;          // cached before the owner's picks
+  paintLanding(L);
+  if (landBusy || !fetch || (L && Date.now() - L.ts < LAND_TTL)) return;
+  landBusy = true;
+  try {
+    const got = {};
+    const take = o => {
+      const gid = genusIn(o, LAND), p = (o.photos || []).find(p => OK_LIC[p.license_code]);
+      if (gid && p && !got[gid]) got[gid] = { o:o.id, u:p.url, by:byName(p.attribution, o.user), lic:p.license_code };
+    };
+    // the owner's picked photo where he has one (no call), someone else's CC0 / CC BY / CC BY-NC photo only where he hasn't
+    LAND.filter(id => OWNER_PICKS[id]).forEach(id => got[id] = { o:OWNER_PICKS[id][0], u:pickUrl(id), by:OWNER, lic:null });
+    for (const gid of LAND.filter(id => !got[id])) {
+      const d = await api('/observations', { taxon_id:gid, quality_grade:'research', photo_license:Object.keys(OK_LIC).join(','), order_by:'votes', order:'desc', per_page:10, fields:PH_FIELDS }, API2);
+      d.results.forEach(take);
+    }
+    (await api('/taxa/' + LAND.join(','))).results.forEach(cnFrom);
+    saveShared();
+    L = { v:2, ts:Date.now(), items:LAND.filter(id => got[id]).map(id => ({ g:id, n:S.nodes[id]?.n || '', cn:cnOf(id), ...got[id] })) };
+    store.set('landing', L);
+    paintLanding(L);
+  } catch (e) { console.warn(e); if (!L) paintLanding(null); }
+  landBusy = false;
+}
+function paintLanding(L) {
+  const el = $('#landPhotos'); if (!el) return;
+  if (L === null) { el.innerHTML = ''; return; }   // offline on a first visit: nothing to show
+  if (!L) return;
+  el.innerHTML = L.items.map(x => `<a class="lcard" href="https://www.inaturalist.org/observations/${+x.o}" target="_blank" rel="noopener" title="Open this record on iNaturalist">
+    <span class="ph" style="background-image:url('${esc(photoSize(x.u, 'medium'))}')"></span><span class="nm"><i>${esc(x.n)}</i></span>
+    ${x.cn ? `<span class="cn">${esc(x.cn)}</span>` : ''}<span class="cr" title="${esc(creditTxt(x.by, x.lic))}">${esc(creditTxt(x.by, x.lic))}</span></a>`).join('');
+}
+
 /* ---------------- boot / flows ---------------- */
 function loadUser(login) {
   S.login = login;
@@ -4856,9 +5326,9 @@ async function copyLink() {
   catch { window.prompt('Copy this link:', url); }
 }
 async function doSync(full) {
-  const btn = $('#syncBtn'); btn.disabled = true; btn.textContent = '⟳ Syncing…';
+  const btn = $('#syncBtn'); btn.disabled = true; btn.innerHTML = '⟳<span class="lbl"> Syncing…</span>';
   const prevQuests = S.M ? buildQuests(S.M) : [];
-  const prevSeen = new Set(S.u.seen);
+  const prevSeen = new Set(S.u.seen), prevLeads = S.M ? S.M.leads.flatMap(l => l.obs.map(o => o.id)) : [];
   try {
     await sync({ full });
     if (S.M.homeCell) try { await scanActive(S.M.homeCell.k); } catch (e) { console.warn(e); }
@@ -4869,40 +5339,90 @@ async function doSync(full) {
     S.u.seen = S.M.genera.map(g => g.id); saveUser();
     if (S.tab !== 'map') render(); else paintMap3d();
     fillElev();
-    if (fresh.length) revealQueue(fresh); else if (!isGuest()) toast('Synced. No new genera this time.');
+    // mystery spoods identified since the last sync: records that were above genus and now sit in a genus (no extra call)
+    const solved = prevLeads.map(id => S.u.obs[id]).filter(o => o && !o.cap && genusOf(o.anc));
+    const items = celebrations(fresh, solved);
+    if (items.length) revealQueue(items); else if (!isGuest()) toast('Synced. No new genera this time.');
   } catch (e) { toast(e.message); }
-  btn.disabled = false; btn.textContent = '⟳ Sync';
+  btn.disabled = false; btn.innerHTML = '⟳<span class="lbl"> Sync</span>';
   loadNews();
   if (S.crew.logins.length && !crewBusy && crewNeedsLoad()) loadCrew().then(() => { if (S.tab !== 'map') render(); });
 }
 async function onboard(login) {
   loadUser(login);
-  const log = $('#scanLog'); log.classList.remove('hidden'); log.textContent = '';
-  const w = s => { log.textContent += s + '\n'; log.scrollTop = log.scrollHeight; };
-  w('beep.'); w('SPOODEX Mk 0 booting…');
-  document.querySelectorAll('#onboard button').forEach(b => b.disabled = true);
+  $('#landStarts').classList.add('hidden'); $('#onboardWork').classList.remove('hidden');
+  $('#impBox').classList.remove('hidden'); $('#revBox').classList.add('hidden');
+  $('#impHead').textContent = `Reading ${login}'s jumping spiders`;
+  const line = $('#impLine'), bar = $('#impBar');
+  const w = (t, f) => { line.textContent = t; if (f != null) bar.style.width = Math.round(100 * f) + '%'; };
+  w('Asking iNaturalist…', 0);
   try {
     const fresh = !S.u.meta.lastSync;
     await sync({ full:fresh, log:w });
     if (fresh) track('new-spoodex');
     fillElev();
-    const M = S.M;
-    w(`Identifying unique genera… ${M.G.size} found.`);
-    const cas = $('#cascade'); cas.innerHTML = '';
-    for (const [i, g] of M.genera.entries()) {
-      const s = document.createElement('span'); s.innerHTML = `<i>${esc(g.name)}</i>`; s.style.animationDelay = (i * 60) + 'ms'; cas.appendChild(s);
-    }
-    await sleep(Math.min(4000, M.genera.length * 60 + 600));
-    S.u.seen = M.genera.map(g => g.id); saveUser();
-    $('#initTitle').textContent = M.G.size ? `SPOODEX INITIALISED — ${M.G.size} GENERA DISCOVERED` : 'SPOODEX INITIALISED — NO GENERA YET. LET\'S FIX THAT.';
-    $('#initDone').classList.remove('hidden');
-  } catch (e) { w('ERROR: ' + e.message); }
-  document.querySelectorAll('#onboard button').forEach(b => b.disabled = false);
+    S.u.seen = S.M.genera.map(g => g.id); saveUser();
+    await revealGenera();
+  } catch (e) {
+    w(`Couldn't finish: ${e.message}`);
+    $('#landStarts').classList.remove('hidden');
+  }
+}
+// The first look at a collection: each genus flips from a blurred silhouette to the naturalist's own photo
+const REVEAL_ALL = 20, REVEAL_TOP = 12;
+let revSkip = false;
+async function revealGenera() {
+  const M = S.M, all = M.genera, big = all.length > REVEAL_ALL;
+  const list = big ? [...all].filter(g => g.cover).sort(rarestFirst).slice(0, REVEAL_TOP) : all;
+  $('#impLine').textContent = 'Developing the photos…';
+  await ensureInfo(list.map(g => g.id));   // common names
+  revSkip = false;
+  // the naturalist's own photos take over from the landing strip
+  $('#landPhotos').classList.add('hidden'); $('.landhead .pitch').classList.add('hidden'); scrollTo(0, 0);
+  $('#impBox').classList.add('hidden'); $('#revBox').classList.remove('hidden');
+  $('#revSkip').classList.toggle('hidden', list.length < 2);
+  $('#revHead').textContent = !all.length ? 'No genera yet' : big ? `Your ${list.length} rarest of ${all.length} genera` : `${all.length} ${all.length === 1 ? 'genus' : 'genera'} found`;
+  $('#revGrid').innerHTML = list.map(g => `<div class="rcard" data-g="${g.id}"><span class="ph" style="background-image:url('${esc(photoSize(g.cover, 'medium'))}')"></span>
+    <div class="nm q">???</div><span class="cn"></span></div>`).join('');
+  $('#revMore').textContent = big ? `…and ${all.length - list.length} more in your SPOODEX.` : '';
+  $('#revEnd').innerHTML = '';
+  loadNextThree(() => { const el = $('#revNext'); if (el) el.innerHTML = nextThreeHtml(); });
+  const cards = [...document.querySelectorAll('#revGrid .rcard')];
+  for (const [i, el] of cards.entries()) {
+    if (!revSkip) await sleep(i ? 380 : 500);
+    flipCard(el);
+  }
+  $('#revSkip').classList.add('hidden');
+  $('#revEnd').innerHTML = revEndHtml();
+}
+function flipCard(el) {
+  if (el.classList.contains('on')) return;
+  const id = +el.dataset.g;
+  el.classList.add('on'); el.dataset.genus = id;
+  const nm = el.querySelector('.nm'); nm.classList.remove('q'); nm.innerHTML = `<i>${esc(S.nodes[id]?.n || '?')}</i>`;
+  for (let px = 14; nm.scrollWidth > nm.clientWidth && px > 10; ) nm.style.fontSize = --px + 'px';   // long names shrink rather than lose letters
+  el.querySelector('.cn').textContent = cnOf(id);
+}
+function revEndHtml() {
+  const M = S.M, n = M.G.size, sc = scopeGenera();
+  return `<div class="panel revend" style="margin-top:8px">
+    <div class="small muted">${esc(who().toUpperCase())}'S SPOODEX</div>
+    <h2>Level ${n}</h2><div class="hand">${titleHtml(M)}</div>
+    <p>${n && sc.ref ? `<b>${n}</b> of the <b>${sc.inScope.length}</b> genera on iNat in ${esc(scopeLabel(S.prefs.scope))}.` : n ? '' : 'No public jumping spider records identified to genus yet.'}</p>
+    ${M.leads.length ? `<p>❓ ${plural(mysteryCount(), 'mystery spood')} not yet identified to genus. <a href="#" data-act="needsid">See them →</a></p>` : ''}
+    <p class="row"><button class="primary big" data-act="openDex">Open your SPOODEX</button>${n && !isGuest() ? '<button data-act="dexImage">📤 Share my SPOODEX</button>' : ''}</p>
+    <div id="revNext">${nextThreeHtml()}</div>${tipsOnce()}</div>`;
+}
+// The photo checklist, shown once to anyone with fewer than 15 genera (the reveal, or Profile until "Got it")
+function tipsOnce(dismiss = false) {
+  if (S.prefs.tipsDone || S.M.G.size >= 15) return '';
+  if (!dismiss) { S.prefs.tipsDone = true; savePrefs(); return `<div style="margin-top:14px">${tipsHtml(true)}</div>`; }
+  return `<div class="panel" style="margin-bottom:16px">${tipsHtml(true)}<p style="margin:8px 0 0"><button class="small" data-act="tipsDone">Got it</button></p></div>`;
 }
 function enterApp(tab) {
   $('#onboard').classList.add('hidden'); $('#app').classList.remove('hidden');
   markVisit();
-  S.tab = tab || (S.M.G.size ? 'profile' : 'map');
+  S.tab = tab || (S.M.G.size || S.u.base ? 'profile' : 'map');
   updateUrl(); render();
   if (S.pendingEv) { const c = S.pendingEv; S.pendingEv = null; openEventCode(c, true); }
   else if (S.pendingVs) { const v = S.pendingVs; S.pendingVs = null; S.tab = 'compare'; render(); loadCompare(v); }
@@ -4912,7 +5432,7 @@ function startGuest() {
   track('guest-mode');
   loadUser(GUEST);
   S.M = buildModel();
-  enterApp('map');
+  enterApp();
   if (S.u.base) loadRefs().then(() => { S.M = buildModel(); loadNews(); }).catch(() => {});
 }
 function toast(msg) {
@@ -4926,7 +5446,8 @@ function settings() {
     <h2>Settings</h2>
     <p>${isGuest() ? 'Browsing as a guest.' : `Viewing <b>${esc(S.login)}</b> (public data only). Last sync ${esc((S.u.meta.lastSync||'').slice(0,16).replace('T',' '))}.`}</p>
     <div class="row"><label>Chassis skin <select data-pref="chassis">${['auto','notebook','kit','cabinet'].map(c => `<option ${S.prefs.chassis===c?'selected':''}>${c}</option>`).join('')}</select></label>
-    <label><input type="checkbox" data-pref="peek" ${S.prefs.peek?'checked':''}> Unlock all modules (prototype peek)</label></div>
+    <label><input type="checkbox" data-pref="peek" ${S.prefs.peek?'checked':''}> Show every tab and module</label></div>
+    ${notesOn() ? '<p style="margin-top:12px"><button data-act="notes">✏️ Write the genus lines</button></p>' : ''}
     <div class="row" style="margin-top:14px">
       ${isGuest() ? '' : '<button data-act="share">🔗 Copy share link</button><button data-act="full">Full resync</button>'}
       <button data-act="switch">Switch user</button>
@@ -4952,7 +5473,6 @@ document.addEventListener('click', e => {
   if (t.dataset.base) { e.preventDefault(); const [lat, lng, ...rest] = t.dataset.base.split('|'); setBase(lat, lng, rest.join('|')); return; }
   if (t.dataset.trip) { e.preventDefault(); const [lat, lng, area, ...rest] = t.dataset.trip.split('|'); setTrip(lat, lng, rest.join('|'), +area || null); return; }
   const a = t.dataset.act;
-  if (a === 'peek') { S.prefs.peek = true; savePrefs(); render(); }
   if (a === 'full') { $('#modalRoot').innerHTML = ''; doSync(true); }
   if (a === 'share') copyLink();
   const val = t.dataset.v;
@@ -4968,13 +5488,14 @@ document.addEventListener('click', e => {
   if (a === 'crewDel') setCrew(S.crew.logins.filter(l => l !== val));
   if (a === 'crewRefresh') { crewErr = null; loadCrew(true); }
   if (a === 'card') openTitleCard();
+  if (a === 'dexImage') openDexImage(val == null ? undefined : val === '1');
   if (a === 'wanted') { e.preventDefault(); openCase(+val); }
   if (a === 'wantedRetry') { wantedErr = null; wantedTs = 0; loadWanted(); }
   if (a === 'idaid' && !matchMedia('(pointer:coarse)').matches) {
     const w = window.open(ID_AID, 'spoodex-idaid', 'popup,width=1280,height=880');
     if (w) { e.preventDefault(); w.focus(); }
   }
-  if (a === 'needsid') { e.preventDefault(); S.prefs.layer = 'needsid'; savePrefs(); S.tab = 'dex'; render(); }
+  if (a === 'needsid') { e.preventDefault(); S.prefs.layer = 'needsid'; savePrefs(); if ($('#app').classList.contains('hidden')) enterApp('dex'); else { S.tab = 'dex'; render(); } }
   if (a === 'leadFilter') { S.prefs.leadFilter = val === 'all' ? null : val; savePrefs(); render(); }
   if (a === 'sets') { e.preventDefault(); S.prefs.layer = 'sets'; savePrefs(); S.tab = 'dex'; render(); }
   if (a === 'wview') { S.prefs.wantedView = val; savePrefs(); render(); }
@@ -5008,6 +5529,12 @@ document.addEventListener('click', e => {
   if (a === 'wxRetry') loadWx(true);
   if (a === 'install') installApp();
   if (a === 'evNew') { S.evDraft = evDraftNew(); render(); }
+  if (a === 'evHunt') {   // open to anyone, the whole of this month, no place unless one is picked
+    const D = S.evDraft = evDraftNew('blitz'); evPreset(D, 'month');
+    Object.assign(D, { open:true, r:'', n:`Spood hunt · ${MONTHS[+D.d1.slice(5, 7) - 1]} ${D.d1.slice(0, 4)}` }); render();
+  }
+  if (a === 'evPostText') { S.evPost = !S.evPost; render(); }
+  if (a === 'evPostCopy') { const ta = $('#evPostTxt'); if (ta) navigator.clipboard.writeText(ta.value).then(() => toast('Post text copied.'), () => { ta.focus(); ta.select(); }); }
   if (a === 'evCancel') { S.evDraft = null; render(); }
   if (a === 'evMode' && S.evDraft) { const D = S.evDraft; S.evDraft = { ...evDraftNew(val), n:D.n, p:val === 'dare' ? null : D.p, pn:val === 'dare' ? '' : D.pn }; render(); }
   if (a === 'evPreset' && S.evDraft) { evPreset(S.evDraft, val); render(); }
@@ -5029,6 +5556,11 @@ document.addEventListener('click', e => {
   if (a === 'evDel') { delete S.events[val]; evSave(); render(); }
   if (a === 'clearBase') { delete S.u.base; saveUser(); S.M = buildModel(); render(); }
   if (a === 'guest') startGuest();
+  if (a === 'openDex') enterApp();
+  if (a === 'notes') { e.preventDefault(); openNotes(val ? +val : null); }
+  if (a === 'notesView') { notesView = val; openNotes(); }
+  if (a === 'notesCopy') { const c = notesCode(); navigator.clipboard.writeText(c).then(() => toast('Genus lines copied.'), () => { const t = $('#notesCode'); if (t) { t.closest('details').open = true; t.select(); } }); }
+  if (a === 'tipsDone') { S.prefs.tipsDone = true; savePrefs(); render(); }
   if (a === 'sample') { $('#loginInput').value = SAMPLE_LOGIN; onboard(SAMPLE_LOGIN); }
   if (a === 'switch') { store.del('lastLogin'); location.href = location.pathname; }
   if (a === 'wipe') { store.del(ukey(S.login)); store.del('lastLogin'); store.flush().finally(() => location.href = location.pathname); }
@@ -5080,6 +5612,7 @@ document.addEventListener('submit', async e => {
   }
 });
 // Event form: typing updates the draft without redrawing (keeps focus); toggles redraw
+document.addEventListener('input', e => { if (e.target.dataset?.note) noteInput(e.target); });
 document.addEventListener('input', e => { const k = e.target.dataset?.evf; if (S.evDraft && ['n', 'r', 'd1', 'd2'].includes(k)) S.evDraft[k] = e.target.value; });
 document.addEventListener('change', async e => {
   if (e.target.dataset.tripm && S.trip.cur) { S.trip.cur.m = +e.target.value; saveTrip(); render(); return; }
@@ -5112,18 +5645,20 @@ document.addEventListener('change', async e => {
 $('#syncBtn').addEventListener('click', () => doSync(false));
 $('#shareBtn').addEventListener('click', copyLink);
 $('#menuBtn').addEventListener('click', settings);
+$('#revSkip').addEventListener('click', () => { revSkip = true; document.querySelectorAll('#revGrid .rcard').forEach(flipCard); });
 $('#loginForm').addEventListener('submit', e => { e.preventDefault(); const v = $('#loginInput').value.trim().replace(/^@/, ''); if (v) onboard(v); });
-$('#openDex').addEventListener('click', () => enterApp());
 
 // ?u=<login> opens that SPOODEX (importing it if needed); ?vs=<login> jumps to Compare.
 // Otherwise a returning player opens straight from cache, then quietly syncs.
 // Shared caches get their defaults when the script loads, before IndexedDB is open; re-read them once it is.
-const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladder', 'crew', 'pioneer', 'report', 'haunts', 'trip', 'elev', 'wx', 'events', 'frontier'];
+const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladder', 'crew', 'pioneer', 'report', 'haunts', 'trip', 'elev', 'wx', 'events', 'frontier', 'ownph', 'notes'];
 (async function boot() {
   track(location.pathname, false);
   registerSW(); netState();
   await store.init();
   for (const k of PERSISTED) S[k] = store.get(k, S[k]);
+  // a read cut short by closing the page is saved as still queued, which would block every later refresh
+  for (const E of Object.values(S.events)) delete E.queued;
   const q = new URLSearchParams(location.search);
   const u = (q.get('u') || '').trim().replace(/^@/, '');
   S.pendingVs = (q.get('vs') || '').trim() || null;
@@ -5134,6 +5669,7 @@ const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladd
     loadUser(target);
     try { S.M = buildModel(); enterApp(); doSync(false); return; } catch (e) { console.warn(e); }
   }
+  loadLanding(!u && !S.pendingEv);   // photos for a first-time visitor; with ?u= the import goes first
   if (u) { $('#loginInput').value = u; onboard(u); }
   else if (S.pendingEv) startGuest();   // an event link opened by someone new: view it as a guest
 })();
