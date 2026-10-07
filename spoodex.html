@@ -4765,6 +4765,8 @@ const WX = {
   rebound:{ from:.6, cap:.2, rainMm:3, rainH:48, rain:.12, windKmh:30, windH:24, wind:.06, coolMax:22, warmTo:24, cool:.06, humid:70, humidTo:24, wet:.05 },
   flood:{ mm:50, penalty:.1 },                              // this much rain in the 48 h before: no rain bonus, and a penalty instead (washed out)
   stars:[.45, .68, .85, 1.03],                             // score for ★2, ★3, ★4, ★5: five stars takes a near-perfect window plus a rebound
+  len:{ min:1, full:4, floor:.7 },                         // a 1-hour window keeps 70% of its score; 4+ hours keep all of it
+  five:{ minH:3 },                                         // ★5 needs a rebound reason and a window of 3+ hours
   sky:[30, 70],                                            // mean cloud %: below the first "sunny", below the second "part cloud", else "cloudy" ("hazy sun" if still bright)
 };
 // Free tier: non-commercial use only, CC BY 4.0 (credited in the panel). If SPOODEX ever charges, this needs Open-Meteo's paid plan.
@@ -4843,8 +4845,13 @@ function wxDays(f, from = null, to = null, max = 7) {
       if (rh.length && avg(rh, 'rh') >= R.humid && temp >= R.humidTo) { bonus += R.wet; why.push(`💧 warm and humid (${Math.round(avg(rh, 'rh'))}%)`); }
       bonus = Math.min(bonus, R.cap);
     }
-    const score = mean + bonus;
-    return { d, light, now, win, from:win[0].hr, to:win[win.length - 1].hr + 1, mean, score, stars:Math.max(1, 1 + WX.stars.filter(x => score >= x).length), temp,
+    // a short humid peak can't outscore a long good day: short windows lose part of their score and can't earn a bonus
+    const hrsN = win.length, lenF = WX.len.floor + (1 - WX.len.floor) * ramp(hrsN, WX.len.min, WX.len.full);
+    if (hrsN < 2) bonus = Math.min(bonus, 0);
+    const score = (mean + bonus) * lenF;
+    let stars = Math.max(1, 1 + WX.stars.filter(x => score >= x).length);
+    if (stars === 5 && !(bonus > 0 && hrsN >= WX.five.minH)) stars = 4;
+    return { d, light, now, win, from:win[0].hr, to:win[win.length - 1].hr + 1, mean, score, stars, temp,
       sky:cc < WX.sky[0] ? '☀ sunny' : cc < WX.sky[1] ? '⛅ part cloud' : avg(win, 'sw') >= WX.sun.bright ? '🌤 hazy sun' : '☁ cloudy', rain:Math.max(...win.map(x => x.pp)), why };
   });
 }
