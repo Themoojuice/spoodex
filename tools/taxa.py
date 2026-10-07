@@ -72,7 +72,12 @@ def main(argv):
     print(f'In the checklist but not in the AFD ({len(no_afd)}): {", ".join(no_afd)}')
     print(f'AFD spellings mapped: {", ".join(mapped) or "none"}')
 
-    js = lambda v: json.dumps(v, ensure_ascii=False).replace('"', "'")
+    # single-quoted like the rest of spoodex.html, unless a string holds an apostrophe (then JSON's double quotes)
+    def js(v):
+        if isinstance(v, list):
+            return '[' + ', '.join(js(x) for x in v) + ']'
+        s = json.dumps(v, ensure_ascii=False)
+        return "'" + s[1:-1] + "'" if isinstance(v, str) and "'" not in v else s
     body = ',\n'.join('  {' + f"n:{js(r['n'])}, inat:{r['inat'] if r['inat'] is not None else 'null'}, lucid:{'true' if r['lucid'] else 'false'}, "
                       f"afd:{js(r['afd'])}, a:{js(r['a'])}" + '}' for r in rows)
     stamp = time.strftime('%Y-%m-%d')

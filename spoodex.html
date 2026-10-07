@@ -477,6 +477,41 @@ body.fieldon { overflow:hidden; }
 .counting { color:var(--lit); }
 .trophies { display:flex; flex-wrap:wrap; gap:8px; }
 .trophy { border:1px solid #b08a45; background:var(--panel2); border-radius:var(--radius); padding:6px 10px; font-size:13px; box-shadow:inset 0 0 0 1px #e2bf7a; }
+/* v2.0 naturalist update: museum plates, seals, the honour ceremony, field stories, museum ghosts, cold cases, crew hype */
+.card.plate { text-decoration:none; color:inherit; display:flex; flex-direction:column; }
+.card.plate .ph { flex:1; }
+.card.plate .ph { display:grid; place-items:center; aspect-ratio:auto; min-height:100%; padding:12px 0; box-sizing:border-box; background:#e9dcbc; background-image:radial-gradient(circle at 30% 20%, rgba(255,255,255,.4), transparent 50%), radial-gradient(circle at 80% 90%, rgba(120,80,30,.2), transparent 55%); filter:sepia(.25); }
+.plab { width:82%; padding:10px 8px; border:1px solid #8a6d44; outline:3px double #8a6d44; outline-offset:-7px; background:#f7efd9; text-align:center; font:11px/1.35 'IBM Plex Mono', monospace; color:#4a3a24; display:flex; flex-direction:column; gap:3px; }
+.plab .pk { font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#8a3b22; }
+.plab .pn { font:italic 600 17px Fraunces, Georgia, serif; color:#2b2419; overflow-wrap:anywhere; }
+.plab .pa { font-size:10.5px; }
+.tree .g.museum { color:var(--muted); text-decoration:none; }
+.seal { display:inline-block; font:600 10px 'IBM Plex Mono', monospace; letter-spacing:.08em; text-transform:uppercase; color:#f6eedb; padding:2px 8px; border-radius:99px; vertical-align:1px; white-space:nowrap; box-shadow:inset 0 0 0 1.5px rgba(246,238,219,.6); }
+.seal.s-first { background:#b8892a; } .seal.s-trio { background:#9a3d2a; } .seal.s-vanguard { background:#5b4a8a; } .seal.s-founding { background:#3f6b3a; }
+.seal.big { display:grid; place-items:center; width:120px; height:120px; padding:12px; border-radius:50%; font-size:12px; line-height:1.2; white-space:normal; text-align:center; box-shadow:0 0 0 4px #f6eedb inset, 0 0 0 2px rgba(0,0,0,.35), 0 8px 24px rgba(0,0,0,.5); animation:sealin .9s cubic-bezier(.2,1.6,.4,1) .9s both; }
+#reveal.honour .rph { width:min(320px,62vw); }
+#reveal.honour .seal.big { margin-top:-60px; position:relative; z-index:1; }
+#reveal.honour .rrank { color:#f3e9d2; font:400 19px/1.4 Fraunces, Georgia, serif; max-width:30em; margin-top:8px; }
+#reveal.honour .rrank b { color:#e2bf7a; font-size:24px; }
+#reveal.honour .rline { max-width:36em; font:13px/1.5 'IBM Plex Mono', monospace; color:#d9c9a6; margin:10px auto 4px; }
+#reveal.honour .rline b { color:#f6eedb; }
+#reveal.honour button { background:#f6eedb; color:#2b2419; border-color:#e2bf7a; }
+@keyframes sealin { from { opacity:0; transform:scale(2.4) rotate(-20deg); } to { opacity:1; transform:none; } }
+.hrow { padding:4px 0; border-bottom:1px dashed var(--dim); }
+.splore { display:block; color:var(--muted); font-size:11.5px; line-height:1.45; margin-top:2px; }
+.fstory { margin:14px 0 4px; padding:14px 16px; background:#f7efd9; border:1px solid #b89f72; box-shadow:inset 0 0 0 4px #f7efd9, inset 0 0 0 5px #c9b083; color:#2b2419; }
+.fstory .fk { font:600 11px 'IBM Plex Mono', monospace; letter-spacing:.16em; color:#8a3b22; margin-bottom:6px; }
+.fstory p { font:16px/1.55 Fraunces, Georgia, serif; margin:0 0 8px; }
+.fstory .frefs { margin:6px 0 0; padding-left:18px; font:11px/1.45 'IBM Plex Mono', monospace; color:#6d5a40; }
+.ghost { opacity:1; }
+.scrow.ghost { background:color-mix(in srgb, #8a6d44 8%, var(--panel)); box-shadow:inset 3px 0 0 #8a6d44; }
+.scrow.ghost.have { opacity:.55; }
+.scrow.ghost summary { cursor:pointer; list-style:none; }
+.poster .stamp { position:absolute; top:58%; left:50%; transform:translate(-50%, -50%) rotate(-12deg); border:3px solid #8a2b1a; color:#8a2b1a; padding:4px 10px; font:400 18px/1.2 'Special Elite', monospace; letter-spacing:.12em; background:rgba(239,225,191,.82); text-align:center; white-space:nowrap; z-index:2; }
+.poster { position:relative; }
+.poster .wph.plateph { display:grid; place-items:center; filter:none; }
+.feed.hype { background:color-mix(in srgb, #b8892a 12%, var(--panel)); box-shadow:inset 3px 0 0 #b8892a; padding:8px 10px; }
+.feed .rline { font-size:12px; color:var(--muted); }
 @media (max-width:820px) { .evturf { height:320px; } }
 @media (max-width:600px) { table.evboard .avatar.sq { width:24px; height:24px; margin-right:4px; } table.evboard td, table.evboard th { padding:5px 4px; } table.evboard td.who { white-space:normal; overflow-wrap:anywhere; font-size:13px; } table.evboard td .small { display:block; } }
 
@@ -1132,6 +1167,242 @@ function prestige(M) {
 }
 const moduleOn = minTier => S.prefs.peek || S.M.tier >= minTier;
 
+/* ---------------- checklist: Australia's jumping spider genera (iNat plus the owner's Lucid key) ---------------- */
+// The taxonomy rule (owner's, v2.0): Australia's checklist is every genus recorded on iNat in Australia plus every genus in the
+// owner's Lucid key; iNat names win. Museum data only describes taxa already on it: a museum name outside it is dropped silently.
+// Generated by tools/taxa.py (which also reads each genus's authority from the Australian Faunal Directory); regenerate, don't edit.
+// TAXA_AU:begin (generated by tools/taxa.py on 2026-10-07; edit the script, not this list)
+const TAXA_AU = [
+  {n:'Abracadabrella', inat:420230, lucid:true, afd:['Abracadabrella'], a:'Zabka, 1991'},
+  {n:'Adoxotoma', inat:375375, lucid:true, afd:['Adoxotoma'], a:'Simon, 1909'},
+  {n:'Afraflacilla', inat:420232, lucid:true, afd:['Afraflacilla'], a:'Berland & Millot, 1941'},
+  {n:'Ananeon', inat:420245, lucid:true, afd:['Ananeon'], a:'Richardson, 2013'},
+  {n:'Ancipitilobus', inat:null, lucid:true, afd:['Ancepitilobus'], a:'Richardson, 2016'},
+  {n:'Apricia', inat:553128, lucid:true, afd:['Apricia'], a:'Richardson, 2016'},
+  {n:'Arasia', inat:420255, lucid:true, afd:['Arasia'], a:'Simon, 1901'},
+  {n:'Asaphobelis', inat:420260, lucid:false, afd:[], a:''},
+  {n:'Astia', inat:420263, lucid:true, afd:['Astia'], a:'L. Koch, 1879'},
+  {n:'Astilodes', inat:420264, lucid:true, afd:['Astilodes'], a:'Zabka, 2009'},
+  {n:'Australoneon', inat:1655471, lucid:true, afd:[], a:'Richardson 2025'},
+  {n:'Barraina', inat:420275, lucid:true, afd:['Barraina'], a:'Richardson, 2013'},
+  {n:'Bathippus', inat:362405, lucid:false, afd:[], a:''},
+  {n:'Bavia', inat:147458, lucid:true, afd:['Bavia'], a:'Simon, 1877'},
+  {n:'Bianor', inat:375766, lucid:true, afd:['Bianor'], a:'Peckham & Peckham, 1886'},
+  {n:'Canama', inat:368660, lucid:true, afd:['Canama'], a:'Simon, 1903'},
+  {n:'Capeyorkia', inat:null, lucid:true, afd:['Capeyorkia'], a:'Richardson, 2016'},
+  {n:'Chalcolecta', inat:420298, lucid:true, afd:['Chalcolecta'], a:'Simon, 1884'},
+  {n:'Clynotis', inat:368224, lucid:true, afd:['Clynotis'], a:'Simon, 1901'},
+  {n:'Cocalus', inat:420310, lucid:true, afd:['Cocalus'], a:'Koch, 1846'},
+  {n:'Coccorchestes', inat:420311, lucid:true, afd:['Coccorchestes'], a:'Thorell, 1881'},
+  {n:'Copocrossa', inat:420317, lucid:true, afd:['Copocrossa'], a:'Simon, 1901'},
+  {n:'Cosmophasis', inat:362604, lucid:true, afd:['Cosmophasis'], a:'Simon, 1901'},
+  {n:'Cyrba', inat:322845, lucid:true, afd:['Cyrba'], a:'Simon, 1876'},
+  {n:'Cytaea', inat:347006, lucid:true, afd:['Cytaea'], a:'Keyserling, 1882'},
+  {n:'Damoetas', inat:420327, lucid:true, afd:['Damoetas'], a:'Peckham & Peckham, 1886'},
+  {n:'Euryattus', inat:420355, lucid:true, afd:['Euryattus'], a:'Thorell, 1881'},
+  {n:'Evarcha', inat:61762, lucid:true, afd:['Evarcha'], a:'Simon, 1902'},
+  {n:'Frewena', inat:null, lucid:true, afd:['Frewena'], a:'Richardson, 2013'},
+  {n:'Frigga', inat:250069, lucid:true, afd:['Frigga'], a:'C.L. Koch, 1850'},
+  {n:'Gelotia', inat:420372, lucid:true, afd:['Gelotia'], a:'Thorell, 1890'},
+  {n:'Grayenulla', inat:420379, lucid:true, afd:['Grayenulla'], a:'Zabka, 1992'},
+  {n:'Harmochirus', inat:null, lucid:true, afd:['Harmochirus'], a:'Simon, 1885'},
+  {n:'Hasarius', inat:244360, lucid:true, afd:['Hasarius'], a:'Simon, 1871'},
+  {n:'Helpis', inat:199168, lucid:true, afd:['Helpis'], a:'Simon, 1901'},
+  {n:'Holoplatys', inat:368945, lucid:true, afd:['Holoplatys'], a:'Simon, 1885'},
+  {n:'Huntiglennia', inat:420396, lucid:true, afd:['Huntiglennia'], a:'Zabka & Gray, 2004'},
+  {n:'Hypoblemum', inat:null, lucid:true, afd:[], a:'Peckham & Peckham, 1886'},
+  {n:'Jacksonoides', inat:420408, lucid:true, afd:['Jacksonoides'], a:'Wanless, 1988'},
+  {n:'Jotus', inat:376739, lucid:true, afd:['Jotus'], a:'L. Koch, 1881'},
+  {n:'Judalana', inat:420412, lucid:true, afd:['Judalana'], a:'Rix, 1999'},
+  {n:'Ligonipes', inat:420435, lucid:true, afd:['Ligonipes'], a:'Karsch, 1878'},
+  {n:'Maddisonia', inat:420443, lucid:true, afd:['Maddisonia'], a:'Zabka, 2014'},
+  {n:'Maratus', inat:53600, lucid:true, afd:['Maratus'], a:'Karsch, 1878'},
+  {n:'Margaromma', inat:420457, lucid:true, afd:['Margaromma'], a:'Keyserling, 1882'},
+  {n:'Megaloastia', inat:420464, lucid:true, afd:['Megaloastia'], a:'Zabka, 1995'},
+  {n:'Menemerus', inat:68064, lucid:true, afd:['Menemerus'], a:'Simon, 1868'},
+  {n:'Metacyrba', inat:250072, lucid:false, afd:[], a:''},
+  {n:'Mopsolodes', inat:420478, lucid:true, afd:['Mopsolodes'], a:'Zabka, 1991'},
+  {n:'Mopsus', inat:194789, lucid:true, afd:['Mopsus'], a:'Karsch, 1878'},
+  {n:'Myrmaplata', inat:713554, lucid:false, afd:[], a:''},
+  {n:'Myrmarachne', inat:51780, lucid:true, afd:['Myrmarachne'], a:'MacLeay, 1839'},
+  {n:'Neon', inat:172376, lucid:true, afd:['Neon'], a:'Simon, 1876'},
+  {n:'Nungia', inat:null, lucid:true, afd:['Nungia'], a:'Zabka, 1985'},
+  {n:'Ocrisiona', inat:353532, lucid:true, afd:['Ocrisiona'], a:'Simon, 1901'},
+  {n:'Ohilimia', inat:420496, lucid:true, afd:['Ohilimia'], a:'Strand, 1911'},
+  {n:'Omoedus', inat:417242, lucid:false, afd:[], a:''},
+  {n:'Opisthoncus', inat:199976, lucid:true, afd:['Opisthoncus'], a:'L. Koch, 1880'},
+  {n:'Papuaneon', inat:820296, lucid:true, afd:['Papuaneon'], a:'Maddison, 2016'},
+  {n:'Parahelpis', inat:null, lucid:true, afd:['Parahelpis'], a:'Gardzinska & Zabka, 2010'},
+  {n:'Paraphilaeus', inat:369839, lucid:true, afd:['Paraphilaeus'], a:'Zabka, 2003'},
+  {n:'Paraplatoides', inat:420521, lucid:true, afd:['Paraplatoides'], a:'Zabka, 1992'},
+  {n:'Pellenes', inat:126862, lucid:true, afd:['Pellenes'], a:'Simon, 1876'},
+  {n:'Phintella', inat:154359, lucid:true, afd:['Phintella'], a:'Strand, 1906'},
+  {n:'Phlegra', inat:null, lucid:true, afd:['Phlegra'], a:'Simon, 1876'},
+  {n:'Plexippus', inat:125445, lucid:true, afd:['Plexippus'], a:'Koch, 1846'},
+  {n:'Porius', inat:420549, lucid:false, afd:[], a:''},
+  {n:'Portia', inat:51934, lucid:true, afd:['Portia'], a:'Karsch, 1878'},
+  {n:'Pristobaeus', inat:null, lucid:true, afd:['Pristobaeus'], a:'Simon, E., 1902'},
+  {n:'Prostheclina', inat:420553, lucid:true, afd:['Prostheclina'], a:'Keyserling, 1882'},
+  {n:'Proszynellus', inat:828470, lucid:true, afd:['Proszynellus'], a:'Patoleta & Żabka, 2015'},
+  {n:'Psenuc', inat:804410, lucid:true, afd:[], a:'Prószyński, 2016'},
+  {n:'Pseudomaevia', inat:null, lucid:true, afd:['Pseudomaevia'], a:'Rainbow, 1920'},
+  {n:'Pseudosynagelides', inat:420565, lucid:true, afd:['Pseudosynagelides'], a:'Zabka, 1991'},
+  {n:'Pungalina', inat:420567, lucid:true, afd:['Pungalina'], a:'Richardson, 2013'},
+  {n:'Rhombonotus', inat:420570, lucid:true, afd:['Rhombonotus'], a:'L. Koch, 1879'},
+  {n:'Saitis', inat:420581, lucid:true, afd:['Saitis'], a:'Simon, 1876'},
+  {n:'Salpesia', inat:420583, lucid:true, afd:['Salpesia'], a:'Simon, 1901'},
+  {n:'Sandalodes', inat:368365, lucid:true, afd:['Sandalodes'], a:'Keyserling, 1883'},
+  {n:'Servaea', inat:420594, lucid:true, afd:['Servaea'], a:'Simon, 1887'},
+  {n:'Simaetha', inat:368389, lucid:true, afd:['Simaetha'], a:'Thorell, 1881'},
+  {n:'Simaethula', inat:353531, lucid:true, afd:['Simaethula'], a:'Simon, 1902'},
+  {n:'Sondra', inat:420604, lucid:true, afd:['Sondra'], a:'Wanless, 1988'},
+  {n:'Tara', inat:420621, lucid:true, afd:['Tara'], a:'Peckham & Peckham, 1886'},
+  {n:'Tauala', inat:420628, lucid:true, afd:['Tauala'], a:'Wanless, 1988'},
+  {n:'Thyene', inat:420635, lucid:true, afd:['Thyene'], a:'Simon, 1885'},
+  {n:'Trite', inat:378485, lucid:true, afd:['Trite'], a:'Simon, 1885'},
+  {n:'Urogelides', inat:420656, lucid:true, afd:['Urogelides'], a:'Zabka, 2009'},
+  {n:'Yamangalea', inat:420672, lucid:true, afd:['Yamangalea'], a:'Maddison, 2009'},
+  {n:'Zebraplatys', inat:420678, lucid:true, afd:['Zebraplatys'], a:'Zabka, 1992'},
+  {n:'Zenodorus', inat:858508, lucid:true, afd:['Zenodorus'], a:'Peckham and Peckham, 1891'},
+];
+const TAXA_AU_EXCLUDED = ['Ascyltus', 'Asemonea', 'Chrysilla', 'Habrocestum', 'Heliophanus', 'Lauharulla', 'Mintonia', 'Muziris', 'Sigytes'];   // AFD-only names, shown to the owner in Settings → Taxonomy review
+// TAXA_AU:end
+const AU = 6744;
+const TAXA_IDX = new Map(TAXA_AU.flatMap(t => [[t.n, t], ...t.afd.map(a => [a, t])]));
+const taxaAu = n => TAXA_IDX.get(n) || null;   // by checklist name or museum (AFD) spelling
+const auHome = () => S.M?.home.country === AU;
+const auNever = () => TAXA_AU.filter(t => t.inat == null);
+const auFound = () => TAXA_AU.filter(t => t.inat && S.M.G.has(t.inat)).length;
+const afdUrl = t => 'https://biodiversity.org.au/afd/taxa/' + encodeURIComponent(t.afd[0] || t.n);
+// A "never on iNat" genus as a museum plate: name, authority, and the first specimen collected in Australia once ALA has been asked
+function plateHtml(t) {
+  const L = S.lore[t.n], auth = L?.auth || t.a, f = L?.first;
+  return `<a class="card plate" href="${esc(afdUrl(t))}" target="_blank" rel="noopener" title="Australian Faunal Directory ↗">
+    <div class="ph"><div class="plab"><span class="pk">🏛 Specimen label</span><span class="pn"><i>${esc(t.n)}</i></span>${auth ? `<span class="pa">${esc(auth)}</span>` : ''}
+      ${f ? `<span class="pa">First collected ${esc(f.y)}${f.inst ? `<br>${esc(f.inst)}` : ''}</span>` : ''}</div></div>
+    <div class="meta"><div class="small muted">Not on iNat in Australia</div></div></a>`;
+}
+
+/* ---------------- lore: a taxon's museum history (Atlas of Living Australia) ---------------- */
+// Described by (ALA name matching, i.e. the Australian Faunal Directory), the holotype (species only) and the earliest museum
+// specimen collected in Australia. Each line comes from one of these fields and is left out when the field is missing.
+// iNaturalist's own copy inside ALA (data resource dr1411) is always excluded, so "first collected" means a specimen, not a photo.
+const ALA_NM = 'https://api.ala.org.au/namematching/api/search', ALA_BC = 'https://biocache-ws.ala.org.au/ws';
+const ALA_NOT_INAT = 'fq=-data_resource_uid:dr1411', LORE_TTL = 90 * 864e5;
+S.lore = store.get('lore', {});   // name -> {ts, auth, holo:{by, date, y, loc, state, inst, cat}|null, first:{y, by, inst, st}|null}
+const alaOn = () => S.prefs.ext?.ala !== false;
+// Hosts other than iNat get a queue each (≈1 request/s), like wxFetch; api() stays iNat-only
+const extNext = {};
+async function extFetch(url) {
+  const host = new URL(url).host, now = Date.now(), slot = Math.max(now, extNext[host] || 0);
+  extNext[host] = slot + 1100;
+  if (slot > now) await sleep(slot - now);
+  if (!navigator.onLine) throw new Error('Offline');
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`${host} returned ${r.status}`);
+  return r.json();
+}
+// "Australian Museum provider for OZCAM" → "Australian Museum"
+const museumOf = o => String(o?.dataResourceName || o?.institutionName || '').replace(/ provider for .*$/i, '').trim();
+// Some collections store a missing date as 30 Dec 1899, day zero of spreadsheet dates (ANIC has many): not a real collection date
+const zeroDate = o => /^1899-12-(29|30|31)/.test(o?.eventDate ? new Date(o.eventDate).toISOString() : '');
+const realYear = o => o?.year && !zeroDate(o) ? o.year : null;
+const alaDate = o => zeroDate(o) ? '' : o?.eventDate ? new Date(o.eventDate).toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric', timeZone:'UTC' }) : o?.year ? String(o.year) : '';
+const alaName = n => taxaAu(n)?.afd[0] || n;   // the museum spelling of a checklist genus (Ancipitilobus → Ancepitilobus)
+const loreBusy = new Set();
+async function ensureLore(name, rank) {
+  const cur = S.lore[name];
+  if (!alaOn() || !name || (cur && Date.now() - cur.ts < LORE_TTL) || loreBusy.has(name)) return cur || null;
+  loreBusy.add(name);
+  try {
+    const q = alaName(name), sp = rank === 'species';
+    const nm = await extFetch(`${ALA_NM}?q=${encodeURIComponent(q)}`);
+    const auth = nm.success && nm.family === 'Salticidae' ? nm.scientificNameAuthorship || '' : '';   // a namesake outside Salticidae isn't this spider
+    const base = `${ALA_BC}/occurrences/search?q=${encodeURIComponent(`${sp ? 'species' : 'genus'}:"${q}"`)}&fq=family:Salticidae&${ALA_NOT_INAT}`;
+    let holo = null;
+    if (sp) {
+      const h = (await extFetch(`${base}&fq=type_status:HOLOTYPE&pageSize=1`)).occurrences?.[0];
+      if (h) {
+        const full = await extFetch(`${ALA_BC}/occurrence/${encodeURIComponent(h.uuid)}`).catch(() => null);   // locality and catalogue number
+        holo = { by:(h.recordedBy || []).join(', '), date:alaDate(h), y:realYear(h), loc:full?.raw?.location?.locality || '', state:h.stateProvince || '',
+          inst:museumOf(h), cat:full?.raw?.occurrence?.catalogNumber || h.raw_catalogNumber || '' };
+      }
+    }
+    // the earliest dated specimen collected in Australia (specimens from New Guinea and beyond would make "first collected" misleading)
+    const e = (await extFetch(`${base}&fq=basis_of_record:PRESERVED_SPECIMEN&fq=country:Australia&fq=year:%5B1700%20TO%202100%5D&sort=year&dir=asc&pageSize=20`)).occurrences?.find(realYear);
+    S.lore[name] = { ts:Date.now(), auth, holo, first:e ? { y:e.year, by:(e.recordedBy || []).join(', '), inst:museumOf(e), st:e.stateProvince || '' } : null };
+    store.set('lore', S.lore);
+    loreUpdated();
+  } catch (e) { console.warn(e); }
+  finally { loreBusy.delete(name); }
+  return S.lore[name] || null;
+}
+const holoTxt = h => [[h.by && 'collected by ' + h.by, h.date, h.loc, h.state].filter(Boolean).join(', '), [h.inst, h.cat].filter(Boolean).join(' ')].filter(Boolean).map(esc).join(' · ');
+const firstTxt = f => [f.y, f.inst, f.st].filter(Boolean).map(esc).join(' · ');
+// "Otto & Hill, 2013" → who "Otto & Hill", y 2013 (parentheses mean it was first described in another genus)
+function authParts(a) {
+  a = String(a || '').trim(); if (!a) return null;
+  const m = /^\(?(.+?),?\s+(\d{4})\)?$/.exec(a);
+  return m ? { who:m[1], y:+m[2] } : { who:a.replace(/^\(|\)$/g, ''), y:null };
+}
+const authOf = name => S.lore[name]?.auth || taxaAu(name)?.a || '';
+// Collected by → described by → naturalists on iNat → you: each segment only when its data exists (ceremony, share card, crew feed)
+function lineageSegs(tid, pid, login = S.login) {
+  const name = S.nodes[tid]?.n || '', L = S.lore[name], segs = [];
+  const ty = S.nodes[tid]?.r === 'genus' && FIELD_STORIES[name]?.ok && FIELD_STORIES[name].type;
+  const holo = ty ? S.lore[ty]?.holo : L?.holo;
+  if (holo?.by) segs.push(`collected by ${holo.by}${holo.y ? ` (${holo.y})` : ''}`);
+  else if (L?.first) segs.push(`first collected ${L.first.y}${L.first.inst ? ` (${L.first.inst})` : ''}`);
+  const a = authParts(authOf(name));
+  if (a) segs.push(`described by ${a.who}${a.y ? ` (${a.y})` : ''}`);
+  const P = S.pioneer[`${tid}:${pid}`], r = natRank(tid, pid, login);
+  if (P?.of) segs.push(`${fmt(P.of)} naturalist${P.of === 1 ? '' : 's'} on iNat`);
+  if (r?.rank) segs.push(`${isMe(login) ? 'you' : login}, #${r.rank}${r.pencil ? ' (pencilled)' : ''}`);
+  return segs;
+}
+const lineageHtml = (tid, pid, login) => lineageSegs(tid, pid, login).map((s, i, a) => i === a.length - 1 && /#\d/.test(s) ? `<b>${esc(s)}</b>` : esc(s)).join(' → ');
+// The genus page's History: described by, the type species' holotype (when a field story names it), first collected, earliest on
+// iNat (pioneer), and where you sit among the naturalists who have recorded it
+function historyHtml(gid) {
+  const name = S.nodes[gid]?.n || '', L = S.lore[name], rows = [];
+  const auth = authOf(name);
+  if (auth) rows.push(['Described by', `<i>${esc(name)}</i> ${esc(auth)}`]);
+  const ty = FIELD_STORIES[name]?.ok && FIELD_STORIES[name].type, TH = ty && S.lore[ty]?.holo;
+  if (TH) rows.push(['Holotype', `<i>${esc(ty)}</i> (type species): ${holoTxt(TH)}`]);
+  if (L?.first) rows.push(['First collected', firstTxt(L.first)]);
+  const nl = [S.M.home.country, S.M.home.state].filter(Boolean).map(p => natLine(gid, p)).filter(Boolean);
+  const dl = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('') + pioneerLine(gid) + (nl.length ? `<dt>Naturalists</dt><dd>${nl.join('<br>')}</dd>` : '');
+  if (!dl) return '';
+  return `<h3 style="margin-top:12px">History</h3><dl class="kv">${dl}</dl>
+    ${L ? `<p class="small muted" style="margin:4px 0 0">Museum records: <a href="https://bie.ala.org.au/species/${encodeURIComponent(alaName(name))}" target="_blank" rel="noopener">Atlas of Living Australia ↗</a></p>` : ''}`;
+}
+// A species row's museum line (genus page): described by, holotype, first collected, and your rank
+function spLoreHtml(sid) {
+  const name = S.nodes[sid]?.n || '', L = S.lore[name], bits = [];
+  if (L?.auth) bits.push(`${esc(L.auth)}`);
+  if (L?.holo) bits.push(`Holotype ${holoTxt(L.holo)}`);
+  if (L?.first) bits.push(`First collected ${firstTxt(L.first)}`);
+  [S.M.home.country, S.M.home.state].filter(Boolean).forEach(p => { const r = natRank(sid, p); if (r?.rank) bits.push(`${r.pencil ? '✏️ pencilled ' : ''}#${r.rank}${r.of && !r.pencil ? ` of ${r.of}` : ''} in ${esc(S.places[p]?.n || '')}${r.hon && !r.pencil ? ` · ${r.hon.n}` : ''}`); });
+  return bits.length ? `<span class="splore">${bits.join(' · ')}</span>` : '';
+}
+function loreUpdated() {
+  document.querySelectorAll('[data-history]').forEach(el => el.innerHTML = historyHtml(+el.dataset.history));
+  document.querySelectorAll('[data-splore]').forEach(el => el.innerHTML = spLoreHtml(+el.dataset.splore));
+  if (S.tab === 'dex' && S.prefs.filter === 'never') softRender();
+}
+
+/* ---------------- field stories: owner-approved notes from the papers, with their references ---------------- */
+// Written from papers the owner supplies (methods and material examined), approved by him, then `ok:true`. Nothing is shown
+// until then, and there's no placeholder when a genus has none. `type` names the genus's type species (its holotype line).
+const FIELD_STORIES = {
+  // 'Maratus': { story:'…', refs:[{ cite:'Author (Year) Title. Journal vol: pages', doi:'10.…' }], type:'Maratus amabilis', by:'drafted from refs, approved by owner', ok:false },
+};
+function fieldStoryHtml(name) {
+  const F = FIELD_STORIES[name]; if (!F?.ok || !F.story) return '';
+  return `<div class="fstory"><div class="fk">FIELD STORY · <i>${esc(name)}</i></div>${String(F.story).split(/\n\s*\n/).map(p => `<p>${esc(p.trim())}</p>`).join('')}
+    ${(F.refs || []).length ? `<ol class="frefs">${F.refs.map(r => `<li>${esc(r.cite)}${r.doi ? ` <a href="https://doi.org/${esc(encodeURI(r.doi))}" target="_blank" rel="noopener">doi:${esc(r.doi)}</a>` : ''}</li>`).join('')}</ol>` : ''}</div>`;
+}
+
 /* ---------------- field style & titles ---------------- */
 function fieldStyle(M) {
   const s = [];
@@ -1194,6 +1465,10 @@ function buildQuests(M) {
     if (empty[0]) q.push({ id:'lineage:'+empty[0].id, kind:'lineage', icon:'🌳', title:'Unexplored Lineage',
       text:`You have nothing from ${S.nodes[empty[0].id].n} (${S.nodes[empty[0].id].r}). ${empty[0].g.length} ${empty[0].g.length===1?'genus':'genera'} from it ${empty[0].g.length===1?'is':'are'} recorded in ${scopeLabel(S.prefs.scope)}.`, node:empty[0].id, targets:empty[0].g, reward:300 });
   }
+  const gh = M.homeCell ? homeGhosts().filter(x => x.id && !M.G.has(x.id)) : [];
+  if (gh.length) q.push({ id:'ghost:' + M.homeCell.k, kind:'ghost', icon:'🏛', title:'Bring It Into the Light',
+    text:`${gh.length === 1 ? '1 genus has' : `${gh.length} genera have`} museum specimens from within 25 km of your home base but no iNat records there. Photograph one there and post it.`,
+    targets:gh.slice(0, 6).map(x => x.id), at:{ lat:M.homeCell.lat, lng:M.homeCell.lng }, reward:300 });
   const ns = nearestSet(refFor(S.prefs.scope));
   if (ns) q.push({ id:'set:' + ns.key + ':' + ns.have, kind:'hunt', icon:'🏆', title:`Complete the Set: ${ns.name}`,
     text:`You have ${ns.have} of the ${ns.ids.length} genera in the ${ns.name} set that are recorded in ${scopeLabel(S.prefs.scope)}. ${ns.left} to go. See them under SPOODEX › Sets.`,
@@ -1228,6 +1503,7 @@ function buildQuests(M) {
 function questDone(q, M) {
   switch (q.kind) {
     case 'hunt': case 'lineage': return (q.targets || []).some(id => M.G.has(id));
+    case 'ghost': return M.obs.some(o => q.targets.includes(genusOf(o.anc)) && inBox(o, q.at, 25));
     case 'resolve': return (q.obs || []).some(id => S.u.obs[id] && genusOf(S.u.obs[id].anc));
     case 'master': return !!M.G.get(q.gid)?.f[q.crit];
     case 'beh': return M.behObs[q.beh] > q.base;
@@ -1296,7 +1572,7 @@ function render() {
   if (S.tab === 'wanted' && wView() === 'bounty' && !bountyBusy && !bountyErr && bountyWhere() && bountyNeedsLoad()) loadBounties();
   if (S.tab === 'trip' && !tripBusy && !tripErr && tripNeedsLoad()) loadTrip();
   if (S.tab === 'profile' && !pioneerBusy && !isGuest()) setTimeout(drainPioneer, 0);
-  if (S.tab === 'crew') { S.crew.seen = Date.now(); saveCrew(); }
+  if (S.tab === 'crew') { S.crew.seen = Date.now(); saveCrew(); setTimeout(crewCeremony, 600); }
   if (S.tab === 'crew' && S.evOpen && S.events[S.evOpen] && !evErr[S.evOpen]) loadEvent(S.evOpen);
   if (S.tab === 'crew' && !S.evOpen && !S.evBroken && cupDue()) loadCups();
   const plan = S.tab === 'trip' && $('#tripPlan');
@@ -1442,9 +1718,11 @@ function viewDex() {
     if (P.filter === 'mastered') return g && g.state === 'MASTERED';
     return true;
   };
-  const shown = order.filter(filt);
+  const never = auHome() && P.filter === 'never';
+  const shown = never ? [] : order.filter(filt);
   ensureInfo([...order, ...sc.extras]);
-  const chips = [['all','All'],['found','Recorded'],['missing','Missing'],['supported','Supported+'],['mastered','Mastered']];
+  if (never) (async () => { for (const t of auNever()) await ensureLore(t.n, 'genus'); })();
+  const chips = [['all','All'],['found','Recorded'],['missing','Missing'],['supported','Supported+'],['mastered','Mastered'], ...(auHome() ? [['never','🏛 Never on iNat']] : [])];
   return `
   <div class="panel row" style="margin-bottom:14px">
     ${layerSwitch()}
@@ -1452,12 +1730,14 @@ function viewDex() {
     <span class="muted">genera on iNat in</span>
     <select data-pref="scope">${['country','state','world'].map(s => `<option value="${s}" ${P.scope===s?'selected':''}>${esc(s==='world'?'World':scopeLabel(s))}</option>`).join('')}</select>
     <div class="bar" style="max-width:220px"><i style="width:${pct(sc.found, sc.inScope.length)}%"></i></div>
+    ${auHome() ? `<span class="small">· <b>${auFound()} / ${TAXA_AU.length}</b> known from Australia</span>` : ''}
     <span>${chips.map(([k,l]) => `<span class="chip ${P.filter===k?'on':''}" data-filter="${k}" style="cursor:pointer">${l}</span>`).join(' ')}</span>
     <label class="small"><input type="checkbox" data-pref="reveal" ${P.reveal?'checked':''}> reveal names</label>
   </div>
   ${sc.ref ? '' : M.home.country || P.scope === 'world' ? '<p class="muted">Loading reference collection…</p>' : '<div class="panel"><p>Set a home base so SPOODEX knows which genera belong in your region.</p><button class="primary" data-tab="map">Set home base</button></div>'}
-  <div class="dexgrid">${shown.map(id => cardHtml(id, num.get(id))).join('')}</div>
-  ${sc.extras.length ? `<h2 style="margin-top:22px">Recorded outside ${esc(scopeLabel(P.scope))} (+${sc.extras.length})</h2>
+  ${never ? `<p class="small muted">Genera known from Australia (the Australian Faunal Directory and the Identification aid's key) with no iNat records in Australia yet.</p>
+    <div class="dexgrid">${auNever().map(plateHtml).join('')}</div>` : `<div class="dexgrid">${shown.map(id => cardHtml(id, num.get(id))).join('')}</div>`}
+  ${sc.extras.length && !never ? `<h2 style="margin-top:22px">Recorded outside ${esc(scopeLabel(P.scope))} (+${sc.extras.length})</h2>
     <div class="dexgrid">${sc.extras.map(id => cardHtml(id, 0)).join('')}</div>` : ''}
   ${M.leads.length ? `<div class="panel" style="margin-top:22px">❓ <b>${fmt(mysteryCount())}</b> mystery spood${mysteryCount() === 1 ? '' : 's'}: records not yet identified to genus. Any of them could be a genus you haven't unlocked.
     <a href="#" data-layer="needsid">See them →</a></div>` : ''}`;
@@ -1574,7 +1854,8 @@ function speciesSection(gid) {
       const img = mine ? photoSize(mine.cover, 'small') : (S.info[id]?.p || '');
       return `<div class="sprow ${mine ? 'have' : ''}"><span class="thumb ${mine ? '' : 'unknown'}" style="background-image:url('${esc(img)}')"></span>
         <span>${mine ? '☑' : '☐'} <i>${esc(S.nodes[id]?.n || mine?.name)}</i>
-        <span class="small muted">${mine ? ` · ${mine.obs.length} obs, since ${(mine.first.d||'').slice(0,4)}` : ''}${c != null ? ` · ${fmt(c)} iNat records in ${esc(scopeLabel(S.prefs.scope))}` : ''}${theirs ? ` · ${esc(S.cmp.login)} ${mine ? 'has it too' : 'has it 😤'}` : ''}</span></span></div>`;
+        <span class="small muted">${mine ? ` · ${mine.obs.length} obs, since ${(mine.first.d||'').slice(0,4)}` : ''}${c != null ? ` · ${fmt(c)} iNat records in ${esc(scopeLabel(S.prefs.scope))}` : ''}${theirs ? ` · ${esc(S.cmp.login)} ${mine ? 'has it too' : 'has it 😤'}` : ''}</span>
+        ${mine ? `<span class="small" data-splore="${id}">${spLoreHtml(id)}</span>` : ''}</span></div>`;
     }).join('')}`;
 }
 
@@ -1603,7 +1884,9 @@ function viewTree() {
     <div class="row" style="margin-bottom:8px"><h2 style="margin:0">Salticidae</h2><span class="small">${top.f}/${top.t} genera lit · scope: ${esc(scopeLabel(S.prefs.scope))}</span>
       <label class="small"><input type="checkbox" data-pref="reveal" ${S.prefs.reveal?'checked':''}> reveal names</label></div>
     <p class="muted small">Classification as used on iNaturalist (subfamily › tribe › subtribe › genus).</p>
-    <ul>${[...(kids[SALTICIDAE] || [])].sort((a,b) => (S.nodes[a]?.n||'').localeCompare(S.nodes[b]?.n||'')).map(node).join('')}</ul></div>`;
+    <ul>${[...(kids[SALTICIDAE] || [])].sort((a,b) => (S.nodes[a]?.n||'').localeCompare(S.nodes[b]?.n||'')).map(node).join('')}
+    ${auHome() ? `<li><details><summary><b>🏛 Known from Australia, not on iNat there</b> <span class="small">${auNever().length} genera</span></summary>
+      <ul>${auNever().map(t => `<li><a class="g museum" href="${esc(afdUrl(t))}" target="_blank" rel="noopener">🏛 <i>${esc(t.n)}</i></a> <span class="small muted">${esc(authOf(t.n))}</span></li>`).join('')}</ul></details></li>` : ''}</ul></div>`;
 }
 
 let map = null, map2d = null, mapArea = null, mapPin = null;
@@ -1670,6 +1953,7 @@ async function runScan(lat, lng, km = scanKm(), per = scanPer()) {
     S.u.scanHist = [S.u.mscan, ...(S.u.scanHist || []).filter(h => !(h.lat === lat && h.lng === lng && h.km === km && h.per === per))].slice(0, SCAN_HIST);
     saveUser(); saveShared();
     ensurePheno(S.u.mscan.G.filter(x => !S.M.G.has(x.id)).map(x => x.id).slice(0, 25));
+    loadScanGhosts(S.u.mscan);
   } catch (e) { if (stale()) return; scanErr = e.message; }
   scanBusy = false; scanPending = null;
   const D = S.u.mscan; if (D) drawScanArea(D, D.km);
@@ -1734,6 +2018,7 @@ function scanPanelHtml() {
     <div class="sctabs" role="tablist"><button type="button" role="tab" data-act="scanTab" data-v="g" class="${isG ? 'on' : ''}" aria-selected="${isG}">Genera</button><button type="button" role="tab" data-act="scanTab" data-v="s" class="${isG ? '' : 'on'}" aria-selected="${!isG}">Species</button></div>
     ${list.length ? '' : `<p class="scnote">No public salticid records in this square${D.per === 'all' ? '' : ` (${esc(perTxt(D.per))})`} yet.</p>`}
     ${newList || (list.length ? `<p class="scnote">You have every ${isG ? 'genus' : 'species'} recorded here.</p>` : '')}
+    ${isG ? ghostRowsHtml(D) : ''}
     ${mine.length ? `<div class="scsec">ALREADY YOURS (${mine.length})</div><div class="schave">${mine.map(x => { const gid = isG ? x.id : genusOfNode(x.id);
       return gid ? `<a href="#" data-genus="${gid}"><i>${esc(S.nodes[x.id]?.n || '?')}</i></a>` : `<i>${esc(S.nodes[x.id]?.n || '?')}</i>`; }).join(', ')}</div>` : ''}
     <p class="scnote small muted">Read ${esc(agoShort(D.ts))}.</p>
@@ -2255,7 +2540,7 @@ async function openGenus(id) {
         <dt>First recorded</dt><dd>${esc(g.first.d)}${firstPlace ? ' · ' + esc(firstPlace) : ''}</dd>
         <dt>Latest</dt><dd>${esc(g.last.d)}</dd>
         <dt>Best record</dt><dd>${g.f.rg ? 'Research Grade' : g.f.supported ? 'Community-supported genus' : 'Your ID (not yet community-supported)'}</dd>
-        ${shareLine(g)}${pioneerLine(id)}
+        ${shareLine(g)}
         <dt>Your ${ordinal(g.discIndex)} genus</dt><dd></dd>
       </dl></div>
       <div><h3>Mastery challenges</h3><ul class="checks">${CRITERIA.map(c => `<li class="${g.f[c.k]?'done':''}">${g.f[c.k]?'☑':'☐'} ${c.icon} ${esc(c.label)}${g.f[c.k] ? '' : fixIt(g, c.k)}</li>`).join('')}</ul>
@@ -2271,14 +2556,17 @@ async function openGenus(id) {
     <div class="muted">${esc(lin)}</div>${wow}
     <p>You haven't recorded this genus. ${rt ? `iNat has ${fmt(rt.count)} verifiable record${rt.count===1?'':'s'} of it in ${esc(scopeLabel(S.prefs.scope))}.` : ''}</p>
     <p><a href="https://www.inaturalist.org/observations?taxon_id=${id}${scopeP ? '&place_id='+scopeP : ''}" target="_blank" rel="noopener">See where others have found it ↗</a></p>`;
-  const when = `<h3 style="margin-top:12px">When to look</h3><div data-phenochart="${id}">${phenoChart(id)}</div>`;
+  const when = `<div data-history="${id}">${historyHtml(id)}</div>${fieldStoryHtml(name)}
+    <h3 style="margin-top:12px">When to look</h3><div data-phenochart="${id}">${phenoChart(id)}</div>`;
   ensurePheno([id]);
+  // museum history: the genus, then your species in it (one at a time, ALA's own queue)
+  (async () => { await ensureLore(name, 'genus'); for (const sp of g ? [...S.M.S.values()].filter(s => s.gid === id) : []) await ensureLore(S.nodes[sp.id]?.n || sp.name, 'species'); })();
   const rarity = moduleOn(3) ? `
     <h3 style="margin-top:12px">Rarity telemetry</h3>
     <dl class="kv">
       ${g ? `<dt>Your encounter rate</dt><dd>${g.obs.length} of your ${fmt(M.obs.length)} salticid observations</dd>` : ''}
       <dt>iNat record frequency</dt><dd>${rt ? `${rarityChip(rt.tier)} in ${esc(scopeLabel(S.prefs.scope))} (${fmt(rt.count)})` : '—'}</dd>
-      <dt>Observers</dt><dd id="obsvrs">…</dd>
+      ${natLine(id, scopeP) ? '' : '<dt>Observers</dt><dd id="obsvrs">…</dd>'}
     </dl>` : '';
   const hist = info.s ? `<h3 style="margin-top:12px">Natural history</h3><p>${esc(info.s)}</p><p class="small muted">Summary via iNaturalist / Wikipedia${info.w ? ` · <a href="${esc(info.w)}" target="_blank" rel="noopener">more</a>` : ''}</p>` : '';
   const cg = S.cmp?.M?.G.get(id);
@@ -2295,7 +2583,7 @@ async function openGenus(id) {
       ${!g && info.a ? ` · <span class="muted">Silhouette from photo ${esc(info.a)}</span>` : ''}</p>
     </div></div></div>`;
   if (!info.s && !info.p) ensureInfo([id]).then(() => { if ($('#modalRoot').innerHTML && S.info[id]?.s) openGenus(id); });
-  if (moduleOn(3)) {
+  if (moduleOn(3) && $('#obsvrs')) {
     const key = `${id}:${scopeP || 'w'}`;
     let n = S.observers[key];
     if (n == null) {
@@ -2319,9 +2607,15 @@ function celebrations(fresh, solved) {
   return out;
 }
 const aGenus = n => (/^[AEIOU]/i.test(n) ? 'an ' : 'a ') + n;
+let revealList = [];   // what's still to come; a ceremony queued while another is on screen joins the end
 function revealQueue(list) {
-  if (!list.length) return;
-  const it = list.shift(), g = it.g, o = it.o;
+  revealList.push(...list);
+  if (!$('#reveal')) revealNext();
+}
+function revealNext() {
+  const list = revealList, it = list.shift(); if (!it) return;
+  if (it.hon) return honourReveal(it.hon, it.crew);
+  const g = it.g, o = it.o;
   const el = document.createElement('div');
   el.id = 'reveal';
   el.innerHTML = `<div class="rph" style="background-image:url('${esc(photoSize(o?.ph[0] || g.cover, 'large'))}')"></div>
@@ -2333,7 +2627,7 @@ function revealQueue(list) {
     ${it.more ? `<p>…and ${plural(it.more, 'more mystery spood')} identified.</p>` : ''}
     ${!list.length && it.isNew && !isGuest() ? '<p style="margin-top:14px"><button class="primary" data-act="dexImage">📤 Share my SPOODEX</button></p>' : ''}
     <p style="margin-top:18px;font-size:12px">${list.length ? `${list.length} more… ` : ''}tap to continue</p>`;
-  el.addEventListener('click', () => { el.remove(); revealQueue(list); });
+  el.addEventListener('click', () => { el.remove(); revealNext(); });
   document.body.appendChild(el);
 }
 
@@ -2646,6 +2940,7 @@ async function loadCrew(force = false) {
     saveShared();
   } catch (e) { crewErr = e.message; }
   crewBusy = false; redraw();
+  crewHype();
 }
 const crewUnseen = () => (S.crew.feed || []).some(e => e.ts > (S.crew.seen || 0) && (e.kind === 'ev' || S.crew.logins.includes(e.login)));
 function crewFeedHtml(ready) {
@@ -2654,8 +2949,8 @@ function crewFeedHtml(ready) {
   const day = ts => new Date(ts).toLocaleDateString(undefined, { day:'numeric', month:'short' });
   const ev = e => { if (e.kind === 'ev') return `<div class="feed">${EV_MODES[e.m]?.i || '🏁'} ${S.events[e.id] ? `<a href="#" data-act="evOpen" data-v="${esc(e.id)}">${esc(e.n)}</a>` : esc(e.n)}: ${esc(e.txt)}<div class="small muted">${day(e.ts)}</div></div>`;
     const miss = isGuest() ? [] : e.g.filter(id => !M.G.has(id));
-    return `<div class="feed">🆕 <b>${esc(e.login)}</b> added ${e.g.length ? `${e.g.length} ${e.g.length === 1 ? 'genus' : 'genera'} (${names(e.g)})` : ''}${e.g.length && e.s.length ? ' and ' : ''}${e.s.length ? `${e.s.length} species` : ''} to their collection${miss.length ? ` <span class="small">· ${miss.length < e.g.length ? `${miss.length} not` : e.g.length === 1 ? 'not' : 'none of them'} in yours 😤</span>` : ''}
-      <div class="small muted">spotted between ${day(e.since)} and ${day(e.ts)}</div></div>`; };
+    return `<div class="feed${e.g.length ? ' hype' : ''}">🆕 <b>${esc(e.login)}</b> added ${e.g.length ? `${e.g.length} ${e.g.length === 1 ? 'genus' : 'genera'} (${names(e.g)})` : ''}${e.g.length && e.s.length ? ' and ' : ''}${e.s.length ? `${e.s.length} species` : ''} to their collection${miss.length ? ` <span class="small">· ${miss.length < e.g.length ? `${miss.length} not` : e.g.length === 1 ? 'not' : 'none of them'} in yours 😤</span>` : ''}
+      ${e.g.length ? hypeHtml(e) : ''}<div class="small muted">spotted between ${day(e.since)} and ${day(e.ts)}</div></div>`; };
   const others = ready.filter(m => !m.me && m.wk);
   const busy = others.filter(m => m.wk.obs).sort((a,b) => b.wk.obs - a.wk.obs), quiet = others.filter(m => !m.wk.obs);
   return `<div class="panel" style="margin-bottom:16px"><h2>Crew feed</h2>
@@ -2731,6 +3026,121 @@ function viewCrewMain() {
   <h2 style="margin-top:22px">Genus by genus</h2>
   <p class="small muted">Taxonomic order as used on iNaturalist. Numbers are each person's observation count for the genus.</p>
   <div class="panel tablewrap"><table class="cmp matrix"><tr><th>Genus</th>${ready.map(m => `<th class="have">${esc(m.login)}</th>`).join('')}<th class="n"></th></tr>${matrix}</table></div>`;
+}
+
+/* ---------------- museum ghosts: genera with museum specimens in a scan square but no iNat records there ---------------- */
+// One ALA genus facet over the scan's own box (preserved specimens only, iNat's copy excluded), kept only for genera on the
+// checklist (TAXA_AU). Genus level only, and never in the dex, level, XP, sets or events.
+const GHOST_TTL = 30 * 864e5;
+const wktOf = (c, km) => { const b = boxOf(c, km), f = v => v.toFixed(4); return `POLYGON((${f(b.w)} ${f(b.s)},${f(b.e)} ${f(b.s)},${f(b.e)} ${f(b.n)},${f(b.w)} ${f(b.n)},${f(b.w)} ${f(b.s)}))`; };
+const ghostQ = (c, km) => `${ALA_BC}/occurrences/search?${ALA_NOT_INAT}&fq=basis_of_record:PRESERVED_SPECIMEN&fq=family:Salticidae&wkt=${encodeURIComponent(wktOf(c, km))}`;
+// [{n checklist name, id iNat genus id or null, c specimens}] for every checklist genus with specimens in the box
+async function ghostsIn(c, km) {
+  const d = await extFetch(`${ghostQ(c, km)}&q=*:*&pageSize=0&facets=genus&flimit=-1`), out = [];
+  for (const r of d.facetResults?.[0]?.fieldResult || []) { const t = taxaAu(r.label); if (t && !out.some(x => x.n === t.n)) out.push({ n:t.n, id:t.inat, c:r.count }); }
+  return out;
+}
+// The latest specimen of a genus in the box: its year and museum
+async function ghostLatest(x, c, km) {
+  const o = (await extFetch(`${ghostQ(c, km)}&q=${encodeURIComponent(`genus:"${alaName(x.n)}"`)}&fq=year:%5B1700%20TO%202100%5D&sort=year&dir=desc&pageSize=5`)).occurrences?.find(realYear);
+  if (o) { x.yN = o.year; x.inst = museumOf(o); }
+  return x;
+}
+// Ghosts for a scan: museum genera minus what iNat has in the same box (an all-time scan only, or "none on iNat" wouldn't hold)
+const scanGhosts = D => !D?.gh || D.per !== 'all' ? [] : D.gh.filter(x => !x.id || !D.G.some(g => g.id === x.id)).sort((a, b) => b.c - a.c);
+async function loadScanGhosts(D) {
+  if (!alaOn() || D.per !== 'all' || D.gh) return;
+  try { D.gh = await ghostsIn(D, D.km); saveUser(); if (S.u.mscan === D) paintScan(); } catch (e) { console.warn(e); }
+}
+function ghostRowsHtml(D) {
+  const xs = scanGhosts(D); if (!xs.length) return '';
+  return `<div class="scsec">🏛 MUSEUM RECORDS HERE, NONE ON iNAT HERE</div>${xs.map(x => { const have = x.id && S.M.G.has(x.id);
+    return `<div class="scrow ghost${have ? ' have' : ''}"><details data-ghost="${esc(x.n)}"><summary><span class="nm"><i>${esc(x.n)}</i></span>${x.id && cnOf(x.id) ? ` <span class="cn">${esc(cnOf(x.id))}</span>` : ''}
+      <span class="meta">${plural(x.c, 'museum specimen')}${have ? ' · yours elsewhere' : ''}</span></summary>
+      <span class="meta" data-ghy="${esc(x.n)}">${x.yN ? `Latest collected ${x.yN}${x.inst ? ` · ${esc(x.inst)}` : ''}` : 'Looking up the latest specimen…'}${x.id ? ` · <a href="#" data-genus="${x.id}">genus page</a>` : ''}</span></details></div>`; }).join('')}`;
+}
+// The latest year loads when a ghost row is opened
+document.addEventListener('toggle', async e => {
+  const el = e.target; if (!el.dataset?.ghost || !el.open) return;
+  const D = S.u.mscan, x = D?.gh?.find(g => g.n === el.dataset.ghost); if (!x || x.yN !== undefined) return;
+  try { await ghostLatest(x, D, D.km); } catch { x.yN = null; }
+  x.yN = x.yN ?? null; saveUser();
+  const m = document.querySelector(`[data-ghy="${CSS.escape(x.n)}"]`);
+  if (m) m.innerHTML = `${x.yN ? `Latest collected ${x.yN}${x.inst ? ` · ${esc(x.inst)}` : ''}` : 'No dated specimen'}${x.id ? ` · <a href="#" data-genus="${x.id}">genus page</a>` : ''}`;
+}, true);
+// Around home (±25 km): the cold cases on the wanted posters and the "Bring it into the light" quest
+let ghostBusy = false;
+async function loadHomeGhosts(latest = false) {
+  const h = S.M?.homeCell, G = S.u.ghostHome;
+  if (!alaOn() || !h) return;
+  while (ghostBusy) { if (!latest) return; await sleep(500); }   // the posters wait for a load already under way
+  ghostBusy = true;
+  try {
+    if (!G || G.k !== h.k || Date.now() - G.ts > GHOST_TTL) { S.u.ghostHome = { k:h.k, ts:Date.now(), g:await ghostsIn(h, 25) }; saveUser(); }
+    if (latest) for (const x of homeGhosts().slice(0, WANTED_POSTERS)) if (x.yN === undefined) { await ghostLatest(x, h, 25); x.yN = x.yN ?? null; saveUser(); if (S.tab === 'wanted') softRender(); }
+  } catch (e) { console.warn(e); }
+  ghostBusy = false;
+}
+// Home ghosts: museum genera within 25 km of home with no iNat record there (the all-time home scan), ones you don't have first
+function homeGhosts() {
+  const h = S.M?.homeCell, G = S.u.ghostHome, scan = h && S.u.scans[h.k];
+  if (!alaOn() || !G || !scan || G.k !== h.k) return [];
+  const on = new Set(scan.g.map(x => x.id));
+  return G.g.filter(x => !x.id || !on.has(x.id)).sort((a, b) => (S.M.G.has(a.id) - S.M.G.has(b.id)) || b.c - a.c);
+}
+const inBox = (o, c, km) => { const b = boxOf(c, km); return o.lat != null && o.lat >= b.s && o.lat <= b.n && o.lng >= b.w && o.lng <= b.e; };
+function coldCaseHtml(x) {
+  const ph = x.id && taxonPhoto(x.id), t = taxaAu(x.n);
+  return `<div class="poster" ${x.id ? `data-genus="${x.id}" title="Genus page"` : ''}>
+    <div class="wtitle">WANTED</div><div class="wtier">COLD CASE · WITHIN 25 KM OF HOME</div>
+    ${ph ? `<div class="wph" style="background-image:url('${esc(ph.u)}')"></div><div class="wcredit">${esc(ph.cr)}</div>`
+      : `<div class="wph plateph"><div class="plab"><span class="pk">🏛 Specimen label</span><span class="pn"><i>${esc(x.n)}</i></span>${authOf(x.n) ? `<span class="pa">${esc(authOf(x.n))}</span>` : ''}</div></div>`}
+    <div class="stamp">COLD CASE${x.yN ? `<br>LAST COLLECTED ${x.yN}` : ''}</div>
+    <div class="wname">${esc(x.n)}</div>${x.id ? cnHtml(x.id, 'wtribe') : ''}<div class="wtribe">${esc(x.id ? tribeOf(x.id) : t?.a || '')}</div>
+    <ul class="wwhy"><li>🏛 ${plural(x.c, 'museum specimen')} from within 25 km of home${x.inst ? `, the latest at ${esc(x.inst)}` : ''}</li>
+      <li>📷 No iNat records within 25 km of home</li>${x.id && S.M.G.has(x.id) ? '<li>✓ In your SPOODEX from elsewhere</li>' : ''}</ul>
+    <div class="wreward">REWARD · THE FIRST PHOTO HERE</div></div>`;
+}
+
+/* ---------------- crew hype: friends' big finds, from the records Crew already reads ---------------- */
+// For a crew member's new genera (and a few new species): where they rank among naturalists in your country and state, from the
+// same ranking cache as your own honours. Lazily, and only for feed entries from the last two weeks.
+const HYPE_DAYS = 14, HYPE_G = 6, HYPE_S = 3;
+let hypeBusy = false;
+async function crewHype() {
+  if (hypeBusy || !S.M) return;
+  const ps = [S.M.home.country, S.M.home.state].filter(Boolean); if (!ps.length) return;
+  hypeBusy = true;
+  try {
+    for (const e of (S.crew.feed || []).filter(e => !e.kind && !e.hyped && e.ts > Date.now() - HYPE_DAYS * 864e5 && S.crew.logins.includes(e.login))) {
+      const ids = [...e.g.slice(0, HYPE_G), ...(e.s || []).slice(0, HYPE_S)];
+      for (const t of ids) for (const p of ps) { const k = `${t}:${p}`; if (!S.pioneer[k]?.nat || Date.now() - S.pioneer[k].rts > PIONEER_TTL) S.pioneer[k] = { ...S.pioneer[k], ...await rankScan(t, p) }; }
+      store.set('pioneer', S.pioneer);
+      e.hype = ids.map(t => ps.map(p => ({ t, p, r:natRank(t, p, e.login) })).filter(x => x.r?.rank && x.r.rank <= 10)
+        .sort((a, b) => (a.p === S.M.home.country ? 0 : 1) - (b.p === S.M.home.country ? 0 : 1) || a.r.rank - b.r.rank)[0])
+        .filter(Boolean).map(x => ({ t:x.t, p:x.p, rank:x.r.rank, id:x.r.id, shown:false }));
+      e.hyped = true; saveCrew();
+      if (e.g[0]) await ensureLore(S.nodes[e.g[0]]?.n, 'genus');
+      if (S.tab === 'crew') { render(); crewCeremony(); }
+    }
+  } catch (err) { console.warn(err); }
+  hypeBusy = false;
+}
+// Opening the Crew tab: a ceremony for each crew honour not yet shown
+function crewCeremony() {
+  if ($('#reveal')) return;
+  const items = [];
+  for (const e of S.crew.feed || []) for (const h of e.hype || []) if (!h.shown && S.crew.logins.includes(e.login)) {
+    h.shown = true; items.push({ hon:{ k:`${h.t}:${h.p}`, tier:honourOf(h.rank).k, rank:h.rank }, crew:e.login });
+  }
+  if (items.length) { saveCrew(); revealQueue(items); }
+}
+function hypeHtml(e) {
+  const hs = e.hype || [], ps = [S.M.home.country, S.M.home.state].filter(Boolean);
+  const lin = e.g[0] ? lineageHtml(e.g[0], hs.find(h => h.t === e.g[0])?.p || ps[0], e.login) : '';
+  return `${hs.map(h => `<div class="small">${sealHtml(honourOf(h.rank))} the <b>${ordinal(h.rank)}</b> naturalist to record <a href="#" data-genus="${S.nodes[h.t]?.r === 'species' ? genusOfNode(h.t) : h.t}"><i>${esc(S.nodes[h.t]?.n || '?')}</i></a> in ${esc(S.places[h.p]?.n || '')}
+    · <a href="https://www.inaturalist.org/observations/${+h.id}" target="_blank" rel="noopener">congratulate them on iNaturalist ↗</a></div>`).join('')}
+    ${lin ? `<div class="rline">${lin}</div>` : ''}`;
 }
 
 /* ---------------- events: crew games scored from public iNat records, with the rules carried in the link ---------------- */
@@ -3456,9 +3866,9 @@ function trophies() {
   return out.sort((a, b) => b.E.ev.d2.localeCompare(a.E.ev.d2));
 }
 function trophyHtml() {
-  const t = trophies(); if (!t.length) return '';
-  return `<div class="panel" style="margin-top:16px"><h2>Trophy cabinet</h2><div class="trophies">${t.map(({ E, icon }) =>
-    `<span class="trophy" ${E.code ? `data-act="evOpen" data-v="${esc(E.id)}" style="cursor:pointer"` : ''}>${icon} <b>${esc(E.ev.n)}</b> <span class="muted">${EV_MODES[E.ev.m].i} ${MONTHS[+E.ev.d2.slice(5, 7) - 1]} ${E.ev.d2.slice(0, 4)}</span></span>`).join('')}</div></div>`;
+  const t = trophies(), hon = honoursHtml(); if (!t.length && !hon) return '';
+  return `<div class="panel" style="margin-top:16px"><h2>Trophy cabinet</h2>${t.length ? `<div class="trophies">${t.map(({ E, icon }) =>
+    `<span class="trophy" ${E.code ? `data-act="evOpen" data-v="${esc(E.id)}" style="cursor:pointer"` : ''}>${icon} <b>${esc(E.ev.n)}</b> <span class="muted">${EV_MODES[E.ev.m].i} ${MONTHS[+E.ev.d2.slice(5, 7) - 1]} ${E.ev.d2.slice(0, 4)}</span></span>`).join('')}</div>` : ''}${hon}</div>`;
 }
 
 // ---- the create form ----
@@ -3564,10 +3974,16 @@ function shareLine(g) {
   return `<dt>Share of the record</dt><dd>${mine >= all ? `🗝 every one of ${esc(S.places[pid]?.n)}'s ${fmt(all)} iNat record${all === 1 ? '' : 's'}` : `${pctTxt(mine / all)} of ${esc(S.places[pid]?.n)}'s iNat records (${mine} of ${fmt(all)})`}</dd>`;
 }
 
-/* ---------------- pioneer badges: is your record the earliest verifiable one on iNat in a place? ---------------- */
-const PIONEER_TTL = 30 * 864e5;
-S.pioneer = store.get('pioneer', {});   // `${genus}:${place}` -> {ts, u:login of earliest record, d:date observed, id:observation}
-let pioneerBusy = false;
+/* ---------------- pioneer badges and naturalist ranks: where your records sit in iNat's history of a taxon ---------------- */
+// Pioneer: is your record the earliest verifiable one of a genus in a place? Rank (v2.0): among the naturalists with a
+// research-grade, non-captive record of a species or genus in your country and state, in order of their first one (date observed,
+// then record id), where are you? Both share one cache and one background drain.
+const PIONEER_TTL = 30 * 864e5, RANK_N = 50;
+// `${taxon}:${place}` -> {ts, u login of the earliest verifiable record, d date observed, id observation; rts, nat:[[login, date, record id]]
+// (the first RANK_N naturalists, research grade, in order), all (true when nat holds everyone), of (how many naturalists in all)}
+S.pioneer = store.get('pioneer', {});
+let pioneerBusy = false, pioneerQ = [];   // pioneerQ: rank keys to check first (new taxa, records just turned research grade)
+const pioneerFresh = new Set();           // ... and whose honours, if any, are celebrated rather than filed quietly
 // Every country and state where you've recorded the genus, plus the local area (LGA/county) of your first record of it
 function pioneerTargets() {
   if (isGuest() || !S.M) return [];
@@ -3580,21 +3996,123 @@ function pioneerTargets() {
   }
   return out;
 }
+// Every species and genus you have in your home country and state -> whether you have a research-grade record of it there.
+// Genera first, then species; the country before the state.
+function rankTargets() {
+  const out = new Map(); if (isGuest() || !S.M) return out;
+  const ps = [S.M.home.country, S.M.home.state].filter(Boolean), ks = [];
+  for (const o of S.M.obs) {
+    const g = genusOf(o.anc); if (!g) continue;
+    const s = speciesOf(o.anc), rg = o.q === 'research';
+    for (const p of ps) if (o.pl.includes(p)) for (const t of s ? [g, s] : [g]) { const k = `${t}:${p}`; if (!out.has(k)) ks.push(k); out.set(k, out.get(k) || rg); }
+  }
+  const w = k => { const [t, p] = k.split(':').map(Number); return (S.nodes[t]?.r === 'genus' ? 0 : 2) + (p === S.M.home.country ? 0 : 1); };
+  return new Map(ks.sort((a, b) => w(a) - w(b)).map(k => [k, out.get(k)]));
+}
+async function rankScan(tid, pid) {
+  const nat = [], seen = new Set();
+  let page = 1, done = false;
+  for (;;) {
+    const d = await api('/observations', { taxon_id:tid, place_id:pid, quality_grade:'research', captive:false, order_by:'observed_on', order:'asc', per_page:200, page, fields:'(id:!t,observed_on:!t,user:(login:!t))' }, API2);
+    const rows = d.results.filter(o => o.observed_on && o.user?.login).sort((a, b) => a.observed_on.localeCompare(b.observed_on) || a.id - b.id);
+    for (const o of rows) { const k = o.user.login.toLowerCase(); if (!seen.has(k)) { seen.add(k); nat.push([o.user.login, o.observed_on, o.id]); } }
+    if (d.results.length < 200 || page * 200 >= (d.total_results || 0)) { done = true; break; }
+    if (nat.length >= RANK_N) break;
+    page++;
+  }
+  let of = done ? seen.size : null;
+  if (!done) of = (await api('/observations/observers', { taxon_id:tid, place_id:pid, quality_grade:'research', captive:false, per_page:1 })).total_results ?? null;
+  return { rts:Date.now(), nat:nat.slice(0, RANK_N), all:done && seen.size <= RANK_N, of };
+}
+// Honour tiers (names and cut-offs are proposals for the owner): a ceremony for the first ten, a seal for the first fifty
+const HONOURS = [
+  { k:'first', max:1, n:'First on record', cer:true },
+  { k:'trio', max:3, n:'Founding trio', cer:true },
+  { k:'vanguard', max:10, n:'Vanguard', cer:true },
+  { k:'founding', max:RANK_N, n:'Founding Naturalist', cer:false },
+];
+const HONOUR_BY = Object.fromEntries(HONOURS.map(h => [h.k, h]));
+const honourOf = rank => rank ? HONOURS.find(h => rank <= h.max) || null : null;
+const sealHtml = (h, big = false) => h ? `<span class="seal s-${h.k}${big ? ' big' : ''}" title="${esc(h.n)}">${esc(h.n)}</span>` : '';
+// Where `login` sits for a taxon in a place: {rank, of, pencil, hon, id record, d date, firsts:[{u, d}] (up to 3 before them)}.
+// Inked = their research-grade record is on iNat's list. For you only: without one, where your earliest verifiable record
+// would sit once it's confirmed (pencilled). Null when there's nothing to say.
+function natRank(tid, pid, login = S.login) {
+  const P = S.pioneer[`${tid}:${pid}`]; if (!P?.nat || !login) return null;
+  const lo = String(login).toLowerCase(), i = P.nat.findIndex(x => x[0].toLowerCase() === lo);
+  const firsts = n => P.nat.slice(0, Math.min(3, n)).map(([u, d]) => ({ u, d }));
+  if (i >= 0) return { rank:i + 1, of:P.of, pencil:false, hon:honourOf(i + 1), id:P.nat[i][2], d:P.nat[i][1], firsts:firsts(i) };
+  if (!isMe(login) || !S.M) return null;
+  const o = S.M.obs.find(o => o.q !== 'casual' && o.d && o.pl.includes(pid) && o.anc.includes(tid));   // M.obs runs by date, then id
+  if (!o || (o.q === 'research' && !P.all)) return o ? { rank:null, of:P.of } : null;   // research grade but past the first fifty
+  const before = P.nat.filter(([, d, id]) => d < o.d || (d === o.d && id < o.id)).length;
+  if (before >= P.nat.length && !P.all) return { rank:null, of:P.of };
+  return { rank:before + 1, of:P.of, pencil:true, hon:honourOf(before + 1), id:o.id, d:o.d, firsts:firsts(before) };
+}
+function natLine(tid, pid) {
+  const P = S.pioneer[`${tid}:${pid}`]; if (!P?.nat) return '';
+  const r = natRank(tid, pid), n = P.of ?? P.nat.length, where = esc(S.places[pid]?.n || '');
+  const you = !r ? '' : !r.rank ? ` · you're one of them` : r.pencil ? ` · you'd be <b>#${r.rank}</b> once confirmed ✏️` : ` · you are <b>#${r.rank}</b> ${sealHtml(r.hon)}`;
+  if (!n && !you) return '';
+  return `${n ? `${fmt(n)} naturalist${n === 1 ? ' has' : 's have'} recorded it on iNat in ${where}` : `No research-grade records on iNat in ${where} yet`}${you}`;
+}
+// Files honours for keys that were just checked: new ones from a sync are celebrated, ones found in the background are filed
+// quietly, and one whose record was re-identified away (or slipped past 50) leaves the cabinet without a word.
+function evalHonours(keys) {
+  if (isGuest()) return [];
+  const H = S.u.honours = S.u.honours || [], won = [];
+  for (const k of keys) {
+    if (!S.pioneer[k]?.nat) continue;
+    const [tid, pid] = k.split(':').map(Number), r = natRank(tid, pid), h = r && !r.pencil && r.hon, i = H.findIndex(x => x.k === k);
+    if (!h) { if (i >= 0) H.splice(i, 1); continue; }
+    if (i >= 0) { Object.assign(H[i], { tier:h.k, rank:r.rank }); continue; }
+    const e = { k, tier:h.k, rank:r.rank, ts:Date.now(), shown:!pioneerFresh.has(k) };
+    H.push(e); if (!e.shown) won.push(e);
+  }
+  saveUser();
+  return won;
+}
+// After a sync: new taxa in your country and state, and records that just turned research grade, are checked first
+function queueRanks(prev) {
+  if (!prev || isGuest()) return;
+  const now = rankTargets(), fresh = [...now].filter(([k, rg]) => !prev.has(k) || (rg && !prev.get(k))).map(([k]) => k);
+  fresh.forEach(k => pioneerFresh.add(k));
+  pioneerQ = [...new Set([...fresh, ...pioneerQ])];
+  if (fresh.length) drainPioneer();
+}
+function nextPioneerJob() {
+  if (pioneerQ.length) return [pioneerQ.shift(), 'r'];
+  const old = t => !t || Date.now() - t > PIONEER_TTL;
+  for (const k of rankTargets().keys()) if (old(S.pioneer[k]?.rts)) return [k, 'r'];
+  for (const k of pioneerTargets()) if (old(S.pioneer[k]?.ts)) return [k, 'p'];
+  return null;
+}
 async function drainPioneer() {
   if (pioneerBusy || isGuest()) return;
   pioneerBusy = true;
+  const won = [];
   try {
-    for (const k of pioneerTargets()) {
-      const cur = S.pioneer[k]; if (cur && Date.now() - cur.ts < PIONEER_TTL) continue;
-      const [gid, pid] = k.split(':').map(Number);
-      const d = await api('/observations', { taxon_id:gid, place_id:pid, verifiable:true, order_by:'observed_on', order:'asc', per_page:1 });
-      const o = d.results[0];
-      S.pioneer[k] = { ts:Date.now(), u:o?.user?.login || '', d:o?.observed_on || '', id:o?.id || 0 };
+    for (let job; (job = nextPioneerJob()); ) {
+      const [k, kind] = job, [tid, pid] = k.split(':').map(Number);
+      if (kind === 'p') {
+        const d = await api('/observations', { taxon_id:tid, place_id:pid, verifiable:true, order_by:'observed_on', order:'asc', per_page:1 });
+        const o = d.results[0];
+        S.pioneer[k] = { ...S.pioneer[k], ts:Date.now(), u:o?.user?.login || '', d:o?.observed_on || '', id:o?.id || 0 };
+      } else {
+        S.pioneer[k] = { ...S.pioneer[k], ...await rankScan(tid, pid) };
+        won.push(...evalHonours([k]));
+        pioneerFresh.delete(k);
+      }
       store.set('pioneer', S.pioneer);
       pioneerUpdated();
+      if (!pioneerQ.length && won.length) celebrateHonours(won.splice(0));
     }
+    // taxa you no longer have (re-identified away) leave the cabinet too
+    const keep = rankTargets();
+    if (S.u.honours?.some(e => !keep.has(e.k))) { S.u.honours = S.u.honours.filter(e => keep.has(e.k)); saveUser(); }
   } catch (e) { console.warn(e); }
   pioneerBusy = false;
+  if (won.length) celebrateHonours(won);
   pioneerUpdated();
 }
 function myPioneers() {
@@ -3602,10 +4120,10 @@ function myPioneers() {
     const [gid, pid] = k.split(':').map(Number); return { gid, pid, lvl:S.places[pid]?.l, d:p.d, id:p.id }; }).filter(Boolean);
 }
 function pioneerHtml() {
-  const t = pioneerTargets(), done = t.filter(k => S.pioneer[k]).length, mine = myPioneers();
+  const t = pioneerTargets(), R = [...rankTargets().keys()], done = t.filter(k => S.pioneer[k]?.ts).length + R.filter(k => S.pioneer[k]?.rts).length, all = t.length + R.length, mine = myPioneers();
   const levels = [[0, '🌏', 'National firsts'], [10, '🗺', 'State firsts'], [20, '📍', 'Local firsts']];
   const where = p => esc(S.places[p.pid]?.n || '?');
-  return `${done < t.length ? `<p class="small">Checking iNat's earliest records… ${done} of ${t.length}${pioneerBusy ? ` (about ${Math.ceil((t.length - done) * 1.1 / 60)} min left)` : ' (resumes while this page is open)'}</p>` : ''}
+  return `${done < all ? `<p class="small">Checking iNat's earliest records… ${done} of ${all}${pioneerBusy ? ` (about ${Math.ceil((all - done) * 1.1 / 60)} min left)` : ' (resumes while this page is open)'}</p>` : ''}
     ${mine.length ? `<div class="envy"><div class="big"><b>${mine.length}</b> pioneer badge${mine.length === 1 ? '' : 's'}</div></div>` : ''}
     ${levels.map(([l, icon, label]) => { const xs = mine.filter(p => p.lvl === l).sort((a,b) => (a.d || '').localeCompare(b.d || ''));
       return xs.length ? `<h3 style="margin-top:10px">${icon} ${label} (${xs.length})</h3>${xs.map(p => `<div class="small">${gLink(p.gid)} in ${where(p)} · <a href="https://www.inaturalist.org/observations/${p.id}" target="_blank" rel="noopener">${esc(p.d)} ↗</a></div>`).join('')}` : ''; }).join('')}
@@ -3617,10 +4135,141 @@ function pioneerLine(gid) {
   if (!xs.length) return '';
   return `<dt>Earliest on iNat</dt><dd>${xs.map(x => `${isMe(x.p.u) ? '🏅 <b>you</b>' : esc(x.p.u)} in ${esc(S.places[x.pid]?.n)} (${esc(x.p.d)})`).join('<br>')}</dd>`;
 }
+let honoursN = -1;
 function pioneerUpdated() {
   const els = document.querySelectorAll('[data-pioneer]');
   els.forEach(el => el.innerHTML = pioneerHtml());
-  if (!els.length && S.tab === 'profile' && myPioneers().length) softRender();   // the panel appears with the first badge
+  document.querySelectorAll('[data-history]').forEach(el => el.innerHTML = historyHtml(+el.dataset.history));
+  document.querySelectorAll('[data-splore]').forEach(el => el.innerHTML = spLoreHtml(+el.dataset.splore));
+  const hn = S.u?.honours?.length || 0, grew = hn !== honoursN; honoursN = hn;
+  // the pioneer panel appears with the first badge, the honours with the first honour
+  if (S.tab === 'profile' && ((!els.length && myPioneers().length) || grew)) softRender();
+}
+
+/* ---------------- naturalist honours: the ceremony, the cabinet, the share card and the dispatch ---------------- */
+const hParts = k => k.split(':').map(Number);
+// The first ten in your country for a genus outrank everything; then the country beats the state, then the rank itself
+const honourWeight = e => { const [t, p] = hParts(e.k), g = S.nodes[t]?.r === 'genus', c = p === S.M.home.country;
+  return (g && c && e.rank <= 10 ? 0 : 1000) + (c ? 0 : 100) + e.rank + (g ? 0 : .5); };
+function celebrateHonours(list) {
+  if (!list.length || isGuest()) return;
+  const best = new Map();   // one ceremony per taxon, for its best place
+  for (const e of list) { const t = hParts(e.k)[0], cur = best.get(t); if (!cur || honourWeight(e) < honourWeight(cur)) best.set(t, e); }
+  const xs = [...best.values()].sort((a, b) => honourWeight(a) - honourWeight(b));
+  const cer = xs.filter(e => HONOUR_BY[e.tier]?.cer), seals = xs.filter(e => !HONOUR_BY[e.tier]?.cer);
+  list.forEach(e => e.shown = true); saveUser();
+  if (seals.length) toast(seals.length === 1 ? `${HONOUR_BY[seals[0].tier].n}: you're the ${ordinal(seals[0].rank)} naturalist to record ${S.nodes[hParts(seals[0].k)[0]]?.n} in ${S.places[hParts(seals[0].k)[1]]?.n}.`
+    : `${seals.length} Founding Naturalist seals: you're among the first ${RANK_N} naturalists for each. See Profile.`);
+  if (!cer.length) return;
+  track('naturalist-rank');
+  // the museum history fills in the lineage line; ask for it before the curtain goes up (a few seconds at most)
+  Promise.all(cer.slice(0, 5).map(e => { const t = hParts(e.k)[0]; return ensureLore(S.nodes[t]?.n, S.nodes[t]?.r); })).finally(() => revealQueue(cer.map(e => ({ hon:e }))));
+}
+const PEN_SHOWN = 5;
+const longDate = d => d ? new Date(d + 'T12:00:00Z').toLocaleDateString('en-AU', { day:'numeric', month:'long', year:'numeric', timeZone:'UTC' }) : '';
+// The photo of the record that earned it, else your cover photo of the genus
+function honourPhoto(tid, r) {
+  const o = r?.id && S.u.obs[r.id];
+  if (o?.ph[0]) return o.ph[0];
+  const sp = S.M.S.get(tid), g = S.M.G.get(sp ? sp.gid : tid);
+  return sp?.cover || g?.cover || '';
+}
+function honourReveal(e, crew) {
+  const [tid, pid] = hParts(e.k), login = crew || S.login, r = natRank(tid, pid, login), H = r?.hon || HONOUR_BY[e.tier];
+  if (!r?.rank) return revealNext();
+  const name = S.nodes[tid]?.n || '?', where = S.places[pid]?.n || '', ph = crew ? '' : honourPhoto(tid, r), lin = lineageHtml(tid, pid, login);
+  const el = document.createElement('div');
+  el.id = 'reveal'; el.className = 'honour';
+  el.innerHTML = `${ph ? `<div class="rph" style="background-image:url('${esc(photoSize(ph, 'large'))}')"></div>` : ''}${sealHtml(H, true)}
+    <div class="k">NATURALIST RANK · ${esc(where.toUpperCase())}</div>
+    <h2>${esc(name)}</h2>${cnOf(tid) ? `<p class="rcn">${esc(cnOf(tid))}</p>` : ''}
+    <p class="rrank">${crew ? esc(crew) + ' just became' : 'You are'} the <b>${ordinal(r.rank)}</b> naturalist ever to record <i>${esc(name)}</i> in <b>${esc(where)}</b></p>
+    ${lin ? `<p class="rline">${lin}</p>` : ''}
+    ${r.firsts.length ? `<p>Before ${crew ? 'them' : 'you'}: ${r.firsts.map(f => `${esc(f.u)} (${esc(f.d.slice(0, 4))})`).join(', ')}</p>` : ''}
+    <p class="row" style="justify-content:center;margin-top:12px">${crew ? `<a class="btnlink" href="https://www.inaturalist.org/observations/${+r.id}" target="_blank" rel="noopener">Congratulate them on iNaturalist ↗</a>`
+      : `<button data-act="honCard" data-v="${esc(e.k)}">🪪 Share card</button><button data-act="honDispatch" data-v="${esc(e.k)}">📋 Dispatch</button>`}</p>
+    <p style="margin-top:14px;font-size:12px">${revealList.length ? `${revealList.length} more… ` : ''}tap to continue</p>`;
+  el.addEventListener('click', ev => { if (ev.target.closest('button,a')) { el.remove(); return; } el.remove(); revealNext(); });
+  document.body.appendChild(el);
+}
+// A field-journal paragraph for Reddit or a forum, assembled only from data fields; a clause whose data is missing is left out
+function dispatchText(k, login = S.login) {
+  const [tid, pid] = hParts(k), r = natRank(tid, pid, login); if (!r?.rank) return '';
+  const name = S.nodes[tid]?.n || '', L = S.lore[name], f = L?.first, a = authOf(name);
+  const out = [`${r.d ? `On ${longDate(r.d)}, ` : ''}${login} ${r.pencil ? 'would become' : 'became'} the ${ordinal(r.rank)} naturalist to record ${name} on iNaturalist in ${S.places[pid]?.n || ''}${r.pencil ? ', once the ID is confirmed' : ''}.`];
+  const hist = [f ? `First collected in ${f.y}${f.by ? ` by ${f.by}` : ''}${f.inst ? ` (${f.inst})` : ''}` : '', a ? `described by ${a}` : ''].filter(Boolean).join('; ');
+  if (hist) out.push(hist[0].toUpperCase() + hist.slice(1) + '.');
+  if (r.id) out.push(`https://www.inaturalist.org/observations/${r.id}`);
+  return out.join(' ').replace(/ (https:)/, '\n\n$1');
+}
+function openDispatch(k) {
+  const t = dispatchText(k); if (!t) return;
+  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(640px,100%)"><button class="x" data-close="1">✕</button><div class="body">
+    <h2>Dispatch</h2><textarea id="dispTxt" rows="7" style="width:100%;font:inherit">${esc(t)}</textarea>
+    <p class="row"><button class="primary" data-act="dispCopy">📋 Copy</button></p></div></div></div>`;
+}
+// Honours in the trophy cabinet, best first, plus pencilled ranks that an ID would ink
+function honoursHtml() {
+  if (isGuest()) return '';
+  const H = [...(S.u.honours || [])].sort((a, b) => honourWeight(a) - honourWeight(b));
+  const pen = [...rankTargets()].filter(([k, rg]) => !rg).map(([k]) => { const [t, p] = hParts(k), r = natRank(t, p); return r?.pencil && r.hon?.cer ? { k, t, p, r } : null; }).filter(Boolean);
+  if (!H.length && !pen.length) return '';
+  // one row per taxon: its best place, then the other one
+  const byT = new Map(); H.forEach(e => { const t = hParts(e.k)[0]; byT.set(t, [...(byT.get(t) || []), e]); });
+  const rows = [...byT.values()];
+  const row = ([e, ...more]) => { const [t, p] = hParts(e.k), gid = S.nodes[t]?.r === 'species' ? genusOfNode(t) : t;
+    return `<div class="hrow">${sealHtml(HONOUR_BY[e.tier])} <a href="#" data-genus="${gid}"><i>${esc(S.nodes[t]?.n || '?')}</i></a> <span class="small muted">#${e.rank} in ${esc(S.places[p]?.n || '')}${more.map(m => `, #${m.rank} in ${esc(S.places[hParts(m.k)[1]]?.n || '')}`).join('')}</span>
+      ${HONOUR_BY[e.tier]?.cer ? `<a href="#" class="small" data-act="honShow" data-v="${esc(e.k)}">replay</a>` : ''}</div>`; };
+  // pencilled: one per taxon (its best place), best ranks first
+  const pb = new Map(); pen.forEach(x => { const c = pb.get(x.t); if (!c || x.r.rank < c.r.rank || (x.r.rank === c.r.rank && x.p === S.M.home.country)) pb.set(x.t, x); });
+  const pens = [...pb.values()].sort((a, b) => a.r.rank - b.r.rank || (S.nodes[a.t]?.r === 'genus' ? 0 : 1) - (S.nodes[b.t]?.r === 'genus' ? 0 : 1));
+  const penRow = x => `<div class="small">#${x.r.rank} for <a href="#" data-genus="${S.nodes[x.t]?.r === 'species' ? genusOfNode(x.t) : x.t}"><i>${esc(S.nodes[x.t]?.n || '?')}</i></a> in ${esc(S.places[x.p]?.n || '')} · <a href="https://www.inaturalist.org/observations/${+x.r.id}" target="_blank" rel="noopener">ask for an ID ↗</a></div>`;
+  const top = rows.filter(es => HONOUR_BY[es[0].tier]?.cer), seals = rows.filter(es => !HONOUR_BY[es[0].tier]?.cer);
+  return `<h3 style="margin-top:10px">Naturalist honours</h3>${top.map(row).join('')}
+    ${seals.length ? `<details style="margin-top:6px"><summary class="small">${sealHtml(HONOURS[3])} ${plural(seals.length, 'taxon', 'taxa')} where you're among the first ${RANK_N}</summary>${seals.map(row).join('')}</details>` : ''}
+    ${pens.length ? `<h3 style="margin-top:10px">✏️ Pencilled in</h3><p class="small muted" style="margin:0 0 4px">Your record isn't research grade yet. Once it is, this is your place.</p>
+      ${pens.slice(0, PEN_SHOWN).map(penRow).join('')}${pens.length > PEN_SHOWN ? `<details><summary class="small">${pens.length - PEN_SHOWN} more</summary>${pens.slice(PEN_SHOWN).map(penRow).join('')}</details>` : ''}` : ''}`;
+}
+// The share card: the record's photo, the seal, the rank and the lineage line. Nothing finer than the country or state.
+function drawHonourCard(cv, k, im, photosOnly) {
+  const [tid, pid] = hParts(k), r = natRank(tid, pid), H = r.hon, K = cardKit(cv), { x, C, text } = K;
+  K.frame(`SPOODEX · ${H.n.toUpperCase()}`);
+  const px = 80, py = 150, pw = 920, ph = 560, img = photosOnly ? im?.open : im?.any;
+  x.fillStyle = C.panel2; x.fillRect(px, py, pw, ph);
+  if (img) {
+    if (!im.open) K.tainted = true;
+    const s = Math.max(pw / img.width, ph / img.height), sw = pw / s, sh = ph / s;
+    x.drawImage(img, (img.width - sw) / 2, (img.height - sh) / 2, sw, sh, px, py, pw, ph);
+  } else text(S.nodes[tid]?.n || '?', px + pw / 2, py + ph / 2 + 20, 'italic 400 72px Fraunces, Georgia, serif', C.line, 'center', pw - 40);
+  x.strokeStyle = C.line; x.lineWidth = 2; x.strokeRect(px, py, pw, ph);
+  // the seal: a wax disc with the tier's name around a rank numeral
+  const sx = 900, sy = 690, col = { first:'#b8892a', trio:'#9a3d2a', vanguard:'#5b4a8a', founding:'#3f6b3a' }[H.k];
+  x.beginPath(); x.arc(sx, sy, 92, 0, Math.PI * 2); x.fillStyle = col; x.fill();
+  x.lineWidth = 4; x.strokeStyle = '#f6eedb'; x.beginPath(); x.arc(sx, sy, 78, 0, Math.PI * 2); x.stroke();
+  text(`#${r.rank}`, sx, sy + 24, '600 64px Fraunces, Georgia, serif', '#f6eedb', 'center', 150);
+  text(H.n.toUpperCase(), sx, sy + 58, '600 13px "IBM Plex Mono", monospace', '#f6eedb', 'center', 140);
+  text(`The ${ordinal(r.rank)} naturalist ever to record`, 80, 790, '400 30px "IBM Plex Mono", monospace', C.muted, 'left', 700);
+  let fs = 72; for (x.font = `italic 600 ${fs}px Fraunces, Georgia, serif`; fs > 44 && x.measureText(S.nodes[tid]?.n || '').width > 920; ) x.font = `italic 600 ${--fs}px Fraunces, Georgia, serif`;
+  text(S.nodes[tid]?.n || '?', 80, 870, x.font, C.ink, 'left', 920);
+  text(`on iNaturalist in ${S.places[pid]?.n || ''}`, 80, 920, '600 44px Caveat, cursive', C.accent, 'left', 920);
+  const segs = lineageSegs(tid, pid), lines = [];
+  for (const s of segs) { const cur = lines[lines.length - 1]; x.font = '400 26px "IBM Plex Mono", monospace';
+    if (cur && x.measureText(cur + ' → ' + s).width <= 920) lines[lines.length - 1] = cur + ' → ' + s; else lines.push(lines.length ? '→ ' + s : s); }
+  lines.slice(0, 3).forEach((l, i) => text(l, 80, 990 + i * 38, '400 26px "IBM Plex Mono", monospace', C.ink, 'left', 920));
+  if (r.firsts.length) text(`Before ${who()}: ${r.firsts.map(f => `${f.u} (${f.d.slice(0, 4)})`).join(', ')}`, 80, 1120, '400 22px "IBM Plex Mono", monospace', C.muted, 'left', 920);
+  K.rule(1160);
+  text(`Photo © ${who()} via iNaturalist · ranked by research-grade records`, 80, 1200, '400 19px "IBM Plex Mono", monospace', C.muted);
+  if (S.lore[S.nodes[tid]?.n]) text('Museum data: Atlas of Living Australia', 80, 1228, '400 19px "IBM Plex Mono", monospace', C.muted);
+  text(location.host + location.pathname.replace(/(index|spoodex)\.html$/, '') + '?u=' + S.login, 80, 1258, '600 19px "IBM Plex Mono", monospace', C.ink);
+  return K.tainted;
+}
+async function openHonourCard(k) {
+  const [tid, pid] = hParts(k), r = natRank(tid, pid); if (!r?.hon) return;
+  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(640px,100%)"><button class="x" data-close="1">✕</button><div class="body">
+    <h2>${esc(r.hon.n)}</h2><div id="cardOut"><p class="muted">Developing the print…</p></div></div></div></div>`;
+  const [im] = await cardPhotos([{ cover:honourPhoto(tid, r) }]);
+  const out = $('#cardOut'); if (!out) return;
+  await mountCard(out, (cv, po) => drawHonourCard(cv, k, im, po), `spoodex-${S.login}-${(S.nodes[tid]?.n || 'honour').replace(/\W+/g, '-').toLowerCase()}`);
 }
 
 /* ---------------- the spood report: this week's salticid news for your state ---------------- */
@@ -3857,6 +4506,7 @@ async function loadWanted() {
     if (h) { if (!S.u.scans[h.k]) await fetchScan(h.k); await scanActive(h.k); }
     redraw();
     await sharpenWanted(homeCtx(), redraw);
+    await loadHomeGhosts(true);
   } catch (e) { wantedErr = e.message; }
   wantedBusy = false; wantedTs = Date.now();
   redraw();
@@ -3897,7 +4547,11 @@ function viewWantedPosters() {
     ${wantedErr ? `<p>${esc(wantedErr)} <button data-act="wantedRetry">Try again</button></p>` : ''}</div>`;
   if (!list) return head + '<p class="muted">Loading the regional reference…</p>';
   if (!list.length) return head + `<div class="panel"><p class="hand">Nobody left on the list. You've recorded every genus iNat knows from ${where}.</p></div>`;
+  const cold = homeGhosts().slice(0, WANTED_POSTERS);
   return head + `<div class="posters">${list.slice(0, WANTED_POSTERS).map(x => posterHtml(x, ctx, 'wanted')).join('')}</div>
+    ${cold.length ? `<h2 style="margin-top:24px">🏛 Cold cases</h2>
+      <p class="small muted">Genera with museum specimens from within 25 km of your home base and no iNat records there. Museum records: Atlas of Living Australia.</p>
+      <div class="posters">${cold.map(coldCaseHtml).join('')}</div>` : ''}
     <h2 style="margin-top:24px">The year ahead</h2>
     <p class="small muted">When each of your ${list.length} most-wanted genera turns up in ${where}: darker = more records that month (smoothed). This month is outlined. Click a row for its case file.</p>
     ${calendarHtml(list, ctx, 'wanted')}`;
@@ -5250,8 +5904,10 @@ async function doSync(full) {
   const btn = $('#syncBtn'); btn.disabled = true; btn.innerHTML = '⟳<span class="lbl"> Syncing…</span>';
   const prevQuests = S.M ? buildQuests(S.M) : [];
   const prevSeen = new Set(S.u.seen), prevLeads = S.M ? S.M.leads.flatMap(l => l.obs.map(o => o.id)) : [];
+  const prevRank = S.M && S.u.meta.lastSync ? rankTargets() : null, prevFull = S.u.meta.lastFull;
   try {
     await sync({ full });
+    if (S.u.meta.lastFull !== prevFull) for (const k of rankTargets().keys()) if (S.pioneer[k]) S.pioneer[k].rts = 0;
     if (S.M.homeCell) try { await scanActive(S.M.homeCell.k); } catch (e) { console.warn(e); }
     // quests completed by this sync
     const at = new Date().toISOString().slice(0,10);
@@ -5264,6 +5920,8 @@ async function doSync(full) {
     const solved = prevLeads.map(id => S.u.obs[id]).filter(o => o && !o.cap && genusOf(o.anc));
     const items = celebrations(fresh, solved);
     if (items.length) revealQueue(items); else if (!isGuest()) toast('Synced. No new genera this time.');
+    queueRanks(prevRank);
+    loadHomeGhosts();
   } catch (e) { toast(e.message); }
   btn.disabled = false; btn.innerHTML = '⟳<span class="lbl"> Sync</span>';
   loadNews();
@@ -5362,6 +6020,12 @@ function toast(msg) {
   t.style.cssText = 'position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:6px;z-index:3000;max-width:90vw';
   document.body.appendChild(t); setTimeout(() => t.remove(), 4000);
 }
+// Owner only: what the checklist rule kept and dropped (tools/taxa.py)
+const taxonomyReviewHtml = () => `<details class="small" style="margin-top:10px"><summary><b>Taxonomy review</b> · ${TAXA_AU.length} genera on the checklist</summary>
+  <p><b>Never on iNat in Australia (${auNever().length}):</b> ${auNever().map(t => `<i>${esc(t.n)}</i>`).join(', ')}</p>
+  <p><b>From iNat only, not in the Lucid key:</b> ${TAXA_AU.filter(t => t.inat && !t.lucid).map(t => `<i>${esc(t.n)}</i>`).join(', ') || 'none'}</p>
+  <p><b>Excluded, Australian Faunal Directory only (${TAXA_AU_EXCLUDED.length}):</b> ${TAXA_AU_EXCLUDED.map(n => `<i>${esc(n)}</i>`).join(', ')}</p>
+  <p><b>Museum spellings mapped:</b> ${TAXA_AU.filter(t => t.afd[0] && t.afd[0] !== t.n).map(t => `<i>${esc(t.afd[0])}</i> → <i>${esc(t.n)}</i>`).join(', ') || 'none'}</p></details>`;
 function settings() {
   $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal"><button class="x" data-close="1">✕</button><div class="body">
     <h2>Settings</h2>
@@ -5376,6 +6040,8 @@ function settings() {
     ${installHtml()}
     <p class="small muted" style="margin-top:14px">Anonymous visit counts via GoatCounter: no cookies, no usernames, no locations.</p>
     <p class="small muted">Weather lookups send your home base, and the destination of a dated trip, rounded to ~10 km, to Open-Meteo.</p>
+    <p class="small"><label><input type="checkbox" data-pref="ext.ala" ${alaOn() ? 'checked' : ''}> Museum records</label> <span class="muted">Atlas of Living Australia. Sent: taxon names and your scan squares.</span></p>
+    ${isMe(OWNER) ? taxonomyReviewHtml() : ''}
     <p class="small muted" id="storeInfo">Saved in this browser${store.db ? ' (IndexedDB)' : ' (localStorage, about 5 MB at most)'}.</p></div></div></div>`;
   store.usage().then(b => { const el = $('#storeInfo'); if (el && b) el.textContent += ` This site is using about ${(b / 1048576).toFixed(1)} MB.`; });
 }
@@ -5385,7 +6051,7 @@ document.addEventListener('click', e => {
   if (!t) return;
   if (t.dataset.close && e.target !== t && !e.target.closest('.x')) return;
   if (t.dataset.genus) { e.preventDefault(); openGenus(+t.dataset.genus); return; }
-  if (t.dataset.close) { $('#modalRoot').innerHTML = ''; return; }
+  if (t.dataset.close) { $('#modalRoot').innerHTML = ''; if (revealList.length && !$('#reveal')) revealNext(); return; }
   if (t.dataset.tab) { e.preventDefault(); $('#modalRoot').innerHTML = ''; S.tab = t.dataset.tab; if (S.tab === 'crew') { S.evOpen = null; S.evBroken = false; } updateUrl(); render(); return; }
   if (t.dataset.filter) { S.prefs.filter = t.dataset.filter; savePrefs(); render(); return; }
   if (t.dataset.layer) { S.prefs.layer = t.dataset.layer; savePrefs(); render(); return; }
@@ -5408,6 +6074,10 @@ document.addEventListener('click', e => {
   if (a === 'crewDel') setCrew(S.crew.logins.filter(l => l !== val));
   if (a === 'crewRefresh') { crewErr = null; loadCrew(true); }
   if (a === 'card') openTitleCard();
+  if (a === 'honCard') openHonourCard(val);
+  if (a === 'honDispatch') openDispatch(val);
+  if (a === 'honShow') { e.preventDefault(); const h = S.u.honours?.find(x => x.k === val); if (h) revealQueue([{ hon:h }]); }
+  if (a === 'dispCopy') { const ta = $('#dispTxt'); if (ta) navigator.clipboard.writeText(ta.value).then(() => toast('Dispatch copied.'), () => { ta.focus(); ta.select(); }); }
   if (a === 'dexImage') openDexImage(val == null ? undefined : val === '1');
   if (a === 'wanted') { e.preventDefault(); openCase(+val); }
   if (a === 'wantedRetry') { wantedErr = null; wantedTs = 0; loadWanted(); }
@@ -5420,7 +6090,7 @@ document.addEventListener('click', e => {
   if (a === 'sets') { e.preventDefault(); S.prefs.layer = 'sets'; savePrefs(); S.tab = 'dex'; render(); }
   if (a === 'wview') { S.prefs.wantedView = val; savePrefs(); render(); }
   if (a === 'bountyGo') { e.preventDefault(); S.prefs.wantedView = 'bounty'; savePrefs(); S.tab = 'wanted'; render(); }
-  if (a === 'scanHist') { const H = S.u.scanHist?.[+val]; if (H) { if (Date.now() - H.ts < SCAN_TTL) { S.u.mscan = H; saveUser(); drawScanArea(H, H.km); paintScan(); } else runScan(H.lat, H.lng, H.km, H.per); } }
+  if (a === 'scanHist') { const H = S.u.scanHist?.[+val]; if (H) { if (Date.now() - H.ts < SCAN_TTL) { S.u.mscan = H; saveUser(); drawScanArea(H, H.km); paintScan(); loadScanGhosts(H); } else runScan(H.lat, H.lng, H.km, H.per); } }
   if (a === 'bountyRefresh') { e.preventDefault(); bountyErr = null; loadBounties(); render(); }
   if (a === 'newsDismiss') { S.u.news.dismissed = true; saveUser(); render(); }
   if (a === 'tripCase') { e.preventDefault(); openCase(+val, tripCtx()); }
@@ -5553,6 +6223,7 @@ document.addEventListener('change', async e => {
     return;
   }
   const p = e.target.dataset.pref; if (!p) return;
+  if (p.startsWith('ext.')) { S.prefs.ext = { ...S.prefs.ext, [p.slice(4)]:e.target.checked }; savePrefs(); render(); return; }
   S.prefs[p] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; savePrefs();
   if (p === 'scope') { try { await ensureRef(S.prefs.scope); } catch (err) { toast(err.message); } S.M = buildModel(); }
   render();
@@ -5567,7 +6238,7 @@ $('#loginForm').addEventListener('submit', e => { e.preventDefault(); const v = 
 // ?u=<login> opens that SPOODEX (importing it if needed); ?vs=<login> jumps to Compare.
 // Otherwise a returning player opens straight from cache, then quietly syncs.
 // Shared caches get their defaults when the script loads, before IndexedDB is open; re-read them once it is.
-const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladder', 'crew', 'pioneer', 'report', 'haunts', 'trip', 'elev', 'wx', 'events', 'frontier', 'ownph'];
+const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladder', 'crew', 'pioneer', 'report', 'haunts', 'trip', 'elev', 'wx', 'events', 'frontier', 'ownph', 'lore'];
 (async function boot() {
   track(location.pathname, false);
   registerSW(); netState();
