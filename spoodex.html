@@ -1156,38 +1156,25 @@ function favouriteLineages(M) {
   M.genera.forEach(g => { const L = lineage(g.id); const tribe = L.find(n => n.r === 'tribe') || L.find(n => n.r === 'subfamily'); if (tribe) { c[tribe.n] = c[tribe.n] || { n:tribe.n, g:0, o:0 }; c[tribe.n].g++; c[tribe.n].o += g.obs.length; } });
   return Object.values(c).sort((a,b) => b.g - a.g || b.o - a.o);
 }
-// Titles (owner, 2026-10-07): a real jumping spider species, rarer on iNat and more celebrated as the collection grows (genera
-// needed), plus one adjective earned from how this naturalist actually records. Proposed list, iNat taxa checked (HANDOVER §12).
-const TITLE_SPP = [
-  [0, 'Phidippus audax'], [1, 'Salticus scenicus'], [3, 'Menemerus bivittatus'], [5, 'Plexippus paykulli'], [8, 'Hasarius adansoni'],
-  [12, 'Marpissa muscosa'], [15, 'Philaeus chrysops'], [20, 'Mopsus mormon'], [25, 'Phidippus regius'], [30, 'Hyllus diardi'],
-  [40, 'Maratus volans'], [50, 'Portia labiata'], [60, 'Portia fimbriata'], [75, 'Bagheera kiplingi'], [90, 'Evarcha culicivora'],
-  [100, 'Euophrys omnisuperstes'],
+// Titles (owner, 2026-10-07): an empowering adjective and a genus, alliterative where it can be ("Magnificent Mopsus"). The genus
+// climbs from the most-recorded on iNat to rarer, more celebrated ones as the collection grows (genera needed); each naturalist
+// keeps one of its three adjectives, picked from their username so it doesn't change. Genera checked on iNat (HANDOVER §12).
+const TITLE_GEN = [
+  [0, 'Phidippus', ['Plucky', 'Proud', 'Fearless']], [1, 'Salticus', ['Spirited', 'Swift', 'Spunky']],
+  [3, 'Menemerus', ['Mighty', 'Mettlesome', 'Marvellous']], [5, 'Plexippus', ['Powerful', 'Peerless', 'Plucky']],
+  [8, 'Hasarius', ['Heroic', 'Hardy', 'Headstrong']], [12, 'Marpissa', ['Masterful', 'Mighty', 'Magnificent']],
+  [15, 'Myrmarachne', ['Mighty', 'Mysterious', 'Majestic']], [20, 'Philaeus', ['Fearless', 'Fierce', 'Formidable']],
+  [25, 'Cosmophasis', ['Courageous', 'Cosmic', 'Commanding']], [30, 'Hyllus', ['Heroic', 'Herculean', 'High-flying']],
+  [40, 'Maratus', ['Magnificent', 'Majestic', 'Marvellous']], [50, 'Mopsus', ['Magnificent', 'Mighty', 'Masterful']],
+  [60, 'Euophrys', ['Exalted', 'Epic', 'Elite']], [75, 'Bagheera', ['Bold', 'Brilliant', 'Brave']],
+  [90, 'Spartaeus', ['Splendid', 'Sovereign', 'Stalwart']], [100, 'Portia', ['Peerless', 'Prodigious', 'Phenomenal']],
 ];
-const titleSpecies = n => TITLE_SPP.filter(([at]) => n >= at).pop()[1];
-// The trait this naturalist stands out for most: each scores against its own bar (1 = just reaches it), the highest wins, and
-// nothing under half a bar counts. Ratios need 10+ records so a beginner isn't judged on three photos.
-function titleAdj(M) {
-  const n = M.obs.length, myst = M.leads.reduce((s, l) => s + l.obs.length, 0), beh = M.behObs.feed + M.behObs.court + M.behObs.egg;
-  const last = M.obs[n - 1]?.d, ago = last ? (Date.now() - new Date(last)) / 864e5 : Infinity;
-  const top = M.genera.reduce((a, g) => Math.max(a, g.obs.length), 0), days = M.fieldDays.length, big = n >= 10;
-  if (!n) return 'Hopeful';
-  if (ago > 365) return 'Dormant';                                   // nothing recorded for a year
-  const traits = [
-    ['Unstoppable', M.streak / 3],                                   // a new genus on 3 field days running
-    ['Hungry', M.newThisYear / 5],                                   // 5 new genera this year
-    ['Obsessed', big ? top / n / .4 : 0],                            // 40% of records in one genus
-    ['Baffled', big ? myst / n / .3 : 0],                            // 30% of records still mystery spoods
-    ['Nosy', big ? beh / n / .03 : 0],                               // 3% of records show feeding, courtship or silk
-    ['Relentless', days >= 10 ? n / days / 8 : 0],                   // 8 records per field day
-    ['Wandering', M.cellsAll01.size / 80],                           // 80 different ~10 km localities
-    ['Sleepless', M.monthsAll.size >= 12 ? .9 : 0],                  // records in every month of the year
-    ['Fresh', ago <= 7 ? .6 : 0],                                    // recorded in the last week
-  ].sort((x, y) => y[1] - x[1]);
-  return traits[0][1] >= .5 ? traits[0][0] : 'Curious';
+function titleParts(M, login = S.login) {
+  const [, genus, adjs] = TITLE_GEN.filter(([at]) => M.G.size >= at).pop();
+  return [adjs[hash32(String(login || '').toLowerCase()) % adjs.length], genus];
 }
-const generatedTitle = M => `${titleAdj(M)} ${titleSpecies(M.G.size)}`;
-const titleHtml = M => `${esc(titleAdj(M))} <i>${esc(titleSpecies(M.G.size))}</i>`;
+const generatedTitle = (M, login) => titleParts(M, login).join(' ');
+const titleHtml = (M, login) => { const [a, g] = titleParts(M, login); return `${esc(a)} <i>${esc(g)}</i>`; };
 
 /* ---------------- quests: generated from genuine gaps ---------------- */
 function scanFor(cell) { return cell ? S.u.scans[cell.k] : null; }
@@ -2395,7 +2382,7 @@ function viewCompare() {
     const covers = [...X.G.values()].sort(byRarity('g')).filter(g => g.cover).slice(0,4);
     return `<div class="side ${cls}"><div class="mosaic">${covers.map(g => `<i style="background-image:url('${esc(photoSize(g.cover,'small'))}')"></i>`).join('')}</div>
       <div style="font-family:var(--head);font-size:20px">${name}</div>
-      <div class="hand">${titleHtml(X)}</div>
+      <div class="hand">${titleHtml(X, S.cmp?.login)}</div>
       <div>LEVEL <b>${X.G.size}</b> · ${X.S.size} species</div>
       <div class="prestige">${fmt(prestige(X))} ✦</div><div class="small muted">collection prestige</div></div>`;
   };
