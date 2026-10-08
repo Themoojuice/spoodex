@@ -120,11 +120,6 @@ table.matrix td.have, table.matrix th.have { text-align:center; color:var(--lit)
 table.matrix tr.solo td { background:var(--panel2); }
 table.matrix tr.solo td:last-child { color:var(--accent); font-weight:600; }
 table.matrix tr.all td:last-child { color:var(--lit); }
-.report .mast { font:400 44px/1.1 'Special Elite', 'Courier New', monospace; text-align:center; border-bottom:3px double var(--line); padding-bottom:6px; }
-.report .dateline { text-align:center; font-size:12px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin:6px 0 10px; }
-.report .headline { justify-content:space-around; text-align:center; }
-.report .headline b { display:block; font:600 34px var(--head); color:var(--accent); }
-.report .headline span { font-size:12px; color:var(--muted); letter-spacing:.1em; text-transform:uppercase; }
 p.story { margin:0 0 8px; padding-bottom:8px; border-bottom:1px dashed var(--dim); }
 .wslide { min-height:400px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:20px 8px; }
 .wslide .kick { letter-spacing:.3em; font-size:12px; color:var(--muted); }
@@ -434,7 +429,7 @@ details > summary.scsec { cursor:pointer; }
 .reward { font-size:12px; color:var(--lit); }
 
 
-/* ---------- Spooding weather & field mode ---------- */
+/* ---------- Spooding weather ---------- */
 .wxpanel { margin-bottom:16px; }
 .wxhead { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px; margin-bottom:10px; }
 .wxhead h2 { margin:0; }
@@ -462,36 +457,6 @@ details > summary.scsec { cursor:pointer; }
   .wxd.none { grid-template-areas:"d bar bar" "w w w"; }
 }
 #offChip { background:var(--accent); color:var(--panel); border-color:var(--accent); }
-body.fieldon { overflow:hidden; }
-.fieldov { position:fixed; inset:0; z-index:900; background:var(--bg); background-image:var(--paper); overflow-y:auto; overscroll-behavior:contain; }
-.fieldbar { position:sticky; top:0; z-index:1; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 16px; padding-top:max(8px, env(safe-area-inset-top)); background:var(--ink); color:var(--panel); }
-.fieldbar b { font:400 21px var(--head); }
-.fieldbar button { background:var(--panel); color:var(--ink); border-color:var(--panel); min-height:44px; font-weight:600; }
-.fieldwrap { max-width:520px; margin:0 auto; padding:12px 16px 40px; display:flex; flex-direction:column; gap:12px; font-size:16px; }
-.fieldwrap .panel { border:2px solid var(--ink); padding:14px; }
-.fieldwrap h3 { font-size:20px; }
-.fieldwrap .small { font-size:14px; }
-.fieldwrap .muted { color:var(--ink); opacity:.78; }
-.fieldwrap a { font-weight:600; }
-.fieldwrap button { min-height:44px; }
-.fieldwrap button.big { width:100%; min-height:56px; font-size:19px; }
-.fstatus:empty { display:none; }
-.fstatus { background:var(--ink); color:var(--panel); border-radius:var(--radius); padding:10px 12px; font-weight:600; }
-.fbig { font:600 22px var(--head); }
-.fdial { display:block; width:min(78vw, 300px); height:auto; margin:0 auto 8px; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
-.fdial .spin { transform-origin:100px 100px; transition:transform .2s linear, opacity .2s; }
-.fdial .face { fill:var(--panel); stroke:var(--ink); stroke-width:3; }
-.fdial .ticks line { stroke:var(--ink); stroke-width:2; }
-.fdial text { font:700 22px var(--body); fill:var(--ink); text-anchor:middle; dominant-baseline:middle; }
-.fdial text.n { fill:var(--accent); }
-.fdial .head { fill:var(--accent); stroke:var(--ink); stroke-width:2; stroke-linejoin:round; }
-.fdial .tail { fill:var(--ink); opacity:.35; }
-.fdial .lubber, .fdial .hub { fill:var(--ink); }
-.ftarget { text-align:center; }
-.fdist { font:600 26px var(--head); }
-.fgen { font-size:19px; margin:2px 0 4px; }
-.fgenrow { padding:8px 0; border-bottom:1px dashed var(--line); }
-.fgenrow a { font-size:17px; }
 /* ---------- Events (crew games) ---------- */
 .evcards { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:10px; margin-top:10px; }
 .evcard { border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:var(--radius); padding:10px 12px; background:var(--panel2); cursor:pointer; }
@@ -620,7 +585,6 @@ body.fieldon { overflow:hidden; }
         <span class="muted" id="whoami"></span>
         <b id="lvlBadge"></b>
         <span class="chip hidden" id="offChip">Offline</span>
-        <button data-act="field" aria-label="Field compass" title="Field compass: where you are, what's around, and the nearest recent records of genera you're missing">🧭<span class="lbl"> Field</span></button>
         <button id="syncBtn" aria-label="Sync with iNaturalist" title="Fetch new/updated observations since last sync">⟳<span class="lbl"> Sync</span></button>
         <button id="shareBtn" aria-label="Copy a link to this SPOODEX" title="Copy a link to this SPOODEX">🔗<span class="lbl"> Share</span></button>
         <button id="menuBtn" aria-label="Settings" title="Settings">⚙</button>
@@ -631,7 +595,6 @@ body.fieldon { overflow:hidden; }
   <main class="wrap" id="view"></main>
 </div>
 
-<div id="fieldRoot"></div>
 <div id="modalRoot"></div>
 
 <script>
@@ -1613,7 +1576,6 @@ const TABS = [
   { k:'dex', label:'SPOODEX' },
   { k:'tree', label:'Lineage tree', at:15 },
   { k:'map', label:'Map & scanner' },
-  { k:'report', label:'This week', at:3 },
   { k:'wanted', label:'Bounty board', at:10 },
   { k:'trip', label:'Trip planner', at:5 },
   { k:'compare', label:'Compare', at:5 },
@@ -1658,7 +1620,6 @@ function render() {
   // Ladder and crew fetch lazily when opened (errors stop the auto-retry until the player asks again)
   if (S.tab === 'ladder' && !ladderBusy && !ladderErr && ladderKey() && ladderNeedsLoad(S.ladder[ladderKey()])) loadLadder();
   if (S.tab === 'crew' && !crewBusy && !crewErr && crewNeedsLoad()) loadCrew();
-  if (S.tab === 'report' && !reportBusy && !reportErr && reportNeedsLoad()) loadReport();
   if (S.tab === 'wanted' && wView() === 'posters' && !wantedBusy && !wantedErr && Date.now() - wantedTs > WANTED_TTL) loadWanted();
   if (S.tab === 'wanted' && wView() === 'bounty' && !bountyBusy && !bountyErr && bountyWhere() && bountyNeedsLoad()) loadBounties();
   if (S.tab === 'trip' && !tripBusy && !tripErr && tripNeedsLoad()) loadTrip();
@@ -1668,7 +1629,7 @@ function render() {
   if (S.tab === 'crew' && !S.evOpen && !S.evBroken && cupDue()) loadCups();
   const plan = S.tab === 'trip' && $('#tripPlan');
   if (plan) plan.innerHTML = viewTripPlan();
-  else v.innerHTML = ({ profile:viewProfile, dex:viewDex, tree:viewTree, map:viewMapShell, quests:viewQuests, compare:viewCompare, ladder:viewLadder, crew:viewCrew, report:viewReport, wanted:viewWanted, trip:viewTrip })[S.tab]();
+  else v.innerHTML = ({ profile:viewProfile, dex:viewDex, tree:viewTree, map:viewMapShell, quests:viewQuests, compare:viewCompare, ladder:viewLadder, crew:viewCrew, wanted:viewWanted, trip:viewTrip })[S.tab]();
   if (S.tab === 'map') { initMap(); loadWx(); }
   if (S.tab === 'trip') mountTripMap();
   if (S.tab === 'crew') { mountEventMap(); evAnimate(); }
@@ -2367,8 +2328,8 @@ function afterMapInit() {
   if (D) drawScanArea(D, D.km);
   else if (h && !scanBusy && !scanErr) runScan(h.lat, h.lng);
 }
-// The home area (and field mode's): genera recorded within `km` each way of a point, all time. `into`: a session-only box
-// instead of the save (field mode never stores where you are). `b:1` marks a square scan; older circle scans are re-read.
+// The home area: genera recorded within `km` each way of a point, all time. `into`: an optional session-only box
+// instead of the save. `b:1` marks a square scan; older circle scans are re-read.
 async function fetchScan(k, into = null) {
   const c = pointFor(k); if (!c) return;
   const d = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, verifiable:true, ...boxQ(c, 25) });
@@ -4490,107 +4451,6 @@ async function openHonourCard(k) {
   await mountCard(out, (cv, po) => drawHonourCard(cv, k, im, po), `spoodex-${S.login}-${(S.nodes[tid]?.n || 'honour').replace(/\W+/g, '-').toLowerCase()}`);
 }
 
-/* ---------------- the spood report: this week's salticid news for your state ---------------- */
-const REPORT_TTL = 6 * 3600e3, REPORT_DAYS = 7, REPORT_TOP = 8;
-S.report = store.get('report', null);   // {pid, ts, d1, tax{t,g,s}, obsv{n, top[]}, picks[], wk{login:[genus ids]}, wkq[logins still to read]}
-let reportBusy = false, reportErr = null;
-const reportPlace = () => S.M?.home.state || S.M?.home.country || null;
-const reportNeedsLoad = () => { const R = S.report; return !R || R.pid !== reportPlace() || Date.now() - R.ts > REPORT_TTL || !R.picks || R.wkq?.length; };
-async function loadReport(force = false) {
-  const pid = reportPlace(); if (!pid || reportBusy) return;
-  let R = S.report;
-  if (force || !R || R.pid !== pid || Date.now() - R.ts > REPORT_TTL)
-    R = S.report = { pid, ts:Date.now(), d1:new Date(Date.now() - REPORT_DAYS * 864e5).toISOString().slice(0, 10), tax:null, obsv:null, picks:null, wk:{}, wkq:null };
-  reportBusy = true; reportErr = null;
-  const redraw = () => { store.set('report', S.report); if (S.tab === 'report') render(); };
-  const base = { taxon_id:SALTICIDAE, place_id:pid, verifiable:true, d1:R.d1 };
-  try {
-    // All-time totals must be as fresh as the week's to call a genus "first ever"
-    const ref = S.ref['p' + pid];
-    if (!ref || Date.now() - ref.ts > REPORT_TTL) await ensureRef('state', true);
-    if (!R.tax) {
-      const d = await api('/observations/taxonomy', base), t = { t:0, g:{}, s:{} };
-      d.results.forEach(x => { addNode(x); const c = x.descendant_obs_count || 0; if (x.rank === 'genus') t.g[x.id] = c; else if (x.rank === 'species') t.s[x.id] = c; else if (x.id === SALTICIDAE) t.t = c; });
-      R.tax = t; redraw();
-    }
-    if (!R.obsv) {
-      const d = await api('/observations/observers', { ...base, per_page:REPORT_TOP });
-      R.obsv = { n:d.total_results, top:d.results.map(r => ({ login:r.user.login, icon:r.user.icon_url || '', obs:r.observation_count })) };
-      R.wkq = R.obsv.top.map(r => r.login);
-      if (!isGuest() && S.login && !R.wkq.some(isMe)) R.wkq.push(S.login);
-      redraw();
-    }
-    if (!R.picks) {
-      const d = await api('/observations', { ...base, photos:true, order_by:'votes', order:'desc', per_page:6 });
-      R.picks = d.results.map(o => { const t = o.taxon || {}; addNode(t);
-        return { id:o.id, u:o.user?.login || '', n:t.name || 'Salticidae', r:t.rank || '', ph:o.photos?.[0]?.url || '', f:o.faves_count || 0, gid:genusOf([...(t.ancestor_ids || []), t.id]) }; });
-      redraw();
-    }
-    while (R.wkq?.length && S.report === R) {
-      const l = R.wkq[0];
-      try {
-        const d = await api('/observations/taxonomy', { ...base, user_login:l });
-        R.wk[l] = d.results.filter(x => x.rank === 'genus').map(x => x.id);
-      } catch (e) { if (!/returned 4\d\d/.test(e.message)) throw e; }
-      R.wkq.shift(); redraw();
-    }
-    saveShared();
-  } catch (e) { reportErr = e.message; }
-  reportBusy = false;
-  if (S.tab === 'report') render();
-}
-function viewReport() {
-  const pid = reportPlace();
-  if (!pid) return `<div class="panel"><h2>The Spood Report</h2><p>The report covers your home state. Record a salticid on iNaturalist, or set a home base on the map.</p><button class="primary" data-tab="map">🏠 Set a home base</button></div>`;
-  const R = S.report && S.report.pid === pid ? S.report : null, where = esc(S.places[pid]?.n || 'your region'), M = S.M;
-  const dfmt = s => new Date(s + 'T12:00:00').toLocaleDateString(undefined, { day:'numeric', month:'short' });
-  const mast = `<div class="panel report" style="margin-bottom:14px"><div class="mast">The Spood Report</div>
-    <div class="dateline">${where} · ${R ? `${dfmt(R.d1)} – ${new Date(R.ts).toLocaleDateString(undefined, { day:'numeric', month:'short' })}` : 'this week'} · jumping spiders on iNaturalist</div>
-    ${R?.tax ? `<div class="row headline"><div><b>${fmt(R.tax.t)}</b><span>records</span></div><div><b>${Object.keys(R.tax.g).length}</b><span>genera</span></div><div><b>${R.obsv ? fmt(R.obsv.n) : '…'}</b><span>observers</span></div></div>` : ''}
-    ${reportBusy ? '<p class="small">Gathering this week\'s records… stories appear as they arrive.</p>' : ''}
-    ${reportErr ? `<p>${esc(reportErr)} <button data-act="reportRefresh">Try again</button></p>` : ''}
-    ${R && !reportBusy ? `<p class="small muted" style="margin:6px 0 0">Verifiable records observed in the last ${REPORT_DAYS} days, compiled ${esc(new Date(R.ts).toLocaleString())}. <a href="#" data-act="reportRefresh">Refresh</a></p>` : ''}</div>`;
-  if (!R?.tax) return mast;
-  const ref = S.ref['p' + pid], scope = 'state';
-  const wkG = Object.entries(R.tax.g).map(([id, c]) => ({ id:+id, c, all:ref?.g[id] || 0 })).sort((a,b) => b.c - a.c);
-  // Every record of the genus in the region was observed this week = first on iNat there
-  const firsts = ref ? wkG.filter(x => x.c >= x.all) : [];
-  const rare = wkG.filter(x => !firsts.includes(x) && starsIn(x.id, 'g', scope) >= 4).slice(0, 5);
-  const mine = R.wk[Object.keys(R.wk).find(isMe)] || null;
-  const newToMe = M.genera.filter(g => (g.first.d || '') >= R.d1);
-  const stories = [];
-  firsts.forEach(x => stories.push(`🆕 <b>First on iNat in ${where}:</b> ${gLink(x.id)}, ${x.c} record${x.c === 1 ? '' : 's'} this week.`));
-  if (wkG[0]) stories.push(`🏆 <b>Genus of the week:</b> ${gLink(wkG[0].id)} with ${wkG[0].c} records${wkG[1] ? `, ahead of ${gLink(wkG[1].id)} (${wkG[1].c})` : ''}.`);
-  rare.forEach(x => stories.push(`${rarityChip(tierIn(refFor(scope)?.g, x.id))} <b>Rare sighting:</b> ${gLink(x.id)}, only ${fmt(x.all)} ${where} record${x.all === 1 ? '' : 's'} ever, ${x.c} of them this week.`));
-  if (!isGuest()) {
-    if (newToMe.length) stories.push(`🎉 <b>You unlocked</b> ${newToMe.map(g => gLink(g.id)).join(', ')} this week.`);
-    if (mine) stories.push(mine.length ? `🕷 <b>Your week:</b> ${mine.length} ${mine.length === 1 ? 'genus' : 'genera'} recorded in ${where}.` : `🕷 <b>Your week:</b> no ${where} records yet.`);
-  }
-  const top = R.obsv?.top || [];
-  const rows = top.map(r => ({ ...r, g:R.wk[r.login] }));
-  if (!isGuest() && S.login && !rows.some(r => isMe(r.login)) && R.wk[S.login]) rows.push({ login:S.login, obs:null, g:R.wk[S.login] });
-  const picks = (R.picks || []).filter(p => p.ph);
-  const faved = picks.some(p => p.f);
-  // The photos lead: the week's best-looking records are the most fun part of the report
-  return mast + `
-  ${picks.length ? `<h2 style="margin-top:4px">${faved ? 'Picks of the week' : 'Fresh from the field'}</h2>
-    <p class="small muted">${faved ? 'Most-faved records observed this week.' : 'Recent records with photos.'} Photos © their observers; tap to see the record on iNaturalist.</p>
-    <div class="jewels">${picks.map(p => `<a class="jewel" href="https://www.inaturalist.org/observations/${p.id}" target="_blank" rel="noopener" style="background-image:url('${esc(photoSize(p.ph, 'medium'))}')">
-      <div class="lab"><div style="font-family:var(--head);font-size:17px;${['genus','species','subspecies'].includes(p.r) ? 'font-style:italic' : ''}">${esc(p.n)}</div>
-      <div class="small">© ${esc(p.u)}${p.f ? ` · ♥ ${p.f}` : ''}</div></div></a>`).join('')}</div>` : ''}
-  <div class="grid2" style="margin-top:22px">
-    <div class="panel"><h2>Headlines</h2>${stories.map(s => `<p class="story">${s}</p>`).join('') || '<p class="muted">A quiet week in the field.</p>'}</div>
-    <div class="panel"><h2>Top spooders this week</h2>
-      <div class="tablewrap"><table class="ladder">${rows.map((r, i) => `<tr class="${isMe(r.login) ? 'me' : ''}"><td class="rk">${r.obs == null ? '–' : i < 3 ? ['🥇','🥈','🥉'][i] : '#' + (i + 1)}</td>
-        <td class="who"><span class="avatar" style="background-image:url('${esc(r.icon || '')}')"></span>${esc(r.login)}</td>
-        <td class="n">${r.obs == null ? '' : fmt(r.obs) + ' rec.'}</td><td class="n">${r.g ? `${r.g.length} gen.` : '…'}</td></tr>`).join('')}</table></div>
-      <p class="small muted">Ranked by records observed this week; genera counted as they load.</p></div>
-  </div>
-  <h2 style="margin-top:22px">Genera recorded this week (${wkG.length})</h2>
-  <div class="panel">${wkG.map(x => `<div class="row" style="gap:6px"><span style="min-width:22px">${M.G.has(x.id) ? '☑' : '🎯'}</span><a href="#" data-genus="${x.id}" style="min-width:140px"><i>${esc(S.nodes[x.id]?.n || '?')}</i></a><span class="small muted">${x.c} this week${ref ? ` · ${fmt(x.all)} all time` : ''}</span></div>`).join('')}
-    <p class="small muted">☑ in your SPOODEX · 🎯 not yet.</p></div>`;
-}
-
 /* ---------------- most wanted: this month's forecast of missing genera, wanted posters, and hotspot case files ---------------- */
 const WANTED_MAX = 40, WANTED_POSTERS = 6, WANTED_TTL = 3600e3, HAUNT_TTL = 7 * 864e5, HAUNT_KM = 150, HAUNT_KEEP = 120;
 S.haunts = store.get('haunts', {});   // `${genus}@${centre rounded 0.1°}` or `${genus}@p${place}` -> {ts, n, used, skipped, wide, cells:[[cellKey, records, last date]]}
@@ -4655,7 +4515,7 @@ function wantedList(ctx = homeCtx()) {
   list.forEach(x => x.tier = x.score >= .6 * top ? 'Prime suspect' : x.score >= .3 * top ? 'Worth a look' : 'Long shot');
   return list;
 }
-const hauntsOf = ctx => ctx.mem || S.haunts;   // field mode away from home keeps its haunts in memory, never in the save
+const hauntsOf = ctx => ctx.mem || S.haunts;   // a ctx may keep its haunts in memory instead of the save
 const hauntKey = (gid, ctx = homeCtx()) => { const c = ctx.centre; return c ? `${gid}@${c.lat.toFixed(1)},${c.lng.toFixed(1)}` : `${gid}@p${ctx.pid}`; };
 // Recent records around the centre (v2 API with only the fields we need), binned into 25 km squares. Falls back to the whole region.
 async function ensureHaunts(gid, ctx = homeCtx()) {
@@ -5758,8 +5618,7 @@ function wxInner() {
   const M = S.M, c = M.homeCell, b = S.u.base;
   const where = !c ? '' : b ? `near <b>${esc(b.near || b.label)}</b> (your home base)` : `your busiest square, <b>${cellLabel(c)}</b>`;
   const head = `<div class="wxhead"><h2>Spooding weather</h2>${where ? `<span class="small">📍 ${where} · 7 days</span>` : ''}
-    <a class="small" href="https://open-meteo.com/" target="_blank" rel="noopener">Weather: Open-Meteo</a>
-    <button class="primary" data-act="field">🧭 Field compass</button></div>`;
+    <a class="small" href="https://open-meteo.com/" target="_blank" rel="noopener">Weather: Open-Meteo</a></div>`;
   if (!c) return head + '<p class="small">Set a home base to see the best days to go spooding this week.</p>';
   const f = S.wx[wxKey(c)];
   if (!f) return head + (wxErr ? `<p class="small">${esc(wxErr)}. <button data-act="wxRetry">Try again</button></p>` : '<p class="small muted">Fetching the 7-day forecast…</p>');
@@ -5780,238 +5639,8 @@ function wxCardsHtml(f, days) {
     ${top ? `<p class="wxbest">Best bet: <b>${day(top.d)} ${wxSpan(top.from, top.to)}</b> ${wxStars(top.stars)} ${top.temp}° · ${top.sky}${top.why.length ? ` · ${esc(top.why[0])}` : ''}</p>` : ''}
     <p class="small muted" style="margin:0">Stars rate each day's best stretch for warmth, sun, rain and wind, and rise when it clears after rain, wind or a cool spell, or turns warm and humid. The bar is the day hour by hour; the outlined part is that stretch.</p>`;
 }
-/* ---------------- field compass: where you are, what's around, and a needle to the nearest recent records of missing genera ---------------- */
-// The live position lives only in F, for this session: never saved, logged, tracked or put in a link. It reaches iNat only as a
-// 25 km scan point rounded to 0.1°, like a map scan. The needle points at 25 km square centres (the 25 km rule), never at records.
-const FIELD = { scanGap:10 * 60e3, recentDays:90, haunts:8, homeKm:75, cachedKm:15, list:15 };
-const F = { on:false, pos:null, geo:'', compass:'', heading:null, watch:null, lock:null, sq:null, toasted:new Set(),
-  scans:{}, active:{}, haunts:{}, scanK:null, scanAt:0, scanTimer:0, scanning:false, scanErr:null, hauntsBusy:false, hauntsFor:'',
-  pick:0, tb:null, rose:0, arrow:0, raf:0 };
-const fieldKey = p => `pt:${p.lat.toFixed(1)},${p.lng.toFixed(1)}`;
+// "5 min ago", else the day: when a scan or forecast was read
 const agoShort = ts => { const m = Math.round((Date.now() - ts) / 60e3); return m < 2 ? 'just now' : m < 90 ? `${m} min ago` : sinceTxt(ts); };
-// Near home the needle uses the home base's haunts (shared with the wanted posters). Further away it uses a 0.5° centre,
-// so walking about doesn't refetch, and keeps those haunts in memory only.
-function fieldCtx() {
-  const home = homeCtx(), p = F.pos;
-  if (!p || (home.centre && kmBetween(home.centre, p) <= FIELD.homeKm)) return home;
-  const fs = fieldScan();
-  return { ...home, kind:'field', centre:{ lat:Math.round(p.lat * 2) / 2, lng:Math.round(p.lng * 2) / 2 }, near:fs?.sc.g, recent:fs?.act?.g,
-    at:'here', atLong:'here', mem:F.haunts };
-}
-// This session's scan of the current 0.1° cell, else the nearest cached scan within 15 km (this session's, or a saved map scan)
-function fieldScan() {
-  const p = F.pos; if (!p) return null;
-  const k = fieldKey(p);
-  if (F.scans[k]) return { sc:F.scans[k], act:F.active[k], d:0, live:true };
-  let best = null;
-  const consider = (key, sc, act) => {
-    const c = pointFor(key); if (!c) return;
-    const d = kmBetween(p, c);
-    if (d <= FIELD.cachedKm && (!best || d < best.d)) best = { sc, act, d, live:false };
-  };
-  for (const [key, sc] of Object.entries(F.scans)) consider(key, sc, F.active[key]);
-  for (const [key, sc] of Object.entries(S.u.scans)) consider(key, sc, S.u.active?.[key]);
-  return best;
-}
-// Squares holding a record from the last 90 days of a genus you're missing, nearest first
-function fieldTargets() {
-  const p = F.pos; if (!p) return [];
-  const ctx = fieldCtx(), H = hauntsOf(ctx), cut = new Date(Date.now() - FIELD.recentDays * 864e5).toISOString().slice(0, 10), cells = new Map();
-  for (const x of wantedList(ctx) || []) {
-    const hn = H[hauntKey(x.id, ctx)]; if (!hn || hn.wide) continue;
-    for (const [k, , last] of hn.cells) {
-      if (last < cut) continue;
-      const e = cells.get(k) || { k, g:[], last:'' };
-      e.g.push(x.id); if (last > e.last) e.last = last;
-      cells.set(k, e);
-    }
-  }
-  return [...cells.values()].map(e => { const c = cellCenter(e.k); return { ...e, d:kmBetween(p, c), b:bearingDeg(p, c) }; }).sort((a,b) => a.d - b.d);
-}
-async function fieldScanNow() {
-  clearTimeout(F.scanTimer);
-  if (!F.on || !F.pos || F.scanning) return;
-  const k = fieldKey(F.pos);
-  if (k === F.scanK || !navigator.onLine) return;
-  const wait = F.scanAt + FIELD.scanGap - Date.now();
-  if (wait > 0) { F.scanTimer = setTimeout(fieldScanNow, wait); return; }
-  F.scanning = true; F.scanErr = null; paintField();
-  try {
-    await fetchScan(k, F.scans);
-    try { await scanActive(k, true, F.active); } catch (e) { console.warn(e.message); }
-    F.scanAt = Date.now();
-  } catch (e) { F.scanErr = e.message; }
-  F.scanK = k; F.scanning = false;
-  paintField(); fieldHaunts();
-}
-async function fieldHaunts() {
-  const ctx = fieldCtx(), sig = hauntKey(0, ctx);
-  if (F.hauntsBusy || !F.on || !F.pos || !ctx.pid || !navigator.onLine || sig === F.hauntsFor) return;
-  F.hauntsBusy = true; F.hauntsFor = sig; paintField();
-  try {
-    for (const x of (wantedList(ctx) || []).slice(0, FIELD.haunts)) {
-      const cur = hauntsOf(ctx)[hauntKey(x.id, ctx)];
-      if (!F.on) break;
-      if (cur && Date.now() - cur.ts < HAUNT_TTL) continue;
-      await ensureHaunts(x.id, ctx); paintField();
-    }
-  } catch (e) { console.warn(e.message); }
-  F.hauntsBusy = false; paintField();
-}
-function onPos(p) {
-  if (!F.on) return;
-  F.pos = { lat:p.coords.latitude, lng:p.coords.longitude }; F.geo = '';
-  const sq = cellKey(F.pos.lat, F.pos.lng, .25);
-  if (sq !== F.sq) {
-    F.sq = sq; F.pick = 0;
-    if (!S.M.cells25.has(sq) && !F.toasted.has(sq)) { F.toasted.add(sq); toast('Unexplored square: a record here counts towards Change of Scenery.'); }
-  }
-  paintField(); fieldScanNow(); fieldHaunts();
-}
-function onPosErr(e) {
-  if (!F.on) return;
-  F.geo = e.code === 1 ? 'Location is blocked for this site. Allow it in your browser settings, then close field mode and start it again.'
-    : F.pos ? '' : 'Still looking for a GPS fix…';
-  paintField();
-}
-// Heading of the top of the screen, clockwise from north
-function onOrient(e) {
-  let h = null;
-  if (typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading)) h = e.webkitCompassHeading;   // iOS
-  else if (e.absolute && e.alpha != null) h = 360 - e.alpha;   // deviceorientationabsolute: alpha runs anticlockwise from north
-  if (h == null) return;
-  const a = screen.orientation?.angle ?? window.orientation ?? 0;
-  F.heading = (((h + a) % 360) + 360) % 360;
-  if (F.compass !== 'on') { F.compass = 'on'; paintField(); }
-  spinField();
-}
-const listenOrient = on => ['deviceorientationabsolute', 'deviceorientation'].forEach(t => window[on ? 'addEventListener' : 'removeEventListener'](t, onOrient));
-async function wakeOn() {
-  if (!F.on || F.lock || !navigator.wakeLock || document.hidden) return;
-  try {
-    const l = await navigator.wakeLock.request('screen');
-    if (!F.on) return l.release();
-    F.lock = l; l.addEventListener('release', () => { if (F.lock === l) F.lock = null; });
-  } catch {}
-}
-function wakeOff() { const l = F.lock; F.lock = null; if (l) l.release().catch(() => {}); }
-document.addEventListener('visibilitychange', () => { if (document.hidden) wakeOff(); else wakeOn(); });
-// Must run inside the tap: iOS only shows its motion-access prompt from a user gesture
-function fieldStart() {
-  if (F.on) return;
-  Object.assign(F, { on:true, compass:'wait', geo:'wait', pick:0, heading:null });
-  const DOE = window.DeviceOrientationEvent;
-  const ask = DOE && typeof DOE.requestPermission === 'function' ? DOE.requestPermission() : Promise.resolve(DOE ? 'granted' : 'none');
-  // Listen regardless: readings that do arrive win over a refusal; the answer only explains a silent compass
-  listenOrient(true);
-  ask.catch(() => 'denied').then(s => {
-    if (!F.on || F.compass === 'on') return;
-    if (s === 'granted') setTimeout(() => { if (F.on && F.compass === 'wait') { F.compass = 'none'; paintField(); } }, 3000);
-    else { F.compass = s === 'none' ? 'none' : 'denied'; paintField(); }
-  });
-  if (navigator.geolocation) F.watch = navigator.geolocation.watchPosition(onPos, onPosErr, { enableHighAccuracy:true, maximumAge:10000, timeout:30000 });
-  else F.geo = 'Location isn\'t available in this browser.';
-  wakeOn();
-  paintField();
-}
-function fieldStop() {
-  if (F.watch != null) navigator.geolocation.clearWatch(F.watch);
-  listenOrient(false); wakeOff(); clearTimeout(F.scanTimer);
-  Object.assign(F, { on:false, pos:null, watch:null, heading:null, compass:'', geo:'', sq:null, tb:null });
-}
-function openField() {
-  $('#fieldRoot').innerHTML = `<div class="fieldov" role="dialog" aria-label="Field mode"><div class="fieldbar"><b>🧭 Field mode</b><button data-act="fieldClose">✕ Close</button></div>
-    <div class="fieldwrap" id="fieldBody"></div></div>`;
-  document.body.classList.add('fieldon');
-  paintField();
-}
-function closeField() { fieldStop(); $('#fieldRoot').innerHTML = ''; document.body.classList.remove('fieldon'); }
-const setHtml = (el, html) => { if (el && el._h !== html) { el._h = html; el.innerHTML = html; } };
-function fieldDial() {
-  const ticks = Array.from({ length:72 }, (_, i) => { const r = i % 18 ? i % 2 ? 85 : 81 : 74;
-    return `<line x1="100" y1="10" x2="100" y2="${100 - r}" transform="rotate(${i * 5} 100 100)"/>`; }).join('');
-  const lab = (t, deg, cls) => `<text x="100" y="40" transform="rotate(${deg} 100 100)" class="${cls}">${t}</text>`;
-  return `<svg id="fDial" class="fdial" viewBox="0 0 200 200" data-act="fieldNext" role="button" aria-label="Point at the next square">
-    <circle cx="100" cy="100" r="97" class="face"/>
-    <g id="fRose" class="spin"><g class="ticks">${ticks}</g>${lab('N', 0, 'n')}${lab('E', 90, '')}${lab('S', 180, '')}${lab('W', 270, '')}</g>
-    <g id="fArrow" class="spin"><path d="M100 18 L117 108 L100 97 L83 108 Z" class="head"/><path d="M100 104 L110 168 L100 160 L90 168 Z" class="tail"/></g>
-    <path d="M91 0 L109 0 L100 13 Z" class="lubber"/><circle cx="100" cy="100" r="8" class="hub"/></svg>`;
-}
-function paintField() {
-  const body = $('#fieldBody'); if (!body) return;
-  if (!F.on) {
-    body._h = null;
-    body.innerHTML = `<div class="panel"><p>Points you at the nearest 25 km square with a record from the last ${FIELD.recentDays} days of a genus you're missing, and lists what's been recorded around you.</p>
-      <button class="primary big" data-act="fieldStart">Start field mode</button>
-      <p class="small muted" style="margin-bottom:0">Uses your location (kept on this device, for this session only), the compass, and keeps the screen awake.</p></div>
-      <div class="panel">${tipsHtml(false)}</div>`;
-    return;
-  }
-  if (!$('#fDial')) body.innerHTML = `<div id="fStatus" class="fstatus"></div><div class="panel" id="fWhere"></div>
-    <div class="panel">${fieldDial()}<div id="fTarget" class="ftarget"></div></div><div class="panel" id="fAround"></div><div class="panel">${tipsHtml(false)}</div>`;
-  const p = F.pos, M = S.M;
-  setHtml($('#fStatus'), !navigator.onLine ? '📴 Offline: using cached data.' : F.geo && F.geo !== 'wait' ? esc(F.geo) : '');
-  // Where you are
-  if (!p) setHtml($('#fWhere'), `<p style="margin:0">${F.geo === 'wait' ? 'Finding your position…' : esc(F.geo)}</p>`);
-  else {
-    const k = cellKey(p.lat, p.lng, .25), mine = M.cells25.get(k);
-    setHtml($('#fWhere'), `<div class="small muted">Your 25 km square</div><div class="fbig">${cellLabel(cellCenter(k))}</div>
-      <p style="margin:4px 0 0">${mine ? `You've recorded here: <b>${fmt(mine.n)}</b> obs, <b>${mine.g.size}</b> genera.` : '<b>Unexplored square</b>: you have no records here yet.'}</p>`);
-  }
-  // The needle
-  const ts = p ? fieldTargets() : [], t = ts.length ? ts[F.pick % ts.length] : null;
-  F.tb = t ? t.b : null;
-  const dialNote = F.compass === 'denied' ? 'Compass access refused: north is at the top of the dial.'
-    : F.compass === 'none' ? 'No compass reading: north is at the top of the dial.' : '';
-  let tgt;
-  if (!p) tgt = '';
-  else if (!homeCtx().pid) tgt = '<p>Set a home base on the Map tab so the needle knows which genera you\'re missing.</p>';
-  else if (!t) tgt = `<p>${F.hauntsBusy ? 'Checking recent records of your missing genera…'
-    : `No squares with a record of a missing genus from the last ${FIELD.recentDays} days${navigator.onLine ? '' : ' in the cached data'}.`}</p>`;
-  else {
-    const here = t.k === cellKey(p.lat, p.lng, .25);
-    tgt = `<div class="fdist">${here ? 'You\'re in this square' : `${kmTxt(t.d)} · ${compassPt(t.b)}`}</div>
-      <div class="fgen">${t.g.slice(0, 3).map(id => `<a href="#" data-genus="${id}"><i>${esc(S.nodes[id]?.n || '?')}</i></a>`).join(', ')}${t.g.length > 3 ? ` +${t.g.length - 3} more` : ''}</div>
-      <div class="small">Last record there ${esc(agoTxt(t.last))} · square ${F.pick % ts.length + 1} of ${ts.length}${ts.length > 1 ? ' · tap the dial for the next' : ''}</div>`;
-  }
-  setHtml($('#fTarget'), tgt + (dialNote && p ? `<p class="small" style="margin:6px 0 0">${dialNote}</p>` : ''));
-  // What's around
-  const fs = p && fieldScan(), head = '<h3>What\'s around <span class="small muted">within 25 km</span></h3>';
-  if (!p) setHtml($('#fAround'), head + '<p class="muted" style="margin:0">Waiting for a GPS fix…</p>');
-  else if (!fs) setHtml($('#fAround'), head + (F.scanning ? '<p>Scanning 25 km around you…</p>'
-    : F.scanErr ? `<p>${esc(F.scanErr)} <button data-act="fieldRescan">Try again</button></p>`
-    : !navigator.onLine ? `<p>Offline, and no cached scan within ${FIELD.cachedKm} km.</p>` : '<p>Next scan shortly…</p>'));
-  else {
-    const recent = new Map((fs.act?.g || []).map(x => [x.id, x.c]));
-    const miss = fs.sc.g.filter(x => !M.G.has(x.id)).map(x => ({ ...x, r:recent.get(x.id) || 0 })).sort((a,b) => b.r - a.r || b.c - a.c);
-    const have = fs.sc.g.filter(x => M.G.has(x.id)).sort((a,b) => b.c - a.c);
-    ensurePheno(miss.slice(0, 25).map(x => x.id));
-    const row = x => `<div class="fgenrow">${x.r ? '🔥 ' : ''}<a href="#" data-genus="${x.id}"><i>${esc(S.nodes[x.id]?.n || '?')}</i></a>
-      <span class="small muted">${x.r ? `${x.r} recent · ` : ''}${fmt(x.c)} record${x.c === 1 ? '' : 's'}</span><div>${phenoTag(x.id)}</div></div>`;
-    setHtml($('#fAround'), `${head}
-      ${fs.live ? '' : `<p class="small"><b>Using cached data</b>: scan from ${esc(agoShort(fs.sc.ts))}, centred ${kmTxt(fs.d)}.</p>`}
-      ${F.scanning ? '<p class="small">Updating…</p>' : F.scanErr && !fs.live ? `<p class="small">${esc(F.scanErr)} <button data-act="fieldRescan">Try again</button></p>` : ''}
-      <p class="small">${fs.sc.g.length} genera recorded · <b>${miss.length}</b> you're missing${miss.some(x => x.r) ? ` · 🔥 recorded in the last ${ACTIVE_DAYS} days` : ''}</p>
-      ${miss.slice(0, FIELD.list).map(row).join('')}
-      ${miss.length > FIELD.list ? `<details><summary class="small">${miss.length - FIELD.list} more</summary>${miss.slice(FIELD.list).map(row).join('')}</details>` : ''}
-      ${have.length ? `<p class="small muted" style="margin-bottom:0">Yours here: ${have.map(x => `<a href="#" data-genus="${x.id}"><i>${esc(S.nodes[x.id]?.n || '?')}</i></a>`).join(', ')}</p>` : ''}`);
-  }
-  spinField();
-}
-const turnTo = (cur, to) => cur + ((((to - cur) % 360) + 540) % 360 - 180);   // shortest way round, so the dial never spins the long way
-function spinField() {
-  if (F.raf) return;
-  F.raf = requestAnimationFrame(() => {
-    F.raf = 0;
-    const rose = $('#fRose'), arrow = $('#fArrow'); if (!rose) return;
-    const up = F.compass === 'on' && F.heading != null ? -F.heading : 0;
-    F.rose = turnTo(F.rose, up);
-    F.arrow = turnTo(F.arrow, (F.tb ?? 0) + up);
-    rose.style.transform = `rotate(${F.rose}deg)`;
-    arrow.style.transform = `rotate(${F.arrow}deg)`;
-    arrow.style.opacity = F.tb == null ? 0 : 1;
-  });
-}
 
 /* ---------------- offline & install: service worker, connection state, add to home screen ---------------- */
 let installEvt = null;
@@ -6034,12 +5663,10 @@ async function installApp() {
 }
 function netState() {
   $('#offChip')?.classList.toggle('hidden', navigator.onLine);
-  paintField();
 }
 addEventListener('offline', netState);
 addEventListener('online', () => {
   netState();
-  if (F.on) { if (F.scanErr) { F.scanK = null; F.scanErr = null; } F.hauntsFor = ''; fieldScanNow(); fieldHaunts(); }
   if (wxErr && $('#wxPanel')) loadWx(true);
 });
 function registerSW() {
@@ -6416,7 +6043,6 @@ document.addEventListener('click', e => {
   if (a === 'wrYear') openWrapped(val);
   if (a === 'wrNext' && S.wr) { S.wr.i = Math.min(WR_SLIDES - 1, S.wr.i + 1); showWrapped(); }
   if (a === 'wrPrev' && S.wr) { S.wr.i = Math.max(0, S.wr.i - 1); showWrapped(); }
-  if (a === 'reportRefresh') { e.preventDefault(); reportErr = null; loadReport(true); }
   if (a === 'cardPng') cardExport(false);
   if (a === 'cardShare') cardExport(true);
   if (a === 'geo') geolocate();
@@ -6426,11 +6052,6 @@ document.addEventListener('click', e => {
   if (a === 'scanHome' && S.M.homeCell) runScan(S.M.homeCell.lat, S.M.homeCell.lng);
   if (a === 'pinHome' && S.u.mscan) { e.preventDefault(); setBase(S.u.mscan.lat, S.u.mscan.lng, S.u.mscan.near?.split(',')[0] || 'Map point'); }
   if (a === 'map3d') { S.prefs.map3d = val === '1'; savePrefs(); render(); }
-  if (a === 'field') openField();
-  if (a === 'fieldStart') fieldStart();
-  if (a === 'fieldClose') closeField();
-  if (a === 'fieldNext') { e.preventDefault(); F.pick++; paintField(); }
-  if (a === 'fieldRescan') { F.scanK = null; F.scanErr = null; fieldScanNow(); }
   if (a === 'wxRetry') loadWx(true);
   if (a === 'install') installApp();
   if (a === 'evNew') { S.evDraft = evDraftNew(); render(); }
@@ -6559,7 +6180,7 @@ $('#loginForm').addEventListener('submit', e => { e.preventDefault(); const v = 
 // ?u=<login> opens that SPOODEX (importing it if needed); ?vs=<login> jumps to Compare.
 // Otherwise a returning player opens straight from cache, then quietly syncs.
 // Shared caches get their defaults when the script loads, before IndexedDB is open; re-read them once it is.
-const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladder', 'crew', 'pioneer', 'report', 'haunts', 'trip', 'elev', 'wx', 'events', 'frontier', 'ownph', 'notes', 'lore', 'facts', 'ccph'];
+const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladder', 'crew', 'pioneer', 'haunts', 'trip', 'elev', 'wx', 'events', 'frontier', 'ownph', 'notes', 'lore', 'facts', 'ccph'];
 (async function boot() {
   track(location.pathname, false);
   registerSW(); netState();
@@ -6567,6 +6188,7 @@ const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladd
   for (const k of PERSISTED) S[k] = store.get(k, S[k]);
   // a read cut short by closing the page is saved as still queued, which would block every later refresh
   for (const E of Object.values(S.events)) delete E.queued;
+  store.del('report');   // the Spood Report (This week tab) was removed in v2.2
   const q = new URLSearchParams(location.search);
   const u = (q.get('u') || '').trim().replace(/^@/, '');
   S.pendingVs = (q.get('vs') || '').trim() || null;
