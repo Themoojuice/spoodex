@@ -19,6 +19,9 @@ AFD = 'https://bie-ws.ala.org.au/ws/childConcepts/' + urllib.parse.quote(
     'https://biodiversity.org.au/afd/taxa/2ebc0b30-7e20-4170-a4a0-035ec32f3944', safe='')
 # AFD spelling -> checklist name (owner-approved mappings only)
 AFD_MAP = {'Ancepitilobus': 'Ancipitilobus'}
+# Junior synonyms -> senior name (owner-approved): left out of the checklist even if the Lucid key still lists them.
+# Hypoblemum Peckham & Peckham was synonymised under Maratus (Otto & Hill 2012, 2021; as summarised in Schubert 2025, thesis).
+SYNONYMS = {'Hypoblemum': 'Maratus'}
 BEGIN, END = '// TAXA_AU:begin', '// TAXA_AU:end'
 
 
@@ -49,7 +52,7 @@ def main(argv):
         auth = (c.get('nameComplete') or n)[len(n):].strip() or (c.get('author') or '').strip()
         afd[AFD_MAP.get(n, n)] = {'spelling': n, 'auth': auth}
 
-    names = sorted(set(inat) | set(lucid))
+    names = sorted((set(inat) | set(lucid)) - set(SYNONYMS))
     rows = []
     for n in names:
         a = afd.get(n, {})
@@ -71,6 +74,7 @@ def main(argv):
     print(f'AFD only, excluded ({len(excluded)}): {", ".join(excluded)}')
     print(f'In the checklist but not in the AFD ({len(no_afd)}): {", ".join(no_afd)}')
     print(f'AFD spellings mapped: {", ".join(mapped) or "none"}')
+    print(f'Synonyms left out: {", ".join(f"{k} -> {v}" for k, v in SYNONYMS.items())}')
 
     # single-quoted like the rest of spoodex.html, unless a string holds an apostrophe (then JSON's double quotes)
     def js(v):

@@ -30,7 +30,7 @@ to start safely. The rest is reference. When you change something, update this f
   6. After every edit, syntax-check (§10). Before shipping, run the smoke test (§10).
   7. Other people's photos only under CC0, CC BY or CC BY-NC, always credited and linked; the owner's own photos first (§9, v1.20).
   8. **Nothing invented** (v2.0): every factual line comes from a named data field (iNat, ALA, or the owner's constants) and is left out
-     when the field is missing. The **taxonomy rule**: Australia's checklist is `TAXA_AU` (iNat ∪ the owner's Lucid key, 91 genera);
+     when the field is missing. The **taxonomy rule**: Australia's checklist is `TAXA_AU` (iNat ∪ the owner's Lucid key, minus owner-approved junior synonyms; 89 genera on 2026-10-08);
      museum data only describes taxa already on it. Field stories only from papers the owner supplies and approves (§9).
 - **Ship**: bump `VERSION` in `sw.js` → copy the site files to `site/` → `git commit` → `git push` (§10). GitHub Pages updates in ~30 s.
   Commit and push only when the owner asks, or as part of a task he asked you to build.
@@ -619,7 +619,7 @@ Work on a new branch, merge it to `main` with `--no-ff`, tag the release.
 - **Honour names and cut-offs** (`HONOURS`): First on record (1) · Founding trio (2–3) · Vanguard (4–10) · Founding Naturalist (11–50).
 - **A lost honour** (record re-identified away): disappears quietly (built). Alternative: stays as "earned <date>".
 - **Ghost sources**: museum specimens only (built). Adding NatureMapr / BowerBird / QuestaGame sightings would bring back e.g. *Adoxotoma*.
-- **"Known from Australia"** (53 / 91) is an extra dex line only; sets, Profile and share images still use iNat's 81. Feed it further?
+- **"Known from Australia"** (53 / 89) is an extra dex line only; sets, Profile and share images still use iNat's 81. Feed it further?
 - **Built differently from the spec, please confirm**: (1) *pencilled* rank = where your earliest non-casual record would sit among
   research-grade naturalists, computed from the same list (no extra `verifiable=true` scan); (2) the rank list is read to 50 naturalists
   even after your login appears (still one call for nearly every taxon), so it serves crew members too; (3) "first collected" is limited to
@@ -664,17 +664,22 @@ Work on a new branch, merge it to `main` with `--no-ff`, tag the release.
   jokes. They're your game flavour, so unchanged; phones no longer show the subtitle in the header. If you'd like plainer ones, e.g.
   Mk 0 "Your first field notebook", Research Station module "Every module installed".
 - The landing page doesn't guess where a stranger is, so it always shows this global set; their own area comes with the first start.
-- **Lineage tree images for genera never on iNat in Australia** (`PLATES`, picked 2026-10-08, please check): of the 10, five got a
+- **Lineage tree images for genera never on iNat in Australia** (`PLATES`, picked 2026-10-08, please check): of the 9, four got a
   picture, each naming the species shown. *Pseudomaevia*: Rainbow (1920) plate XXXI fig. 123, *P. cognata*, the whole animal, public
-  domain (Wikimedia Commons); *Hypoblemum*: *H. griseum*, CC0 (Commons); *Harmochirus insulanus* (portioid, CC BY), *Nungia epigynalis*
-  (Marco Chan, CC BY), *Phlegra blaugrana* (Óscar Mendez, CC BY-NC), *Pristobaeus beccarii* (Naufal Urfi Dhiya'ulhaq, CC BY-NC) from
-  iNat outside Australia, chosen by eye. *Ancipitilobus*, *Capeyorkia*, *Frewena*, *Parahelpis* (described 1985–2016) have no
-  public-domain figures and no licensed photos, so they stay as specimen labels; their papers' figures are copyright. Commons' *Harmochirus*,
-  *Pristobaeus* and one *Phlegra* image were CC BY-SA, so not used. Swap any entry for a better image (keep the licence rule).
-- ***Hypoblemum* (taxonomy, your call)**: your Lucid key treats it as a genus; ALA (AFD) and iNat treat it as a synonym of *Maratus*
-  (ALA answers "Hypoblemum" with *Maratus* Karsch, 1878; *H. griseum* is iNat's *Maratus griseus*, which you have). So "zero iNat
-  records" was misleading: the tree now says the Atlas files it under *Maratus*. v2.0 had shown Karsch, 1878 as *Hypoblemum*'s author;
-  authorities now come only from an exact ALA match, and the checklist's authority (Peckham & Peckham, 1886) wins for checklist genera.
+  domain (Wikimedia Commons); *Harmochirus insulanus* (portioid, CC BY), *Nungia epigynalis* (Marco Chan, CC BY), *Phlegra blaugrana*
+  (Óscar Mendez, CC BY-NC) and *Pristobaeus beccarii* (Naufal Urfi Dhiya'ulhaq, CC BY-NC) from iNat outside Australia, chosen by eye.
+  *Ancipitilobus*, *Capeyorkia*, *Frewena*, *Parahelpis* (described 1985–2016) have no public-domain figures and no licensed photos, so
+  they stay as specimen labels; their papers' figures are copyright. Commons' *Harmochirus*, *Pristobaeus* and one *Phlegra* image were
+  CC BY-SA, so not used. Swap any entry for a better image (keep the licence rule).
+- ***Hypoblemum*: settled (owner, 2026-10-08)**: a junior synonym of *Maratus* (Otto & Hill 2012, 2021; as summarised in Schubert's
+  2025 thesis). `tools/taxa.py` now has `SYNONYMS = {'Hypoblemum': 'Maratus'}`, so it's left out of `TAXA_AU` even though the Lucid key
+  still lists it (update the key when convenient), and its plate is gone. Two related fixes stay: ALA authorities only for an exact
+  name match (ALA answered "Hypoblemum" with *Maratus* Karsch, 1878), and the checklist's authority wins for checklist genera.
+  The same regeneration dropped *Asaphobelis*: it was on iNat in Australia on 2026-10-07 and isn't now (a record re-identified, it
+  seems); the checklist follows iNat by design, so it returns by itself if a record does.
+- **Noted, not built**: Schubert (2025, thesis) proposes *Tropijotus* gen. nov. for a north Queensland "tropical group" of the *Saitis*
+  group (eleven new species, one new combination). A thesis isn't a published work for nomenclature, so nothing changes until the
+  paper is out and iNat follows; then it arrives through iNat (and the Lucid key) like any genus.
 - **"Did you know?" facts** (`GENUS_FACTS`, by genus name): written by you in ⚙ → ✏️ Genus lines and facts (the second box under each
   genus), saved as you type and shown first in the strip in your browser; 📋 Copy all gives both blocks to bake in. Biology facts like
   "the largest chelicerae for its size" only ever come from you; the app's own facts are counts, dates and places from the data.
