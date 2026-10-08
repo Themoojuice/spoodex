@@ -221,6 +221,11 @@ a.lcard:hover { border-color:var(--accent); }
 .herobtns button { padding:5px 10px; font-size:13px; }
 .spoods { display:grid; grid-auto-flow:column; grid-auto-columns:116px; gap:8px; overflow-x:auto; padding-bottom:6px; scrollbar-width:thin; }
 .spoods .lcard { cursor:pointer; }
+.stiles { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; }
+.stile { display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; padding:12px 14px; min-height:84px; white-space:normal; }
+.stile b { font:600 30px/1.1 Fraunces, Georgia, serif; color:var(--accent); }
+.stile span { font-size:12.5px; color:var(--muted); }
+@media (max-width:600px) { .stiles { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; } .stile b { font-size:24px; } }
 .spoods .lcard.myst { border-style:dashed; }
 .spoods .lcard .cn { padding-bottom:6px; }
 #impBox h2 { margin-bottom:4px; }
@@ -1601,8 +1606,8 @@ function render() {
   if (S.tab === 'crew') { mountEventMap(); evAnimate(); }
 }
 
-// Profile, beginner first: who and what level, your own photos, three genera to find next; then the ledgers. Numbers that are
-// still zero or tiny (no behaviour records, no streak, no style, under 1% of the record, no pioneer badges) stay hidden until they mean something.
+// Profile, short: who and what level, your own photos, three genera to find next, news, the trophy cabinet; the ledgers sit behind
+// number tiles (owner, 2026-10-08). Numbers that are still zero or tiny stay hidden until they mean something.
 let nextKey = '', nextAt = 0;
 function viewProfile() {
   const M = S.M, sc = scopeGenera(), tier = M.tier, n = M.G.size;
@@ -1679,30 +1684,46 @@ function viewProfile() {
         ${rare.map(x => `<div><a href="#" data-genus="${x.g.id}"><i>${esc(x.g.name)}</i></a> <span class="small muted">${fmt(x.r.count)} record${x.r.count === 1 ? '' : 's'}</span></div>`).join('')}` : ''}
     </div>` : '';
   const news = newsHtml(), tips = tipsOnce(true);
-  return `${hero}${spoods}${finds}${n ? '' : starter}${news ? `<div style="margin-top:16px">${news}</div>` : ''}
-  ${tips ? `<div style="margin-top:16px">${tips}</div>` : ''}
-  ${kv.length || n ? `<div class="grid2">
-    ${kv.length ? `<div class="panel"><h2>Ledger</h2><div class="kv">${kv.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</div></div>` : ''}
-    ${n ? `<div class="panel">
-      <h2>Chassis</h2>
+  // Everything else is a row of number tiles; each opens its detail in a sheet (profSheet), so Profile stays short
+  const A = isGuest() ? null : recordShare(M.home.state || M.home.country), pioN = isGuest() ? 0 : myPioneers().length;
+  const ledger = kv.length || n ? `${kv.length ? `<div class="kv">${kv.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</div>` : ''}
+    ${n ? `<h3 style="margin-top:16px">Chassis</h3>
       <p><b>${esc(TIERS[tier].name)}</b> — <span class="muted">${esc(TIERS[tier].sub)}</span></p>
       ${next ? `<div class="row"><span class="small">Next: ${esc(next.name)} at ${next.min} genera</span>${bar(n - TIERS[tier].min, next.min - TIERS[tier].min)}<span class="small">${next.min - n} to go</span></div>` : '<p>Fully upgraded.</p>'}
       <ul class="checks" style="margin-top:10px">${TIERS.map((t,i) => `<li class="${i<=tier?'done':''}">${i<=tier?'☑':'☐'} ${esc(t.module)} <span class="muted small">(${t.min}+)</span></li>`).join('')}</ul>
-      ${streak ? `<h3 style="margin-top:14px">Discovery streak</h3>${streak}` : ''}
-    </div>` : ''}
-  </div>` : ''}
-  ${regionsHtml || lineHtml ? `<div class="grid2" style="margin-top:16px">${regionsHtml}${lineHtml}</div>` : ''}
-  ${share || pio ? `<div class="grid2" style="margin-top:16px">
-    ${share ? `<div class="panel"><h2>Your share of the record</h2>${share}</div>` : ''}
-    ${pio ? `<div class="panel"><h2>Pioneer badges</h2><div data-pioneer>${pio}</div></div>` : ''}
-  </div>` : ''}
-  ${trophyHtml()}
-  ${ys.length >= 2 ? `<div class="panel" style="margin-top:16px">
-    <h2>New genera per year</h2>
-    <div class="row" style="align-items:flex-end;gap:6px;height:120px">
+      ${streak ? `<h3 style="margin-top:14px">Discovery streak</h3>${streak}` : ''}` : ''}` : '';
+  const yearsHtml = ys.length >= 2 ? `<div class="row" style="align-items:flex-end;gap:6px;height:120px">
       ${ys.map(y => `<div style="text-align:center;flex:1;min-width:28px"><div class="small">${years[y]}</div><div style="height:${Math.round(80*years[y]/maxY)}px;background:var(--lit);border-radius:3px 3px 0 0;box-shadow:var(--glow)"></div><div class="small muted">${y}</div></div>`).join('')}
-    </div>
-  </div>` : ''}`;
+    </div>` : '';
+  const strip = h => h.replace(/^<div class="panel">\s*/, '').replace(/<\/div>\s*$/, '');   // the region/lineage panels, without their own frame
+  profSheets = {
+    ledger:{ t:'Ledger', h:ledger },
+    regions:{ t:'Regions', h:regionsHtml && strip(regionsHtml).replace('<h2>Regions</h2>', '') },
+    lineages:{ t:'Lineages and field style', h:lineHtml && strip(lineHtml) },
+    share:{ t:'Your share of the record', h:share },
+    pioneer:{ t:'Pioneer badges', h:pio && '<div data-pioneer>' + pio + '</div>' },
+    years:{ t:'New genera per year', h:yearsHtml },
+  };
+  const tile = (k, big, label) => profSheets[k].h ? `<button class="stile" data-act="profSheet" data-v="${k}"><b>${big}</b><span>${label}</span></button>` : '';
+  const tiles = [
+    tile('ledger', fmt(M.obs.length), 'records · ledger'),
+    tile('regions', fmt(regionRows(20).length), `local area${regionRows(20).length === 1 ? '' : 's'}`),
+    tile('lineages', fmt(favouriteLineages(M).length), 'lineages · field style'),
+    A && share ? tile('share', pctTxt(A.pc), `of ${esc(A.where)}'s records`) : '',
+    tile('pioneer', `<span data-piocount>${fmt(pioN)}</span>`, 'pioneer badges'),
+    tile('years', fmt(M.newThisYear), `new genera in ${new Date().getFullYear()}`),
+  ].join('');
+  return `${hero}${spoods}${finds}${n ? '' : starter}${news ? `<div style="margin-top:16px">${news}</div>` : ''}
+  ${tips ? `<div style="margin-top:16px">${tips}</div>` : ''}
+  ${trophyHtml()}
+  ${tiles ? `<div class="panel" style="margin-top:16px"><h2>Your numbers</h2><div class="stiles">${tiles}</div></div>` : ''}`;
+}
+// The detail behind a Profile number tile, from the last Profile render
+let profSheets = {};
+function openProfSheet(k) {
+  const x = profSheets[k]; if (!x?.h) return;
+  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(720px,100%)"><button class="x" data-close="1">✕</button><div class="body">
+    <h2>${esc(x.t)}</h2>${x.h}</div></div></div>`;
 }
 
 function cardHtml(id, num) {
@@ -4156,13 +4177,14 @@ function pioneerLine(gid) {
 }
 let honoursN = -1;
 function pioneerUpdated() {
-  const els = document.querySelectorAll('[data-pioneer]');
+  const els = document.querySelectorAll('[data-pioneer]'), cnt = document.querySelectorAll('[data-piocount]');
   els.forEach(el => el.innerHTML = pioneerHtml());
+  cnt.forEach(el => el.textContent = fmt(myPioneers().length));
   document.querySelectorAll('[data-history]').forEach(el => el.innerHTML = historyHtml(+el.dataset.history));
   document.querySelectorAll('[data-splore]').forEach(el => el.innerHTML = spLoreHtml(+el.dataset.splore));
   const hn = S.u?.honours?.length || 0, grew = hn !== honoursN; honoursN = hn;
   // the pioneer panel appears with the first badge, the honours with the first honour
-  if (S.tab === 'profile' && ((!els.length && myPioneers().length) || grew)) softRender();
+  if (S.tab === 'profile' && ((!els.length && !cnt.length && myPioneers().length) || grew)) softRender();
 }
 
 /* ---------------- naturalist honours: the ceremony, the cabinet, the share card and the dispatch ---------------- */
@@ -6235,6 +6257,7 @@ document.addEventListener('click', e => {
   if (a === 'clearBase') { delete S.u.base; saveUser(); S.M = buildModel(); render(); }
   if (a === 'guest') startGuest();
   if (a === 'openDex') enterApp();
+  if (a === 'profSheet') openProfSheet(val);
   if (a === 'notes') { e.preventDefault(); openNotes(val ? +val : null); }
   if (a === 'notesView') { notesView = val; openNotes(); }
   if (a === 'notesCopy') { const c = notesCode(); navigator.clipboard.writeText(c).then(() => toast('Genus lines copied.'), () => { const t = $('#notesCode'); if (t) { t.closest('details').open = true; t.select(); } }); }
