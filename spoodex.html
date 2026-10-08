@@ -221,6 +221,46 @@ a.lcard:hover { border-color:var(--accent); }
 .herobtns button { padding:5px 10px; font-size:13px; }
 .spoods { display:grid; grid-auto-flow:column; grid-auto-columns:116px; gap:8px; overflow-x:auto; padding-bottom:6px; scrollbar-width:thin; }
 .spoods .lcard { cursor:pointer; }
+/* lineage drawers */
+.spots { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(300px, 340px); gap:12px; overflow-x:auto; padding-bottom:8px; margin-bottom:16px; scroll-snap-type:x mandatory; }
+.spot { scroll-snap-align:start; display:flex; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; min-width:0; }
+.spot .sph { flex:none; width:120px; background:var(--panel2) center/cover no-repeat; display:grid; place-items:center; font:40px var(--head); color:var(--muted); text-decoration:none; }
+.spot .sph.plateph, .vint { background-color:#efe3c4 !important; }
+.vint { filter:sepia(.35) contrast(1.05); }
+.card.plate.pic .ph { aspect-ratio:1; background:var(--panel2) center/cover no-repeat; min-height:0; padding:0; filter:none; }
+.card.plate.pic .ph.vint { filter:sepia(.35) contrast(1.05); }
+.card.plate.pic .meta .cr { font-size:10px; color:var(--muted); margin-top:2px; }
+.spot .smeta { padding:10px 12px; display:flex; flex-direction:column; gap:3px; min-width:0; }
+.spot .sk { font-size:10.5px; letter-spacing:.2em; color:var(--accent); }
+.spot .snm { font:italic 600 19px var(--head); color:var(--ink); text-decoration:none; }
+.spot .sfacts { list-style:none; margin:4px 0; padding:0; font-size:12.5px; display:grid; gap:3px; }
+.spot .cr { font-size:10px; color:var(--muted); margin-top:auto; }
+.tsec { margin-bottom:18px; }
+.tban { height:120px; border-radius:var(--radius) var(--radius) 0 0; background:#3a2f22 center/cover no-repeat; display:flex; align-items:flex-end; overflow:hidden; }
+.tban > div { width:100%; padding:10px 14px; color:#f6eedb; background:linear-gradient(transparent, rgba(20,14,8,.85)); font-size:13px; }
+.tban b { font:600 24px Fraunces, Georgia, serif; }
+.tban .rank { color:#d9c7a0; font-size:11px; }
+.tban.museum { background:#e9dcbc; height:auto; }
+.tban.museum > div { color:var(--ink); background:none; }
+.drawer { background:var(--panel); border:1px solid var(--line); border-top:none; }
+.drawer:last-child { border-radius:0 0 var(--radius) var(--radius); }
+.drawer > summary { display:flex; align-items:center; gap:12px; padding:10px 14px; cursor:pointer; list-style:none; }
+.drawer > summary::-webkit-details-marker { display:none; }
+.drawer .dhero { flex:none; width:52px; height:52px; border-radius:6px; background:var(--panel2) center/cover; border:2px solid #b08a45; }
+.drawer .dhero.dark, .ttile.dark .ph { filter:grayscale(1) sepia(.6) blur(4px) brightness(.6); }
+.drawer .dtitle { flex:1; min-width:0; }
+.drawer .rank { color:var(--muted); font-size:11px; }
+.drawer.unexp .dtitle .small { color:var(--accent); }
+.ring { flex:none; width:52px; height:52px; border-radius:50%; display:grid; place-items:center; align-content:center; background:radial-gradient(var(--panel) 58%, transparent 60%), conic-gradient(var(--lit) calc(var(--p) * 1%), var(--dim) 0); line-height:1; }
+.ring b { font:600 16px Fraunces, Georgia, serif; } .ring small { font-size:10px; color:var(--muted); }
+.dtiles { display:grid; grid-template-columns:repeat(auto-fill, minmax(92px, 1fr)); gap:8px; padding:0 14px 12px; }
+.ttile { display:flex; flex-direction:column; text-decoration:none; color:inherit; border:1px solid var(--line); border-bottom:3px solid var(--rc, var(--line)); border-radius:6px; overflow:hidden; background:var(--panel2); }
+.ttile .ph { aspect-ratio:1; background:var(--panel2) center/cover no-repeat; }
+.ttile .tn { font-size:12px; padding:3px 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ttile.dark .tn { color:var(--muted); letter-spacing:.05em; }
+.dnext { margin:0; padding:0 14px 12px; font-size:13px; }
+.dex-plates { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; padding:12px; background:var(--panel); border:1px solid var(--line); border-top:none; border-radius:0 0 var(--radius) var(--radius); }
+@media (max-width:600px) { .spots { grid-auto-columns:minmax(280px, 88vw); } .spot .sph { width:96px; } .tban { height:96px; } .dtiles { grid-template-columns:repeat(3, minmax(0, 1fr)); gap:6px; } }
 .stiles { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; }
 .stile { display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; padding:12px 14px; min-height:84px; white-space:normal; }
 .stile b { font:600 30px/1.1 Fraunces, Georgia, serif; color:var(--accent); }
@@ -1285,9 +1325,37 @@ const auHome = () => S.M?.home.country === AU;
 const auNever = () => TAXA_AU.filter(t => t.inat == null);
 const auFound = () => TAXA_AU.filter(t => t.inat && S.M.G.has(t.inat)).length;
 const afdUrl = t => 'https://biodiversity.org.au/afd/taxa/' + encodeURIComponent(t.afd[0] || t.n);
+// Vintage plates (public domain figures from the original literature) for genera never on iNat, curated by hand (HANDOVER §12)
+// Checked by hand 2026-10-08: each image shows a species of that genus (the species is named on the card), and each is public domain,
+// CC0, CC BY or CC BY-NC. Photos are from outside Australia where no Australian one is licensed. `crop` shows one figure of a plate.
+const PLATES = {
+  Pseudomaevia:{ u:'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Rainbow_1920_plate_xxxi.png/960px-Rainbow_1920_plate_xxxi.png',
+    crop:{ fw:.31, cx:.477, cy:.785, ar:2629 / 1920 }, sp:'Pseudomaevia cognata', plate:true,
+    cr:'Rainbow (1920), Records of the South Australian Museum, plate XXXI, fig. 123 · public domain', src:'https://commons.wikimedia.org/wiki/File:Rainbow_1920_plate_xxxi.png' },
+  Hypoblemum:{ u:'https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Hypoblemum_griseum.jpg/960px-Hypoblemum_griseum.jpg', sp:'Hypoblemum griseum',
+    cr:'© Great Ocean Road Coast Committee, CC0', src:'https://commons.wikimedia.org/wiki/File:Hypoblemum_griseum.jpg' },
+  Harmochirus:{ u:'https://inaturalist-open-data.s3.amazonaws.com/photos/96757672/medium.jpg', sp:'Harmochirus insulanus',
+    cr:'© portioid, CC BY', src:'https://www.inaturalist.org/observations/60505195' },
+  Nungia:{ u:'https://inaturalist-open-data.s3.amazonaws.com/photos/141393358/medium.jpeg', sp:'Nungia epigynalis',
+    cr:'© Marco Chan, CC BY', src:'https://www.inaturalist.org/observations/85886521' },
+  Phlegra:{ u:'https://inaturalist-open-data.s3.amazonaws.com/photos/446574911/medium.jpeg', sp:'Phlegra blaugrana',
+    cr:'© Óscar Mendez, CC BY-NC', src:'https://www.inaturalist.org/observations/249780005' },
+  Pristobaeus:{ u:'https://inaturalist-open-data.s3.amazonaws.com/photos/196932403/medium.jpeg', sp:'Pristobaeus beccarii',
+    cr:"© Naufal Urfi Dhiya'ulhaq, CC BY-NC", src:'https://www.inaturalist.org/observations/116652533' },
+};
+const plateFor = n => PLATES[n] || null;
+// CSS for an image, or for one figure of a plate (the figure's width fw and centre cx, cy as fractions of the plate)
+// (vertical centring assumes a square box: the plate is R box-heights tall, ar = plate height / width)
+const plateBg = P => { const c = P.crop; if (!c) return `background-image:url('${esc(P.u)}')`;
+  const R = c.ar / c.fw, px = 100 * (c.cx - c.fw / 2) / (1 - c.fw), py = 100 * (c.cy * R - .5) / (R - 1);
+  return `background-image:url('${esc(P.u)}');background-size:${(100 / c.fw).toFixed(1)}% auto;background-position:${px.toFixed(1)}% ${py.toFixed(1)}%`; };
 // A "never on iNat" genus as a museum plate: name, authority, and the first specimen collected in Australia once ALA has been asked
 function plateHtml(t) {
-  const L = S.lore[t.n], auth = L?.auth || t.a, f = L?.first;
+  const L = S.lore[t.n], auth = authOf(t.n), f = L?.first, P = plateFor(t.n);
+  if (P) return `<a class="card plate pic" href="${esc(P.src)}" target="_blank" rel="noopener" title="${esc(P.cr)}">
+    <div class="ph ${P.plate ? 'vint' : ''}" style="${plateBg(P)}"></div>
+    <div class="meta"><div class="nm"><i>${esc(t.n)}</i></div><div class="small muted">${auth ? esc(auth) + ' · ' : ''}not on iNat in Australia</div>
+      <div class="small">Pictured: <i>${esc(P.sp)}</i></div><div class="cr">${esc(P.cr)}</div></div></a>`;
   return `<a class="card plate" href="${esc(afdUrl(t))}" target="_blank" rel="noopener" title="Australian Faunal Directory ↗">
     <div class="ph"><div class="plab"><span class="pk">🏛 Specimen label</span><span class="pn"><i>${esc(t.n)}</i></span>${auth ? `<span class="pa">${esc(auth)}</span>` : ''}
       ${f ? `<span class="pa">First collected ${esc(f.y)}${f.inst ? `<br>${esc(f.inst)}` : ''}</span>` : ''}</div></div>
@@ -1324,12 +1392,16 @@ const alaName = n => taxaAu(n)?.afd[0] || n;   // the museum spelling of a check
 const loreBusy = new Set();
 async function ensureLore(name, rank) {
   const cur = S.lore[name];
-  if (!alaOn() || !name || (cur && Date.now() - cur.ts < LORE_TTL) || loreBusy.has(name)) return cur || null;
+  // museum-only checklist genera read before synonyms were recorded are asked again once
+  const stale = cur && !('syn' in cur) && taxaAu(name) && taxaAu(name).inat == null;
+  if (!alaOn() || !name || (cur && !stale && Date.now() - cur.ts < LORE_TTL) || loreBusy.has(name)) return cur || null;
   loreBusy.add(name);
   try {
     const q = alaName(name), sp = rank === 'species';
     const nm = await extFetch(`${ALA_NM}?q=${encodeURIComponent(q)}`);
-    const auth = nm.success && nm.family === 'Salticidae' ? nm.scientificNameAuthorship || '' : '';   // a namesake outside Salticidae isn't this spider
+    // a namesake outside Salticidae isn't this spider, and ALA answers a synonym with its senior name (Hypoblemum -> Maratus Karsch, 1878)
+    const auth = nm.success && nm.family === 'Salticidae' && nm.scientificName === q ? nm.scientificNameAuthorship || '' : '';
+    const syn = nm.success && nm.family === 'Salticidae' && nm.scientificName && nm.scientificName !== q ? nm.scientificName : null;   // ALA's senior name
     const base = `${ALA_BC}/occurrences/search?q=${encodeURIComponent(`${sp ? 'species' : 'genus'}:"${q}"`)}&fq=family:Salticidae&${ALA_NOT_INAT}`;
     let holo = null;
     if (sp) {
@@ -1342,7 +1414,7 @@ async function ensureLore(name, rank) {
     }
     // the earliest dated specimen collected in Australia (specimens from New Guinea and beyond would make "first collected" misleading)
     const e = (await extFetch(`${base}&fq=basis_of_record:PRESERVED_SPECIMEN&fq=country:Australia&fq=year:%5B1700%20TO%202100%5D&sort=year&dir=asc&pageSize=20`)).occurrences?.find(realYear);
-    S.lore[name] = { ts:Date.now(), auth, holo, first:e ? { y:e.year, by:(e.recordedBy || []).join(', '), inst:museumOf(e), st:e.stateProvince || '' } : null };
+    S.lore[name] = { ts:Date.now(), auth, syn, holo, first:e ? { y:e.year, by:(e.recordedBy || []).join(', '), inst:museumOf(e), st:e.stateProvince || '' } : null };
     store.set('lore', S.lore);
     loreUpdated();
   } catch (e) { console.warn(e); }
@@ -1357,7 +1429,7 @@ function authParts(a) {
   const m = /^\(?(.+?),?\s+(\d{4})\)?$/.exec(a);
   return m ? { who:m[1], y:+m[2] } : { who:a.replace(/^\(|\)$/g, ''), y:null };
 }
-const authOf = name => S.lore[name]?.auth || taxaAu(name)?.a || '';
+const authOf = name => taxaAu(name)?.a || S.lore[name]?.auth || '';   // the checklist (AFD, the owner's key) first; ALA for the rest
 // Collected by → described by → naturalists on iNat → you: each segment only when its data exists (ceremony, share card, crew feed)
 function lineageSegs(tid, pid, login = S.login) {
   const name = S.nodes[tid]?.n || '', L = S.lore[name], segs = [];
@@ -1400,7 +1472,7 @@ function spLoreHtml(sid) {
 function loreUpdated() {
   document.querySelectorAll('[data-history]').forEach(el => el.innerHTML = historyHtml(+el.dataset.history));
   document.querySelectorAll('[data-splore]').forEach(el => el.innerHTML = spLoreHtml(+el.dataset.splore));
-  if (S.tab === 'dex' && S.prefs.filter === 'never') softRender();
+  if ((S.tab === 'dex' && S.prefs.filter === 'never') || S.tab === 'tree') softRender();
 }
 
 /* ---------------- field stories: owner-approved notes from the papers, with their references ---------------- */
@@ -1898,7 +1970,116 @@ function speciesSection(gid) {
     }).join('')}`;
 }
 
+/* ---------------- lineage tree: museum drawers (2026-10-08) ---------------- */
+// Subfamily sections with a photo banner, a drawer per tribe (subfamily when there's no tribe) with a progress ring and genus
+// tiles, a "Next to light" hint per drawer, and a "Did you know?" strip of genera you haven't found. Facts come from data
+// (iNat counts, your home scans, seasons, museum records) or from the owner (GENUS_FACTS); nothing is generated.
+// The classification is iNat's (taxonomy, not a dated phylogeny); the old outline stays one tap away.
+const GENUS_FACTS = {};   // genus name -> one "Did you know" line written by the owner (editor: ⚙ → ✏️ Genus lines and facts)
+S.facts = store.get('facts', {});   // the owner's drafts, this browser only, until they're baked into GENUS_FACTS
+const ownFact = name => S.facts[name] || GENUS_FACTS[name] || '';
+const SPOT_N = 12;
+function treeGroups() {
+  const M = S.M, sc = scopeGenera(), ids = [...new Set([...sc.inScope, ...sc.extras])];
+  const subs = new Map();
+  for (const id of taxonomicOrder(ids).order) {
+    if (S.nodes[id]?.r !== 'genus') continue;
+    const L = lineage(id), sf = L.find(n => n.r === 'subfamily'), tr = L.find(n => n.r === 'tribe') || sf;
+    const sk = sf?.id || 0, tk = tr?.id || 0;
+    if (!subs.has(sk)) subs.set(sk, { id:sk, n:sf?.n || 'Salticidae', drawers:new Map() });
+    const D = subs.get(sk).drawers;
+    if (!D.has(tk)) D.set(tk, tr && tr !== sf ? { id:tk, n:tr.n, r:'tribe', ids:[] } : { id:tk, n:`Other ${sf?.n || 'Salticidae'}`, r:'no tribe on iNat', ids:[], other:true });
+    D.get(tk).ids.push(id);
+  }
+  return [...subs.values()].map(g => ({ ...g, drawers:new Map([...g.drawers].sort((a, b) => !!a[1].other - !!b[1].other)) }));
+}
+// Your photo of a genus, else the owner's pick, else a CC0/CC BY/CC BY-NC taxon photo (taxonPhoto); null if none is allowed
+const treePh = id => { const g = S.M.G.get(id); return g?.cover ? { u:photoSize(g.cover, 'medium'), mine:true } : taxonPhoto(id); };
+// Facts about a genus you haven't found, strongest first; every one is read from data or written by the owner
+function factsFor(id, name, never) {
+  const out = [], f = ownFact(name), sc = scopeLabel(S.prefs.scope);
+  if (f) out.push(['✍️', f]);
+  const syn = never && S.lore[name]?.syn;
+  if (syn) out.push(['🏛', `Not on iNat under this name in Australia: the Atlas of Living Australia files it under ${syn}.`]);
+  else if (never) out.push(['🏛', `Zero iNaturalist records in Australia so far.`]);
+  const w = id && (wantedList() || []).find(x => x.id === id);
+  if (w?.recent) out.push(['🔥', `Recorded within 25 km of your home base in the last ${ACTIVE_DAYS} days.`]);
+  else if (w?.near) out.push(['📍', `${fmt(w.near)} iNat record${w.near === 1 ? '' : 's'} within 25 km of your home base.`]);
+  const c = id ? refCount(id) : null;
+  if (c != null && c <= 30) out.push(['🔎', `Only ${fmt(c)} iNat record${c === 1 ? '' : 's'} in ${sc}, ever.`]);
+  const pk = w?.peak; if (pk && !pk.few) out.push(['🌡', pk.now ? `In season now (peak ${pk.text}).` : `Peak season: ${pk.text}.`]);
+  const L = S.lore[name];
+  if (L?.first) out.push(['🏺', `First collected in Australia in ${L.first.y}${L.first.inst ? ` (${L.first.inst})` : ''}.`]);
+  const a = authParts(authOf(name)); if (a?.y) out.push(['📜', `Described by ${a.who} in ${a.y}.`]);
+  return out;
+}
+// The strip: unseen genera with an owner fact first, then never-on-iNat, then those recorded near you, then the fewest records
+function spotlights() {
+  const M = S.M, sc = scopeGenera(), w = new Map((wantedList() || []).map(x => [x.id, x]));
+  const items = sc.inScope.filter(id => !M.G.has(id)).map(id => ({ id, n:S.nodes[id]?.n || '' }));
+  if (auHome()) auNever().forEach(t => items.push({ id:null, n:t.n, never:true }));
+  const near = x => w.get(x.id)?.recent ? 2 : w.get(x.id)?.near ? 1 : 0, cnt = x => x.id ? refCount(x.id) ?? Infinity : Infinity;
+  const pool = items.filter(x => x.n), mine = pool.filter(x => ownFact(x.n)), rest = pool.filter(x => !ownFact(x.n));
+  const buckets = [rest.filter(x => near(x)).sort((a, b) => near(b) - near(a) || cnt(a) - cnt(b)), rest.filter(x => x.never),
+    rest.filter(x => !x.never && !near(x)).sort((a, b) => cnt(a) - cnt(b))];
+  const out = [...mine];
+  for (let i = 0; out.length < SPOT_N && buckets.some(b => b.length); i++) { const b = buckets[i % buckets.length]; if (b.length) out.push(b.shift()); }
+  return out.slice(0, SPOT_N);
+}
+function spotCard(x) {
+  const fs = factsFor(x.id, x.n, x.never).slice(0, 3), ph = x.never ? plateFor(x.n) : x.id ? treePh(x.id) : null;
+  const go = x.never ? `href="${esc(afdUrl(taxaAu(x.n)))}" target="_blank" rel="noopener"` : `href="#" data-genus="${x.id}"`;
+  return `<div class="spot"><a class="sph ${x.never && !ph ? 'plateph' : ''} ${ph?.plate ? 'vint' : ''}" ${go} style="${ph ? plateBg(ph) : ''}">${ph ? '' : x.never ? '<span>🏛</span>' : '<span>?</span>'}</a>
+    <div class="smeta"><div class="sk">DID YOU KNOW?</div><a class="snm" ${go}><i>${esc(x.n)}</i></a>${x.id && cnOf(x.id) ? `<div class="small muted">${esc(cnOf(x.id))}</div>` : ''}
+      <ul class="sfacts">${fs.map(([i, t]) => `<li><span aria-hidden="true">${i}</span> ${esc(t)}</li>`).join('') || '<li class="muted">No records near you yet.</li>'}</ul>
+      ${x.id && (wantedList() || []).some(w => w.id === x.id) ? `<button class="small" data-act="wanted" data-v="${x.id}">🧭 Where to look</button>` : ''}
+      ${ph?.sp ? `<div class="small">Pictured: <i>${esc(ph.sp)}</i></div>` : ''}${ph?.cr ? `<div class="cr">${esc(ph.cr)}</div>` : ''}</div></div>`;
+}
+function treeTile(id) {
+  const g = S.M.G.get(id), n = S.nodes[id]?.n || '?', tr = tierOf(id), ph = g ? photoSize(g.cover, 'small') : photoSize(stockPh(id), 'small');
+  const name = g || S.prefs.reveal ? `<i>${esc(n)}</i>` : '???';
+  return `<a href="#" class="ttile ${g ? 'lit' : 'dark'}" data-genus="${id}" title="${g || S.prefs.reveal ? esc(n) : 'Not found yet'}" style="${tr ? `--rc:${tr.c}` : ''}">
+    <span class="ph" style="background-image:url('${esc(ph)}')"></span><span class="tn">${name}</span></a>`;
+}
+const progRing = (f, t) => `<span class="ring" style="--p:${pct(f, t)}"><b>${f}</b><small>/${t}</small></span>`;
+function drawerHtml(d, wl) {
+  const M = S.M, found = d.ids.filter(id => M.G.has(id)), hero = found[0] || d.ids[0], hp = M.G.has(hero) ? photoSize(M.G.get(hero).cover, 'small') : photoSize(stockPh(hero), 'small');
+  const nxt = !found.length || found.length < d.ids.length ? wl.find(x => d.ids.includes(x.id)) : null;
+  const why = nxt ? (nxt.recent ? 'recorded near you this month' : nxt.near ? `${fmt(nxt.near)} record${nxt.near === 1 ? '' : 's'} within 25 km` : nxt.peak?.now ? 'in season now' : `${fmt(nxt.state)} records in ${esc(S.places[homeCtx().pid]?.n || 'your region')}`) : '';
+  const glimpsed = d.other ? 0 : M.leads.filter(l => l.id === d.id).reduce((a, l) => a + l.obs.length, 0);
+  return `<details class="drawer ${found.length ? '' : 'unexp'}" ${found.length ? 'open' : ''}><summary>
+      <span class="dhero ${M.G.has(hero) ? '' : 'dark'}" style="background-image:url('${esc(hp)}')"></span>
+      <span class="dtitle"><b>${d.other ? `Other <i>${esc(d.n.replace(/^Other /, ''))}</i>` : esc(d.n)}</b> <span class="rank">${esc(d.r)}</span><br>
+        <span class="small">${found.length ? `${found.length} of ${d.ids.length} found` : 'Unexplored lineage'}${glimpsed ? ` · ❓ ${glimpsed} mystery spood${glimpsed === 1 ? '' : 's'}` : ''}</span></span>
+      ${progRing(found.length, d.ids.length)}</summary>
+    <div class="dtiles">${d.ids.map(treeTile).join('')}</div>
+    ${nxt ? `<p class="dnext">🧭 Next to light: <a href="#" data-act="wanted" data-v="${nxt.id}"><i>${esc(S.nodes[nxt.id]?.n || '')}</i></a> · ${why}</p>` : ''}</details>`;
+}
 function viewTree() {
+  const M = S.M, view = S.prefs.treeView || 'drawers';
+  const sw = `<span class="row" style="gap:6px">${[['drawers', '🗄 Drawers'], ['outline', '🌿 Outline']].map(([k, l]) => `<span class="chip ${view === k ? 'on' : ''}" data-act="treeView" data-v="${k}" style="cursor:pointer">${l}</span>`).join('')}</span>`;
+  if (view === 'outline') return `<div class="panel row" style="margin-bottom:12px">${sw}</div>${viewTreeOutline()}`;
+  const groups = treeGroups(), wl = wantedList() || [], spots = spotlights();
+  // pictures and museum facts for what's on screen (each call is cached; lore only with museum records switched on)
+  const need = [...new Set([...spots.map(x => x.id), ...groups.flatMap(g => [...g.drawers.values()].map(d => d.ids[0]))].filter(id => id && !S.info[id]))];
+  if (need.length) ensureInfo(need);
+  else ensureCcPhotos(spots.map(x => x.id), () => { if (S.tab === 'tree') softRender(); });
+  const loreNeed = n => !S.lore[n] || (taxaAu(n)?.inat == null && taxaAu(n) && !('syn' in S.lore[n]));
+  [...new Set([...spots.map(x => x.n), ...(auHome() ? auNever().map(t => t.n) : [])])].filter(loreNeed).slice(0, 8)
+    .forEach(n => ensureLore(n, 'genus').then(r => { if (r && S.tab === 'tree') softRender(); }).catch(() => {}));
+  const all = groups.flatMap(g => [...g.drawers.values()]), tot = all.reduce((a, d) => a + d.ids.length, 0), got = all.reduce((a, d) => a + d.ids.filter(id => M.G.has(id)).length, 0);
+  const unexp = all.filter(d => !d.ids.some(id => M.G.has(id))).length;
+  return `<div class="panel" style="margin-bottom:14px"><div class="row" style="justify-content:space-between;gap:8px"><h2 style="margin:0">Lineages</h2>${sw}</div>
+      <p style="margin:8px 0 0"><b>${got}</b> of <b>${tot}</b> genera on iNat in ${esc(scopeLabel(S.prefs.scope))} · <b>${all.length - unexp}</b> of ${all.length} lineages explored${auHome() ? ` · Australia's checklist: ${TAXA_AU.length} genera, ${auNever().length} never on iNat` : ''}</p>
+      <p class="small muted" style="margin:4px 0 0">Classification as used on iNaturalist (subfamily › tribe › genus). <label><input type="checkbox" data-pref="reveal" ${S.prefs.reveal ? 'checked' : ''}> reveal names</label></p></div>
+    ${spots.length ? `<div class="spots">${spots.map(spotCard).join('')}</div>` : ''}
+    ${groups.map(g => { const ids = [...g.drawers.values()].flatMap(d => d.ids), f = ids.filter(id => M.G.has(id)), hero = f.find(id => OWNER_PICKS[id]) || f[0];
+      return `<section class="tsec"><div class="tban" style="${hero ? `background-image:url('${esc(photoSize(M.G.get(hero).cover, 'large'))}')` : ''}"><div><b>${esc(g.n)}</b> <span class="rank">subfamily</span><br><span>${f.length} of ${ids.length} genera found</span></div></div>
+        ${[...g.drawers.values()].map(d => drawerHtml(d, wl)).join('')}</section>`; }).join('')}
+    ${auHome() && auNever().length ? `<section class="tsec"><div class="tban museum"><div><b>🏛 Known from Australia, not on iNat there</b><br><span>${auNever().length} genera, known from museum collections</span></div></div>
+      <div class="dex-plates">${auNever().map(plateHtml).join('')}</div></section>` : ''}`;
+}
+function viewTreeOutline() {
   const M = S.M, sc = scopeGenera();
   const ids = [...sc.inScope, ...sc.extras];
   const { kids } = taxonomicOrder(ids);
@@ -4666,7 +4847,27 @@ function taxonPhoto(id) {
   if (OWNER_PICKS[id]) return { u:pickUrl(id), o:OWNER_PICKS[id][0], cr:creditTxt(OWNER) };
   if (o?.u) return { u:photoSize(o.u, 'medium'), o:o.o, cr:creditTxt(OWNER) };
   if (i?.p && OK_LIC[i.lc]) return { u:i.p, cr:creditTxt(byName(i.a) || 'iNaturalist user', i.lc) };
+  const c = S.ccph[id]; if (c?.u) return { u:c.u, o:c.o, cr:c.cr };
   return null;
+}
+// For genera with no owner pick and no CC0/CC BY/CC BY-NC taxon photo: the most-faved research-grade record whose photo carries one
+// of those licences (one call per genus, cached 30 days; {ts} alone = none found). Used by the lineage tree and Three to find.
+S.ccph = store.get('ccph', {});
+let ccBusy = false;
+async function ensureCcPhotos(ids, redraw = () => {}) {
+  const need = [...new Set(ids)].filter(id => id && !OWNER_PICKS[id] && !S.ownph[id]?.u && S.info[id] && !OK_LIC[S.info[id].lc]
+    && (!S.ccph[id] || Date.now() - S.ccph[id].ts > OWNPH_TTL));
+  if (ccBusy || !need.length) return;
+  ccBusy = true;
+  try {
+    for (const id of need) {
+      const d = await api('/observations', { taxon_id:id, quality_grade:'research', photo_license:Object.keys(OK_LIC).join(','), order_by:'votes', order:'desc', per_page:5, fields:PH_FIELDS }, API2);
+      let got = { ts:Date.now() };
+      for (const o of d.results) { const ph = (o.photos || []).find(p => OK_LIC[p.license_code]); if (ph) { got = { ts:Date.now(), o:o.id, u:photoSize(ph.url, 'medium'), cr:creditTxt(byName(ph.attribution, o.user), ph.license_code) }; break; } }
+      S.ccph[id] = got; store.set('ccph', S.ccph); redraw();
+    }
+  } catch (e) { console.warn(e); }
+  ccBusy = false;
 }
 // Recorded within 25 km of home first, then in season, then the wanted score (which already weighs recent records and season)
 function nextThree() {
@@ -4693,7 +4894,7 @@ async function loadNextThree(redraw) {
       ids = nextThree().map(x => x.id).filter(id => !S.pheno[phenoKey(id)]);
     }
     const ids = nextThree().map(x => x.id);
-    await ensureInfo(ids); await ownerPhotos(ids);
+    await ensureInfo(ids); await ownerPhotos(ids); await ensureCcPhotos(ids);
   } catch (e) { console.warn(e); }
   nextBusy = false; redraw();
 }
@@ -5876,17 +6077,18 @@ function notesIds() {
   const all = [...new Set([...mine, ...scopeGenera().inScope, ...written])];
   return taxonomicOrder(notesView === 'mine' ? mine : notesView === 'todo' ? all.filter(id => !ownNote(id)) : all).order;
 }
-const noteCount = () => Object.keys({ ...GENUS_NOTES, ...S.notes }).length;
+const noteCount = () => Object.keys({ ...GENUS_NOTES, ...S.notes }).length + Object.keys({ ...GENUS_FACTS, ...S.facts }).length;
 function openNotes(focus = null) {
   if (focus && notesView === 'mine' && !S.M.G.has(focus)) notesView = 'all';
   const ids = notesIds(), chip = (k, l) => `<span class="chip ${notesView === k ? 'on' : ''}" data-act="notesView" data-v="${k}" style="cursor:pointer">${l}</span>`;
   const row = id => { const g = S.M.G.get(id), ph = g ? photoSize(g.cover, 'small') : photoSize(stockPh(id), 'small'), w = wikiLine(id);
     return `<div class="noterow ${ownNote(id) ? 'done' : ''}" id="note${id}"><span class="ph" style="background-image:url('${esc(ph)}')"></span>
       <div><a href="#" data-genus="${id}"><b><i>${esc(S.nodes[id]?.n || '?')}</i></b></a> ${cnOf(id) ? `<span class="small muted">${esc(cnOf(id))}</span>` : ''}
-      <textarea data-note="${id}" rows="2" maxlength="300" placeholder="${esc(w ? 'Wikipedia: ' + w : 'No Wikipedia line: nothing shows until you write one')}">${esc(ownNote(id))}</textarea></div></div>`; };
+      <textarea data-note="${id}" rows="2" maxlength="300" placeholder="${esc(w ? 'Wikipedia: ' + w : 'No Wikipedia line: nothing shows until you write one')}">${esc(ownNote(id))}</textarea>
+      <textarea data-fact="${esc(S.nodes[id]?.n || '')}" rows="1" maxlength="200" placeholder="Did you know… (shown on the lineage tree to people who haven't found it)">${esc(ownFact(S.nodes[id]?.n || ''))}</textarea></div></div>`; };
   $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(760px,100%)"><button class="x" data-close="1">✕</button><div class="body">
-    <h2>Genus lines</h2>
-    <p class="small">One line per genus, shown on its page and when it's first found. Empty boxes show the Wikipedia line in grey, which is what people see now. Saved as you type.</p>
+    <h2>Genus lines and facts</h2>
+    <p class="small">Top box: one line per genus, shown on its page and when it's first found (empty boxes show today's Wikipedia line in grey). Bottom box: a "Did you know?" fact, shown on the lineage tree to people who haven't found the genus yet. Saved as you type.</p>
     <div class="row" style="gap:6px">${chip('mine', 'Your genera')}${chip('todo', 'Not written yet')}${chip('all', 'All')}<span class="small muted" id="noteN" style="margin-left:auto">${noteCount()} written</span></div>
     <div id="notesList" style="margin-top:8px">${ids.map(row).join('')}</div>
     <p class="row" style="gap:6px;margin-top:12px"><button class="primary" data-act="notesCopy">📋 Copy all for SPOODEX</button></p>
@@ -5904,10 +6106,17 @@ function noteInput(t) {
   const n = $('#noteN'); if (n) n.textContent = `${noteCount()} written`;
   const c = $('#notesCode'); if (c) c.value = notesCode();
 }
-// The GENUS_NOTES block for spoodex.html, in taxonomic order with each genus named
+function factInput(t) {
+  const n = t.dataset.fact, v = t.value.replace(/\s+/g, ' ').trim(); if (!n) return;
+  if (v) S.facts[n] = v; else delete S.facts[n];
+  store.set('facts', S.facts);
+  const c = $('#notesCode'); if (c) c.value = notesCode();
+}
+// The GENUS_NOTES and GENUS_FACTS blocks for spoodex.html, each genus named
 function notesCode() {
-  const all = { ...GENUS_NOTES, ...S.notes }, ids = taxonomicOrder(Object.keys(all).map(Number)).order;
-  return `const GENUS_NOTES = {\n${ids.map(id => `  ${id}: ${JSON.stringify(all[id])},   // ${S.nodes[id]?.n || ''}`).join('\n')}\n};`;
+  const all = { ...GENUS_NOTES, ...S.notes }, ids = taxonomicOrder(Object.keys(all).map(Number)).order, facts = { ...GENUS_FACTS, ...S.facts };
+  return `const GENUS_NOTES = {\n${ids.map(id => `  ${id}: ${JSON.stringify(all[id])},   // ${S.nodes[id]?.n || ''}`).join('\n')}\n};\n`
+    + `const GENUS_FACTS = {\n${Object.keys(facts).sort().map(n => `  ${JSON.stringify(n)}: ${JSON.stringify(facts[n])},`).join('\n')}\n};`;
 }
 
 /* ---------------- landing: real jumping spiders before anyone types a username ---------------- */
@@ -6141,7 +6350,7 @@ function settings() {
     <p>${isGuest() ? 'Browsing as a guest.' : `Viewing <b>${esc(S.login)}</b> (public data only). Last sync ${esc((S.u.meta.lastSync||'').slice(0,16).replace('T',' '))}.`}</p>
     <div class="row"><label>Chassis skin <select data-pref="chassis">${['auto','notebook','kit','cabinet'].map(c => `<option ${S.prefs.chassis===c?'selected':''}>${c}</option>`).join('')}</select></label>
     <label><input type="checkbox" data-pref="peek" ${S.prefs.peek?'checked':''}> Show every tab and module</label></div>
-    ${notesOn() ? '<p style="margin-top:12px"><button data-act="notes">✏️ Write the genus lines</button></p>' : ''}
+    ${notesOn() ? '<p style="margin-top:12px"><button data-act="notes">✏️ Genus lines and facts</button></p>' : ''}
     <div class="row" style="margin-top:14px">
       ${isGuest() ? '' : '<button data-act="share">🔗 Copy share link</button><button data-act="full">Full resync</button>'}
       <button data-act="switch">Switch user</button>
@@ -6258,6 +6467,7 @@ document.addEventListener('click', e => {
   if (a === 'guest') startGuest();
   if (a === 'openDex') enterApp();
   if (a === 'profSheet') openProfSheet(val);
+  if (a === 'treeView') { S.prefs.treeView = val; savePrefs(); render(); }
   if (a === 'notes') { e.preventDefault(); openNotes(val ? +val : null); }
   if (a === 'notesView') { notesView = val; openNotes(); }
   if (a === 'notesCopy') { const c = notesCode(); navigator.clipboard.writeText(c).then(() => toast('Genus lines copied.'), () => { const t = $('#notesCode'); if (t) { t.closest('details').open = true; t.select(); } }); }
@@ -6313,7 +6523,7 @@ document.addEventListener('submit', async e => {
   }
 });
 // Event form: typing updates the draft without redrawing (keeps focus); toggles redraw
-document.addEventListener('input', e => { if (e.target.dataset?.note) noteInput(e.target); });
+document.addEventListener('input', e => { if (e.target.dataset?.note) noteInput(e.target); if (e.target.dataset?.fact != null) factInput(e.target); });
 document.addEventListener('input', e => { const k = e.target.dataset?.evf; if (S.evDraft && ['n', 'r', 'd1', 'd2'].includes(k)) S.evDraft[k] = e.target.value; });
 document.addEventListener('change', async e => {
   if (e.target.dataset.tripm && S.trip.cur) { S.trip.cur.m = +e.target.value; saveTrip(); render(); return; }
@@ -6353,7 +6563,7 @@ $('#loginForm').addEventListener('submit', e => { e.preventDefault(); const v = 
 // ?u=<login> opens that SPOODEX (importing it if needed); ?vs=<login> jumps to Compare.
 // Otherwise a returning player opens straight from cache, then quietly syncs.
 // Shared caches get their defaults when the script loads, before IndexedDB is open; re-read them once it is.
-const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladder', 'crew', 'pioneer', 'report', 'haunts', 'trip', 'elev', 'wx', 'events', 'frontier', 'ownph', 'notes', 'lore'];
+const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladder', 'crew', 'pioneer', 'report', 'haunts', 'trip', 'elev', 'wx', 'events', 'frontier', 'ownph', 'notes', 'lore', 'facts', 'ccph'];
 (async function boot() {
   track(location.pathname, false);
   registerSW(); netState();
