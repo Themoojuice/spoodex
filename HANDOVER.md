@@ -1,6 +1,6 @@
 # SPOODEX — handover
 
-**As of 2026-10-11 · v2.4 "Look and feel", live at https://themoojuice.github.io/spoodex/?u=themoojuice (tags `v1.20.0`, `v2.0.0`)**
+**As of 2026-10-11 · v2.4 "Look and feel" live; v2.5 "Expand" on branch `feature/expand`; live at https://themoojuice.github.io/spoodex/?u=themoojuice (tags `v1.20.0`, `v2.0.0`)**
 
 This is the single source of truth for anyone (human or Claude) picking up the project. Read §0 first; it's enough
 to start safely. The rest is reference. When you change something, update this file in the same commit.
@@ -177,6 +177,7 @@ Search for `/* ---------------- <name>` to jump. Line numbers drift; names don't
 | loading (v2.4) | `.skel` (shimmer, none under reduced motion), `.skline`, `skelCards(n)`, `skelFinds(n)` | Skeletons in the shape of what's coming, with the silhouette: the landing strip's tiles, Bounty board before its first load, Three to find next while it loads, Ladder rows waiting to be read, a quest line's season. Progress text that says something real stays ("Read 1,400 of 1,544 records", the Ladder's "Reading 2 of 25… about 27 s left") |
 | ink icons (v2.4) | `#icons` sprite (first child of `<body>`, ~55 `<symbol id="i-…">`, 24 px grid, 1.6 stroke, `currentColor`), `ICON_OF` (emoji → icon name), `ic(name)`, `inkIcons(root)` and a `MutationObserver` on the document | Emoji in the page's **text nodes** become icons as they arrive, so view code keeps writing emoji. Skipped: `textarea`, `select`/`option`, `svg`, anything under `[data-emoji]`; never touched: canvases, copied/shared text, `title`/`aria-label`. Left as emoji on purpose: medals 🥇🥈🥉, ♂ ♀, ★ ✦ ✓ ✕ ☑ ☐, the Sets emblems (🦚 🐜 👻 💞 ⛰ 🌊), 💃 😤 😈 🤝 ♥. To iconify another emoji, draw a `<symbol>` and add it to `ICON_OF` |
 | silhouette (v2.4) | CSS `--sil` on `:root` (a data-URI SVG: a generic jumping spider from above, ink line), `.sil` | The one empty-slot drawing, used as a mask so it takes the theme's ink: missing cards and unrevealed reveal tiles (`::after`), Three to find and Did you know? tiles without a photo, event finds without a photo, the landing's loading tiles. Redraw it by replacing that one url |
+| challenges (v2.5) | `dareGenus(id)`, `dareWho()`, `dareBanner(ev)`; actions `dareGenus`, `evDareWho`, `duelRival` | **🎯 Challenge a friend** on a found genus (genus page, card back) opens the existing Dare form with the genus (`q:'g<id>'`), you as challenger and a 7-day deadline; chips under the players box fill the dared slot from your crew and latest Compare rival; "Create and copy event link" works as before. **⚔️ Challenge <rival> to a duel** on Compare opens a 2-day Duel the same way. A **new visitor** opening a dare link (no saved account) gets the landing page with a banner ("A dared B to find *Genus* (common name) by <date>", licence-checked photo) above the three starts instead of going straight to guest mode; whichever start they pick, `enterApp` then opens the dare as before |
 | display case (v2.5) | `CASE_N` (9), `CASE_KEEP`, `caseIds(M, picks)`, `caseLink(login, picks)`, `caseHtml`, `showCase(login, picksQ)`, `caseEditor`, `casePick`, `caseShare` | `?u=<login>&case[=ids]` is caught in `boot()` before the login is loaded: `showCase` hides the landing and the app and draws `#caseView` from the `cases` cache, then refreshes with `importRecords` (the Compare path: one v2 page per 200 records, then one `/observations/taxonomy` for the country if not cached, and `ensureInfo` for the 9). It sets `S.M` to the owner's model and `S.prefs.scope` to 'country' in memory only, and never calls `loadUser`, so `lastLogin` and the visitor's own save are untouched. Default contents: the owner's genera recorded in their country, rarest first, then any from elsewhere; picks (taxon ids in the link, ones the owner hasn't got ignored) override. Each card links to the record its photo comes from (`g.coverObs`, v2.5). Buttons: "Compare with mine" (`?u=<visitor>&vs=<owner>`) when the visitor has their own save, "Open my SPOODEX" for the owner, else "Start your own SPOODEX". GoatCounter counts `case` |
 | cards (v2.4) | `rarAttrs(id)` → `{r, cls, style}` (edge class `rar rarN` and `--rc`, Uncommon up), `cardBack(id)`, `turnCard(card, open)` (`data-act="flip"`) | Used by `cardHtml`, Profile's Your spoods (`.lcard`), the reveal's tiles (`flipCard`) and the My SPOODEX image (`K.tile` strokes the tile in the rarity colour) |
 | views | `TABS` (`at` = genera to open the tab), `SECTIONS`, `secOf(k)`, `navHtml()` (both header rows), `tabEarned`, `tabOn`, `tabNews`, `render`, `softRender`, `viewProfile` (builds `profSheets` {key: {t title, h html}} for the number tiles; `openProfSheet(k)` shows one; the pioneer tile's count is a `[data-piocount]` span that `pioneerUpdated` updates in place, so the 440-check drain doesn't redraw Profile) (`nextKey`/`nextAt`: Three to find reloads when the home square, region or month changes, or after 6 h), `cardHtml`, `viewDex`, `viewTree`, `viewQuests` | `render()` swaps `#view` innerHTML and triggers lazy loads per tab (map: `initMap()` then `loadWx()`). `softRender()` debounces 400 ms and skips the map tab |
@@ -569,6 +570,10 @@ Work on a new branch, merge it to `main` with `--no-ff`, tag the release.
 
 ## 11. Known issues and caveats
 
+- **Display case link previews** (v2.5): the site is static, so a shared `&case` link previews with the app's own title and description,
+  not the naturalist's name or photos. Per-user previews would need a server.
+- **Emoji left as emoji** (v2.4): medals, ♂ ♀, ★ ✦ ✓ ✕ ☑ ☐, the Sets emblems (🦚 🐜 👻 💞 ⛰ 🌊), 💃 😤 😈 🤝 ♥, and everything drawn on canvases
+  (share images) or put in copied text. See `ICON_OF` to convert more.
 - Incremental sync uses `updated_since`; unconfirmed whether adding an annotation bumps `updated_at`. The genus page suggests
   ⚙ → Full resync if a mastery box doesn't tick. (Full resync also runs every 14 days.)
 - Web links (fix-it, Needs ID) use Explore params the API honours; the website itself can't be checked by automation (Cloudflare).
@@ -612,6 +617,20 @@ Work on a new branch, merge it to `main` with `--no-ff`, tag the release.
   tabs and opens the rest with their level, and the phone header is one line; grouping is still open.
 - **Test outside Australia**; consider showing progress as a % of the regional total for low-diversity regions (e.g. the UK has ~20 genera).
 - **Full-photo share cards** via an image proxy (see §11).
+
+**Awaiting the owner's decision (v2.5, expand; branch `feature/expand`, not merged)**:
+- **Outside Australia** (tested 2026-10-11 with real accounts in Texas (heavy and light), England, Bavaria, Espírito Santo and Kanagawa;
+  not named here): imports, headline, Ladder (Texas, England, Bayern, Espírito Santo, Kanagawa), sets, Lineage, quests and squares
+  ("near Bexar", "near München") all work. Fixed: weather units, ALA requests and Australian museum facts outside Australia, the
+  Australian Identification aid shown everywhere, three quests saying "1 genera". **Titles**: the genus ladder (`TITLE_GEN`) is worldwide,
+  so a Texan is "Cosmic *Cosmophasis*", a genus not found in the US. Option: a ladder per country built from that country's reference
+  counts. Not built. **Low-diversity regions**: "16 / 29 genera on iNat in United Kingdom" reads as progress; no percentage proposed.
+- **Units**: built to follow the home country (United States → °F and inches), not the browser language as the spec said, because many
+  browsers outside the US report en-US (this test browser did). With no home yet, the browser language decides. ⚙ "Weather units" overrides.
+- **Display case**: link `?u=<login>&case`. The default 9 are the rarest **from your country** first, then any from elsewhere (otherwise a
+  traveller's case was all holiday genera, and yours led with *Salticus* from France). Alternative: plain rarest-first, as in the reveal.
+- **Open dares** (spec option b, not built): a dare whose dared slot is taken by whoever opens it first. It would need `evCheck` to accept a
+  one-player dare with an `open` flag and the event reader to fill the slot; built option (a) instead (you name the friend, with suggestions).
 
 **Awaiting the owner's decision (v2.4, look and feel; shipped 2026-10-11, these still open)**:
 - **The silhouette** (`--sil`): a generic jumping spider from above, ink line, square-fronted carapace and heavy first legs, two eyes at the
@@ -807,6 +826,7 @@ cards progressively during a first import; generalising beyond jumping spiders (
 | v1.7 | IndexedDB storage (with migration), v2 imports with `fields=` (~6% of the download), Trip planner |
 | v1.8 | Sets (themed + complete-the-lineage), Bounty board, "since your last visit" |
 | v1.9 | Most Wanted tab renamed Bounty board (bounties first), SPOODEX › Needs ID layer, fixed-height quest tiles |
+| v2.5 | Expand (branch `feature/expand`, 2026-10-11; prompt `spoodex-prompt-7-expand.md`): tested outside Australia (US, UK, Germany, Brazil, Japan) with fixes (°F/inches for US homes and a ⚙ units switch, museum records and the Identification aid only for Australian homes, singular quest wording); a display case link (`&case`) with a picker on Profile; 🎯 Challenge a friend (Dare) from any found genus, ⚔️ duel a Compare rival, and a dare banner on the landing page for new visitors |
 | v2.4 | Look and feel (shipped 2026-10-11, tag `v2.4.0`; prompt `spoodex-prompt-6-look-and-feel.md`): rarity-edged cards with foil, a specimen label and a back you turn to (also on Profile's strip, the reveal and the My SPOODEX image); one spider silhouette (`--sil`) for every empty slot; Fraunces body text with IBM Plex Mono for controls and labels, nothing under 11 px; ~55 ink icons replacing emoji in the page (`inkIcons`); shimmer skeletons for loading states. App icon waiting for the owner's art |
 | v2.3 | Simplify (shipped 2026-10-11, tag `v2.3.0`; prompt `spoodex-prompt-5-simplify.md`): one headline count everywhere (`headline()`, which fixed the reveal's "54 of the 80"), three sections (Collection, Go spooding with Quests, Mates) with a view row instead of ten tabs, quest and poster XP rewards removed (mastery XP kept, renamed mastery points), first-record places shown as the square's name, tier subtitles removed, no coordinates finer than 0.25° on screen (`cellLabel` names squares) |
 | v2.2 | Uncluttered (owner, 2026-10-08): the This week tab (Spood Report) and field mode (field compass, header 🧭 button) removed; 10 tabs; boot drops the old `report` cache |

@@ -335,6 +335,10 @@ a.lcard:hover { border-color:var(--accent); }
 .card.unknown .nm { font-style:normal; letter-spacing:.2em; color:var(--muted); }
 .card .badge { position:absolute; top:6px; left:6px; font-size:11px; padding:1px 6px; border-radius:99px; background:var(--panel); border:1px solid var(--line); z-index:2; }
 .b-disc { color:var(--ink); } .b-supp { color:var(--lit); border-color:var(--lit)!important; } .b-mast { background:var(--accent)!important; color:var(--panel)!important; border-color:var(--accent)!important; }
+/* v2.5 dare landing */
+.darebanner { display:flex; gap:12px; align-items:center; margin-top:10px; }
+.darebanner .ph { flex:none; width:88px; aspect-ratio:1; border-radius:var(--radius); background:var(--panel2) center/cover no-repeat; }
+.darebanner p { margin:0; }
 /* v2.5 display case */
 #caseView { padding-top:24px; }
 .casehead h1 { font:600 40px var(--head); margin:2px 0 0; }
@@ -1917,7 +1921,8 @@ function cardBack(id) {
     g.cover && `Photo: ${esc(who())}`,
   ].filter(Boolean);
   return `<div class="back"><button class="flip" data-act="flip" data-v="${id}" aria-label="Turn card back" title="Turn card back">↺</button>
-    <div class="nm">${esc(g.name)}</div>${cnHtml(id)}${lines.map(l => `<p>${l}</p>`).join('')}</div>`;
+    <div class="nm">${esc(g.name)}</div>${cnHtml(id)}${lines.map(l => `<p>${l}</p>`).join('')}
+    ${isGuest() ? '' : `<p><button class="small" data-act="dareGenus" data-v="${id}">🎯 Challenge a friend</button></p>`}</div>`;
 }
 function turnCard(card, open = !card.classList.contains('flipped')) {
   card.querySelector('.back')?.remove();
@@ -2925,7 +2930,7 @@ async function openGenus(id) {
   $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal">
     <button class="x" data-close="1">✕</button>
     <div class="hero ${g ? '' : 'unknown'}" style="background-image:url('${esc(hero||'')}')"></div>
-    <div class="body">${body}${when}${speciesSection(id)}${theirs}${rarity}${hist}
+    <div class="body">${body}${g && !isGuest() ? `<p class="row" style="margin:10px 0 0"><button data-act="dareGenus" data-v="${id}">🎯 Challenge a friend</button></p>` : ''}${when}${speciesSection(id)}${theirs}${rarity}${hist}
       <p class="small"><a href="https://www.inaturalist.org/taxa/${id}" target="_blank" rel="noopener">iNaturalist taxon page ↗</a>
       ${g ? ` · <a href="https://www.inaturalist.org/observations?user_id=${encodeURIComponent(S.login)}&taxon_id=${id}" target="_blank" rel="noopener">your records ↗</a>` : ''}
       ${!g && stockCr(id) ? ` · <span class="muted">Silhouette from photo ${esc(stockCr(id))}</span>` : ''}</p>
@@ -2986,7 +2991,8 @@ function viewCompare() {
     <p class="muted small">Enter another iNaturalist username to see what they've found that you haven't, and the other way round.</p>
     <form class="row" data-form="compare"><input name="login" value="${esc(C?.login || '')}" placeholder="their iNaturalist username" autocomplete="off" style="flex:1;min-width:180px"><button class="primary" ${C?.loading ? 'disabled' : ''}>Compare</button></form>
     ${C?.loading ? `<p id="cmpLog" class="small" style="margin:10px 0 0">${esc(C.log[C.log.length - 1] || '')}</p>` : ''}
-    ${C?.error ? `<p>${esc(C.error)}</p>` : ''}</div>`;
+    ${C?.error ? `<p>${esc(C.error)}</p>` : ''}
+    ${C?.M && !C.loading && !isGuest() ? `<p class="row" style="margin:10px 0 0"><button data-act="duelRival" data-v="${esc(C.login)}">⚔️ Challenge ${esc(C.login)} to a duel</button></p>` : ''}</div>`;
   if (!C || !C.M || C.loading) return form;
   const T = C.M, me = esc(who()), them = esc(C.login), where = esc(scopeLabel(S.prefs.scope));
   ensurePheno([...T.G.keys()].filter(id => !M.G.has(id)).slice(0, 20));
@@ -4232,6 +4238,18 @@ function evPreset(D, k) {
   if (set) [D.d1, D.d2] = set;
   if (D.m === 'dare') D.d1 = t;
 }
+// "Challenge a friend" (v2.5): the existing Dare event, pre-filled with the genus, you as challenger and 7 days to find it
+function dareGenus(id) {
+  const D = evDraftNew('dare');
+  evPreset(D, 'week');
+  Object.assign(D, { q:'g' + id, r:`${S.login}, ` });
+  $('#modalRoot').innerHTML = '';
+  S.tab = 'crew'; S.evOpen = null; S.evBroken = false; S.evDraft = D;
+  updateUrl(); render(); scrollTo(0, 0);
+  const el = $('[data-evf="r"]'); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+}
+// people you might dare: your crew and your latest Compare rival
+const dareWho = () => [...new Set([...S.crew.logins, store.get('cmp')?.login].filter(l => l && !isMe(l)))].slice(0, 6);
 function evFormHtml() {
   const D = S.evDraft, m = D.m;
   const chip = (act, v, on, label) => `<span class="chip ${on ? 'on' : ''}" data-act="${act}" data-v="${v}" style="cursor:pointer">${label}</span>`;
@@ -4262,6 +4280,7 @@ function evFormHtml() {
           <div class="small" style="margin-top:4px">${D.hits.map(h => `<a href="#" data-act="evPlacePick" data-v="${h.id}">${esc(h.name)}</a>`).join(' · ')}</div>`}</div>`}
       <label>${m === 'dare' ? 'Challenger, then the dared player' : m === 'duel' ? 'The two players' : 'Players (iNaturalist usernames, up to 6)'}
         <input data-evf="r" value="${esc(D.r)}" ${m === 'blitz' && D.open ? 'disabled' : ''} placeholder="usernames, separated by commas"></label>
+      ${m === 'dare' && !isGuest() && dareWho().length ? `<div class="row small" style="gap:6px">Dare: ${dareWho().map(l => chip('evDareWho', esc(l), D.r.split(/[\s,;]+/)[1] === l, '@' + esc(l))).join('')}</div>` : ''}
     </div>
     ${opts}
     <p class="small muted">Rarity tiers count iNat records in ${scopeName}. The link carries only usernames, dates${m === 'dare' ? '' : ', the place'} and taxon ids.</p>
@@ -6132,6 +6151,13 @@ function enterApp(tab) {
   else if (S.pendingVs) { const v = S.pendingVs; S.pendingVs = null; S.tab = 'compare'; render(); loadCompare(v); }
   else if (S.pendingCrew) { const c = S.pendingCrew; S.pendingCrew = null; S.tab = 'crew'; setCrew(c); }
 }
+async function dareBanner(ev) {
+  const id = /^[gs]\d/.test(ev.q || '') ? +ev.q.slice(1) : null;
+  if (id) await ensureInfo([id]).catch(() => {});
+  const ph = id && taxonPhoto(id), what = id ? `<i>${esc(S.nodes[id]?.n || '?')}</i>${cnOf(id) ? ` (${esc(cnOf(id))})` : ''}` : esc(evTargetTxt(ev.q));
+  $('.landhead').insertAdjacentHTML('beforeend', `<div class="panel darebanner">${ph ? `<span class="ph" style="background-image:url('${esc(ph.u)}')"></span>` : ''}
+    <div><p><b>${esc(ev.r[0])}</b> dared <b>${esc(ev.r[1])}</b> to find ${what} by ${esc(ev.d2)}.</p><p class="small muted">Open SPOODEX below to take it on.${ph?.cr ? ` Photo ${esc(ph.cr)}` : ''}</p></div></div>`);
+}
 function startGuest() {
   track('guest-mode');
   loadUser(GUEST);
@@ -6212,6 +6238,9 @@ document.addEventListener('click', e => {
     const w = window.open(ID_AID, 'spoodex-idaid', 'popup,width=1280,height=880');
     if (w) { e.preventDefault(); w.focus(); }
   }
+  if (a === 'duelRival') { e.preventDefault(); const D = evDraftNew('duel'); evPreset(D, 'd2'); D.r = `${S.login}, ${val}`; S.tab = 'crew'; S.evOpen = null; S.evDraft = D; updateUrl(); render(); scrollTo(0, 0); return; }
+  if (a === 'dareGenus') { e.preventDefault(); dareGenus(+val); return; }
+  if (a === 'evDareWho' && S.evDraft) { e.preventDefault(); S.evDraft.r = `${S.login}, ${val}`; render(); return; }
   if (a === 'caseEdit') { e.preventDefault(); caseEditor(); return; }
   if (a === 'casePick') { e.preventDefault(); casePick(+val); return; }
   if (a === 'caseCopy') { e.preventDefault(); caseShare(false); return; }
@@ -6474,7 +6503,7 @@ const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladd
   }
   loadLanding(!u && !S.pendingEv);   // photos for a first-time visitor; with ?u= the import goes first
   if (u) { $('#loginInput').value = u; onboard(u); }
-  else if (S.pendingEv) startGuest();   // an event link opened by someone new: view it as a guest
+  else if (S.pendingEv) { const ev = evParse(S.pendingEv); if (ev?.m === 'dare') { loadLanding(true); dareBanner(ev); } else startGuest(); }   // an event link opened by someone new: a dare gets the landing (v2.5), the rest open as a guest
 })();
 </script>
 </body>
