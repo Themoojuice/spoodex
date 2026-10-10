@@ -545,7 +545,7 @@ details > summary.scsec { cursor:pointer; }
   nav.tabs { margin-top:6px; }
   nav.tabs .secs { gap:2px; }
   nav.tabs .secs button { padding:5px 8px; font-size:13px; flex:1 1 auto; }
-  nav.tabs .views { padding:3px 4px; }
+  nav.tabs .views { padding:3px 4px; flex-wrap:wrap; row-gap:2px; }   /* Go spooding's four views take two short lines rather than hide one */
   nav.tabs .views button { padding:3px 10px; font-size:12.5px; }
   .modal .hero { height:200px; }
   #reveal h2 { font-size:30px; }
@@ -635,7 +635,7 @@ const TIERS = [
   { min:5,   name:'Field Notebook',        chassis:'notebook', module:'Region statistics' },
   { min:15,  name:'SPOODEX Mk II',         chassis:'kit', module:'Lineage tree' },
   { min:30,  name:'SPOODEX Mk III',        chassis:'kit', module:'Rarity ledgers' },
-  { min:50,  name:'Naturalist Cabinet',    chassis:'cabinet', module:'Mastery XP ledger' },
+  { min:50,  name:'Naturalist Cabinet',    chassis:'cabinet', module:'Mastery points ledger' },
   { min:75,  name:'Arachnologist Rig',     chassis:'cabinet', module:'Gilded labels for mastered genera' },
   { min:100, name:'Spood Research Station',chassis:'cabinet', module:'Every module' },
 ];
@@ -1617,13 +1617,12 @@ const TABS = [
   { k:'crew', label:'Crew' },
   { k:'quests', label:'Quests' },
 ];
-// Four sections, each a row of views (v2.3, owner 2026-10-10: ten tabs in one row were too many). Views still unlock one by one
+// Three sections, each a row of views (v2.3, owner 2026-10-10/11: ten tabs in one row were too many; Quests sits under Go spooding). Views still unlock one by one
 // (`at`); a section shows once any of its views is open and reopens on the view you last used in it.
 const SECTIONS = [
   { k:'collection', label:'Collection', tabs:['profile', 'dex', 'tree'] },
-  { k:'go', label:'Go spooding', tabs:['map', 'wanted', 'trip'] },
+  { k:'go', label:'Go spooding', tabs:['map', 'quests', 'wanted', 'trip'] },
   { k:'mates', label:'Mates', tabs:['crew', 'compare', 'ladder'] },
-  { k:'quests', label:'Quests', tabs:['quests'] },
 ];
 const secOf = k => SECTIONS.find(x => x.tabs.includes(k)) || SECTIONS[0];
 const tabEarned = t => !t.at || S.M.G.size >= t.at || (S.u.tabs || []).includes(t.k);
@@ -1746,7 +1745,7 @@ function viewProfile() {
     ['Field days', M.fieldDays.length && fmt(M.fieldDays.length)],
     ['Behaviour records', [['feed', 'feeding'], ['court', 'courtship'], ['egg', 'silk/brood']].filter(([k]) => M.behObs[k]).map(([k, l]) => `${M.behObs[k]} ${l}`).join(' · ')],
     [`New genera ${new Date().getFullYear()}`, M.newThisYear],
-    ['Mastery XP', M.xp && fmt(M.xp)],
+    ['Mastery points', M.xp && fmt(M.xp)],
     ['Mystery spoods', mysteryCount() && `${fmt(mysteryCount())} not yet identified to genus <a href="#" class="small" data-act="needsid">see them</a>`],
   ].filter(([, v]) => v);
   const streak = M.streak ? `<p>${'🔥'.repeat(Math.min(M.streak,10))} <b>${M.streak}</b> consecutive field day${M.streak===1?'':'s'} with a new genus <span class="muted">(best ${M.bestStreak})</span></p>`
@@ -2755,7 +2754,7 @@ async function openGenus(id) {
   const M = S.M, g = M.G.get(id), info = S.info[id] || {}, name = S.nodes[id]?.n || '?';
   const rt = rarityTier(id), scopeP = scopePlace(S.prefs.scope);
   const lin = lineageText(id);
-  const firstPlace = g ? (g.first.pg || '') : '';
+  const firstPlace = g?.first.lat != null ? cellLabel(g.first) : '';   // the square's name, never the record's place guess (owner, v2.3)
   const wl = wowLine(id), edit = notesOn() ? ` <a href="#" class="small" data-act="notes" data-v="${id}">✏️ ${ownNote(id) ? 'edit' : 'write your own line'}</a>` : '';
   const wow = wl ? `<p class="gwow">${esc(wl)}${ownNote(id) ? '' : ` <a class="small" href="${esc(info.w || `https://www.inaturalist.org/taxa/${id}`)}" target="_blank" rel="noopener">Wikipedia ↗</a>`}${edit}</p>` : edit ? `<p class="small">${edit}</p>` : '';
   const body = g ? `
@@ -2769,7 +2768,7 @@ async function openGenus(id) {
         <dt>Localities</dt><dd>${g.c01.size}</dd>
         ${altitudeLine(g)}
         <dt>Species-level taxa</dt><dd>${g.species.size ? [...g.species].map(s => `<i>${esc(s)}</i>`).join(', ') : '—'}</dd>
-        <dt>First recorded</dt><dd>${esc(g.first.d)}${firstPlace ? ' · ' + esc(firstPlace) : ''}</dd>
+        <dt>First recorded</dt><dd>${esc(g.first.d)}${firstPlace ? ' · ' + firstPlace : ''}</dd>
         <dt>Latest</dt><dd>${esc(g.last.d)}</dd>
         <dt>Best record</dt><dd>${g.f.rg ? 'Research Grade' : g.f.supported ? 'Community-supported genus' : 'Your ID (not yet community-supported)'}</dd>
         ${shareLine(g)}
@@ -2781,7 +2780,7 @@ async function openGenus(id) {
     </div>
     <h3 style="margin-top:12px">Your gallery</h3>
     <div class="gallery">${g.photos.map(p => `<a href="https://www.inaturalist.org/observations/${p.id}" target="_blank" rel="noopener" style="background-image:url('${esc(photoSize(p.url,'small'))}')"></a>`).join('')}</div>
-    ${moduleOn(4) ? `<h3 style="margin-top:12px">Mastery XP ledger (${fmt(g.xp)} XP)</h3><div class="small" style="max-height:140px;overflow:auto">${g.xpLog.slice().reverse().map(e => `<div>${esc(e.d)} · ${esc(e.label)} <span class="reward">+${e.xp}</span></div>`).join('')}</div>` : ''}
+    ${moduleOn(4) ? `<h3 style="margin-top:12px">Mastery points ledger (${fmt(g.xp)} points)</h3><div class="small" style="max-height:140px;overflow:auto">${g.xpLog.slice().reverse().map(e => `<div>${esc(e.d)} · ${esc(e.label)} <span class="reward">+${e.xp}</span></div>`).join('')}</div>` : ''}
   ` : `
     <div class="small" style="letter-spacing:.2em">UNKNOWN</div>
     <h1 style="font-size:36px;font-style:italic;margin:2px 0">${esc(name)}</h1>${cnHtml(id, 'cnbig')}
@@ -2855,7 +2854,7 @@ function revealNext() {
     ${wowLine(g.id) ? `<p class="rwow">${esc(wowLine(g.id))}</p>` : ''}
     ${o ? `<p class="rcn">Your mystery spood is ${esc(aGenus(g.name))}!${it.isNew ? ' Card unlocked.' : ''}</p>` : ''}
     ${it.isNew && !o ? `<p>Your ${ordinal(g.discIndex)} jumping spider genus</p>` : ''}
-    ${o ? `<p>Observed ${esc(o.d)}</p>` : `<p>First observed ${esc(g.first.d)}${g.first.pg ? ' · ' + esc(g.first.pg) : ''}</p>`}
+    ${o ? `<p>Observed ${esc(o.d)}</p>` : `<p>First observed ${esc(g.first.d)}${g.first.lat != null ? ' · ' + cellLabel(g.first) : ''}</p>`}
     ${it.more ? `<p>…and ${plural(it.more, 'more mystery spood')} identified.</p>` : ''}
     ${!list.length && it.isNew && !isGuest() ? '<p style="margin-top:14px"><button class="primary" data-act="dexImage">📤 Share my SPOODEX</button></p>' : ''}
     <p style="margin-top:18px;font-size:12px">${list.length ? `${list.length} more… ` : ''}tap to continue</p>`;
