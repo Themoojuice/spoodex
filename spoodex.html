@@ -314,6 +314,33 @@ a.lcard:hover { border-color:var(--accent); }
 .card.unknown .nm { font-style:normal; letter-spacing:.2em; color:var(--muted); }
 .card .badge { position:absolute; top:6px; left:6px; font-size:10px; padding:1px 6px; border-radius:99px; background:var(--panel); border:1px solid var(--line); z-index:2; }
 .b-disc { color:var(--ink); } .b-supp { color:var(--lit); border-color:var(--lit)!important; } .b-mast { background:var(--accent)!important; color:var(--panel)!important; border-color:var(--accent)!important; }
+/* v2.4 cards: rarity edge (Uncommon up), foil on Rare/Exceptional, specimen label, a back you turn to */
+.card.rar, .lcard.rar, .rcard.rar { border:2px solid var(--rc); }
+.card.gilded.rar { border-color:#b08a45; box-shadow:inset 0 0 0 3px var(--rc); }
+.card .meta { border-top:3px double var(--line); }
+.card .meta .num { margin-top:2px; }
+.card.rar4 .ph::after, .card.rar5 .ph::after, .lcard.rar4 .ph::after, .lcard.rar5 .ph::after {
+  content:''; position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity .3s;
+  background:linear-gradient(115deg, transparent 35%, rgba(255,255,255,.38) 48%, rgba(255,240,200,.18) 54%, transparent 66%) 130% 0 / 260% 100% no-repeat; }
+.lcard .ph { position:relative; }
+.card.rar4:is(:hover, :focus-within) .ph::after, .card.rar5:is(:hover, :focus-within) .ph::after,
+.lcard.rar4:hover .ph::after, .lcard.rar5:hover .ph::after { opacity:1; animation:foil 1.4s ease-in-out; background-position:-30% 0; }
+@keyframes foil { from { background-position:130% 0; } to { background-position:-30% 0; } }
+.card .flip { position:absolute; right:6px; bottom:6px; z-index:2; width:30px; height:30px; padding:0; border-radius:99px; display:grid; place-items:center;
+  background:color-mix(in srgb, var(--panel) 88%, transparent); font-size:16px; line-height:1; opacity:.85; }
+.card .flip:hover, .card .flip:focus-visible { opacity:1; }
+.card .back { position:absolute; inset:0; z-index:4; background:var(--panel); padding:10px; overflow:auto; scrollbar-width:thin; cursor:pointer;
+  border-top:3px double var(--line); animation:turn .35s ease-out; transform-origin:50% 50%; }
+.card .back .nm { font-size:16px; padding-right:30px; }
+.card .back p { margin:6px 0 0; font-size:12px; line-height:1.35; }
+.card .back .flip { top:6px; bottom:auto; right:6px; }
+@keyframes turn { from { transform:perspective(600px) rotateY(90deg); } to { transform:none; } }
+@media (prefers-reduced-motion: reduce) {
+  .card .back { animation:fade .2s ease-out; }
+  .card.rar4 .ph::after, .card.rar5 .ph::after, .lcard.rar4 .ph::after, .lcard.rar5 .ph::after { animation:none !important; background-position:50% 0; }
+}
+@keyframes fade { from { opacity:0; } to { opacity:1; } }
+.card .rar.rarb { top:auto; right:auto; bottom:8px; left:6px; }
 .pips { display:flex; gap:2px; margin-top:4px; }
 .pips i { flex:1; height:4px; background:var(--dim); border-radius:2px; }
 .pips i.on { background:var(--lit); }
@@ -1720,7 +1747,7 @@ function viewProfile() {
   // your genera, newest first, then a few mystery spoods (records not yet identified to genus) with their photos
   const myst = M.leads.flatMap(l => l.obs).filter(o => o.ph.length).sort((a, b) => (b.d || '').localeCompare(a.d || '') || b.id - a.id).slice(0, 6);
   const spoodCards = [...M.genera].filter(g => g.cover).sort((a, b) => (b.first.d || '').localeCompare(a.first.d || '') || b.first.id - a.first.id).map(g =>
-      `<div class="lcard" data-genus="${g.id}" title="Open the card"><span class="ph" style="background-image:url('${esc(photoSize(g.cover, 'small'))}')"></span>
+      `<div class="lcard${rarAttrs(g.id).cls}" data-genus="${g.id}"${rarAttrs(g.id).style} title="Open the card"><span class="ph" style="background-image:url('${esc(photoSize(g.cover, 'small'))}')"></span>
         <span class="nm"><i>${esc(g.name)}</i></span>${cnOf(g.id) ? `<span class="cn">${esc(cnOf(g.id))}</span>` : ''}</div>`).join('')
     + myst.map(o => `<div class="lcard myst" data-act="needsid" title="Mystery spoods: get them identified to genus"><span class="ph" style="background-image:url('${esc(photoSize(o.ph[0], 'small'))}')"></span>
         <span class="nm" style="font-style:normal;white-space:normal">❓ Mystery spood</span><span class="cn">${esc(o.t.n || '')}</span></div>`).join('');
@@ -1808,6 +1835,32 @@ function openProfSheet(k) {
     <h2>${esc(x.t)}</h2>${x.h}</div></div></div>`;
 }
 
+// A found genus's rarity as card attributes (v2.4): a coloured edge from Uncommon up, foil on Rare and Exceptional; Common stays plain
+function rarAttrs(id) {
+  const r = S.M.G.has(id) ? tierOf(id) : null;
+  return { r, cls:r && r.lv >= 2 ? ` rar rar${r.lv}` : '', style:r && r.lv >= 2 ? ` style="--rc:${r.c}"` : '' };
+}
+// The back of a card: only fields the model has, each left out when missing (owner's "nothing invented" rule)
+function cardBack(id) {
+  const g = S.M.G.get(id); if (!g) return '';
+  const ds = g.obs.map(o => o.d).filter(Boolean).sort(), sq = new Set(g.obs.filter(o => o.lat != null).map(o => cellKey(o.lat, o.lng, .25))).size;
+  const r = tierOf(id), note = rarityNote(id);
+  const lines = [
+    ds.length > 1 ? `${esc(ds[0])} → ${esc(ds[ds.length - 1])}` : ds[0] && esc(ds[0]),
+    [plural(g.obs.length, 'record'), sq && `${sq} × 25 km square${sq === 1 ? '' : 's'}`, g.sp.size && plural(g.sp.size, 'species', 'species')].filter(Boolean).join(' · '),
+    r && `${rarityChip(r)}${note ? ` ${esc(note)}` : ''}`,
+    `Mastery ${g.level} / 10 · ${g.state.toLowerCase()}`,
+    g.cover && `Photo: ${esc(who())}`,
+  ].filter(Boolean);
+  return `<div class="back"><button class="flip" data-act="flip" data-v="${id}" aria-label="Turn card back" title="Turn card back">↺</button>
+    <div class="nm">${esc(g.name)}</div>${cnHtml(id)}${lines.map(l => `<p>${l}</p>`).join('')}</div>`;
+}
+function turnCard(card, open = !card.classList.contains('flipped')) {
+  card.querySelector('.back')?.remove();
+  card.classList.toggle('flipped', open);
+  if (open) { card.insertAdjacentHTML('beforeend', cardBack(+card.dataset.genus)); card.querySelector('.back .flip')?.focus(); }
+  else card.querySelector('.ph .flip')?.focus();
+}
 function cardHtml(id, num) {
   const M = S.M, g = M.G.get(id), info = S.info[id] || {};
   const lin = lineage(id), tribe = (lin.find(n => n.r === 'tribe') || lin.find(n => n.r === 'subfamily') || {}).n || 'Salticidae';
@@ -1816,10 +1869,10 @@ function cardHtml(id, num) {
     return `<div class="card unknown" data-genus="${id}"><div class="ph" style="background-image:url('${esc(photoSize(stockPh(id), 'small'))}')"></div>
       <div class="meta"><div class="num">#${String(num).padStart(3,'0')} · ${esc(tribe)}</div><div class="nm">${name}</div>${S.prefs.reveal ? cnHtml(id) : ''}<div class="pips">${'<i></i>'.repeat(10)}</div></div></div>`;
   }
-  const cls = g.state === 'MASTERED' ? 'b-mast' : g.state === 'SUPPORTED' ? 'b-supp' : 'b-disc';
-  return `<div class="card ${g.state === 'MASTERED' && moduleOn(5) ? 'gilded' : ''}" data-genus="${id}"><span class="badge ${cls}">${g.state}</span>
-    <div class="ph" style="background-image:url('${esc(photoSize(g.cover,'small') || info.p || '')}')"></div>
-    <div class="meta"><div class="num">#${String(num).padStart(3,'0')} · ${esc(tribe)}</div><div class="nm">${esc(g.name)}</div>${cnHtml(id)}
+  const cls = g.state === 'MASTERED' ? 'b-mast' : g.state === 'SUPPORTED' ? 'b-supp' : 'b-disc', rar = rarAttrs(id);
+  return `<div class="card ${g.state === 'MASTERED' && moduleOn(5) ? 'gilded' : ''}${rar.cls}" data-genus="${id}"${rar.style}><span class="badge ${cls}">${g.state}</span>
+    <div class="ph" style="background-image:url('${esc(photoSize(g.cover,'small') || info.p || '')}')">${rar.r?.lv >= 2 ? `<span class="rar rarb">${rarityChip(rar.r)}</span>` : ''}<button class="flip" data-act="flip" data-v="${id}" aria-label="Turn card over" title="Turn card over">↻</button></div>
+    <div class="meta"><div class="nm">${esc(g.name)}</div>${cnHtml(id)}<div class="num">#${String(num).padStart(3,'0')} · ${esc(tribe)}</div>
     <div class="small muted">${g.obs.length} obs · ${g.c01.size} loc. · ${g.sp.size} sp.</div>
     <div class="pips">${CRITERIA.map(c => `<i class="${g.f[c.k]?'on':''}"></i>`).join('')}</div></div></div>`;
 }
@@ -5321,7 +5374,9 @@ function cardKit(cv, H = 1350) {
       x.drawImage(im, (im.width - sw) / 2, (im.height - sh) / 2, sw, sh, cx, cy, tw, th);
     } else if (t) text(t.g.name[0], cx + tw / 2, cy + th / 2 + 40, 'italic 400 140px Fraunces, Georgia, serif', C.line, 'center');
     else text('???', cx + tw / 2, cy + th / 2 + 18, '400 52px "Special Elite", monospace', C.dim, 'center');
-    x.strokeStyle = C.line; x.lineWidth = 2; x.strokeRect(cx, cy, tw, th);
+    const tr0 = t && tierOf(t.g.id, 'g');   // the card's rarity edge, as in the app (v2.4)
+    if (tr0 && tr0.lv >= 2) { x.strokeStyle = tr0.c; x.lineWidth = 8; x.strokeRect(cx + 4, cy + 4, tw - 8, th - 8); }
+    else { x.strokeStyle = C.line; x.lineWidth = 2; x.strokeRect(cx, cy, tw, th); }
     if (t) {
       if (im) { x.shadowColor = 'rgba(0,0,0,.8)'; x.shadowBlur = 6; }
       const tr = tierOf(t.g.id, 'g');   // the rarity tier as a coloured label in the corner
@@ -5973,10 +6028,12 @@ function flipCard(el) {
   if (el.classList.contains('on')) return;
   const id = +el.dataset.g;
   el.classList.add('on'); el.dataset.genus = id;
+  const rar = rarAttrs(id); if (rar.r?.lv >= 2) { el.className += rar.cls; el.style.setProperty('--rc', rar.r.c); }
   const nm = el.querySelector('.nm'); nm.classList.remove('q'); nm.innerHTML = `<i>${esc(S.nodes[id]?.n || '?')}</i>`;
   for (let px = 14; nm.scrollWidth > nm.clientWidth && px > 10; ) nm.style.fontSize = --px + 'px';   // long names shrink rather than lose letters
   el.querySelector('.cn').textContent = cnOf(id);
 }
+addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.card.flipped').forEach(c => turnCard(c, false)); });
 function revEndHtml() {
   const M = S.M, n = M.G.size, hl = headline();
   return `<div class="panel revend" style="margin-top:8px">
@@ -6081,6 +6138,7 @@ document.addEventListener('click', e => {
     const w = window.open(ID_AID, 'spoodex-idaid', 'popup,width=1280,height=880');
     if (w) { e.preventDefault(); w.focus(); }
   }
+  if (a === 'flip') { e.preventDefault(); const c = t.closest('.card'); if (c) turnCard(c); return; }
   if (a === 'needsid') { e.preventDefault(); S.prefs.layer = 'needsid'; savePrefs(); if ($('#app').classList.contains('hidden')) enterApp('dex'); else { S.tab = 'dex'; render(); } }
   if (a === 'leadFilter') { S.prefs.leadFilter = val === 'all' ? null : val; savePrefs(); render(); }
   if (a === 'sets') { e.preventDefault(); S.prefs.layer = 'sets'; savePrefs(); S.tab = 'dex'; render(); }
