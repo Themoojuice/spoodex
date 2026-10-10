@@ -665,7 +665,23 @@ const ordinal = n => n + (['th','st','nd','rd'][(n%100-20)%10] || ['th','st','nd
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const photoSize = (url, size) => url ? url.replace(/\/(square|thumb|small|medium|large|original)\./, `/${size}.`) : '';
 const stripHtml = s => { const d = document.createElement('div'); d.innerHTML = s || ''; return d.textContent; };
-const cellLabel = c => c && c.label ? esc(c.label + (c.near ? ` (near ${c.near})` : '')) : c ? `${Math.abs(c.lat).toFixed(2)}°${c.lat<0?'S':'N'} ${Math.abs(c.lng).toFixed(2)}°${c.lng<0?'W':'E'}` : '';
+// What a square or point is called on screen (v2.3): its own label, else the county-level iNat place (admin level 20) most of your
+// records in its 25 km square share, else its centre to the nearest quarter degree. Nothing finer than the squares is ever printed.
+const cellNames = new WeakMap();
+function cellLabel(c) {
+  if (!c) return '';
+  if (c.label) return esc(c.label + (c.near ? ` (near ${c.near})` : ''));
+  const k = cellKey(c.lat, c.lng, .25), M = S.M, names = M && (cellNames.get(M) || cellNames.set(M, new Map()).get(M));
+  if (names && !names.has(k)) {
+    const cnt = {};
+    for (const o of M.obs) if (o.lat != null && cellKey(o.lat, o.lng, .25) === k) for (const p of o.pl) if (S.places[p]?.l === 20) cnt[p] = (cnt[p] || 0) + 1;
+    const top = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0];
+    names.set(k, top ? S.places[top].n : null);
+  }
+  if (names?.get(k)) return `near ${esc(names.get(k))}`;
+  const q = (x, pos, neg) => { const r = Math.round(Math.abs(x) * 4) / 4; return `${r.toFixed(2).replace(/\.?0+$/, '')}°${r ? (x < 0 ? neg : pos) : ''}`; };
+  return `about ${q(c.lat, 'N', 'S')} ${q(c.lng, 'E', 'W')}`;
+}
 const cellKey = (lat, lng, deg) => `${Math.floor(lat/deg)}:${Math.floor(lng/deg)}`;
 
 // Saves live in IndexedDB (localStorage caps out around 5 MB). Reads come from an in-memory copy loaded once at boot,

@@ -166,7 +166,7 @@ Search for `/* ---------------- <name>` to jump. Line numbers drift; names don't
 | Section | Key functions | Notes |
 |---|---|---|
 | constants | `SALTICIDAE=48139`, `API`, `API2`, `ANN`, `BEH_RX`, `TIERS`, `CRITERIA`, `MASTERY_AT=7` | |
-| utils | `$`, `esc`, `photoSize(url,size)`, `cellKey`, `cellLabel`, `store` | `store` = IndexedDB behind a synchronous in-memory cache (§6) |
+| utils | `$`, `esc`, `photoSize(url,size)`, `cellKey`, `cellLabel` (screen name of a square, never finer than 0.25°; names cached per model in `cellNames`), `store` | `store` = IndexedDB behind a synchronous in-memory cache (§6) |
 | api | `api(path, params, base = API)` | Global throttle ≈1 request / 1.1 s (iNat asks ~1/s, ≤10k/day). On 429/5xx **or a network error** it pushes back the whole queue (iNat's 429s carry no CORS header, so they reach the browser as network errors). Pass `API2` for v2. **All iNat calls go through `api()`**. When `navigator.onLine` is false (checked before each attempt and after a failed fetch) it throws `Offline` at once instead of backing off, so Sync, scans, Compare, Ladder etc. say "Offline" |
 | state | `S`, `ukey`, `saveUser`, `saveShared`, `savePrefs`, `addNode` | |
 | sync | `trimObs`, `OBS_FIELDS`/`TAXON_FIELDS`, `importRecords(login, save, {full,log})`, `sync`, `loadRefs`, `placesNear(lat,lng)`, `resolveBasePlaces`, `setBase`, `geolocate`, `ensureRef(scope)` → `ensureRefPlace(pid)`, `ensureInfo(ids)`, `fetchPlaces` | Import uses **v2** `/observations` + `fields=OBS_FIELDS`: ~29 KB gzipped per 200 records vs ~470 KB on v1, verified byte-identical after `trimObs` (1,538/1,538). Incremental via `updated_since`; full resync every 14 days |
@@ -432,8 +432,8 @@ Scan-point keys: a 0.25° cell `"lat:lng"` (integers) or an arbitrary point `"pt
   measure, not conservation status" and "It's about iNat's record, not who discovered it" AI slop, and ~50 were removed. Don't add
   short qualifying statements, jokes, pep talks ("Cheeky.", "Be the first!", "Keep it that way") or reassurances that give the user
   nothing to act on. Captions should explain what a number means or what to do next, and nothing else. Kept deliberately: the
-  location privacy note by the home-base controls, the GoatCounter and weather disclosures in Settings, the location note on the
-  field-mode start screen, photo and weather attribution, and the chassis tier names and subtitles (game flavour).
+  location privacy note by the home-base controls, the GoatCounter and weather disclosures in Settings, photo and weather attribution,
+  and the chassis tier names (game flavour; their subtitles were removed in v2.3).
   Event screens explain what inked/pencilled and the points mean (it's what makes the numbers readable); keep those.
   "Spooding weather" scores the weather and the season; keep its wording from suggesting it predicts spiders.
 - **Photos from other people** (owner, v1.20): licence-checked and credited every time. Prefer the owner's own photos (`themoojuice`,
@@ -448,6 +448,10 @@ Scan-point keys: a 0.25° cell `"lat:lng"` (integers) or an arbitrary point `"pt
   the browser, trips kept in the browser. Share links carry only `?u=`, `?vs=`, `?crew=` (usernames) and `?ev=` (event links, below).
   The **My SPOODEX image** (v1.20) names at most a country or state: no local areas, maps or squares, and only the `?u=` link.
   Open-Meteo gets the home base rounded to 0.1°.
+  **On screen** (v2.3) a square or point is never printed finer than a quarter degree: `cellLabel` gives its own label, else "near <the
+  county-level iNat place (admin level 20) most of your records in that 25 km square share>", else "about 17°S 145.75°E" (nearest 0.25°).
+  Stored values (base and scan points at 0.01°) are unchanged. The genus page's "First recorded" and the new-genus ceremony still show
+  the record's iNat place guess (`pg`), which can be a street; see §12.
 - **Event links** (v1.16): `?ev=<base64url(JSON)>`, ≤ ~1,500 characters, validated by `evCheck` (anything malformed shows only "This event
   link is broken"); every decoded string is `esc()`d. Fields: `v` 1 · `m` blitz|bingo|turf|duel|dare · `n` name ≤ 40 · `d1`/`d2`
   YYYY-MM-DD (≤ 92 days; a duel 1–3 days) · `p` optional iNat **place id** · `r` roster of 1–6 iNat logins (absent = open bioblitz) ·
