@@ -335,6 +335,23 @@ a.lcard:hover { border-color:var(--accent); }
 .card.unknown .nm { font-style:normal; letter-spacing:.2em; color:var(--muted); }
 .card .badge { position:absolute; top:6px; left:6px; font-size:11px; padding:1px 6px; border-radius:99px; background:var(--panel); border:1px solid var(--line); z-index:2; }
 .b-disc { color:var(--ink); } .b-supp { color:var(--lit); border-color:var(--lit)!important; } .b-mast { background:var(--accent)!important; color:var(--panel)!important; border-color:var(--accent)!important; }
+/* v2.5 display case */
+#caseView { padding-top:24px; }
+.casehead h1 { font:600 40px var(--head); margin:2px 0 0; }
+.casegrid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px; margin-top:16px; }
+.ccard { display:flex; flex-direction:column; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; color:inherit; text-decoration:none; }
+.ccard.rar { border:3px solid var(--rc); }
+.ccard .ph { aspect-ratio:1; background:var(--panel2) center/cover no-repeat; }
+.ccard .meta { padding:8px 12px 12px; border-top:3px double var(--line); display:flex; flex-direction:column; gap:2px; }
+.ccard .nm { font:italic 600 20px var(--head); }
+.ccard .cn { font-size:14px; }
+.ccard .rl { font-size:12px; color:var(--muted); margin-top:4px; }
+.casepick { display:grid; grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); gap:8px; }
+.casepick button { padding:0; overflow:hidden; display:flex; flex-direction:column; text-align:left; background:var(--panel); }
+.casepick button .ph { aspect-ratio:1; background:var(--panel2) center/cover no-repeat; }
+.casepick button i { padding:3px 6px; font:italic 13px var(--body); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.casepick button.on { border:3px solid var(--accent); }
+@media (max-width:600px) { .casegrid { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; } .casehead h1 { font-size:30px; } .ccard .nm { font-size:16px; } }
 /* v2.4 cards: rarity edge (Uncommon up), foil on Rare/Exceptional, specimen label, a back you turn to */
 .card.rar, .lcard.rar, .rcard.rar { border:2px solid var(--rc); }
 .card.gilded.rar { border-color:#b08a45; box-shadow:inset 0 0 0 3px var(--rc); }
@@ -1180,6 +1197,7 @@ function buildModel(obsMap = S.u.obs, base = S.u.base) {
     // cover photo: prefer research-grade record photo
     const rg = g.obs.find(o => o.q === 'research' && o.ph.length), pk = OWNER_PICKS[g.id];
     g.cover = pk && g.obs.some(o => o.id === pk[0]) ? pickUrl(g.id, 'square') : rg ? rg.ph[0] : (g.photos[0]?.url || '');   // the owner's pick, in his own collection
+    g.coverObs = pk && g.obs.some(o => o.id === pk[0]) ? pk[0] : rg ? rg.id : (g.obs.find(o => o.ph.length) || g.first).id;
   }
   for (const g of genera) g.sp = g.sp || new Set();
   for (const sp of SP.values()) { const rgo = sp.obs.find(o => o.q === 'research' && o.ph.length); sp.cover = rgo ? rgo.ph[0] : (sp.photos[0]?.url || ''); }
@@ -1788,7 +1806,7 @@ function viewProfile() {
       <div class="muted small">${esc(who().toUpperCase())}'S SPOODEX</div>
       <h1>Level ${n}</h1><div class="hand">${titleHtml(M)}</div>
       ${hl ? `<div class="row" style="gap:8px;margin-top:6px"><span>${headlineHtml(hl)}</span>${bar(hl.found, hl.total)}</div>` : ''}
-      ${isGuest() || !n ? '' : `<p class="row herobtns"><button data-act="dexImage">📤 My SPOODEX image</button><button data-act="card">🪪 Title card</button>${M.fieldDays.length ? `<button data-act="wrapped">🎁 ${esc(wrappedYears()[0])} in spoods</button>` : ''}</p>`}
+      ${isGuest() || !n ? '' : `<p class="row herobtns"><button data-act="dexImage">📤 My SPOODEX image</button><button data-act="caseEdit">🗄 Display case</button><button data-act="card">🪪 Title card</button>${M.fieldDays.length ? `<button data-act="wrapped">🎁 ${esc(wrappedYears()[0])} in spoods</button>` : ''}</p>`}
     </div>`;
   // your genera, newest first, then a few mystery spoods (records not yet identified to genus) with their photos
   const myst = M.leads.flatMap(l => l.obs).filter(o => o.ph.length).sort((a, b) => (b.d || '').localeCompare(a.d || '') || b.id - a.id).slice(0, 6);
@@ -6194,6 +6212,10 @@ document.addEventListener('click', e => {
     const w = window.open(ID_AID, 'spoodex-idaid', 'popup,width=1280,height=880');
     if (w) { e.preventDefault(); w.focus(); }
   }
+  if (a === 'caseEdit') { e.preventDefault(); caseEditor(); return; }
+  if (a === 'casePick') { e.preventDefault(); casePick(+val); return; }
+  if (a === 'caseCopy') { e.preventDefault(); caseShare(false); return; }
+  if (a === 'caseShare') { e.preventDefault(); caseShare(true); return; }
   if (a === 'flip') { e.preventDefault(); const c = t.closest('.card'); if (c) turnCard(c); return; }
   if (a === 'needsid') { e.preventDefault(); S.prefs.layer = 'needsid'; savePrefs(); if ($('#app').classList.contains('hidden')) enterApp('dex'); else { S.tab = 'dex'; render(); } }
   if (a === 'leadFilter') { S.prefs.leadFilter = val === 'all' ? null : val; savePrefs(); render(); }
@@ -6345,6 +6367,88 @@ $('#menuBtn').addEventListener('click', settings);
 $('#revSkip').addEventListener('click', () => { revSkip = true; document.querySelectorAll('#revGrid .rcard').forEach(flipCard); });
 $('#loginForm').addEventListener('submit', e => { e.preventDefault(); const v = $('#loginInput').value.trim().replace(/^@/, ''); if (v) onboard(v); });
 
+/* ---------------- display case: a read-only showpiece link (v2.5) ---------------- */
+// ?u=<login>&case shows that naturalist's 9 rarest genera (or ?u=<login>&case=<taxon id>,<taxon id>,… for their own picks, at most 9)
+// on one page, without tabs and without touching the visitor's own SPOODEX: no lastLogin, no account, crew or events. Taxon ids only,
+// never places (HANDOVER §9). The case owner's records are cached like a Compare rival, up to CASE_KEEP of them, newest first.
+const CASE_N = 9, CASE_KEEP = 3;
+const caseIds = (M, picks) => {
+  const mine = (picks || []).filter(id => M.G.get(id)?.cover).slice(0, CASE_N);
+  // the rarest from home first: a genus never recorded in the country would otherwise always outrank it; overseas ones fill any gap
+  const home = g => refCount(g.id) != null ? 0 : 1;
+  return mine.length ? mine : [...M.genera].filter(g => g.cover).sort((a, b) => home(a) - home(b) || rarestFirst(a, b)).slice(0, CASE_N).map(g => g.id);
+};
+const caseLink = (login, picks) => `${location.origin}${location.pathname.replace(/(index|spoodex)\.html$/, '')}?u=${encodeURIComponent(login)}&case${picks?.length ? '=' + picks.join(',') : ''}`;
+function caseHtml(login, M, ids) {
+  const pid = M.home.country, hl = headline('country'), where = S.places[pid]?.n || '';
+  const mine = store.get('lastLogin'), own = mine && store.get(ukey(mine)) && mine.toLowerCase() !== login.toLowerCase();
+  const self = mine && mine.toLowerCase() === login.toLowerCase();
+  const card = id => {
+    const g = M.G.get(id), r = pid ? rarityOf(id, 'g', pid) : null, c = pid ? S.ref['p' + pid]?.g?.[id] : null;
+    return `<a class="ccard${r && r.lv >= 2 ? ` rar rar${r.lv}` : ''}"${r && r.lv >= 2 ? ` style="--rc:${r.c}"` : ''} href="https://www.inaturalist.org/observations/${g.coverObs}" target="_blank" rel="noopener" title="Open the record on iNaturalist">
+      <span class="ph" style="background-image:url('${esc(photoSize(g.cover, 'medium'))}')"></span>
+      <span class="meta"><span class="nm"><i>${esc(g.name)}</i></span>${cnOf(id) ? `<span class="cn">${esc(cnOf(id))}</span>` : ''}
+        ${r ? `<span class="rl">${rarityChip(r)} ${c != null ? `${fmt(c)} iNat record${c === 1 ? '' : 's'} in ${esc(where)}` : `recorded outside ${esc(where)}`}</span>` : ''}</span></a>`;
+  };
+  return `<div class="casehead"><div class="small muted mono">${esc(login.toUpperCase())}'S DISPLAY CASE</div>
+      <h1>${esc(login)}</h1><div class="hand">${titleHtml(M, login)}</div>
+      <p>Level <b>${M.G.size}</b>${hl ? ` · ${headlineHtml(hl)}` : ''}</p></div>
+    ${ids.length ? `<div class="casegrid">${ids.map(card).join('')}</div>` : '<p>No genera recorded yet.</p>'}
+    <p class="row" style="margin-top:18px">${self ? `<a class="btnlink" href="?u=${encodeURIComponent(mine)}">Open my SPOODEX</a>`
+      : own ? `<a class="btnlink" href="?u=${encodeURIComponent(mine)}&vs=${encodeURIComponent(login)}">Compare with mine</a>` : ''}
+      ${self ? '' : `<a class="${own ? '' : 'btnlink'}" href="${location.pathname}">${own ? 'Open my SPOODEX' : 'Start your own SPOODEX'}</a>`}</p>`;
+}
+async function showCase(login, picksQ) {
+  track('case');
+  const picks = (picksQ || '').split(',').map(Number).filter(n => Number.isInteger(n) && n > 0);
+  $('#onboard').classList.add('hidden'); $('#app').classList.add('hidden');
+  const box = document.createElement('main'); box.id = 'caseView'; box.className = 'wrap'; document.body.append(box);
+  const cases = store.get('cases', {}), key = login.toLowerCase(), hit = cases[key];
+  const save = hit?.save || { obs:{}, meta:{} };
+  S.prefs = { ...S.prefs, scope:'country' };   // the case speaks for its owner's country; never saved
+  const draw = async () => {
+    S.M = buildModel(save.obs, null);
+    if (S.M.home.country) await ensureRefPlace(S.M.home.country).catch(() => {});
+    const ids = caseIds(S.M, picks);
+    await ensureInfo(ids).catch(() => {});
+    box.innerHTML = caseHtml(login, S.M, ids);
+  };
+  if (hit) await draw();
+  else box.innerHTML = `<div class="panel" style="margin-top:24px"><h2>Opening ${esc(login)}'s display case</h2><p class="small mono" id="caseLog">Asking iNaturalist…</p></div>`;
+  try {
+    await importRecords(login, save, { log:line => { const el = $('#caseLog'); if (el) el.textContent = line; } });
+    saveShared();
+    cases[key] = { save, ts:Date.now() };
+    const keep = Object.entries(cases).sort((a, b) => b[1].ts - a[1].ts).slice(0, CASE_KEEP);
+    if (!store.set('cases', Object.fromEntries(keep))) store.del('cases');
+    await draw();
+  } catch (e) { if (!hit) box.innerHTML = `<div class="panel" style="margin-top:24px"><p>${esc(e.message)}</p><a class="btnlink" href="${location.pathname}">Open SPOODEX</a></div>`; }
+}
+// The owner's side: pick up to 9 genera for the case, then copy or share the link
+function caseEditor() {
+  const M = S.M, picks = (S.u.casePicks || []).filter(id => M.G.has(id)), shown = caseIds(M, picks);
+  const all = [...M.genera].filter(g => g.cover).sort(rarestFirst);
+  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(880px,100%)"><button class="x" data-close="1">✕</button><div class="body">
+    <h2>Display case</h2>
+    <p class="small">A page of your ${shown.length === CASE_N ? 9 : shown.length} ${picks.length ? 'chosen' : 'rarest'} genera for anyone with the link. No places are shown.</p>
+    <p class="row"><button class="primary" data-act="caseCopy">🔗 Copy link</button>${navigator.share ? '<button data-act="caseShare">📤 Share</button>' : ''}
+      <a href="${esc(caseLink(S.login, picks))}" target="_blank" rel="noopener">Preview ↗</a></p>
+    <h3 style="margin-top:14px">${picks.length ? `Your picks (${picks.length} of ${CASE_N})` : `Your ${CASE_N} rarest, until you pick your own`}</h3>
+    <div class="casepick">${all.map(g => `<button class="${picks.includes(g.id) ? 'on' : ''}" data-act="casePick" data-v="${g.id}" aria-pressed="${picks.includes(g.id)}">
+      <span class="ph" style="background-image:url('${esc(photoSize(g.cover, 'small'))}')"></span><i>${esc(g.name)}</i></button>`).join('')}</div></div></div></div>`;
+}
+function casePick(id) {
+  const picks = (S.u.casePicks || []).filter(x => S.M.G.has(x));
+  S.u.casePicks = picks.includes(id) ? picks.filter(x => x !== id) : picks.length < CASE_N ? [...picks, id] : picks;
+  if (picks.length >= CASE_N && !picks.includes(id)) toast(`A case holds ${CASE_N}. Unpick one first.`);
+  saveUser(); caseEditor();
+}
+async function caseShare(native) {
+  const url = caseLink(S.login, (S.u.casePicks || []).filter(id => S.M.G.has(id)));
+  if (native && navigator.share) { try { await navigator.share({ title:`${S.login}'s SPOODEX display case`, url }); } catch {} return; }
+  try { await navigator.clipboard.writeText(url); toast('Display case link copied'); } catch { window.prompt('Copy this link:', url); }
+}
+
 // ?u=<login> opens that SPOODEX (importing it if needed); ?vs=<login> jumps to Compare.
 // Otherwise a returning player opens straight from cache, then quietly syncs.
 // Shared caches get their defaults when the script loads, before IndexedDB is open; re-read them once it is.
@@ -6362,6 +6466,7 @@ const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladd
   S.pendingVs = (q.get('vs') || '').trim() || null;
   S.pendingCrew = q.get('crew') ? q.get('crew').split(',') : null;
   S.pendingEv = (q.get('ev') || '').trim() || null;
+  if (u && q.has('case')) { showCase(u, q.get('case')); return; }
   const target = u || store.get('lastLogin');
   if (target && store.get(ukey(target))) {
     loadUser(target);
