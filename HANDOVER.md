@@ -93,7 +93,7 @@ python -m http.server 8765        # any static server works
 | (linked, not copied) | The **Identification aid** (owner's interactive key to Australian salticid genera) lives in its own repo, https://github.com/Themoojuice/Identification-aid, and its own Pages site, https://themoojuice.github.io/Identification-aid/ (React/Vite, deployed by that repo's Actions workflow). SPOODEX only links to it via the `ID_AID` constant and `idAidBtn()`. Don't copy its build in here: it has its own service worker and offline package tied to `/Identification-aid/`, and a copy would go stale |
 | `.gitignore` | Ignores `.claude/` and `site/` |
 
-External dependencies (CDN): Leaflet 1.9.4 (cdnjs), Google Fonts (Special Elite, Fraunces, IBM Plex Mono, Caveat), and
+External dependencies (CDN): Leaflet 1.9.4 (cdnjs), Google Fonts (Special Elite, Fraunces, IBM Plex Mono, Caveat; since v2.4 `--body` is Fraunces for reading text, `--mono` IBM Plex Mono for buttons, chips, labels, catalogue numbers and table headers; nothing on screen is below 11 px, and `--muted` passes WCAG AA on both panel colours in every chassis: 4.8–5.5:1), and
 **MapLibre GL JS 5.24.0** (cdnjs, loaded lazily the first time the 3D map opens; `MAPLIBRE` constant). MapLibre 6 is ESM-only
 (`.mjs` plus worker modules) and cdnjs carries only its CSS, so 5.24.0 is the newest release cdnjs serves as a script.
 Map tiles: **Esri World_Topo_Map + World_Imagery (keyless)**. OSM's tile servers blocked us (tile usage policy) and

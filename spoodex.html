@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="SPOODEX">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=IBM+Plex+Mono:wght@400;600&family=Caveat:wght@600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400;1,9..144,600&family=IBM+Plex+Mono:wght@400;600&family=Caveat:wght@600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
@@ -19,7 +19,7 @@
 :root, [data-chassis="notebook"] {
   --bg:#e7d8b9; --panel:#f5ecd6; --panel2:#efe2c3; --ink:#2b2419; --muted:#6d604a;
   --accent:#a8412a; --lit:#2f6b3a; --line:#c4ad84; --dim:#cdbb96; --glow:none;
-  --head:'Special Elite', 'Courier New', monospace; --body:'IBM Plex Mono', ui-monospace, monospace;
+  --head:'Special Elite', 'Courier New', monospace; --body:'Fraunces', Georgia, serif; --mono:'IBM Plex Mono', ui-monospace, monospace;
   --radius:4px; --paper:repeating-linear-gradient(0deg, transparent 0 27px, rgba(80,60,30,.08) 27px 28px);
 }
 [data-chassis="kit"] {
@@ -53,13 +53,17 @@
 .sil { display:block; width:56%; aspect-ratio:1; margin:auto; background:var(--ink); opacity:.4; -webkit-mask:var(--sil) center / contain no-repeat; mask:var(--sil) center / contain no-repeat; }
 * { box-sizing:border-box; }
 html,body { margin:0; }
-body { background:var(--bg); background-image:var(--paper); color:var(--ink); font:14px/1.5 var(--body); min-height:100vh; }
+body { background:var(--bg); background-image:var(--paper); color:var(--ink); font:15px/1.5 var(--body); min-height:100vh; }
 a { color:var(--accent); }
 button, select, input { font:inherit; color:inherit; }
 button { cursor:pointer; background:var(--panel2); border:1px solid var(--line); border-radius:var(--radius); padding:6px 12px; }
 button:hover { border-color:var(--accent); }
 button.primary { background:var(--accent); color:var(--panel); border-color:var(--accent); font-weight:600; }
 input, select { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:6px 10px; }
+/* v2.4 type: Fraunces for reading, IBM Plex Mono only for controls, labels, catalogue numbers and figures */
+button, select, input, textarea, .chip, .rchip, .badge, .num, .kv dt, table th, .stile span, .lvl, nav.tabs { font-family:var(--mono); }
+button, select, input { font-size:14px; }
+.mono, .wreward, .small.mono { font-family:var(--mono); }
 h1,h2,h3 { font-family:var(--head); font-weight:400; margin:0 0 8px; letter-spacing:.02em; }
 .wrap { max-width:1180px; margin:0 auto; padding:0 16px 60px; }
 .muted { color:var(--muted); }
@@ -77,12 +81,12 @@ h1,h2,h3 { font-family:var(--head); font-weight:400; margin:0 0 8px; letter-spac
 table.cmp { width:100%; border-collapse:collapse; font-size:13px; }
 table.cmp td, table.cmp th { padding:4px 6px; border-bottom:1px solid var(--dim); text-align:left; }
 .card.gilded { border:2px solid #b08a45; box-shadow:inset 0 0 0 2px #e2bf7a; }
-.leaflet-popup-content button { font:13px var(--body); }
+.leaflet-popup-content button { font:13px var(--mono); }
 .pheno { display:grid; grid-template-columns:repeat(12,1fr); gap:3px; height:80px; align-items:end; max-width:420px; }
 .pheno div { height:100%; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; }
 .pheno i { display:block; width:100%; min-height:2px; background:var(--dim); border-radius:2px 2px 0 0; }
 .pheno i.now { background:var(--accent); }
-.pheno span { font-size:10px; color:var(--muted); }
+.pheno span { font-size:11px; color:var(--muted); }
 .inseason { color:var(--lit); }
 .fix { margin:1px 0 4px 26px; }
 .card .rar { position:absolute; top:6px; right:6px; z-index:2; font-size:11px; color:#e2bf7a; text-shadow:0 1px 2px #000; letter-spacing:1px; }
@@ -135,7 +139,7 @@ p.story { margin:0 0 8px; padding-bottom:8px; border-bottom:1px dashed var(--dim
 .wslide .cardcanvas { max-width:360px; }
 .wdots { display:flex; gap:6px; } .wdots i { width:8px; height:8px; border-radius:50%; background:var(--dim); } .wdots i.on { background:var(--accent); }
 .feed { padding:6px 0; border-bottom:1px dashed var(--dim); }
-nav.tabs button .news { color:var(--accent); font-size:10px; vertical-align:super; }
+nav.tabs button .news { color:var(--accent); font-size:11px; vertical-align:super; }
 .posters { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:18px; }
 .poster { background:#efe1bf; background-image:radial-gradient(circle at 20% 15%, rgba(255,255,255,.35), transparent 45%), radial-gradient(circle at 85% 90%, rgba(120,80,30,.18), transparent 50%);
   color:#3a2a18; border:1px solid #b89f72; box-shadow:0 3px 12px rgba(0,0,0,.28); padding:14px 14px 12px; text-align:center; cursor:pointer; transform:rotate(-.6deg); transition:transform .15s; }
@@ -144,7 +148,7 @@ nav.tabs button .news { color:var(--accent); font-size:10px; vertical-align:supe
 .poster .wtitle { font:400 44px/1 'Special Elite', 'Courier New', monospace; letter-spacing:.14em; border-bottom:3px double #6b5234; padding-bottom:4px; }
 .poster .wtier { font:600 11px 'IBM Plex Mono', monospace; letter-spacing:.18em; margin-top:6px; color:#8a3b22; }
 .poster .wph { aspect-ratio:1; background:#d9c7a0 center/cover; filter:sepia(.5) contrast(1.05); border:6px solid #f7eed8; box-shadow:0 1px 3px rgba(0,0,0,.3); margin:10px 0 2px; }
-.poster .wcredit { font:10px 'IBM Plex Mono', monospace; color:#7a6548; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.poster .wcredit { font:11px 'IBM Plex Mono', monospace; color:#7a6548; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .poster .wname { font:italic 600 26px Fraunces, Georgia, serif; margin-top:6px; }
 .poster .wtribe { font:12px 'IBM Plex Mono', monospace; color:#6d5a40; }
 .poster .wwhy { list-style:none; padding:0; margin:8px 0; font:12px/1.5 'IBM Plex Mono', monospace; text-align:left; }
@@ -215,7 +219,7 @@ a.lcard:hover { border-color:var(--accent); }
 .lcard .nm { padding:6px 8px 0; font:italic 600 15px var(--head); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .lcard .cn, .card .cn, .rcard .cn { font-size:11.5px; line-height:1.3; color:var(--ink); }
 .lcard .cn { padding:0 8px; }
-.lcard .cr { margin-top:auto; padding:3px 8px 6px; font-size:10px; line-height:1.3; color:var(--muted); overflow-wrap:anywhere; }
+.lcard .cr { margin-top:auto; padding:3px 8px 6px; font-size:11px; line-height:1.3; color:var(--muted); overflow-wrap:anywhere; }
 .landstarts { display:flex; flex-direction:column; gap:12px; max-width:560px; }
 .landstarts button.big { min-height:58px; font-size:17px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
 .landstarts button.big small { font-weight:400; font-size:13px; }
@@ -233,12 +237,12 @@ a.lcard:hover { border-color:var(--accent); }
 .vint { filter:sepia(.35) contrast(1.05); }
 .card.plate.pic .ph { aspect-ratio:1; background:var(--panel2) center/cover no-repeat; min-height:0; padding:0; filter:none; }
 .card.plate.pic .ph.vint { filter:sepia(.35) contrast(1.05); }
-.card.plate.pic .meta .cr { font-size:10px; color:var(--muted); margin-top:2px; }
+.card.plate.pic .meta .cr { font-size:11px; color:var(--muted); margin-top:2px; }
 .spot .smeta { padding:10px 12px; display:flex; flex-direction:column; gap:3px; min-width:0; }
-.spot .sk { font-size:10.5px; letter-spacing:.2em; color:var(--accent); }
+.spot .sk { font-size:11px; letter-spacing:.2em; color:var(--accent); }
 .spot .snm { font:italic 600 19px var(--head); color:var(--ink); text-decoration:none; }
 .spot .sfacts { list-style:none; margin:4px 0; padding:0; font-size:12.5px; display:grid; gap:3px; }
-.spot .cr { font-size:10px; color:var(--muted); margin-top:auto; }
+.spot .cr { font-size:11px; color:var(--muted); margin-top:auto; }
 .tsec { margin-bottom:18px; }
 .tban { height:120px; border-radius:var(--radius) var(--radius) 0 0; background:#3a2f22 center/cover no-repeat; display:flex; align-items:flex-end; overflow:hidden; }
 .tban > div { width:100%; padding:10px 14px; color:#f6eedb; background:linear-gradient(transparent, rgba(20,14,8,.85)); font-size:13px; }
@@ -256,7 +260,7 @@ a.lcard:hover { border-color:var(--accent); }
 .drawer .rank { color:var(--muted); font-size:11px; }
 .drawer.unexp .dtitle .small { color:var(--accent); }
 .ring { flex:none; width:52px; height:52px; border-radius:50%; display:grid; place-items:center; align-content:center; background:radial-gradient(var(--panel) 58%, transparent 60%), conic-gradient(var(--lit) calc(var(--p) * 1%), var(--dim) 0); line-height:1; }
-.ring b { font:600 16px Fraunces, Georgia, serif; } .ring small { font-size:10px; color:var(--muted); }
+.ring b { font:600 16px Fraunces, Georgia, serif; } .ring small { font-size:11px; color:var(--muted); }
 .dtiles { display:grid; grid-template-columns:repeat(auto-fill, minmax(92px, 1fr)); gap:8px; padding:0 14px 12px; }
 .ttile { display:flex; flex-direction:column; text-decoration:none; color:inherit; border:1px solid var(--line); border-bottom:3px solid var(--rc, var(--line)); border-radius:6px; overflow:hidden; background:var(--panel2); }
 .ttile .ph { aspect-ratio:1; background:var(--panel2) center/cover no-repeat; }
@@ -294,7 +298,7 @@ a.lcard:hover { border-color:var(--accent); }
 .fcard .ph.none { display:grid; place-items:center; font:40px var(--head); color:var(--muted); }
 .fcard .meta { padding:8px 10px 10px; display:flex; flex-direction:column; gap:2px; }
 .fcard .nm { font:italic 600 18px var(--head); }
-.fcard .cr { font-size:10px; color:var(--muted); margin-top:2px; }
+.fcard .cr { font-size:11px; color:var(--muted); margin-top:2px; }
 @media (max-width:600px) { .finds { grid-template-columns:1fr; gap:8px; } .fcard { flex-direction:row; } .fcard .ph { width:104px; flex:none; aspect-ratio:1; } }
 
 /* ---------- Dex grid ---------- */
@@ -316,7 +320,7 @@ a.lcard:hover { border-color:var(--accent); }
 .card .num { font-size:11px; color:var(--muted); }
 .card .nm { font-family:var(--head); font-size:15px; font-style:italic; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .card.unknown .nm { font-style:normal; letter-spacing:.2em; color:var(--muted); }
-.card .badge { position:absolute; top:6px; left:6px; font-size:10px; padding:1px 6px; border-radius:99px; background:var(--panel); border:1px solid var(--line); z-index:2; }
+.card .badge { position:absolute; top:6px; left:6px; font-size:11px; padding:1px 6px; border-radius:99px; background:var(--panel); border:1px solid var(--line); z-index:2; }
 .b-disc { color:var(--ink); } .b-supp { color:var(--lit); border-color:var(--lit)!important; } .b-mast { background:var(--accent)!important; color:var(--panel)!important; border-color:var(--accent)!important; }
 /* v2.4 cards: rarity edge (Uncommon up), foil on Rare/Exceptional, specimen label, a back you turn to */
 .card.rar, .lcard.rar, .rcard.rar { border:2px solid var(--rc); }
@@ -404,24 +408,24 @@ a.lcard:hover { border-color:var(--accent); }
 .dotsw { display:inline-block; width:11px; height:11px; border:2px dotted; border-radius:1px; vertical-align:middle; }
 .sw { display:inline-block; width:10px; height:10px; border-radius:2px; vertical-align:middle; border:1px solid rgba(0,0,0,.2); }
 .basesw { display:flex; flex-direction:column; }
-.basesw button { width:auto !important; height:auto !important; padding:3px 8px !important; font:12px var(--body); text-align:left; }
+.basesw button { width:auto !important; height:auto !important; padding:3px 8px !important; font:12px var(--mono); text-align:left; }
 .basesw button.on { background:var(--accent); color:var(--panel); }
 .maplibregl-popup-content { background:var(--panel); color:var(--ink); font:13px/1.45 var(--body); border:1px solid var(--line); }
 .maplibregl-popup-anchor-bottom .maplibregl-popup-tip { border-top-color:var(--panel); } .maplibregl-popup-anchor-top .maplibregl-popup-tip { border-bottom-color:var(--panel); }
 .maplibregl-popup-close-button { font-size:18px; padding:0 6px; }
 .mapctrls { display:flex; flex-direction:column; gap:8px; }
 .layersw { display:flex; flex-direction:column; }
-.layersw button { width:auto !important; height:auto !important; display:flex !important; align-items:center; gap:6px; padding:4px 8px !important; font:12px var(--body); text-align:left; color:#2b2419; }
+.layersw button { width:auto !important; height:auto !important; display:flex !important; align-items:center; gap:6px; padding:4px 8px !important; font:12px var(--mono); text-align:left; color:#2b2419; }
 .layersw button i { width:12px; height:12px; border-radius:2px; border:1.5px solid #8a7a5c; flex:none; }
 .layersw button.on i { background:#2f6b3a; border-color:#2f6b3a; box-shadow:inset 0 0 0 2px #fff; }
 .maplegend { display:flex; flex-wrap:wrap; gap:4px 12px; align-items:center; }
 .lgsw { display:inline-block; width:15px; height:11px; border:2.5px solid; border-radius:2px; vertical-align:-1px; margin-right:4px; box-shadow:0 0 0 1px rgba(43,36,25,.45); }
-.rchip { display:inline-block; font-size:10px; letter-spacing:.06em; text-transform:uppercase; padding:0 6px; border-radius:99px; border:1.5px solid var(--rc); color:var(--ink); background:color-mix(in srgb, var(--rc) 22%, var(--panel)); white-space:nowrap; vertical-align:1px; }
+.rchip { display:inline-block; font-size:11px; letter-spacing:.06em; text-transform:uppercase; padding:0 6px; border-radius:99px; border:1.5px solid var(--rc); color:var(--ink); background:color-mix(in srgb, var(--rc) 22%, var(--panel)); white-space:nowrap; vertical-align:1px; }
 .scchips button { padding:2px 9px; border-radius:99px; font-size:12px; }
 .scchips button.on { background:var(--ink); color:var(--panel); border-color:var(--ink); }
 #mapSide { padding:0; overflow:hidden; align-self:start; }
 .schead { padding:14px 16px 12px; background:var(--panel2); border-bottom:1px solid var(--line); }
-.schead .eyebrow { font-size:10px; letter-spacing:.16em; color:var(--muted); }
+.schead .eyebrow { font-size:11px; letter-spacing:.16em; color:var(--muted); }
 .schead h2 { margin:2px 0 0; font-size:21px; }
 .schead .scinfo { margin-top:4px; }
 .mapbadge.go { cursor:pointer; top:auto; bottom:52px; }
@@ -432,7 +436,7 @@ a.lcard:hover { border-color:var(--accent); }
 .wxdays.many { grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); }
 .card .rar .rchip { text-shadow:none; letter-spacing:.04em; }
 .mapctrls .layersw { background:#fff; border-radius:4px; overflow:hidden; box-shadow:0 0 0 2px rgba(0,0,0,.1); }
-.leaflet-control .layersw button { display:flex; align-items:center; gap:6px; width:100%; border:0; border-bottom:1px solid #ddd; border-radius:0; background:#fff; padding:4px 8px; font:12px var(--body); color:#2b2419; text-align:left; }
+.leaflet-control .layersw button { display:flex; align-items:center; gap:6px; width:100%; border:0; border-bottom:1px solid #ddd; border-radius:0; background:#fff; padding:4px 8px; font:12px var(--mono); color:#2b2419; text-align:left; }
 .scstats { display:grid; grid-template-columns:repeat(4,1fr); border-bottom:1px solid var(--line); }
 .scstats div { padding:8px 2px; text-align:center; border-right:1px solid var(--dim); }
 .scstats div:last-child { border-right:0; }
@@ -505,7 +509,7 @@ details > summary.scsec { cursor:pointer; }
 .bingos { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr)); gap:14px; }
 .bwrap { position:relative; }
 .bgrid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:3px; }
-.bsq { aspect-ratio:1; border:1px solid var(--line); border-radius:3px; background:var(--panel2); font-size:10px; line-height:1.15; display:flex; align-items:center; justify-content:center; text-align:center; padding:2px; overflow:hidden; overflow-wrap:break-word; hyphens:auto; }
+.bsq { aspect-ratio:1; border:1px solid var(--line); border-radius:3px; background:var(--panel2); font-size:11px; line-height:1.15; display:flex; align-items:center; justify-content:center; text-align:center; padding:2px; overflow:hidden; overflow-wrap:break-word; hyphens:auto; }
 .bsq a { color:inherit; text-decoration:none; }
 .bsq.on { background:color-mix(in srgb, var(--lit) 32%, var(--panel)); border-color:var(--lit); font-weight:600; }
 .bsq.pen { border:1.5px dashed var(--accent); }
@@ -530,11 +534,11 @@ details > summary.scsec { cursor:pointer; }
 .card.plate .ph { flex:1; }
 .card.plate .ph { display:grid; place-items:center; aspect-ratio:auto; min-height:100%; padding:12px 0; box-sizing:border-box; background:#e9dcbc; background-image:radial-gradient(circle at 30% 20%, rgba(255,255,255,.4), transparent 50%), radial-gradient(circle at 80% 90%, rgba(120,80,30,.2), transparent 55%); filter:sepia(.25); }
 .plab { width:82%; padding:10px 8px; border:1px solid #8a6d44; outline:3px double #8a6d44; outline-offset:-7px; background:#f7efd9; text-align:center; font:11px/1.35 'IBM Plex Mono', monospace; color:#4a3a24; display:flex; flex-direction:column; gap:3px; }
-.plab .pk { font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#8a3b22; }
+.plab .pk { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#8a3b22; }
 .plab .pn { font:italic 600 17px Fraunces, Georgia, serif; color:#2b2419; overflow-wrap:anywhere; }
-.plab .pa { font-size:10.5px; }
+.plab .pa { font-size:11px; }
 .tree .g.museum { color:var(--muted); text-decoration:none; }
-.seal { display:inline-block; font:600 10px 'IBM Plex Mono', monospace; letter-spacing:.08em; text-transform:uppercase; color:#f6eedb; padding:2px 8px; border-radius:99px; vertical-align:1px; white-space:nowrap; box-shadow:inset 0 0 0 1.5px rgba(246,238,219,.6); }
+.seal { display:inline-block; font:600 11px 'IBM Plex Mono', monospace; letter-spacing:.08em; text-transform:uppercase; color:#f6eedb; padding:2px 8px; border-radius:99px; vertical-align:1px; white-space:nowrap; box-shadow:inset 0 0 0 1.5px rgba(246,238,219,.6); }
 .seal.s-first { background:#b8892a; } .seal.s-trio { background:#9a3d2a; } .seal.s-vanguard { background:#5b4a8a; } .seal.s-founding { background:#3f6b3a; }
 .seal.big { display:grid; place-items:center; width:120px; height:120px; padding:12px; border-radius:50%; font-size:12px; line-height:1.2; white-space:normal; text-align:center; box-shadow:0 0 0 4px #f6eedb inset, 0 0 0 2px rgba(0,0,0,.35), 0 8px 24px rgba(0,0,0,.5); animation:sealin .9s cubic-bezier(.2,1.6,.4,1) .9s both; }
 #reveal.honour .rph { width:min(320px,62vw); }
