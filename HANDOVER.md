@@ -1,6 +1,6 @@
 # SPOODEX — handover
 
-**As of 2026-10-11 · v2.3 "Simplify" live; v2.4 "Look and feel" on branch `feature/look-and-feel`; live at https://themoojuice.github.io/spoodex/?u=themoojuice (tags `v1.20.0`, `v2.0.0`)**
+**As of 2026-10-11 · v2.4 "Look and feel", live at https://themoojuice.github.io/spoodex/?u=themoojuice (tags `v1.20.0`, `v2.0.0`)**
 
 This is the single source of truth for anyone (human or Claude) picking up the project. Read §0 first; it's enough
 to start safely. The rest is reference. When you change something, update this file in the same commit.
@@ -610,7 +610,7 @@ Work on a new branch, merge it to `main` with `--no-ff`, tag the release.
 - **Test outside Australia**; consider showing progress as a % of the regional total for low-diversity regions (e.g. the UK has ~20 genera).
 - **Full-photo share cards** via an image proxy (see §11).
 
-**Awaiting the owner's decision (v2.4, look and feel; branch `feature/look-and-feel`, not merged)**:
+**Awaiting the owner's decision (v2.4, look and feel; shipped 2026-10-11, these still open)**:
 - **The silhouette** (`--sil`): a generic jumping spider from above, ink line, square-fronted carapace and heavy first legs, two eyes at the
   front corners. Alternative: a face-on pose (the big front eyes), which reads more "salticid" but is busier at small sizes. Or draw your own
   and replace the one url.
@@ -804,7 +804,7 @@ cards progressively during a first import; generalising beyond jumping spiders (
 | v1.7 | IndexedDB storage (with migration), v2 imports with `fields=` (~6% of the download), Trip planner |
 | v1.8 | Sets (themed + complete-the-lineage), Bounty board, "since your last visit" |
 | v1.9 | Most Wanted tab renamed Bounty board (bounties first), SPOODEX › Needs ID layer, fixed-height quest tiles |
-| v2.4 | Look and feel (branch `feature/look-and-feel`, 2026-10-11; prompt `spoodex-prompt-6-look-and-feel.md`): rarity-edged cards with foil, a specimen label and a back you turn to (also on Profile's strip, the reveal and the My SPOODEX image); one spider silhouette (`--sil`) for every empty slot; Fraunces body text with IBM Plex Mono for controls and labels, nothing under 11 px; ~55 ink icons replacing emoji in the page (`inkIcons`); shimmer skeletons for loading states. App icon waiting for the owner's art |
+| v2.4 | Look and feel (shipped 2026-10-11, tag `v2.4.0`; prompt `spoodex-prompt-6-look-and-feel.md`): rarity-edged cards with foil, a specimen label and a back you turn to (also on Profile's strip, the reveal and the My SPOODEX image); one spider silhouette (`--sil`) for every empty slot; Fraunces body text with IBM Plex Mono for controls and labels, nothing under 11 px; ~55 ink icons replacing emoji in the page (`inkIcons`); shimmer skeletons for loading states. App icon waiting for the owner's art |
 | v2.3 | Simplify (shipped 2026-10-11, tag `v2.3.0`; prompt `spoodex-prompt-5-simplify.md`): one headline count everywhere (`headline()`, which fixed the reveal's "54 of the 80"), three sections (Collection, Go spooding with Quests, Mates) with a view row instead of ten tabs, quest and poster XP rewards removed (mastery XP kept, renamed mastery points), first-record places shown as the square's name, tier subtitles removed, no coordinates finer than 0.25° on screen (`cellLabel` names squares) |
 | v2.2 | Uncluttered (owner, 2026-10-08): the This week tab (Spood Report) and field mode (field compass, header 🧭 button) removed; 10 tabs; boot drops the old `report` cache |
 | v2.0 | The Naturalist Update (shipped 2026-10-07, tag `v2.0.0`, on top of v1.20): merged onto v1.20 by the spood-frenzy session (one conflict, `PERSISTED` = both `notes` and `lore`); `extFetch` now drops ALA requests queued before the switch went off; Australia's checklist `TAXA_AU` (iNat ∪ the Lucid key, 91 genera, `tools/taxa.py`), "known from Australia" in the dex, 🏛 Never on iNat museum plates and tree branch, owner's Taxonomy review; museum history from the Atlas of Living Australia (described by, holotype, first collected) on the genus page and species rows; naturalist ranks for every species and genus in your country and state, inked or pencilled, with honours (First on record, Founding trio, Vanguard, Founding Naturalist), a ceremony, a share card and a dispatch, and a cabinet on Profile; museum ghosts in the scanner, cold-case posters and the Bring It Into the Light quest; crew hype with a ceremony and a link to congratulate on iNat; an empty field-story renderer; weather stars weigh the window's length |
