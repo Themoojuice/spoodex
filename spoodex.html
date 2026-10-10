@@ -1125,6 +1125,18 @@ function scopeGenera(scope = S.prefs.scope) {
   const extras = S.M.genera.filter(g => !set.has(g.id)).map(g => g.id);
   return { ref, inScope, extras, found: inScope.filter(id => S.M.G.has(id)).length };
 }
+// The one collection count every screen prints (v2.3): genera found out of the scope's iNat list, plus any you've recorded that aren't
+// on it (owner, 2026-10-10: five different counts were confusing), so found + extra is always the level. null until the list loads.
+function headline(scope = S.prefs.scope) {
+  const sc = scopeGenera(scope);
+  if (!sc.ref || !sc.inScope.length) return null;
+  const pid = scopePlace(scope), away = sc.extras.every(id => !S.M.G.get(id).obs.some(o => o.pl?.includes(pid)));
+  return { found:sc.found, total:sc.inScope.length, extra:sc.extras.length, away, where:scopeLabel(scope) };
+}
+// "53 / 80 genera on iNat in Australia · +1 elsewhere" (bold numbers in HTML, plain for canvases)
+const headlineExtra = h => h.extra ? ` · +${h.extra} ${h.away ? 'elsewhere' : 'more'}` : '';
+const headlineHtml = h => `<b>${h.found} / ${h.total}</b> genera on iNat in ${esc(h.where)}${headlineExtra(h)}`;
+const headlineText = h => `${h.found} / ${h.total} genera on iNat in ${h.where}${headlineExtra(h)}`;
 // Taxonomic order: DFS through the merged tree, alphabetical within each node
 function taxonomicOrder(ids) {
   const want = new Set(ids), kids = {};
@@ -1639,7 +1651,7 @@ function render() {
 // number tiles (owner, 2026-10-08). Numbers that are still zero or tiny stay hidden until they mean something.
 let nextKey = '', nextAt = 0;
 function viewProfile() {
-  const M = S.M, sc = scopeGenera(), tier = M.tier, n = M.G.size;
+  const M = S.M, hl = headline(), tier = M.tier, n = M.G.size;
   const regions = {};
   M.genera.forEach(g => g.places.forEach(p => { const pl = S.places[p]; if (pl && pl.l != null && [0,10,20].includes(pl.l)) { (regions[p] = regions[p] || { id:p, n:pl.n, l:pl.l, g:0 }).g++; } }));
   const regionRows = lvl => Object.values(regions).filter(r => r.l === lvl).sort((a,b) => b.g - a.g);
@@ -1661,7 +1673,7 @@ function viewProfile() {
   const hero = `<div class="panel profhero">
       <div class="muted small">${esc(who().toUpperCase())}'S SPOODEX</div>
       <h1>Level ${n}</h1><div class="hand">${titleHtml(M)}</div>
-      ${sc.ref && sc.inScope.length ? `<div class="row" style="gap:8px;margin-top:6px"><span><b>${sc.found} / ${sc.inScope.length}</b> genera on iNat in ${esc(scopeLabel(S.prefs.scope))}</span>${bar(sc.found, sc.inScope.length)}</div>` : ''}
+      ${hl ? `<div class="row" style="gap:8px;margin-top:6px"><span>${headlineHtml(hl)}</span>${bar(hl.found, hl.total)}</div>` : ''}
       ${isGuest() || !n ? '' : `<p class="row herobtns"><button data-act="dexImage">📤 My SPOODEX image</button><button data-act="card">🪪 Title card</button>${M.fieldDays.length ? `<button data-act="wrapped">🎁 ${esc(wrappedYears()[0])} in spoods</button>` : ''}</p>`}
     </div>`;
   // your genera, newest first, then a few mystery spoods (records not yet identified to genus) with their photos
@@ -1775,7 +1787,7 @@ function viewDex() {
   if (S.prefs.layer === 'species') return viewDexSpecies();
   if (S.prefs.layer === 'sets') return viewSets();
   if (S.prefs.layer === 'needsid') return viewNeedsId();
-  const M = S.M, sc = scopeGenera(), P = S.prefs;
+  const M = S.M, sc = scopeGenera(), hl = headline(), P = S.prefs;
   const { order } = taxonomicOrder(sc.inScope);
   const num = new Map(order.map((id,i) => [id, i+1]));
   const filt = id => {
@@ -1798,12 +1810,12 @@ function viewDex() {
     <span class="muted">genera on iNat in</span>
     <select data-pref="scope">${['country','state','world'].map(s => `<option value="${s}" ${P.scope===s?'selected':''}>${esc(s==='world'?'World':scopeLabel(s))}</option>`).join('')}</select>
     <div class="bar" style="max-width:220px"><i style="width:${pct(sc.found, sc.inScope.length)}%"></i></div>
-    ${auHome() ? `<span class="small">· <b>${auFound()} / ${TAXA_AU.length}</b> known from Australia</span>` : ''}
+    ${hl?.extra ? `<span class="small">${headlineExtra(hl).slice(3)}</span>` : ''}
     <span>${chips.map(([k,l]) => `<span class="chip ${P.filter===k?'on':''}" data-filter="${k}" style="cursor:pointer">${l}</span>`).join(' ')}</span>
     <label class="small"><input type="checkbox" data-pref="reveal" ${P.reveal?'checked':''}> reveal names</label>
   </div>
   ${sc.ref ? '' : M.home.country || P.scope === 'world' ? '<p class="muted">Loading reference collection…</p>' : '<div class="panel"><p>Set a home base so SPOODEX knows which genera belong in your region.</p><button class="primary" data-tab="map">Set home base</button></div>'}
-  ${never ? `<p class="small muted">Genera known from Australia (the Australian Faunal Directory and the Identification aid's key) with no iNat records in Australia yet.</p>
+  ${never ? `<p class="small muted">You've recorded <b>${auFound()} of the ${TAXA_AU.length}</b> genera known from Australia (the Australian Faunal Directory and the Identification aid's key). These have no iNat records in Australia yet.</p>
     <div class="dexgrid">${auNever().map(plateHtml).join('')}</div>` : `<div class="dexgrid">${shown.map(id => cardHtml(id, num.get(id))).join('')}</div>`}
   ${sc.extras.length && !never ? `<h2 style="margin-top:22px">Recorded outside ${esc(scopeLabel(P.scope))} (+${sc.extras.length})</h2>
     <div class="dexgrid">${sc.extras.map(id => cardHtml(id, 0)).join('')}</div>` : ''}
@@ -2024,10 +2036,10 @@ function viewTree() {
   const loreNeed = n => !S.lore[n] || (taxaAu(n)?.inat == null && taxaAu(n) && !('syn' in S.lore[n]));
   [...new Set([...spots.map(x => x.n), ...(auHome() ? auNever().map(t => t.n) : [])])].filter(loreNeed).slice(0, 8)
     .forEach(n => ensureLore(n, 'genus').then(r => { if (r && S.tab === 'tree') softRender(); }).catch(() => {}));
-  const all = groups.flatMap(g => [...g.drawers.values()]), tot = all.reduce((a, d) => a + d.ids.length, 0), got = all.reduce((a, d) => a + d.ids.filter(id => M.G.has(id)).length, 0);
+  const all = groups.flatMap(g => [...g.drawers.values()]), hl = headline();
   const unexp = all.filter(d => !d.ids.some(id => M.G.has(id))).length;
   return `<div class="panel" style="margin-bottom:14px"><div class="row" style="justify-content:space-between;gap:8px"><h2 style="margin:0">Lineages</h2>${sw}</div>
-      <p style="margin:8px 0 0"><b>${got}</b> of <b>${tot}</b> genera on iNat in ${esc(scopeLabel(S.prefs.scope))} · <b>${all.length - unexp}</b> of ${all.length} lineages explored${auHome() ? ` · Australia's checklist: ${TAXA_AU.length} genera, ${auNever().length} never on iNat` : ''}</p>
+      <p style="margin:8px 0 0">${hl ? `${headlineHtml(hl)} · ` : ''}<b>${all.length - unexp}</b> of ${all.length} lineages explored${auHome() ? ` · Australia's checklist: ${TAXA_AU.length} genera, ${auNever().length} never on iNat` : ''}</p>
       <p class="small muted" style="margin:4px 0 0">Classification as used on iNaturalist (subfamily › tribe › genus). <label><input type="checkbox" data-pref="reveal" ${S.prefs.reveal ? 'checked' : ''}> reveal names</label></p></div>
     ${spots.length ? `<div class="spots">${spots.map(spotCard).join('')}</div>` : ''}
     ${groups.map(g => { const ids = [...g.drawers.values()].flatMap(d => d.ids), f = ids.filter(id => M.G.has(id)), hero = f.find(id => OWNER_PICKS[id]) || f[0];
@@ -5371,13 +5383,14 @@ async function openTitleCard() {
 // Only the naturalist's own photos, the level, "N / M genera on iNat in <country or state>" and the ?u= link: no places below
 // state level, no map, no squares, nothing about where.
 function drawDexImage(cv, tiles, square, photosOnly) {
-  const M = S.M, H = square ? 1080 : 1350, K = cardKit(cv, H), { C, text } = K, sc = scopeGenera();
+  const M = S.M, H = square ? 1080 : 1350, K = cardKit(cv, H), { C, text } = K;
   // room under each photo for the name and a common name on up to two lines
   const cols = 4, rows = square ? 2 : 3, tw = 200, gap = (920 - cols * tw) / (cols - 1), rowH = tw + 104, top = 272;
   K.frame(tierKicker(M));
   text(who(), 80, 190, '600 64px Fraunces, Georgia, serif', C.ink, 'left', 640);
   text(`Level ${M.G.size}`, 1000, 190, '600 64px Fraunces, Georgia, serif', C.accent, 'right', 300);
-  text(sc.ref && S.prefs.scope !== 'world' ? `${sc.found} / ${sc.inScope.length} genera on iNat in ${scopeLabel(S.prefs.scope)}`
+  const hl = S.prefs.scope !== 'world' && headline();
+  text(hl ? headlineText(hl)
     : `${M.G.size} jumping spider ${M.G.size === 1 ? 'genus' : 'genera'}`, 80, 244, '600 44px Caveat, cursive', C.accent);
   for (let i = 0; i < cols * rows; i++) K.tile(tiles[i], 80 + (i % cols) * (tw + gap), top + Math.floor(i / cols) * rowH, tw, tw, photosOnly, 2);
   const y = top + rows * rowH + 6;
@@ -5924,11 +5937,11 @@ function flipCard(el) {
   el.querySelector('.cn').textContent = cnOf(id);
 }
 function revEndHtml() {
-  const M = S.M, n = M.G.size, sc = scopeGenera();
+  const M = S.M, n = M.G.size, hl = headline();
   return `<div class="panel revend" style="margin-top:8px">
     <div class="small muted">${esc(who().toUpperCase())}'S SPOODEX</div>
     <h2>Level ${n}</h2><div class="hand">${titleHtml(M)}</div>
-    <p>${n && sc.ref ? `<b>${n}</b> of the <b>${sc.inScope.length}</b> genera on iNat in ${esc(scopeLabel(S.prefs.scope))}.` : n ? '' : 'No public jumping spider records identified to genus yet.'}</p>
+    <p>${n && hl ? `${headlineHtml(hl)}.` : n ? '' : 'No public jumping spider records identified to genus yet.'}</p>
     ${M.leads.length ? `<p>❓ ${plural(mysteryCount(), 'mystery spood')} not yet identified to genus. <a href="#" data-act="needsid">See them →</a></p>` : ''}
     <p class="row"><button class="primary big" data-act="openDex">Open your SPOODEX</button>${n && !isGuest() ? '<button data-act="dexImage">📤 Share my SPOODEX</button>' : ''}</p>
     <div id="revNext">${nextThreeHtml()}</div>${tipsOnce()}</div>`;
