@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="SPOODEX">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=IBM+Plex+Mono:wght@400;600&family=Caveat:wght@600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400;1,9..144,600&family=IBM+Plex+Mono:wght@400;600&family=Caveat:wght@600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
@@ -19,7 +19,7 @@
 :root, [data-chassis="notebook"] {
   --bg:#e7d8b9; --panel:#f5ecd6; --panel2:#efe2c3; --ink:#2b2419; --muted:#6d604a;
   --accent:#a8412a; --lit:#2f6b3a; --line:#c4ad84; --dim:#cdbb96; --glow:none;
-  --head:'Special Elite', 'Courier New', monospace; --body:'IBM Plex Mono', ui-monospace, monospace;
+  --head:'Special Elite', 'Courier New', monospace; --body:'Fraunces', Georgia, serif; --mono:'IBM Plex Mono', ui-monospace, monospace;
   --radius:4px; --paper:repeating-linear-gradient(0deg, transparent 0 27px, rgba(80,60,30,.08) 27px 28px);
 }
 [data-chassis="kit"] {
@@ -47,15 +47,24 @@
 [data-chassis="cabinet"] #view > h3 .muted { color:#c9b48f; }
 [data-chassis="cabinet"] .panel, [data-chassis="cabinet"] .card { box-shadow:0 2px 0 #1a120d, 0 6px 16px rgba(0,0,0,.35); }
 [data-chassis="cabinet"] .panel { border-top:3px solid #b08a45; }
+/* The one empty-slot drawing (v2.4): a generic jumping spider from above, ink line. Swap this url to redraw it everywhere. Used as a
+   mask, so it takes the theme's ink colour: <i class="sil"></i>, or mask:var(--sil) on a pseudo-element. */
+:root { --sil:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M24 17 L14 11 L9 4' stroke-width=%273.4%27/%3E%3Cpath d='M23 21 L12 18 L5 17'/%3E%3Cpath d='M23 26 L12 29 L6 35'/%3E%3Cpath d='M25 30 L16 40 L13 51'/%3E%3Cpath d='M40 17 L50 11 L55 4' stroke-width=%273.4%27/%3E%3Cpath d='M41 21 L52 18 L59 17'/%3E%3Cpath d='M41 26 L52 29 L58 35'/%3E%3Cpath d='M39 30 L48 40 L51 51'/%3E%3Cpath d='M29.5 12.5 L29 9.8 M34.5 12.5 L35 9.8'/%3E%3Cpath d='M23 17 Q23 12.5 27 12.5 H37 Q41 12.5 41 17 V27 Q41 32.5 35 33 H29 Q23 32.5 23 27 Z'/%3E%3Ccircle cx='26.2' cy='15.4' r='1.3' fill='%23000'/%3E%3Ccircle cx='37.8' cy='15.4' r='1.3' fill='%23000'/%3E%3Cpath d='M32 33 V35.5'/%3E%3Cpath d='M32 35.5 C38.5 35.5 40 41 39 46 C38 51.5 35 55.5 32 55.5 C29 55.5 26 51.5 25 46 C24 41 25.5 35.5 32 35.5 Z'/%3E%3C/svg%3E"); }
+.sil { display:block; width:56%; aspect-ratio:1; margin:auto; background:var(--ink); opacity:.4; -webkit-mask:var(--sil) center / contain no-repeat; mask:var(--sil) center / contain no-repeat; }
 * { box-sizing:border-box; }
+.ic { width:1.2em; height:1.2em; vertical-align:-.24em; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; flex:none; }
 html,body { margin:0; }
-body { background:var(--bg); background-image:var(--paper); color:var(--ink); font:14px/1.5 var(--body); min-height:100vh; }
+body { background:var(--bg); background-image:var(--paper); color:var(--ink); font:15px/1.5 var(--body); min-height:100vh; }
 a { color:var(--accent); }
 button, select, input { font:inherit; color:inherit; }
 button { cursor:pointer; background:var(--panel2); border:1px solid var(--line); border-radius:var(--radius); padding:6px 12px; }
 button:hover { border-color:var(--accent); }
 button.primary { background:var(--accent); color:var(--panel); border-color:var(--accent); font-weight:600; }
 input, select { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:6px 10px; }
+/* v2.4 type: Fraunces for reading, IBM Plex Mono only for controls, labels, catalogue numbers and figures */
+button, select, input, textarea, .chip, .rchip, .badge, .num, .kv dt, table th, .stile span, .lvl, nav.tabs { font-family:var(--mono); }
+button, select, input { font-size:14px; }
+.mono, .wreward, .small.mono { font-family:var(--mono); }
 h1,h2,h3 { font-family:var(--head); font-weight:400; margin:0 0 8px; letter-spacing:.02em; }
 .wrap { max-width:1180px; margin:0 auto; padding:0 16px 60px; }
 .muted { color:var(--muted); }
@@ -73,12 +82,12 @@ h1,h2,h3 { font-family:var(--head); font-weight:400; margin:0 0 8px; letter-spac
 table.cmp { width:100%; border-collapse:collapse; font-size:13px; }
 table.cmp td, table.cmp th { padding:4px 6px; border-bottom:1px solid var(--dim); text-align:left; }
 .card.gilded { border:2px solid #b08a45; box-shadow:inset 0 0 0 2px #e2bf7a; }
-.leaflet-popup-content button { font:13px var(--body); }
+.leaflet-popup-content button { font:13px var(--mono); }
 .pheno { display:grid; grid-template-columns:repeat(12,1fr); gap:3px; height:80px; align-items:end; max-width:420px; }
 .pheno div { height:100%; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; }
 .pheno i { display:block; width:100%; min-height:2px; background:var(--dim); border-radius:2px 2px 0 0; }
 .pheno i.now { background:var(--accent); }
-.pheno span { font-size:10px; color:var(--muted); }
+.pheno span { font-size:11px; color:var(--muted); }
 .inseason { color:var(--lit); }
 .fix { margin:1px 0 4px 26px; }
 .card .rar { position:absolute; top:6px; right:6px; z-index:2; font-size:11px; color:#e2bf7a; text-shadow:0 1px 2px #000; letter-spacing:1px; }
@@ -131,7 +140,7 @@ p.story { margin:0 0 8px; padding-bottom:8px; border-bottom:1px dashed var(--dim
 .wslide .cardcanvas { max-width:360px; }
 .wdots { display:flex; gap:6px; } .wdots i { width:8px; height:8px; border-radius:50%; background:var(--dim); } .wdots i.on { background:var(--accent); }
 .feed { padding:6px 0; border-bottom:1px dashed var(--dim); }
-nav.tabs button .news { color:var(--accent); font-size:10px; vertical-align:super; }
+nav.tabs button .news { color:var(--accent); font-size:11px; vertical-align:super; }
 .posters { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:18px; }
 .poster { background:#efe1bf; background-image:radial-gradient(circle at 20% 15%, rgba(255,255,255,.35), transparent 45%), radial-gradient(circle at 85% 90%, rgba(120,80,30,.18), transparent 50%);
   color:#3a2a18; border:1px solid #b89f72; box-shadow:0 3px 12px rgba(0,0,0,.28); padding:14px 14px 12px; text-align:center; cursor:pointer; transform:rotate(-.6deg); transition:transform .15s; }
@@ -140,7 +149,7 @@ nav.tabs button .news { color:var(--accent); font-size:10px; vertical-align:supe
 .poster .wtitle { font:400 44px/1 'Special Elite', 'Courier New', monospace; letter-spacing:.14em; border-bottom:3px double #6b5234; padding-bottom:4px; }
 .poster .wtier { font:600 11px 'IBM Plex Mono', monospace; letter-spacing:.18em; margin-top:6px; color:#8a3b22; }
 .poster .wph { aspect-ratio:1; background:#d9c7a0 center/cover; filter:sepia(.5) contrast(1.05); border:6px solid #f7eed8; box-shadow:0 1px 3px rgba(0,0,0,.3); margin:10px 0 2px; }
-.poster .wcredit { font:10px 'IBM Plex Mono', monospace; color:#7a6548; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.poster .wcredit { font:11px 'IBM Plex Mono', monospace; color:#7a6548; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .poster .wname { font:italic 600 26px Fraunces, Georgia, serif; margin-top:6px; }
 .poster .wtribe { font:12px 'IBM Plex Mono', monospace; color:#6d5a40; }
 .poster .wwhy { list-style:none; padding:0; margin:8px 0; font:12px/1.5 'IBM Plex Mono', monospace; text-align:left; }
@@ -206,12 +215,24 @@ main { padding-top:18px; }
 .lcard { scroll-snap-align:start; display:flex; flex-direction:column; min-width:0; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; color:inherit; text-decoration:none; }
 a.lcard:hover { border-color:var(--accent); }
 .lcard .ph { display:block; aspect-ratio:1; background:var(--panel2) center/cover no-repeat; }
-.lcard.blank .ph { animation:pulse 1.4s ease-in-out infinite alternate; }
+.lcard.blank .ph { display:grid; place-items:center; }
 @keyframes pulse { to { opacity:.55; } }
+/* v2.4 loading skeletons: the shape of what's coming, the silhouette, a slow shimmer (none under reduced motion) */
+.skel { position:relative; overflow:hidden; background:var(--panel2); }
+.skel::before { content:''; position:absolute; inset:0; z-index:1; background:linear-gradient(100deg, transparent 30%, rgba(255,255,255,.5) 50%, transparent 70%) -150% 0 / 200% 100% no-repeat;
+  animation:shimmer 1.6s linear infinite; pointer-events:none; }
+@keyframes shimmer { to { background-position:250% 0; } }
+.skline { display:inline-block; height:.75em; width:9em; max-width:100%; vertical-align:middle; border-radius:99px; background:var(--dim); }
+.skline.short { width:5em; }
+.skelcard { cursor:default; }
+.skelcard .ph, .fcard.skelcard .ph { display:grid; place-items:center; }
+.fcard .ph .sil { width:auto; height:62%; }
+.skelcard .meta { display:flex; flex-direction:column; gap:6px; padding-top:8px; }
+@media (prefers-reduced-motion: reduce) { .skel::before { animation:none; background:none; } }
 .lcard .nm { padding:6px 8px 0; font:italic 600 15px var(--head); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .lcard .cn, .card .cn, .rcard .cn { font-size:11.5px; line-height:1.3; color:var(--ink); }
 .lcard .cn { padding:0 8px; }
-.lcard .cr { margin-top:auto; padding:3px 8px 6px; font-size:10px; line-height:1.3; color:var(--muted); overflow-wrap:anywhere; }
+.lcard .cr { margin-top:auto; padding:3px 8px 6px; font-size:11px; line-height:1.3; color:var(--muted); overflow-wrap:anywhere; }
 .landstarts { display:flex; flex-direction:column; gap:12px; max-width:560px; }
 .landstarts button.big { min-height:58px; font-size:17px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
 .landstarts button.big small { font-weight:400; font-size:13px; }
@@ -229,12 +250,12 @@ a.lcard:hover { border-color:var(--accent); }
 .vint { filter:sepia(.35) contrast(1.05); }
 .card.plate.pic .ph { aspect-ratio:1; background:var(--panel2) center/cover no-repeat; min-height:0; padding:0; filter:none; }
 .card.plate.pic .ph.vint { filter:sepia(.35) contrast(1.05); }
-.card.plate.pic .meta .cr { font-size:10px; color:var(--muted); margin-top:2px; }
+.card.plate.pic .meta .cr { font-size:11px; color:var(--muted); margin-top:2px; }
 .spot .smeta { padding:10px 12px; display:flex; flex-direction:column; gap:3px; min-width:0; }
-.spot .sk { font-size:10.5px; letter-spacing:.2em; color:var(--accent); }
+.spot .sk { font-size:11px; letter-spacing:.2em; color:var(--accent); }
 .spot .snm { font:italic 600 19px var(--head); color:var(--ink); text-decoration:none; }
 .spot .sfacts { list-style:none; margin:4px 0; padding:0; font-size:12.5px; display:grid; gap:3px; }
-.spot .cr { font-size:10px; color:var(--muted); margin-top:auto; }
+.spot .cr { font-size:11px; color:var(--muted); margin-top:auto; }
 .tsec { margin-bottom:18px; }
 .tban { height:120px; border-radius:var(--radius) var(--radius) 0 0; background:#3a2f22 center/cover no-repeat; display:flex; align-items:flex-end; overflow:hidden; }
 .tban > div { width:100%; padding:10px 14px; color:#f6eedb; background:linear-gradient(transparent, rgba(20,14,8,.85)); font-size:13px; }
@@ -252,7 +273,7 @@ a.lcard:hover { border-color:var(--accent); }
 .drawer .rank { color:var(--muted); font-size:11px; }
 .drawer.unexp .dtitle .small { color:var(--accent); }
 .ring { flex:none; width:52px; height:52px; border-radius:50%; display:grid; place-items:center; align-content:center; background:radial-gradient(var(--panel) 58%, transparent 60%), conic-gradient(var(--lit) calc(var(--p) * 1%), var(--dim) 0); line-height:1; }
-.ring b { font:600 16px Fraunces, Georgia, serif; } .ring small { font-size:10px; color:var(--muted); }
+.ring b { font:600 16px Fraunces, Georgia, serif; } .ring small { font-size:11px; color:var(--muted); }
 .dtiles { display:grid; grid-template-columns:repeat(auto-fill, minmax(92px, 1fr)); gap:8px; padding:0 14px 12px; }
 .ttile { display:flex; flex-direction:column; text-decoration:none; color:inherit; border:1px solid var(--line); border-bottom:3px solid var(--rc, var(--line)); border-radius:6px; overflow:hidden; background:var(--panel2); }
 .ttile .ph { aspect-ratio:1; background:var(--panel2) center/cover no-repeat; }
@@ -274,7 +295,7 @@ a.lcard:hover { border-color:var(--accent); }
 @media (max-width:600px) { .revgrid { grid-template-columns:repeat(3, minmax(0, 1fr)); gap:6px; } }
 .rcard { position:relative; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; min-width:0; }
 .rcard .ph { display:block; aspect-ratio:1; background:var(--panel2) center/cover no-repeat; filter:grayscale(1) sepia(.6) blur(7px) brightness(.6) contrast(1.2); transition:filter .8s ease-out; }
-.rcard::after { content:'?'; position:absolute; top:0; left:0; right:0; aspect-ratio:1; display:grid; place-items:center; font:44px var(--head); color:var(--ink); opacity:.55; transition:opacity .3s; pointer-events:none; }
+.rcard::after { content:''; position:absolute; top:0; left:0; right:0; aspect-ratio:1; background:var(--ink); -webkit-mask:var(--sil) center / 52% no-repeat; mask:var(--sil) center / 52% no-repeat; opacity:.55; transition:opacity .3s; pointer-events:none; }
 .rcard .nm { padding:5px 7px 0; font:italic 600 14px var(--head); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .rcard .nm.q { font-style:normal; letter-spacing:.2em; color:var(--muted); }
 .rcard .cn { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; margin:0 7px 6px; min-height:1.3em; overflow:hidden; }
@@ -290,7 +311,7 @@ a.lcard:hover { border-color:var(--accent); }
 .fcard .ph.none { display:grid; place-items:center; font:40px var(--head); color:var(--muted); }
 .fcard .meta { padding:8px 10px 10px; display:flex; flex-direction:column; gap:2px; }
 .fcard .nm { font:italic 600 18px var(--head); }
-.fcard .cr { font-size:10px; color:var(--muted); margin-top:2px; }
+.fcard .cr { font-size:11px; color:var(--muted); margin-top:2px; }
 @media (max-width:600px) { .finds { grid-template-columns:1fr; gap:8px; } .fcard { flex-direction:row; } .fcard .ph { width:104px; flex:none; aspect-ratio:1; } }
 
 /* ---------- Dex grid ---------- */
@@ -299,7 +320,7 @@ a.lcard:hover { border-color:var(--accent); }
 .card:hover { transform:translateY(-2px); border-color:var(--accent); }
 .card .ph { aspect-ratio:1; background:var(--panel2) center/cover no-repeat; position:relative; }
 .card.unknown .ph, .modal .hero.unknown { filter:grayscale(1) sepia(.6) blur(7px) brightness(.6) contrast(1.2); }
-.card.unknown::after { content:'?'; position:absolute; top:0; left:0; right:0; aspect-ratio:1; display:grid; place-items:center; font:52px var(--head); color:var(--ink); opacity:.55; pointer-events:none; }
+.card.unknown::after { content:''; position:absolute; top:0; left:0; right:0; aspect-ratio:1; background:var(--ink); -webkit-mask:var(--sil) center / 52% no-repeat; mask:var(--sil) center / 52% no-repeat; opacity:.5; pointer-events:none; }
 .card .meta { padding:6px 8px 8px; }
 .card .cn { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .cnbig { font:400 19px Fraunces, Georgia, serif; margin:-2px 0 2px; }
@@ -312,8 +333,35 @@ a.lcard:hover { border-color:var(--accent); }
 .card .num { font-size:11px; color:var(--muted); }
 .card .nm { font-family:var(--head); font-size:15px; font-style:italic; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .card.unknown .nm { font-style:normal; letter-spacing:.2em; color:var(--muted); }
-.card .badge { position:absolute; top:6px; left:6px; font-size:10px; padding:1px 6px; border-radius:99px; background:var(--panel); border:1px solid var(--line); z-index:2; }
+.card .badge { position:absolute; top:6px; left:6px; font-size:11px; padding:1px 6px; border-radius:99px; background:var(--panel); border:1px solid var(--line); z-index:2; }
 .b-disc { color:var(--ink); } .b-supp { color:var(--lit); border-color:var(--lit)!important; } .b-mast { background:var(--accent)!important; color:var(--panel)!important; border-color:var(--accent)!important; }
+/* v2.4 cards: rarity edge (Uncommon up), foil on Rare/Exceptional, specimen label, a back you turn to */
+.card.rar, .lcard.rar, .rcard.rar { border:2px solid var(--rc); }
+.card.gilded.rar { border-color:#b08a45; box-shadow:inset 0 0 0 3px var(--rc); }
+.card .meta { border-top:3px double var(--line); }
+.card .meta .num { margin-top:2px; }
+.card.rar4 .ph::after, .card.rar5 .ph::after, .lcard.rar4 .ph::after, .lcard.rar5 .ph::after {
+  content:''; position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity .3s;
+  background:linear-gradient(115deg, transparent 35%, rgba(255,255,255,.38) 48%, rgba(255,240,200,.18) 54%, transparent 66%) 130% 0 / 260% 100% no-repeat; }
+.lcard .ph { position:relative; }
+.card.rar4:is(:hover, :focus-within) .ph::after, .card.rar5:is(:hover, :focus-within) .ph::after,
+.lcard.rar4:hover .ph::after, .lcard.rar5:hover .ph::after { opacity:1; animation:foil 1.4s ease-in-out; background-position:-30% 0; }
+@keyframes foil { from { background-position:130% 0; } to { background-position:-30% 0; } }
+.card .flip { position:absolute; right:6px; bottom:6px; z-index:2; width:30px; height:30px; padding:0; border-radius:99px; display:grid; place-items:center;
+  background:color-mix(in srgb, var(--panel) 88%, transparent); font-size:16px; line-height:1; opacity:.85; }
+.card .flip:hover, .card .flip:focus-visible { opacity:1; }
+.card .back { position:absolute; inset:0; z-index:4; background:var(--panel); padding:10px; overflow:auto; scrollbar-width:thin; cursor:pointer;
+  border-top:3px double var(--line); animation:turn .35s ease-out; transform-origin:50% 50%; }
+.card .back .nm { font-size:16px; padding-right:30px; }
+.card .back p { margin:6px 0 0; font-size:12px; line-height:1.35; }
+.card .back .flip { top:6px; bottom:auto; right:6px; }
+@keyframes turn { from { transform:perspective(600px) rotateY(90deg); } to { transform:none; } }
+@media (prefers-reduced-motion: reduce) {
+  .card .back { animation:fade .2s ease-out; }
+  .card.rar4 .ph::after, .card.rar5 .ph::after, .lcard.rar4 .ph::after, .lcard.rar5 .ph::after { animation:none !important; background-position:50% 0; }
+}
+@keyframes fade { from { opacity:0; } to { opacity:1; } }
+.card .rar.rarb { top:auto; right:auto; bottom:8px; left:6px; }
 .pips { display:flex; gap:2px; margin-top:4px; }
 .pips i { flex:1; height:4px; background:var(--dim); border-radius:2px; }
 .pips i.on { background:var(--lit); }
@@ -373,24 +421,24 @@ a.lcard:hover { border-color:var(--accent); }
 .dotsw { display:inline-block; width:11px; height:11px; border:2px dotted; border-radius:1px; vertical-align:middle; }
 .sw { display:inline-block; width:10px; height:10px; border-radius:2px; vertical-align:middle; border:1px solid rgba(0,0,0,.2); }
 .basesw { display:flex; flex-direction:column; }
-.basesw button { width:auto !important; height:auto !important; padding:3px 8px !important; font:12px var(--body); text-align:left; }
+.basesw button { width:auto !important; height:auto !important; padding:3px 8px !important; font:12px var(--mono); text-align:left; }
 .basesw button.on { background:var(--accent); color:var(--panel); }
 .maplibregl-popup-content { background:var(--panel); color:var(--ink); font:13px/1.45 var(--body); border:1px solid var(--line); }
 .maplibregl-popup-anchor-bottom .maplibregl-popup-tip { border-top-color:var(--panel); } .maplibregl-popup-anchor-top .maplibregl-popup-tip { border-bottom-color:var(--panel); }
 .maplibregl-popup-close-button { font-size:18px; padding:0 6px; }
 .mapctrls { display:flex; flex-direction:column; gap:8px; }
 .layersw { display:flex; flex-direction:column; }
-.layersw button { width:auto !important; height:auto !important; display:flex !important; align-items:center; gap:6px; padding:4px 8px !important; font:12px var(--body); text-align:left; color:#2b2419; }
+.layersw button { width:auto !important; height:auto !important; display:flex !important; align-items:center; gap:6px; padding:4px 8px !important; font:12px var(--mono); text-align:left; color:#2b2419; }
 .layersw button i { width:12px; height:12px; border-radius:2px; border:1.5px solid #8a7a5c; flex:none; }
 .layersw button.on i { background:#2f6b3a; border-color:#2f6b3a; box-shadow:inset 0 0 0 2px #fff; }
 .maplegend { display:flex; flex-wrap:wrap; gap:4px 12px; align-items:center; }
 .lgsw { display:inline-block; width:15px; height:11px; border:2.5px solid; border-radius:2px; vertical-align:-1px; margin-right:4px; box-shadow:0 0 0 1px rgba(43,36,25,.45); }
-.rchip { display:inline-block; font-size:10px; letter-spacing:.06em; text-transform:uppercase; padding:0 6px; border-radius:99px; border:1.5px solid var(--rc); color:var(--ink); background:color-mix(in srgb, var(--rc) 22%, var(--panel)); white-space:nowrap; vertical-align:1px; }
+.rchip { display:inline-block; font-size:11px; letter-spacing:.06em; text-transform:uppercase; padding:0 6px; border-radius:99px; border:1.5px solid var(--rc); color:var(--ink); background:color-mix(in srgb, var(--rc) 22%, var(--panel)); white-space:nowrap; vertical-align:1px; }
 .scchips button { padding:2px 9px; border-radius:99px; font-size:12px; }
 .scchips button.on { background:var(--ink); color:var(--panel); border-color:var(--ink); }
 #mapSide { padding:0; overflow:hidden; align-self:start; }
 .schead { padding:14px 16px 12px; background:var(--panel2); border-bottom:1px solid var(--line); }
-.schead .eyebrow { font-size:10px; letter-spacing:.16em; color:var(--muted); }
+.schead .eyebrow { font-size:11px; letter-spacing:.16em; color:var(--muted); }
 .schead h2 { margin:2px 0 0; font-size:21px; }
 .schead .scinfo { margin-top:4px; }
 .mapbadge.go { cursor:pointer; top:auto; bottom:52px; }
@@ -401,7 +449,7 @@ a.lcard:hover { border-color:var(--accent); }
 .wxdays.many { grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); }
 .card .rar .rchip { text-shadow:none; letter-spacing:.04em; }
 .mapctrls .layersw { background:#fff; border-radius:4px; overflow:hidden; box-shadow:0 0 0 2px rgba(0,0,0,.1); }
-.leaflet-control .layersw button { display:flex; align-items:center; gap:6px; width:100%; border:0; border-bottom:1px solid #ddd; border-radius:0; background:#fff; padding:4px 8px; font:12px var(--body); color:#2b2419; text-align:left; }
+.leaflet-control .layersw button { display:flex; align-items:center; gap:6px; width:100%; border:0; border-bottom:1px solid #ddd; border-radius:0; background:#fff; padding:4px 8px; font:12px var(--mono); color:#2b2419; text-align:left; }
 .scstats { display:grid; grid-template-columns:repeat(4,1fr); border-bottom:1px solid var(--line); }
 .scstats div { padding:8px 2px; text-align:center; border-right:1px solid var(--dim); }
 .scstats div:last-child { border-right:0; }
@@ -474,7 +522,7 @@ details > summary.scsec { cursor:pointer; }
 .bingos { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr)); gap:14px; }
 .bwrap { position:relative; }
 .bgrid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:3px; }
-.bsq { aspect-ratio:1; border:1px solid var(--line); border-radius:3px; background:var(--panel2); font-size:10px; line-height:1.15; display:flex; align-items:center; justify-content:center; text-align:center; padding:2px; overflow:hidden; overflow-wrap:break-word; hyphens:auto; }
+.bsq { aspect-ratio:1; border:1px solid var(--line); border-radius:3px; background:var(--panel2); font-size:11px; line-height:1.15; display:flex; align-items:center; justify-content:center; text-align:center; padding:2px; overflow:hidden; overflow-wrap:break-word; hyphens:auto; }
 .bsq a { color:inherit; text-decoration:none; }
 .bsq.on { background:color-mix(in srgb, var(--lit) 32%, var(--panel)); border-color:var(--lit); font-weight:600; }
 .bsq.pen { border:1.5px dashed var(--accent); }
@@ -499,11 +547,11 @@ details > summary.scsec { cursor:pointer; }
 .card.plate .ph { flex:1; }
 .card.plate .ph { display:grid; place-items:center; aspect-ratio:auto; min-height:100%; padding:12px 0; box-sizing:border-box; background:#e9dcbc; background-image:radial-gradient(circle at 30% 20%, rgba(255,255,255,.4), transparent 50%), radial-gradient(circle at 80% 90%, rgba(120,80,30,.2), transparent 55%); filter:sepia(.25); }
 .plab { width:82%; padding:10px 8px; border:1px solid #8a6d44; outline:3px double #8a6d44; outline-offset:-7px; background:#f7efd9; text-align:center; font:11px/1.35 'IBM Plex Mono', monospace; color:#4a3a24; display:flex; flex-direction:column; gap:3px; }
-.plab .pk { font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#8a3b22; }
+.plab .pk { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#8a3b22; }
 .plab .pn { font:italic 600 17px Fraunces, Georgia, serif; color:#2b2419; overflow-wrap:anywhere; }
-.plab .pa { font-size:10.5px; }
+.plab .pa { font-size:11px; }
 .tree .g.museum { color:var(--muted); text-decoration:none; }
-.seal { display:inline-block; font:600 10px 'IBM Plex Mono', monospace; letter-spacing:.08em; text-transform:uppercase; color:#f6eedb; padding:2px 8px; border-radius:99px; vertical-align:1px; white-space:nowrap; box-shadow:inset 0 0 0 1.5px rgba(246,238,219,.6); }
+.seal { display:inline-block; font:600 11px 'IBM Plex Mono', monospace; letter-spacing:.08em; text-transform:uppercase; color:#f6eedb; padding:2px 8px; border-radius:99px; vertical-align:1px; white-space:nowrap; box-shadow:inset 0 0 0 1.5px rgba(246,238,219,.6); }
 .seal.s-first { background:#b8892a; } .seal.s-trio { background:#9a3d2a; } .seal.s-vanguard { background:#5b4a8a; } .seal.s-founding { background:#3f6b3a; }
 .seal.big { display:grid; place-items:center; width:120px; height:120px; padding:12px; border-radius:50%; font-size:12px; line-height:1.2; white-space:normal; text-align:center; box-shadow:0 0 0 4px #f6eedb inset, 0 0 0 2px rgba(0,0,0,.35), 0 8px 24px rgba(0,0,0,.5); animation:sealin .9s cubic-bezier(.2,1.6,.4,1) .9s both; }
 #reveal.honour .rph { width:min(320px,62vw); }
@@ -553,6 +601,7 @@ details > summary.scsec { cursor:pointer; }
 </style>
 </head>
 <body data-chassis="notebook">
+<svg id="icons" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden"><symbol id="i-sync" viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3"/><path d="M18 3v4h-4M6 21v-4h4"/></symbol><symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol><symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="6.5"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></symbol><symbol id="i-share" viewBox="0 0 24 24"><path d="M12 15V3M7.5 7.5 12 3l4.5 4.5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></symbol><symbol id="i-idcard" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2.2"/><path d="M5.8 16.5c.6-1.8 1.8-2.6 3.2-2.6s2.6.8 3.2 2.6M14.5 10h4M14.5 13.5h3"/></symbol><symbol id="i-gift" viewBox="0 0 24 24"><rect x="3.5" y="9" width="17" height="4" rx="1"/><path d="M5 13v7h14v-7M12 9v11"/><path d="M12 9C10.5 6 7 5 7 7.5S10 9 12 9s5 0 5-1.5S13.5 6 12 9z"/></symbol><symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l2.5 2.5M18.5 4.5 21 7"/></symbol><symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></symbol><symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5h4v5"/></symbol><symbol id="i-museum" viewBox="0 0 24 24"><path d="M3 9.5 12 4l9 5.5z"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20.5h18"/></symbol><symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 21c-3.9 0-6.5-2.6-6.5-6 0-3.5 3-5.5 3.5-9 2 1.5 3 3.5 3 5 1-1 1.5-2 1.5-3.5 2.5 2 5 4.5 5 7.5 0 3.4-2.6 6-6.5 6z"/></symbol><symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></symbol><symbol id="i-trophy" viewBox="0 0 24 24"><path d="M7.5 4h9v5a4.5 4.5 0 0 1-9 0z"/><path d="M7.5 6h-3a3 3 0 0 0 3 4M16.5 6h3a3 3 0 0 1-3 4M12 13.5V17M9.5 17h5v3.5h-5z"/></symbol><symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol><symbol id="i-mystery" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7v.5"/><circle cx="12" cy="17" r=".9" fill="currentColor"/></symbol><symbol id="i-thermo" viewBox="0 0 24 24"><path d="M10 14.5V5a2 2 0 0 1 4 0v9.5a4 4 0 1 1-4 0z"/><path d="M12 9v8"/></symbol><symbol id="i-web" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/><path d="M12 7.5l3.2 1.3 1.3 3.2-1.3 3.2-3.2 1.3-3.2-1.3L7.5 12l1.3-3.2z"/></symbol><symbol id="i-medal" viewBox="0 0 24 24"><path d="M8 3l2.5 6M16 3l-2.5 6"/><circle cx="12" cy="15" r="5.5"/><path d="M12 12.3l.9 1.8 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z"/></symbol><symbol id="i-dish" viewBox="0 0 24 24"><path d="M5 19a9 9 0 0 1 0-12.7L17.7 19A9 9 0 0 1 5 19z"/><path d="M11.3 12.7 15 9"/><circle cx="16" cy="8" r="1.4"/><path d="M18 3.5a5 5 0 0 1 2.5 2.5"/></symbol><symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><rect x="9" y="3" width="6" height="3" rx="1"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4"/></symbol><symbol id="i-books" viewBox="0 0 24 24"><path d="M4 19.5V5a1.5 1.5 0 0 1 1.5-1.5H9v16"/><path d="M9 3.5h4v16H9"/><path d="M14.5 5.2l3.5-1 2.6 15-3.5 1z"/><path d="M3 20.5h11"/></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3.5L9 5.5h6L16.5 8H20a1 1 0 0 1 1 1v9.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5.5 5.5"/></symbol><symbol id="i-crown" viewBox="0 0 24 24"><path d="M4 18 3 8l5 4 4-6 4 6 5-4-1 10z"/><path d="M4 21h16"/></symbol><symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4.5h12l-2.5 4 2.5 4H5"/></symbol><symbol id="i-fork" viewBox="0 0 24 24"><path d="M7 3v6a2 2 0 0 0 4 0V3M9 3v18"/><path d="M17 21V3c-2 1-3 3.5-3 6.5V13h3"/></symbol><symbol id="i-microscope" viewBox="0 0 24 24"><path d="M9 4.5l4 2-3.5 7-4-2z"/><path d="M11 3.5l1-2 2 1-1 2M7.5 13l-1 2"/><path d="M14 10a5.5 5.5 0 0 1 1.5 8.5H6M4 21h16"/></symbol><symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19C5 10 11 5 20 4c-.5 9-5.5 15-15 15z"/><path d="M5 19l8-8"/></symbol><symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3.5 21.5 20h-19z"/><path d="M12 10v4.5"/><circle cx="12" cy="17.2" r=".9" fill="currentColor"/></symbol><symbol id="i-map" viewBox="0 0 24 24"><path d="M3.5 6.5 9 4l6 2.5L20.5 4v13.5L15 20l-6-2.5-5.5 2.5z"/><path d="M9 4v13.5M15 6.5V20"/></symbol><symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5V5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></symbol><symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18.5h10a4 4 0 0 0 .5-8 5.5 5.5 0 0 0-10.6 1.5A3.3 3.3 0 0 0 7 18.5z"/></symbol><symbol id="i-partcloud" viewBox="0 0 24 24"><path d="M9 6.5a3.5 3.5 0 0 1 5.4 1.6M7 3.5v1.2M3.2 9.5h1.2M4.5 5.8l.9.9"/><path d="M8 19.5h9a3.5 3.5 0 0 0 .4-7 4.8 4.8 0 0 0-9.2 1.2A2.9 2.9 0 0 0 8 19.5z"/></symbol><symbol id="i-rain" viewBox="0 0 24 24"><path d="M7 14.5h10a4 4 0 0 0 .5-8 5.5 5.5 0 0 0-10.6 1.5A3.3 3.3 0 0 0 7 14.5z"/><path d="M8.5 17.5l-1 2.5M12.5 17.5l-1 2.5M16.5 17.5l-1 2.5"/></symbol><symbol id="i-wind" viewBox="0 0 24 24"><path d="M3 9h11a2.5 2.5 0 1 0-2.5-2.5M3 13h15a2.5 2.5 0 1 1-2.5 2.5M3 17h8"/></symbol><symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 3.5s6 6.3 6 10.5a6 6 0 0 1-12 0c0-4.2 6-10.5 6-10.5z"/></symbol><symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18.5h2"/></symbol><symbol id="i-spider" viewBox="0 0 24 24"><ellipse cx="12" cy="9.5" rx="3" ry="2.6"/><ellipse cx="12" cy="16" rx="2.6" ry="3.4"/><path d="M9.3 8.5 5 5.5 4 3M14.7 8.5 19 5.5 20 3M9 10.5 4.5 9.5l-2 1M15 10.5l4.5-1 2 1M9.5 12l-4 2L4 17M14.5 12l4 2 1.5 3"/></symbol><symbol id="i-tree" viewBox="0 0 24 24"><path d="M12 21v-6"/><path d="M12 15c-4.5 0-7-2-7-5a4.5 4.5 0 0 1 3-4.2 4.5 4.5 0 0 1 8 0A4.5 4.5 0 0 1 19 10c0 3-2.5 5-7 5z"/></symbol><symbol id="i-up" viewBox="0 0 24 24"><path d="M12 20V4M6 10l6-6 6 6"/></symbol><symbol id="i-sides" viewBox="0 0 24 24"><path d="M3.5 12h17M7.5 8l-4 4 4 4M16.5 8l4 4-4 4"/></symbol><symbol id="i-ruler" viewBox="0 0 24 24"><rect x="2.5" y="8" width="19" height="8" rx="1"/><path d="M6 8v3M9.5 8v4.5M13 8v3M16.5 8v4.5"/></symbol><symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20l1-4.5L16 4.5 19.5 8 8.5 19z"/><path d="M14 6.5l3.5 3.5"/></symbol><symbol id="i-jar" viewBox="0 0 24 24"><path d="M9 3.5h6M9.5 3.5v3C6.5 8 5.5 10.5 5.5 13.5c0 4 2.8 7 6.5 7s6.5-3 6.5-7c0-3-1-5.5-4-7v-3"/></symbol><symbol id="i-scroll" viewBox="0 0 24 24"><path d="M7 4h11a2 2 0 0 1 2 2v1h-4"/><path d="M16 6v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1h11"/><path d="M7 4a2 2 0 0 0-2 2v11M9 9h4M9 12.5h4"/></symbol><symbol id="i-drawers" viewBox="0 0 24 24"><rect x="4" y="3.5" width="16" height="17" rx="1.5"/><path d="M4 9.2h16M4 14.8h16M10.5 6.4h3M10.5 12h3M10.5 17.6h3"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M8 12.5l2.8 2.8L16.5 9"/></symbol><symbol id="i-tent" viewBox="0 0 24 24"><path d="M2.5 20h19M4 20 12 5l8 15M12 5 8.5 20M12 5l3.5 15"/></symbol><symbol id="i-dice" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/></symbol><symbol id="i-swords" viewBox="0 0 24 24"><path d="M5 5l12 12M19 5 7 17M15 19l4-4M5 15l4 4"/></symbol><symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 3.6 5.6 3.6 9s-1 6.4-3.6 9c-2.6-2.6-3.6-5.6-3.6-9s1-6.4 3.6-9z"/></symbol><symbol id="i-paper" viewBox="0 0 24 24"><path d="M4 5h13v13a2 2 0 0 0 2 2H6a2 2 0 0 1-2-2z"/><path d="M17 9h3v9a2 2 0 0 1-2 2M7 9h7M7 12.5h7M7 16h4"/></symbol><symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3"/><path d="M3.5 19.5c.6-3.3 2.8-5 5.5-5s4.9 1.7 5.5 5"/><circle cx="16.5" cy="9" r="2.5"/><path d="M15.5 14.6c2.6-.3 4.6 1.2 5 4.4"/></symbol><symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.8z"/></symbol></svg>
 
 <!-- ================= ONBOARDING ================= -->
 <section id="onboard">
@@ -561,7 +610,7 @@ details > summary.scsec { cursor:pointer; }
       <h1>SPOODEX</h1>
       <p class="pitch">A Pokédex for jumping spiders, filled in from your own iNaturalist photos.</p>
     </div>
-    <div id="landPhotos" class="landstrip" aria-label="Jumping spiders recorded on iNaturalist"><span class="lcard blank"><span class="ph"></span></span><span class="lcard blank"><span class="ph"></span></span><span class="lcard blank"><span class="ph"></span></span><span class="lcard blank"><span class="ph"></span></span><span class="lcard blank"><span class="ph"></span></span><span class="lcard blank"><span class="ph"></span></span></div>
+    <div id="landPhotos" class="landstrip" aria-label="Jumping spiders recorded on iNaturalist"><span class="lcard blank"><span class="ph skel"><i class="sil"></i></span></span><span class="lcard blank"><span class="ph skel"><i class="sil"></i></span></span><span class="lcard blank"><span class="ph skel"><i class="sil"></i></span></span><span class="lcard blank"><span class="ph skel"><i class="sil"></i></span></span><span class="lcard blank"><span class="ph skel"><i class="sil"></i></span></span><span class="lcard blank"><span class="ph skel"><i class="sil"></i></span></span></div>
     <div id="landStarts" class="landstarts">
       <button type="button" class="primary big" data-act="guest">🧭 See what jumping spiders live near you<small>No iNaturalist account needed</small></button>
       <form id="loginForm" class="panel">
@@ -656,6 +705,29 @@ const CRITERIA = [
 const MASTERY_AT = 7;
 
 /* ---------------- utils ---------------- */
+// Ink icons (v2.4, owner: emoji fought the museum look). Known emoji in the page's text become line icons from the #icons sprite, in
+// one place, as the text reaches the page. Text people copy or share, canvases, form fields and <option>s keep their emoji. Unmapped
+// emoji (medals, ♂ ♀, the Sets emblems) stay as they are.
+const ICON_OF = {"⟳": "sync", "🔁": "sync", "🔗": "link", "⚙": "gear", "📤": "share", "🪪": "idcard", "🎁": "gift", "🔑": "key", "🗝": "key", "🧭": "compass", "📍": "pin", "🏠": "home", "🏡": "home", "🏛": "museum", "🔥": "flame", "🎯": "target", "🏆": "trophy", "🗓": "calendar", "❓": "mystery", "🌡": "thermo", "🕸": "web", "🏅": "medal", "📡": "dish", "📋": "clipboard", "📚": "books", "👁": "eye", "👀": "eye", "📸": "camera", "📷": "camera", "🔎": "search", "🔍": "search", "👑": "crown", "🏁": "flag", "🍴": "fork", "🔬": "microscope", "🌿": "leaf", "⚠": "warn", "🗺": "map", "☀": "sun", "☁": "cloud", "⛅": "partcloud", "🌤": "partcloud", "🌧": "rain", "💨": "wind", "💧": "drop", "📲": "phone", "🕷": "spider", "🌳": "tree", "⬆": "up", "↔": "sides", "📏": "ruler", "✏": "pencil", "✍": "pencil", "🏺": "jar", "📜": "scroll", "🗄": "drawers", "✅": "check", "🏕": "tent", "🎲": "dice", "⚔": "swords", "🌏": "globe", "🗞": "paper", "👥": "people", "⭐": "star"};
+const ICON_SPLIT = new RegExp(`(${Object.keys(ICON_OF).join('|')})\uFE0F?`, 'u'), ICON_ANY = new RegExp(ICON_SPLIT.source, 'u');
+const ic = n => `<svg class="ic" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+function inkIcons(root) {
+  if (!root || root.nodeType !== 1 || root.closest?.('textarea, select, script, style, svg, [data-emoji]')) return;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode:n => !ICON_ANY.test(n.data) ? NodeFilter.FILTER_SKIP
+    : n.parentElement.closest('textarea, select, option, script, style, svg, [data-emoji]') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+  const hits = []; while (w.nextNode()) hits.push(w.currentNode);
+  for (const t of hits) {
+    const f = document.createDocumentFragment(), tpl = document.createElement('template');
+    t.data.split(new RegExp(ICON_SPLIT.source, 'gu')).forEach((part, i) => {
+      if (i % 2) { tpl.innerHTML = ic(ICON_OF[part]); f.append(tpl.content.firstChild); } else if (part) f.append(part);
+    });
+    t.replaceWith(f);
+  }
+}
+new MutationObserver(ms => { for (const m of ms) for (const n of m.addedNodes) inkIcons(n.nodeType === 3 ? n.parentElement : n); })
+  .observe(document.documentElement, { childList:true, subtree:true });
+addEventListener('DOMContentLoaded', () => inkIcons(document.body));
+
 const $ = (s, r=document) => r.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -1720,7 +1792,7 @@ function viewProfile() {
   // your genera, newest first, then a few mystery spoods (records not yet identified to genus) with their photos
   const myst = M.leads.flatMap(l => l.obs).filter(o => o.ph.length).sort((a, b) => (b.d || '').localeCompare(a.d || '') || b.id - a.id).slice(0, 6);
   const spoodCards = [...M.genera].filter(g => g.cover).sort((a, b) => (b.first.d || '').localeCompare(a.first.d || '') || b.first.id - a.first.id).map(g =>
-      `<div class="lcard" data-genus="${g.id}" title="Open the card"><span class="ph" style="background-image:url('${esc(photoSize(g.cover, 'small'))}')"></span>
+      `<div class="lcard${rarAttrs(g.id).cls}" data-genus="${g.id}"${rarAttrs(g.id).style} title="Open the card"><span class="ph" style="background-image:url('${esc(photoSize(g.cover, 'small'))}')"></span>
         <span class="nm"><i>${esc(g.name)}</i></span>${cnOf(g.id) ? `<span class="cn">${esc(cnOf(g.id))}</span>` : ''}</div>`).join('')
     + myst.map(o => `<div class="lcard myst" data-act="needsid" title="Mystery spoods: get them identified to genus"><span class="ph" style="background-image:url('${esc(photoSize(o.ph[0], 'small'))}')"></span>
         <span class="nm" style="font-style:normal;white-space:normal">❓ Mystery spood</span><span class="cn">${esc(o.t.n || '')}</span></div>`).join('');
@@ -1808,6 +1880,32 @@ function openProfSheet(k) {
     <h2>${esc(x.t)}</h2>${x.h}</div></div></div>`;
 }
 
+// A found genus's rarity as card attributes (v2.4): a coloured edge from Uncommon up, foil on Rare and Exceptional; Common stays plain
+function rarAttrs(id) {
+  const r = S.M.G.has(id) ? tierOf(id) : null;
+  return { r, cls:r && r.lv >= 2 ? ` rar rar${r.lv}` : '', style:r && r.lv >= 2 ? ` style="--rc:${r.c}"` : '' };
+}
+// The back of a card: only fields the model has, each left out when missing (owner's "nothing invented" rule)
+function cardBack(id) {
+  const g = S.M.G.get(id); if (!g) return '';
+  const ds = g.obs.map(o => o.d).filter(Boolean).sort(), sq = new Set(g.obs.filter(o => o.lat != null).map(o => cellKey(o.lat, o.lng, .25))).size;
+  const r = tierOf(id), note = rarityNote(id);
+  const lines = [
+    ds.length > 1 ? `${esc(ds[0])} → ${esc(ds[ds.length - 1])}` : ds[0] && esc(ds[0]),
+    [plural(g.obs.length, 'record'), sq && `${sq} × 25 km square${sq === 1 ? '' : 's'}`, g.sp.size && plural(g.sp.size, 'species', 'species')].filter(Boolean).join(' · '),
+    r && `${rarityChip(r)}${note ? ` ${esc(note)}` : ''}`,
+    `Mastery ${g.level} / 10 · ${g.state.toLowerCase()}`,
+    g.cover && `Photo: ${esc(who())}`,
+  ].filter(Boolean);
+  return `<div class="back"><button class="flip" data-act="flip" data-v="${id}" aria-label="Turn card back" title="Turn card back">↺</button>
+    <div class="nm">${esc(g.name)}</div>${cnHtml(id)}${lines.map(l => `<p>${l}</p>`).join('')}</div>`;
+}
+function turnCard(card, open = !card.classList.contains('flipped')) {
+  card.querySelector('.back')?.remove();
+  card.classList.toggle('flipped', open);
+  if (open) { card.insertAdjacentHTML('beforeend', cardBack(+card.dataset.genus)); card.querySelector('.back .flip')?.focus(); }
+  else card.querySelector('.ph .flip')?.focus();
+}
 function cardHtml(id, num) {
   const M = S.M, g = M.G.get(id), info = S.info[id] || {};
   const lin = lineage(id), tribe = (lin.find(n => n.r === 'tribe') || lin.find(n => n.r === 'subfamily') || {}).n || 'Salticidae';
@@ -1816,10 +1914,10 @@ function cardHtml(id, num) {
     return `<div class="card unknown" data-genus="${id}"><div class="ph" style="background-image:url('${esc(photoSize(stockPh(id), 'small'))}')"></div>
       <div class="meta"><div class="num">#${String(num).padStart(3,'0')} · ${esc(tribe)}</div><div class="nm">${name}</div>${S.prefs.reveal ? cnHtml(id) : ''}<div class="pips">${'<i></i>'.repeat(10)}</div></div></div>`;
   }
-  const cls = g.state === 'MASTERED' ? 'b-mast' : g.state === 'SUPPORTED' ? 'b-supp' : 'b-disc';
-  return `<div class="card ${g.state === 'MASTERED' && moduleOn(5) ? 'gilded' : ''}" data-genus="${id}"><span class="badge ${cls}">${g.state}</span>
-    <div class="ph" style="background-image:url('${esc(photoSize(g.cover,'small') || info.p || '')}')"></div>
-    <div class="meta"><div class="num">#${String(num).padStart(3,'0')} · ${esc(tribe)}</div><div class="nm">${esc(g.name)}</div>${cnHtml(id)}
+  const cls = g.state === 'MASTERED' ? 'b-mast' : g.state === 'SUPPORTED' ? 'b-supp' : 'b-disc', rar = rarAttrs(id);
+  return `<div class="card ${g.state === 'MASTERED' && moduleOn(5) ? 'gilded' : ''}${rar.cls}" data-genus="${id}"${rar.style}><span class="badge ${cls}">${g.state}</span>
+    <div class="ph" style="background-image:url('${esc(photoSize(g.cover,'small') || info.p || '')}')">${rar.r?.lv >= 2 ? `<span class="rar rarb">${rarityChip(rar.r)}</span>` : ''}<button class="flip" data-act="flip" data-v="${id}" aria-label="Turn card over" title="Turn card over">↻</button></div>
+    <div class="meta"><div class="nm">${esc(g.name)}</div>${cnHtml(id)}<div class="num">#${String(num).padStart(3,'0')} · ${esc(tribe)}</div>
     <div class="small muted">${g.obs.length} obs · ${g.c01.size} loc. · ${g.sp.size} sp.</div>
     <div class="pips">${CRITERIA.map(c => `<i class="${g.f[c.k]?'on':''}"></i>`).join('')}</div></div></div>`;
 }
@@ -2039,7 +2137,7 @@ function spotlights() {
 function spotCard(x) {
   const fs = factsFor(x.id, x.n, x.never).slice(0, 3), ph = x.never ? plateFor(x.n) : x.id ? treePh(x.id) : null;
   const go = x.never ? `href="${esc(afdUrl(taxaAu(x.n)))}" target="_blank" rel="noopener"` : `href="#" data-genus="${x.id}"`;
-  return `<div class="spot"><a class="sph ${x.never && !ph ? 'plateph' : ''} ${ph?.plate ? 'vint' : ''}" ${go} style="${ph ? plateBg(ph) : ''}">${ph ? '' : x.never ? '<span>🏛</span>' : '<span>?</span>'}</a>
+  return `<div class="spot"><a class="sph ${x.never && !ph ? 'plateph' : ''} ${ph?.plate ? 'vint' : ''}" ${go} style="${ph ? plateBg(ph) : ''}">${ph ? '' : x.never ? '<span>🏛</span>' : '<i class="sil"></i>'}</a>
     <div class="smeta"><div class="sk">DID YOU KNOW?</div><a class="snm" ${go}><i>${esc(x.n)}</i></a>${x.id && cnOf(x.id) ? `<div class="small muted">${esc(cnOf(x.id))}</div>` : ''}
       <ul class="sfacts">${fs.map(([i, t]) => `<li><span aria-hidden="true">${i}</span> ${esc(t)}</li>`).join('') || '<li class="muted">No records near you yet.</li>'}</ul>
       ${x.id && (wantedList() || []).some(w => w.id === x.id) ? `<button class="small" data-act="wanted" data-v="${x.id}">🧭 Where to look</button>` : ''}
@@ -2676,7 +2774,7 @@ function peakInfo(gid, pid = phenoPlace(), nowM = new Date().getMonth()) {
 }
 function phenoHtml(gid) {
   const p = peakInfo(gid);
-  if (!p) return '<span class="muted">· checking season…</span>';
+  if (!p) return '<span class="muted">· </span><span class="skline short skel" aria-label="checking season"></span>';
   if (p.few) return '<span class="muted">· too few records to call a season</span>';
   return `${p.now ? '<b class="inseason">🌡 in season now</b> · ' : ''}<span class="muted">peak ${esc(p.text)}</span>`;
 }
@@ -3114,7 +3212,7 @@ function viewLadder() {
     <td class="who"><span class="avatar" style="background-image:url('${esc(L.icons[r.login] || '')}')"></span><a href="https://www.inaturalist.org/people/${encodeURIComponent(r.login)}" target="_blank" rel="noopener">${esc(r.login)}</a>${isMe(r.login) ? ' <span class="small muted">(you)</span>' : ''}</td>
     <td class="${cls('gn')}">${r.gn}</td><td class="${cls('sn')}">${r.sn}</td><td class="${cls('pr')}">${fmt(r.pr)}</td><td class="n muted">${fmt(r.obs)}</td>
     <td class="acts">${isMe(r.login) ? '' : `<button data-act="vs" data-v="${esc(r.login)}">Compare</button> <button data-act="crewAdd" data-v="${esc(r.login)}" title="Add to your crew">+ Crew</button>`}</td></tr>`;
-  const pending = (L.queue || []).map(l => `<tr class="pending"><td class="rk">…</td><td class="who"><span class="avatar" style="background-image:url('${esc(L.icons[l] || '')}')"></span>${esc(l)}</td><td colspan="5" class="small">waiting to be read</td></tr>`).join('');
+  const pending = (L.queue || []).map(l => `<tr class="pending"><td class="rk">…</td><td class="who"><span class="avatar" style="background-image:url('${esc(L.icons[l] || '')}')"></span>${esc(l)}</td><td colspan="5" aria-label="waiting to be read"><span class="skline skel" style="width:60%"></span></td></tr>`).join('');
   return head + standing + `<div class="panel tablewrap"><table class="ladder">
     <tr><th></th><th>Naturalist</th><th class="${cls('gn')}">Genera</th><th class="${cls('sn')}">Species</th><th class="${cls('pr')}">Prestige ✦</th><th class="n">Records</th><th></th></tr>
     ${rows.map(tr).join('')}${pending}</table></div>`;
@@ -3918,7 +4016,7 @@ function bestFindsHtml(R) {
   if (!top.length) return '';
   ensureInfo(top.map(f => f.gid));   // common names
   return `<div class="panel" style="margin-bottom:16px"><h3>Best finds</h3><div class="spoods">${top.map(f => `<a class="lcard" href="https://www.inaturalist.org/observations/${f.o.id}" target="_blank" rel="noopener" title="Open on iNaturalist">
-    ${evPhOk(f.o) ? `<span class="ph" style="background-image:url('${esc(photoSize(f.o.ph, 'small'))}')"></span>` : '<span class="ph noph">?</span>'}
+    ${evPhOk(f.o) ? `<span class="ph" style="background-image:url('${esc(photoSize(f.o.ph, 'small'))}')"></span>` : '<span class="ph noph"><i class="sil"></i></span>'}
     <span class="nm"><i>${esc(S.nodes[f.gid]?.n || '?')}</i></span>${cnOf(f.gid) ? `<span class="cn">${esc(cnOf(f.gid))}</span>` : ''}
     <span class="pts"><b>${f.pts} pts</b></span><span class="cr" title="${esc(evPhOk(f.o) ? evPhCredit(f.o) : f.login)}">${esc(evPhOk(f.o) ? evPhCredit(f.o) : `by ${f.login}`)}</span></a>`).join('')}</div></div>`;
 }
@@ -4813,14 +4911,17 @@ function findCard(x) {
     : `📚 ${fmt(x.state)} record${x.state === 1 ? '' : 's'} in ${where}`;
   const when = !p || p.few ? '' : p.text === 'year-round' ? '🌡 Recorded all year round' : p.now ? `🌡 In season now · peak ${esc(p.text)}` : `🗓 Peak ${esc(p.text)}`;
   return `<div class="fcard" data-act="wanted" data-v="${x.id}" title="Where and when to look">
-    ${ph ? `<div class="ph" style="background-image:url('${esc(ph.u)}')"></div>` : '<div class="ph none">?</div>'}
+    ${ph ? `<div class="ph" style="background-image:url('${esc(ph.u)}')"></div>` : '<div class="ph none"><i class="sil"></i></div>'}
     <div class="meta"><div class="nm"><i>${esc(S.nodes[x.id]?.n || '?')}</i></div>${cnOf(x.id) ? `<div class="cn">${esc(cnOf(x.id))}</div>` : ''}
       <div class="small">${near}</div>${when ? `<div class="small">${when}</div>` : ''}${ph ? `<div class="cr">${esc(ph.cr)}</div>` : ''}</div></div>`;
 }
+// Skeletons in the shape of the cards on their way (v2.4)
+const skelCards = n => `<div class="dexgrid" aria-busy="true">${'<div class="card skelcard"><div class="ph skel"><i class="sil"></i></div><div class="meta"><span class="skline skel"></span><span class="skline short skel"></span></div></div>'.repeat(n)}</div>`;
+const skelFinds = n => `<div class="finds" aria-busy="true">${'<div class="fcard skelcard"><div class="ph skel"><i class="sil"></i></div><div class="meta"><span class="skline skel"></span><span class="skline skel"></span><span class="skline short skel"></span></div></div>'.repeat(n)}</div>`;
 function nextThreeHtml() {
   const ctx = homeCtx(); if (!ctx.pid) return '';
   const xs = nextThree();
-  if (!xs || (nextBusy && !xs.length)) return '<p class="small muted">Checking what has been recorded near you…</p>';
+  if (!xs || (nextBusy && !xs.length)) return `<h3 style="margin-top:14px">Three to find next <span class="small muted">· ${MONTHS[ctx.month]}</span></h3>${skelFinds(3)}`;
   if (!xs.length) return '';
   return `<h3 style="margin-top:14px">Three to find next <span class="small muted">· ${MONTHS[ctx.month]}</span></h3><div class="finds">${xs.map(findCard).join('')}</div>`;
 }
@@ -5207,7 +5308,7 @@ function viewBounty() {
     <p style="margin:10px 0 0">${idAidBtn()}</p>
     ${bountyBusy ? '<p class="small">Checking the records…</p>' : ''}${bountyErr ? `<p>${esc(bountyErr)} <button data-act="bountyRefresh">Try again</button></p>` : ''}</div>`;
   if (!bountyWhere()) return head + '<p class="muted">Set a home base on the Map tab so SPOODEX knows where to look.</p>';
-  if (!b) return head + '<p class="muted">Loading bounties…</p>';
+  if (!b) return head + `<h2>Wanted, unconfirmed</h2>${skelCards(7)}`;
   return head + `<h2>Wanted, unconfirmed</h2>
     <p class="small muted">Records of genera you're missing, still at Needs ID (${fmt(b.confN)} in all).</p>
     ${b.conf.length ? `<div class="dexgrid">${b.conf.map(card).join('')}</div>` : '<p class="small">None right now.</p>'}
@@ -5321,7 +5422,9 @@ function cardKit(cv, H = 1350) {
       x.drawImage(im, (im.width - sw) / 2, (im.height - sh) / 2, sw, sh, cx, cy, tw, th);
     } else if (t) text(t.g.name[0], cx + tw / 2, cy + th / 2 + 40, 'italic 400 140px Fraunces, Georgia, serif', C.line, 'center');
     else text('???', cx + tw / 2, cy + th / 2 + 18, '400 52px "Special Elite", monospace', C.dim, 'center');
-    x.strokeStyle = C.line; x.lineWidth = 2; x.strokeRect(cx, cy, tw, th);
+    const tr0 = t && tierOf(t.g.id, 'g');   // the card's rarity edge, as in the app (v2.4)
+    if (tr0 && tr0.lv >= 2) { x.strokeStyle = tr0.c; x.lineWidth = 8; x.strokeRect(cx + 4, cy + 4, tw - 8, th - 8); }
+    else { x.strokeStyle = C.line; x.lineWidth = 2; x.strokeRect(cx, cy, tw, th); }
     if (t) {
       if (im) { x.shadowColor = 'rgba(0,0,0,.8)'; x.shadowBlur = 6; }
       const tr = tierOf(t.g.id, 'g');   // the rarity tier as a coloured label in the corner
@@ -5973,10 +6076,12 @@ function flipCard(el) {
   if (el.classList.contains('on')) return;
   const id = +el.dataset.g;
   el.classList.add('on'); el.dataset.genus = id;
+  const rar = rarAttrs(id); if (rar.r?.lv >= 2) { el.className += rar.cls; el.style.setProperty('--rc', rar.r.c); }
   const nm = el.querySelector('.nm'); nm.classList.remove('q'); nm.innerHTML = `<i>${esc(S.nodes[id]?.n || '?')}</i>`;
   for (let px = 14; nm.scrollWidth > nm.clientWidth && px > 10; ) nm.style.fontSize = --px + 'px';   // long names shrink rather than lose letters
   el.querySelector('.cn').textContent = cnOf(id);
 }
+addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.card.flipped').forEach(c => turnCard(c, false)); });
 function revEndHtml() {
   const M = S.M, n = M.G.size, hl = headline();
   return `<div class="panel revend" style="margin-top:8px">
@@ -6081,6 +6186,7 @@ document.addEventListener('click', e => {
     const w = window.open(ID_AID, 'spoodex-idaid', 'popup,width=1280,height=880');
     if (w) { e.preventDefault(); w.focus(); }
   }
+  if (a === 'flip') { e.preventDefault(); const c = t.closest('.card'); if (c) turnCard(c); return; }
   if (a === 'needsid') { e.preventDefault(); S.prefs.layer = 'needsid'; savePrefs(); if ($('#app').classList.contains('hidden')) enterApp('dex'); else { S.tab = 'dex'; render(); } }
   if (a === 'leadFilter') { S.prefs.leadFilter = val === 'all' ? null : val; savePrefs(); render(); }
   if (a === 'sets') { e.preventDefault(); S.prefs.layer = 'sets'; savePrefs(); S.tab = 'dex'; render(); }
