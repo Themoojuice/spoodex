@@ -108,13 +108,13 @@ The service worker caches tiles **only as they're viewed** (≤ ~600); never bul
 an area (Esri's terms).
 
 External services besides iNat:
-- **Open-Meteo** (since v1.15, "Spooding weather"): `https://api.open-meteo.com/v1/forecast` with
+- **Open-Meteo** (since v1.15, "Spooding weather"; **display units since v2.5**: `imperial()`, `tDeg(c)`, `rainAmt(mm)` show °F and inches when the home is in the United States (iNat place 1), °C and mm elsewhere, or as set in ⚙ "Weather units" (`S.prefs.units` '' / 'metric' / 'us'); with no home yet a US-English browser decides; the home leads because many browsers outside the US say en-US; scoring stays metric and wind is never shown as a number): `https://api.open-meteo.com/v1/forecast` with
   `hourly=temperature_2m,precipitation_probability,precipitation,cloud_cover,wind_speed_10m,shortwave_radiation,is_day&timezone=auto&forecast_days=7`.
   No key. Sent: the home base rounded to 0.1° (~10 km), nothing else. Response: `utc_offset_seconds` and `hourly.<field>[]` aligned with
   `hourly.time[]` (local times like `2026-10-05T09:00` at that point; checked 2026-10-04). **The free tier is non-commercial only**
   (600 calls/min, 10,000/day) and its data is **CC BY 4.0**: the panel credits "Weather: Open-Meteo" with a link to open-meteo.com.
   **If SPOODEX ever charges (subscriptions, ads, paid features), this needs Open-Meteo's paid API plan.**
-- **Atlas of Living Australia** (v2.0, "museum records"; ⚙ switch `S.prefs.ext.ala`, default on, disclosed in Settings: "Sent: taxon names
+- **Atlas of Living Australia** (v2.0, "museum records"; **only for an Australian home since v2.5**: `alaOn()` is false and the ⚙ switch is hidden elsewhere, so nothing is sent to ALA and no Australian museum facts appear for other players; ⚙ switch `S.prefs.ext.ala`, default on, disclosed in Settings: "Sent: taxon names
   and your scan squares"). Name matching `https://api.ala.org.au/namematching/api/search?q=` (authority) and biocache
   `https://biocache-ws.ala.org.au/ws/occurrences/search` / `/occurrence/<uuid>` (holotypes, earliest specimens, specimen genera in a box).
   No key; CORS works from localhost and github.io. Its own queue per host (`extFetch`, ≈1 request/s), not `api()`. Details in §7.

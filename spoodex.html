@@ -1434,7 +1434,8 @@ function plateHtml(t) {
 const ALA_NM = 'https://api.ala.org.au/namematching/api/search', ALA_BC = 'https://biocache-ws.ala.org.au/ws';
 const ALA_NOT_INAT = 'fq=-data_resource_uid:dr1411', LORE_TTL = 90 * 864e5;
 S.lore = store.get('lore', {});   // name -> {ts, auth, holo:{by, date, y, loc, state, inst, cat}|null, first:{y, by, inst, st}|null}
-const alaOn = () => S.prefs.ext?.ala !== false;
+// Museum records only for an Australian home: ALA describes Australian specimens, so elsewhere it would only send names for nothing (v2.5)
+const alaOn = () => S.prefs.ext?.ala !== false && (!S.M || auHome());
 // Hosts other than iNat get a queue each (≈1 request/s), like wxFetch; api() stays iNat-only
 const extNext = {};
 async function extFetch(url) {
@@ -1600,17 +1601,17 @@ function buildQuests(M) {
   if (act) {
     const miss = act.g.filter(x => !M.G.has(x.id)).sort((a,b) => b.c - a.c);
     if (miss.length) q.push({ id:'active:'+M.homeCell.k+':'+act.d1, kind:'hunt', icon:'🔥', title:'Active Right Now',
-      text:`${miss.length} genera you haven't recorded have been found within 25 km of your home base in the last ${ACTIVE_DAYS} days.`,
+      text:`${miss.length === 1 ? "A genus you haven't recorded has" : `${miss.length} genera you haven't recorded have`} been found within 25 km of your home base in the last ${ACTIVE_DAYS} days.`,
       targets:miss.slice(0,6).map(x => x.id), recent:Object.fromEntries(miss.map(x => [x.id, x.c])) });
     else if (act.g.length) q.push({ id:'active-mastery', kind:'info', icon:'🔥', title:'Everything Active Is Already Yours',
-      text:`All ${act.g.length} genera recorded near your home base in the last ${ACTIVE_DAYS} days are in your SPOODEX.`,
+      text:`${act.g.length === 1 ? 'The one genus' : `All ${act.g.length} genera`} recorded near your home base in the last ${ACTIVE_DAYS} days ${act.g.length === 1 ? 'is' : 'are'} in your SPOODEX.`,
       targets:act.g.slice(0,6).map(x => x.id) });
   }
   const scan = scanFor(M.homeCell);
   if (scan) {
     const missing = scan.g.filter(x => !M.G.has(x.id)).sort((a,b) => b.c - a.c);
     if (missing.length) q.push({ id:'hunt:'+M.homeCell.k, kind:'hunt', icon:'🎯', title:'Genus Hunt',
-      text:`${missing.length} Salticidae genera recorded within 25 km of your home base aren't in your SPOODEX. Find one.`,
+      text:`${missing.length === 1 ? "One jumping spider genus recorded within 25 km of your home base isn't in your SPOODEX. Find it." : `${missing.length} jumping spider genera recorded within 25 km of your home base aren't in your SPOODEX. Find one.`}`,
       targets:missing.slice(0,6).map(x => x.id) });
   } else if (M.homeCell) {
     q.push({ id:'scan-home', kind:'scan', icon:'📡', title:'Calibrate the scanner', text:'Scan the area around your home base to reveal nearby genera you have not recorded yet.' });
@@ -2055,7 +2056,7 @@ function viewNeedsId() {
       : '<div class="panel"><p>No mystery spoods: every record is identified to genus or below.</p></div>'}`;
 }
 // Opens the Identification aid in one reused popup window (a tab on phones, or if popups are blocked)
-const idAidBtn = () => `<a class="btnlink" href="${ID_AID}" target="spoodex-idaid" data-act="idaid">🔑 Identification aid ↗</a>`;
+const idAidBtn = () => !auHome() ? '' : `<a class="btnlink" href="${ID_AID}" target="spoodex-idaid" data-act="idaid">🔑 Identification aid ↗</a>`;
 const layerSwitch = () => `<span>${[['genus','Genera'],['species','Species'],['sets','Sets'],['needsid',`❓ Mystery spoods (${mysteryCount()})`]].map(([k,l]) => `<span class="chip ${(S.prefs.layer||'genus')===k?'on':''}" data-layer="${k}" style="cursor:pointer">${l}</span>`).join(' ')}</span>`;
 function speciesSection(gid) {
   const M = S.M, ref = refFor(S.prefs.scope), cm = S.cmp?.M;
@@ -5664,6 +5665,12 @@ function drawWrappedCard(cv, W, tiles, photosOnly) {
 
 /* ---------------- spooding weather: the best hours near home this week, from the Open-Meteo forecast ---------------- */
 // Scores the weather and the season, not the spiders. Every threshold is a first guess for the owner to tune (HANDOVER §12).
+// Display units (v2.5): °F and inches when home is in the United States (iNat place 1), °C and mm elsewhere, or as chosen in ⚙
+// (S.prefs.units 'metric' / 'us'). With no home yet, a US-English browser decides. The home rather than the browser leads because many
+// browsers outside the US are set to en-US. Only what's shown changes; the scoring rules below stay in °C, mm and km/h.
+const imperial = () => S.prefs.units ? S.prefs.units === 'us' : S.M?.home.country ? S.M.home.country === 1 : /^en-US$/i.test(navigator.language || '');
+const tDeg = c => `${Math.round(imperial() ? c * 9 / 5 + 32 : c)}°`;
+const rainAmt = mm => imperial() ? `${+(mm / 25.4).toFixed(mm < 25.4 ? 1 : 0)} in` : `${Math.round(mm)} mm`;
 const WX = {
   warm:{ from:18, full:24, hot:32, tooHot:35, max:40 },   // °C: 0 at `from`, 1 from `full` to `hot`, .8 at `tooHot`, 0 at `max`
   sun:{ dim:100, bright:500, clear:.7 },                   // shortwave W/m² from dim to bright, or clear sky × `clear`, whichever is higher
@@ -5745,9 +5752,9 @@ function wxDays(f, from = null, to = null, max = 7) {
     const win = left.slice(a, b + 1), mean = avg(win, 's'), temp = Math.round(avg(win, 'temp')), cc = avg(win, 'cc'), start = win[0].i;
     const rain = hrs.slice(Math.max(0, start - R.rainH), start).reduce((s, x) => s + x.p, 0), why = [];
     let bonus = 0;
-    if (rain >= WX.flood.mm) { bonus -= WX.flood.penalty; why.push(`🌊 after ${Math.round(rain)} mm of rain (too wet)`); }
+    if (rain >= WX.flood.mm) { bonus -= WX.flood.penalty; why.push(`🌊 after ${rainAmt(rain)} of rain (too wet)`); }
     else if (mean >= R.from) {
-      if (rain >= R.rainMm) { bonus += R.rain; why.push(`🌧 after ${Math.round(rain)} mm of rain`); }
+      if (rain >= R.rainMm) { bonus += R.rain; why.push(`🌧 after ${rainAmt(rain)} of rain`); }
       if (Math.max(0, ...hrs.slice(Math.max(0, start - R.windH), start).map(x => x.w)) >= R.windKmh) { bonus += R.wind; why.push('💨 after a windy spell'); }
       const prev = hrs.filter(x => x.d === addDays(d, -1) && x.day && x.temp != null);
       if (prev.length && Math.max(...prev.map(x => x.temp)) < R.coolMax && temp >= R.warmTo) { bonus += R.cool; why.push('☀ first warm day after a cool one'); }
@@ -5791,9 +5798,9 @@ function wxCardsHtml(f, days) {
   const day = d => d === today ? 'Today' : days.length > 7 ? new Date(d + 'T12:00:00Z').toLocaleDateString('en-AU', { weekday:'short', day:'numeric', timeZone:'UTC' }) : wxDay(d, today);
   const card = x => x.none ? `<div class="wxd none"><span class="d">${day(x.d)}</span>${stripe(x)}<span class="t">Daylight's over</span></div>`
     : `<div class="wxd${x === top ? ' top' : ''}"><span class="d">${day(x.d)}</span>${wxStars(x.stars)}<span class="w">${wxSpan(x.from, x.to)}</span>${stripe(x)}
-      <span class="t">${x.temp}° · ${x.sky}${x.rain >= WX.dry.pp[0] ? ` · ${x.rain}% rain` : ''}</span>${x.why.length ? `<span class="why">${x.why.map(esc).join('<br>')}</span>` : ''}</div>`;
+      <span class="t">${tDeg(x.temp)} · ${x.sky}${x.rain >= WX.dry.pp[0] ? ` · ${x.rain}% rain` : ''}</span>${x.why.length ? `<span class="why">${x.why.map(esc).join('<br>')}</span>` : ''}</div>`;
   return `<div class="wxdays${days.length > 7 ? ' many' : ''}">${days.map(card).join('')}</div>
-    ${top ? `<p class="wxbest">Best bet: <b>${day(top.d)} ${wxSpan(top.from, top.to)}</b> ${wxStars(top.stars)} ${top.temp}° · ${top.sky}${top.why.length ? ` · ${esc(top.why[0])}` : ''}</p>` : ''}
+    ${top ? `<p class="wxbest">Best bet: <b>${day(top.d)} ${wxSpan(top.from, top.to)}</b> ${wxStars(top.stars)} ${tDeg(top.temp)} · ${top.sky}${top.why.length ? ` · ${esc(top.why[0])}` : ''}</p>` : ''}
     <p class="small muted" style="margin:0">Stars rate each day's best stretch for warmth, sun, rain and wind, and rise when it clears after rain, wind or a cool spell, or turns warm and humid. The bar is the day hour by hour; the outlined part is that stretch.</p>`;
 }
 // "5 min ago", else the day: when a scan or forecast was read
@@ -6140,8 +6147,9 @@ function settings() {
     </div>
     ${installHtml()}
     <p class="small muted" style="margin-top:14px">Anonymous visit counts via GoatCounter: no cookies, no usernames, no locations.</p>
+    <p class="small">Weather units <select data-pref="units">${[['', `Automatic (${(() => { const u = S.prefs.units; S.prefs.units = ''; const r = imperial(); S.prefs.units = u; return r; })() ? '°F, inches' : '°C, mm'})`], ['metric', '°C, mm'], ['us', '°F, inches']].map(([v, l]) => `<option value="${v}" ${(S.prefs.units || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></p>
     <p class="small muted">Weather lookups send your home base, and the destination of a dated trip, rounded to ~10 km, to Open-Meteo.</p>
-    <p class="small"><label><input type="checkbox" data-pref="ext.ala" ${alaOn() ? 'checked' : ''}> Museum records</label> <span class="muted">Atlas of Living Australia. Sent: taxon names and your scan squares.</span></p>
+    ${auHome() ? `<p class="small"><label><input type="checkbox" data-pref="ext.ala" ${alaOn() ? 'checked' : ''}> Museum records</label> <span class="muted">Atlas of Living Australia. Sent: taxon names and your scan squares.</span></p>` : ''}
     ${isMe(OWNER) ? taxonomyReviewHtml() : ''}
     <p class="small muted" id="storeInfo">Saved in this browser${store.db ? ' (IndexedDB)' : ' (localStorage, about 5 MB at most)'}.</p></div></div></div>`;
   store.usage().then(b => { const el = $('#storeInfo'); if (el && b) el.textContent += ` This site is using about ${(b / 1048576).toFixed(1)} MB.`; });
