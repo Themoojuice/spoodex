@@ -1,6 +1,6 @@
 # SPOODEX — handover
 
-**As of 2026-10-07 · v2.0 "The Naturalist Update", live at https://themoojuice.github.io/spoodex/?u=themoojuice (tags `v1.20.0`, `v2.0.0`)**
+**As of 2026-10-10 · v2.3 "Simplify" on branch `feature/simplify` (live: v2.2), live at https://themoojuice.github.io/spoodex/?u=themoojuice (tags `v1.20.0`, `v2.0.0`)**
 
 This is the single source of truth for anyone (human or Claude) picking up the project. Read §0 first; it's enough
 to start safely. The rest is reference. When you change something, update this file in the same commit.
@@ -606,6 +606,23 @@ Work on a new branch, merge it to `main` with `--no-ff`, tag the release.
 - **Test outside Australia**; consider showing progress as a % of the regional total for low-diversity regions (e.g. the UK has ~20 genera).
 - **Full-photo share cards** via an image proxy (see §11).
 
+**Awaiting the owner's decision (v2.3, simplify; branch `feature/simplify`, not merged)**:
+- **Level vs the headline.** Built option (c): the level stays every genus you've recorded anywhere, and the headline adds what's outside
+  the scope's list so the numbers add up ("Level 54" beside "53 / 80 genera on iNat in Australia · +1 elsewhere"; your +1 is *Salticus*,
+  the casual record from Metz). Alternatives: (a) the level counts only the scope's list, with overseas genera shown separately (the level
+  would then change when you switch scope, and `TIERS`, tab unlocks, quests and titles would follow it); (b) the header shows only the
+  level and the fraction appears only on Profile.
+- **Grouping.** Built as specified: Collection · Go spooding · Mates · Quests. An alternative is three sections, with Quests as a view
+  under Go spooding (it's about going out), which would leave Quests one tap further away. The view label "Lineage tree" could become
+  "Lineage" to match the page heading.
+- **"XP"** now appears only as mastery XP: Profile's "Mastery XP" ledger line, the genus page's "Mastery XP ledger" and the Mk Cabinet
+  module name. Renaming it "mastery points" would be plainer; not done.
+- **Research Station module** (the 100-genera tier) reads "Every module" instead of "Everything, plus smugness". Change it if you'd like
+  other wording.
+- **Place guesses.** The genus page ("First recorded … · <place guess>") and the new-genus ceremony ("First observed … · <place guess>")
+  show the record's iNat place guess, which can be a street or a property. Options: keep it (your own data, public on iNat), or show the
+  square's name from `cellLabel` instead ("near Cairns - Barron").
+
 **Awaiting the owner's decision (v2.0, the naturalist update)**:
 - **Honour names and cut-offs** (`HONOURS`): First on record (1) · Founding trio (2–3) · Vanguard (4–10) · Founding Naturalist (11–50).
 - **A lost honour** (record re-identified away): disappears quietly (built). Alternative: stays as "earned <date>".
@@ -786,6 +803,7 @@ cards progressively during a first import; generalising beyond jumping spiders (
 | v1.7 | IndexedDB storage (with migration), v2 imports with `fields=` (~6% of the download), Trip planner |
 | v1.8 | Sets (themed + complete-the-lineage), Bounty board, "since your last visit" |
 | v1.9 | Most Wanted tab renamed Bounty board (bounties first), SPOODEX › Needs ID layer, fixed-height quest tiles |
+| v2.3 | Simplify (branch `feature/simplify`, 2026-10-10; prompt `spoodex-prompt-5-simplify.md`): one headline count everywhere (`headline()`, which fixed the reveal's "54 of the 80"), four sections (Collection, Go spooding, Mates, Quests) with a view row instead of ten tabs, quest and poster XP rewards removed (mastery XP kept and labelled), tier subtitles removed, no coordinates finer than 0.25° on screen (`cellLabel` names squares) |
 | v2.2 | Uncluttered (owner, 2026-10-08): the This week tab (Spood Report) and field mode (field compass, header 🧭 button) removed; 10 tabs; boot drops the old `report` cache |
 | v2.0 | The Naturalist Update (shipped 2026-10-07, tag `v2.0.0`, on top of v1.20): merged onto v1.20 by the spood-frenzy session (one conflict, `PERSISTED` = both `notes` and `lore`); `extFetch` now drops ALA requests queued before the switch went off; Australia's checklist `TAXA_AU` (iNat ∪ the Lucid key, 91 genera, `tools/taxa.py`), "known from Australia" in the dex, 🏛 Never on iNat museum plates and tree branch, owner's Taxonomy review; museum history from the Atlas of Living Australia (described by, holotype, first collected) on the genus page and species rows; naturalist ranks for every species and genus in your country and state, inked or pencilled, with honours (First on record, Founding trio, Vanguard, Founding Naturalist), a ceremony, a share card and a dispatch, and a cabinet on Profile; museum ghosts in the scanner, cold-case posters and the Bring It Into the Light quest; crew hype with a ceremony and a link to congratulate on iNat; an empty field-story renderer; weather stars weigh the window's length |
 | v1.20 | Spood frenzy (shipped 2026-10-07, tag `v1.20.0`): a landing page with real jumping spiders (the owner's photos first, licence-checked others) and three starts; a photo reveal instead of the boot log; iNat common names and one Wikipedia line per genus; the photo checklist, mystery spoods (was Needs ID) and a celebration when one is identified; a beginner-first Profile (Your spoods, Three to find next, tiny stats hidden); tabs that open with level and a one-line phone header; a My SPOODEX share image (portrait/square); the monthly spood hunt (open worldwide events, post text, best-find photos, refresh/page caps); guests are asked where they look before the map. Second test pass (2026-10-06, all five test personas, 375 and 1280 px): guests land on Profile after their first base; the reveal hides the landing strip, shrinks long genus names and gives common names three lines; mystery spoods join "Your spoods" and the reveal links to them; the share image wraps common names and shrinks long genus names; landing credits wrap; open-hunt form says "the world"; a saved `queued` flag no longer freezes an event after a reload. Then (2026-10-07, owner's requests): his best photo per genus picked by eye from all his records (`OWNER_PICKS`, used everywhere a genus needs a picture, including the landing page and for other players); titles are an empowering adjective and a genus ("Masterful *Mopsus*"), rarer genera at higher levels; a click-and-type genus lines editor that saves as you type and copies the `GENUS_NOTES` block. Profile tidy (2026-10-08, v2.0.1): top section and trophy cabinet only, the ledgers behind "Your numbers" tiles that open sheets. Lineage tree as museum drawers (v2.1): subfamily banners, tribe drawers with progress rings and genus tiles, Next to light, a Did you know? strip (data facts and the owner's `GENUS_FACTS`, written in the editor), CC-licensed photos for genera without one, curated plates and photos for never-on-iNat genera, and the ALA synonym fix (*Hypoblemum*) |
