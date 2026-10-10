@@ -37,7 +37,7 @@
   --paper:repeating-linear-gradient(95deg, rgba(0,0,0,.05) 0 3px, transparent 3px 9px, rgba(255,220,170,.025) 9px 11px, transparent 11px 17px);
 }
 [data-chassis="cabinet"] header.top { background:#1f1712; border-bottom-color:#8f6420; color:#efe4cc; }
-[data-chassis="cabinet"] header.top .muted, [data-chassis="cabinet"] .brand .sub { color:#c9b48f; }
+[data-chassis="cabinet"] header.top .muted { color:#c9b48f; }
 [data-chassis="cabinet"] header.top h1 { color:#e2bf7a; }
 [data-chassis="cabinet"] nav.tabs .secs button { color:#efe4cc; }
 [data-chassis="cabinet"] header.top .lvl button { color:var(--ink); }
@@ -180,7 +180,6 @@ header.top { position:sticky; top:0; z-index:500; background:var(--bg); border-b
 header.top .wrap { padding-top:10px; padding-bottom:0; }
 .brand { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
 .brand h1 { font-size:26px; margin:0; }
-.brand .sub { color:var(--muted); font-size:12px; }
 .lvl { margin-left:auto; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 .lvl b { font-family:var(--head); font-size:18px; }
 nav.tabs { margin-top:8px; }
@@ -538,7 +537,7 @@ details > summary.scsec { cursor:pointer; }
   header.top .wrap { padding-top:6px; }
   .brand { flex-wrap:nowrap; align-items:center; gap:6px; }
   .brand h1 { font-size:17px; flex:1 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .brand .sub, #whoami, .lvl .lbl { display:none; }
+  #whoami, .lvl .lbl { display:none; }
   .lvl { margin-left:auto; gap:4px; flex-wrap:nowrap; flex:none; }
   .lvl .lbs { display:inline; }
   .lvl b { font-size:15px; white-space:nowrap; margin-right:2px; }
@@ -587,7 +586,7 @@ details > summary.scsec { cursor:pointer; }
 <div id="app" class="hidden">
   <header class="top"><div class="wrap">
     <div class="row brand">
-      <h1 id="chassisName">SPOODEX</h1><span class="sub" id="chassisSub"></span>
+      <h1 id="chassisName">SPOODEX</h1>
       <div class="lvl">
         <span class="muted" id="whoami"></span>
         <b id="lvlBadge"></b>
@@ -632,13 +631,13 @@ const BEH_RX = {
 };
 
 const TIERS = [
-  { min:0,   name:'SPOODEX Mk 0',          sub:'A slightly suspicious digital notebook', chassis:'notebook', module:'Genus records & nearby scanner' },
-  { min:5,   name:'Field Notebook',        sub:'Now with a pencil. Region statistics installed.', chassis:'notebook', module:'Region statistics' },
-  { min:15,  name:'SPOODEX Mk II',         sub:'Laminated. Mostly waterproof. Lineage tree installed.', chassis:'kit', module:'Lineage tree' },
-  { min:30,  name:'SPOODEX Mk III',        sub:'Rarity ledgers installed.', chassis:'kit', module:'Rarity ledgers' },
-  { min:50,  name:'Naturalist Cabinet',    sub:'Brass fittings. Mastery ledgers installed.', chassis:'cabinet', module:'Mastery XP ledger' },
-  { min:75,  name:'Arachnologist Rig',     sub:'Gilt edges on everything you have mastered.', chassis:'cabinet', module:'Gilded labels for mastered genera' },
-  { min:100, name:'Spood Research Station',sub:'Please wipe your boots.', chassis:'cabinet', module:'Everything, plus smugness' },
+  { min:0,   name:'SPOODEX Mk 0',          chassis:'notebook', module:'Genus records & nearby scanner' },
+  { min:5,   name:'Field Notebook',        chassis:'notebook', module:'Region statistics' },
+  { min:15,  name:'SPOODEX Mk II',         chassis:'kit', module:'Lineage tree' },
+  { min:30,  name:'SPOODEX Mk III',        chassis:'kit', module:'Rarity ledgers' },
+  { min:50,  name:'Naturalist Cabinet',    chassis:'cabinet', module:'Mastery XP ledger' },
+  { min:75,  name:'Arachnologist Rig',     chassis:'cabinet', module:'Gilded labels for mastered genera' },
+  { min:100, name:'Spood Research Station',chassis:'cabinet', module:'Every module' },
 ];
 const tierIdx = n => TIERS.reduce((a,t,i)=> n>=t.min ? i : a, 0);
 
@@ -1650,7 +1649,6 @@ function render() {
   if (S.tab !== 'map') dropMap3d();
   document.body.dataset.chassis = S.prefs.chassis === 'auto' ? tier.chassis : S.prefs.chassis;
   $('#chassisName').textContent = tier.name;
-  $('#chassisSub').textContent = tier.sub;
   $('#whoami').textContent = who();
   $('#shareBtn').classList.toggle('hidden', isGuest());
   $('#lvlBadge').innerHTML = `<span class="lbl">LEVEL </span><span class="lbs">Lv </span>${M.G.size}`;
@@ -1757,7 +1755,7 @@ function viewProfile() {
   const A = isGuest() ? null : recordShare(M.home.state || M.home.country), pioN = isGuest() ? 0 : myPioneers().length;
   const ledger = kv.length || n ? `${kv.length ? `<div class="kv">${kv.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</div>` : ''}
     ${n ? `<h3 style="margin-top:16px">Chassis</h3>
-      <p><b>${esc(TIERS[tier].name)}</b> — <span class="muted">${esc(TIERS[tier].sub)}</span></p>
+      <p><b>${esc(TIERS[tier].name)}</b></p>
       ${next ? `<div class="row"><span class="small">Next: ${esc(next.name)} at ${next.min} genera</span>${bar(n - TIERS[tier].min, next.min - TIERS[tier].min)}<span class="small">${next.min - n} to go</span></div>` : '<p>Fully upgraded.</p>'}
       <ul class="checks" style="margin-top:10px">${TIERS.map((t,i) => `<li class="${i<=tier?'done':''}">${i<=tier?'☑':'☐'} ${esc(t.module)} <span class="muted small">(${t.min}+)</span></li>`).join('')}</ul>
       ${streak ? `<h3 style="margin-top:14px">Discovery streak</h3>${streak}` : ''}` : ''}` : '';

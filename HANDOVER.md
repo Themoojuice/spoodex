@@ -647,9 +647,8 @@ Work on a new branch, merge it to `main` with `--no-ff`, tag the release.
 - **Tab levels** (`TABS[].at`, genera needed): always Profile, SPOODEX, Map & scanner, Crew, Quests; Trip planner and
   Compare 5 (the Field Notebook tier); Bounty board and Ladder 10; Lineage tree 15 (unchanged, Mk II). The old 🔒 tab and "MODULE NOT
   INSTALLED" plate are gone: locked tabs are simply not shown.
-- **Kids and the tier subtitles**: the review flagged "A slightly suspicious digital notebook" and "Everything, plus smugness" as adult
-  jokes. They're your game flavour, so unchanged; phones no longer show the subtitle in the header. If you'd like plainer ones, e.g.
-  Mk 0 "Your first field notebook", Research Station module "Every module installed".
+- **Tier subtitles: removed in v2.3** (owner, 2026-10-10, "no filler captions"): `TIERS[].sub` ("Brass fittings. Mastery ledgers
+  installed." etc.) is gone from the data, the header and Profile's Chassis sheet, and the Research Station module reads "Every module".
 - The landing page doesn't guess where a stranger is, so it always shows this global set; their own area comes with the first start.
 - **Lineage tree images for genera never on iNat in Australia** (`PLATES`, picked 2026-10-08, please check): of the 9, four got a
   picture, each naming the species shown. *Pseudomaevia*: Rainbow (1920) plate XXXI fig. 123, *P. cognata*, the whole animal, public
