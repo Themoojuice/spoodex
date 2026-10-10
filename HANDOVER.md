@@ -400,6 +400,9 @@ Scan-point keys: a 0.25° cell `"lat:lng"` (integers) or an arbitrary point `"pt
 ## 8. Game rules
 
 - **Level = number of genera.** Species are a side collection and never drive level (owner's explicit choice). Sets are side goals too.
+- **XP is mastery XP only** (v2.3): the per-record mastery events in `buildModel` (`g.xp`, `g.xpLog`, `M.xp`), shown as "Mastery XP" in
+  Profile's ledger sheet and the genus page's "Mastery XP ledger". Quests and wanted posters no longer print rewards (they were never added
+  to anything); a poster's reward is just "LEVEL N+1".
 - States: Unknown (greyed photo, `???` unless "reveal names") → Glimpsed/Needs ID (stuck above genus) → Discovered →
   Supported (community taxon within the genus; **not** Research Grade) → Mastered (7 of 10 `CRITERIA`).
 - Tiers/chassis: 0 Mk 0 · 5 Field Notebook · 15 Mk II (lineage tree) · 30 Mk III (rarity) · 50 Naturalist Cabinet · 75 Arachnologist Rig ·

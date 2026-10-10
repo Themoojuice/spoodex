@@ -429,10 +429,8 @@ details > summary.scsec { cursor:pointer; }
 .questgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); grid-auto-rows:340px; gap:16px; }
 .questgrid .quest { display:flex; flex-direction:column; overflow:hidden; min-width:0; }
 .questgrid .qbody { flex:1 1 auto; min-height:0; overflow-y:auto; padding-right:4px; }
-.questgrid .reward { flex:none; margin-top:8px; }
 .quest.daily { border-left-width:8px; }
 .quest h3 { margin-bottom:2px; }
-.reward { font-size:12px; color:var(--lit); }
 
 
 /* ---------- Spooding weather ---------- */
@@ -1509,26 +1507,26 @@ const titleHtml = (M, login) => { const [a, g] = titleParts(M, login); return `$
 function scanFor(cell) { return cell ? S.u.scans[cell.k] : null; }
 function buildQuests(M) {
   const q = [];
-  if (!M.G.size) q.push({ id:'first', kind:'first', icon:'🕷', title:'Your First Spood', text:'Find a jumping spider, photograph it and upload it to iNaturalist. Once it is identified to genus, sync SPOODEX and your first card unlocks.', reward:100 });
-  if (!M.homeCell) q.push({ id:'base', kind:'base', icon:'🏠', title:'Pick a Home Base', text:'Tell SPOODEX where you usually spood and it will list the genera recorded around you.', reward:0 });
+  if (!M.G.size) q.push({ id:'first', kind:'first', icon:'🕷', title:'Your First Spood', text:'Find a jumping spider, photograph it and upload it to iNaturalist. Once it is identified to genus, sync SPOODEX and your first card unlocks.' });
+  if (!M.homeCell) q.push({ id:'base', kind:'base', icon:'🏠', title:'Pick a Home Base', text:'Tell SPOODEX where you usually spood and it will list the genera recorded around you.' });
   const act = M.homeCell && S.u.active?.[M.homeCell.k];
   if (act) {
     const miss = act.g.filter(x => !M.G.has(x.id)).sort((a,b) => b.c - a.c);
     if (miss.length) q.push({ id:'active:'+M.homeCell.k+':'+act.d1, kind:'hunt', icon:'🔥', title:'Active Right Now',
       text:`${miss.length} genera you haven't recorded have been found within 25 km of your home base in the last ${ACTIVE_DAYS} days.`,
-      targets:miss.slice(0,6).map(x => x.id), recent:Object.fromEntries(miss.map(x => [x.id, x.c])), reward:300 });
+      targets:miss.slice(0,6).map(x => x.id), recent:Object.fromEntries(miss.map(x => [x.id, x.c])) });
     else if (act.g.length) q.push({ id:'active-mastery', kind:'info', icon:'🔥', title:'Everything Active Is Already Yours',
       text:`All ${act.g.length} genera recorded near your home base in the last ${ACTIVE_DAYS} days are in your SPOODEX.`,
-      targets:act.g.slice(0,6).map(x => x.id), reward:0 });
+      targets:act.g.slice(0,6).map(x => x.id) });
   }
   const scan = scanFor(M.homeCell);
   if (scan) {
     const missing = scan.g.filter(x => !M.G.has(x.id)).sort((a,b) => b.c - a.c);
     if (missing.length) q.push({ id:'hunt:'+M.homeCell.k, kind:'hunt', icon:'🎯', title:'Genus Hunt',
       text:`${missing.length} Salticidae genera recorded within 25 km of your home base aren't in your SPOODEX. Find one.`,
-      targets:missing.slice(0,6).map(x => x.id), reward:250 });
+      targets:missing.slice(0,6).map(x => x.id) });
   } else if (M.homeCell) {
-    q.push({ id:'scan-home', kind:'scan', icon:'📡', title:'Calibrate the scanner', text:'Scan the area around your home base to reveal nearby genera you have not recorded yet.', reward:0 });
+    q.push({ id:'scan-home', kind:'scan', icon:'📡', title:'Calibrate the scanner', text:'Scan the area around your home base to reveal nearby genera you have not recorded yet.' });
   }
   const ref = refFor(S.prefs.scope);
   if (ref && moduleOn(2)) {
@@ -1538,37 +1536,37 @@ function buildQuests(M) {
     const empty = tribes.map(id => ({ id, g:under(id) })).filter(t => t.g.length && !t.g.some(g => M.G.has(g)))
       .sort((a,b) => b.g.reduce((s,x) => s + (ref.g[x]||0), 0) - a.g.reduce((s,x) => s + (ref.g[x]||0), 0));
     if (empty[0]) q.push({ id:'lineage:'+empty[0].id, kind:'lineage', icon:'🌳', title:'Unexplored Lineage',
-      text:`You have nothing from ${S.nodes[empty[0].id].n} (${S.nodes[empty[0].id].r}). ${empty[0].g.length} ${empty[0].g.length===1?'genus':'genera'} from it ${empty[0].g.length===1?'is':'are'} recorded in ${scopeLabel(S.prefs.scope)}.`, node:empty[0].id, targets:empty[0].g, reward:300 });
+      text:`You have nothing from ${S.nodes[empty[0].id].n} (${S.nodes[empty[0].id].r}). ${empty[0].g.length} ${empty[0].g.length===1?'genus':'genera'} from it ${empty[0].g.length===1?'is':'are'} recorded in ${scopeLabel(S.prefs.scope)}.`, node:empty[0].id, targets:empty[0].g });
   }
   const gh = M.homeCell ? homeGhosts().filter(x => x.id && !M.G.has(x.id)) : [];
   if (gh.length) q.push({ id:'ghost:' + M.homeCell.k, kind:'ghost', icon:'🏛', title:'Bring It Into the Light',
     text:`${gh.length === 1 ? '1 genus has' : `${gh.length} genera have`} museum specimens from within 25 km of your home base but no iNat records there. Photograph one there and post it.`,
-    targets:gh.slice(0, 6).map(x => x.id), at:{ lat:M.homeCell.lat, lng:M.homeCell.lng }, reward:300 });
+    targets:gh.slice(0, 6).map(x => x.id), at:{ lat:M.homeCell.lat, lng:M.homeCell.lng } });
   const ns = nearestSet(refFor(S.prefs.scope));
   if (ns) q.push({ id:'set:' + ns.key + ':' + ns.have, kind:'hunt', icon:'🏆', title:`Complete the Set: ${ns.name}`,
     text:`You have ${ns.have} of the ${ns.ids.length} genera in the ${ns.name} set that are recorded in ${scopeLabel(S.prefs.scope)}. ${ns.left} to go. See them under SPOODEX › Sets.`,
-    targets:ns.ids.filter(id => !M.G.has(id)), reward:200 });
+    targets:ns.ids.filter(id => !M.G.has(id)) });
   if (M.leads.length) {
     const n = M.leads.reduce((s,l) => s + l.obs.length, 0);
     q.push({ id:'resolve', kind:'resolve', icon:'❓', title:'Something Is Lurking',
       text:`${n} mystery spood${n === 1 ? '' : 's'}: records not yet identified to genus (${M.leads.slice(0,3).map(l => l.name).join(', ')}…). Add face-on, top and side photos, or ask for an ID.`,
-      obs:M.leads.flatMap(l => l.obs.map(o => o.id)).slice(0,50), reward:100 });
+      obs:M.leads.flatMap(l => l.obs.map(o => o.id)).slice(0,50) });
   }
   const near = M.genera.filter(g => g.state !== 'MASTERED').sort((a,b) => b.level - a.level || b.obs.length - a.obs.length)[0];
   if (near) {
     const miss = CRITERIA.filter(c => !near.f[c.k]);
     q.push({ id:'master:'+near.id, kind:'master', icon:'🏅', title:`Towards Mastery: ${near.name}`,
-      text:`${near.name} is at level ${near.level}/10. Still to do: ${miss.slice(0,3).map(c => c.label.toLowerCase()).join('; ')}.`, gid:near.id, crit:miss[0]?.k, reward:150 });
+      text:`${near.name} is at level ${near.level}/10. Still to do: ${miss.slice(0,3).map(c => c.label.toLowerCase()).join('; ')}.`, gid:near.id, crit:miss[0]?.k });
   }
   const behs = [['feed','Feeding frenzy','Photograph a salticid feeding or with prey'],['court','Dance floor','Record courtship or display'],['egg','Silk & brood','Find an egg sac, retreat, nest or moult']]
     .sort((a,b) => M.behObs[a[0]] - M.behObs[b[0]]);
-  q.push({ id:'beh:'+behs[0][0], kind:'beh', icon:'🔍', title:`Behaviour: ${behs[0][1]}`, text:`${behs[0][2]}. You have ${M.behObs[behs[0][0]]} so far. Mention it in the description or tags so SPOODEX can see it.`, beh:behs[0][0], base:M.behObs[behs[0][0]], reward:80 });
+  q.push({ id:'beh:'+behs[0][0], kind:'beh', icon:'🔍', title:`Behaviour: ${behs[0][1]}`, text:`${behs[0][2]}. You have ${M.behObs[behs[0][0]]} so far. Mention it in the description or tags so SPOODEX can see it.`, beh:behs[0][0], base:M.behObs[behs[0][0]] });
   const holeMonths = [...Array(12).keys()].map(i => i+1).filter(m => !M.monthsAll.has(m));
   const thisMonth = new Date().getMonth() + 1;
-  if (holeMonths.includes(thisMonth)) q.push({ id:'month:'+thisMonth, kind:'month', icon:'🗓', title:'Off-Season Spooding', text:`You've never recorded a salticid in ${MONTHS[thisMonth-1]}.`, m:thisMonth, reward:120 });
-  q.push({ id:'explore', kind:'explore', icon:'🧭', title:'Change of Scenery', text:`Record a salticid in a new 25 km grid square (you have ${M.cells25.size}).`, base:M.cells25.size, reward:150 });
+  if (holeMonths.includes(thisMonth)) q.push({ id:'month:'+thisMonth, kind:'month', icon:'🗓', title:'Off-Season Spooding', text:`You've never recorded a salticid in ${MONTHS[thisMonth-1]}.`, m:thisMonth });
+  q.push({ id:'explore', kind:'explore', icon:'🧭', title:'Change of Scenery', text:`Record a salticid in a new 25 km grid square (you have ${M.cells25.size}).`, base:M.cells25.size });
   const oneSex = M.genera.filter(g => (g.f.male ^ g.f.female)).sort((a,b) => b.obs.length - a.obs.length)[0];
-  if (oneSex) q.push({ id:'sex:'+oneSex.id, kind:'master', icon:oneSex.f.male ? '♀' : '♂', title:'The Other Half', text:`You've recorded a ${oneSex.f.male ? 'male' : 'female'} ${oneSex.name} but never a ${oneSex.f.male ? 'female' : 'male'}. Annotate sex on iNat when you do.`, gid:oneSex.id, crit:oneSex.f.male ? 'female' : 'male', reward:40 });
+  if (oneSex) q.push({ id:'sex:'+oneSex.id, kind:'master', icon:oneSex.f.male ? '♀' : '♂', title:'The Other Half', text:`You've recorded a ${oneSex.f.male ? 'male' : 'female'} ${oneSex.name} but never a ${oneSex.f.male ? 'female' : 'male'}. Annotate sex on iNat when you do.`, gid:oneSex.id, crit:oneSex.f.male ? 'female' : 'male' });
   // Daily pick, seeded by date
   const seed = new Date().toISOString().slice(0,10).split('-').reduce((a,b) => a*31 + +b, 7);
   const pickable = q.filter(x => x.kind !== 'scan');
@@ -1734,7 +1732,7 @@ function viewProfile() {
     ['Field days', M.fieldDays.length && fmt(M.fieldDays.length)],
     ['Behaviour records', [['feed', 'feeding'], ['court', 'courtship'], ['egg', 'silk/brood']].filter(([k]) => M.behObs[k]).map(([k, l]) => `${M.behObs[k]} ${l}`).join(' · ')],
     [`New genera ${new Date().getFullYear()}`, M.newThisYear],
-    ['Naturalist XP', M.xp && fmt(M.xp)],
+    ['Mastery XP', M.xp && fmt(M.xp)],
     ['Mystery spoods', mysteryCount() && `${fmt(mysteryCount())} not yet identified to genus <a href="#" class="small" data-act="needsid">see them</a>`],
   ].filter(([, v]) => v);
   const streak = M.streak ? `<p>${'🔥'.repeat(Math.min(M.streak,10))} <b>${M.streak}</b> consecutive field day${M.streak===1?'':'s'} with a new genus <span class="muted">(best ${M.bestStreak})</span></p>`
@@ -2724,7 +2722,7 @@ function viewQuests() {
   ensurePheno(qs.flatMap(q => q.targets || []));
   const done = (S.u.completed || []).slice(-10).reverse();
   return `
-  ${done.length ? `<div class="panel" style="margin-bottom:14px"><h2>Completed since you started</h2>${done.map(q => `<div>✅ <b>${esc(q.title)}</b> <span class="small muted">${esc(q.at)}</span> <span class="reward">+${q.reward} XP</span></div>`).join('')}</div>` : ''}
+  ${done.length ? `<div class="panel" style="margin-bottom:14px"><h2>Completed since you started</h2>${done.map(q => `<div>✅ <b>${esc(q.title)}</b> <span class="small muted">${esc(q.at)}</span></div>`).join('')}</div>` : ''}
   <div class="questgrid">${qs.map(q => `<div class="panel quest ${q.daily?'daily':''}"><div class="qbody">
     ${q.daily ? '<div class="small" style="letter-spacing:.2em">★ TODAY\'S FIELD QUEST</div>' : ''}
     <h3>${q.icon} ${esc(q.title)}</h3><p>${esc(q.text)}</p>
@@ -2734,7 +2732,7 @@ function viewQuests() {
     ${q.kind === 'first' ? '<a class="btnlink" href="https://www.inaturalist.org/observations/upload" target="_blank" rel="noopener">Upload to iNaturalist ↗</a>' : ''}
     ${q.kind === 'base' ? '<button class="primary" data-tab="map">Set home base</button>' : ''}
     ${q.kind === 'resolve' ? `<a href="${esc(leadsUrl())}" target="_blank" rel="noopener">Open these on iNaturalist ↗</a> · <a href="#" data-act="needsid">see your mystery spoods</a>` : ''}
-    </div>${q.reward ? `<div class="reward">Reward: +${q.reward} Naturalist XP</div>` : ''}</div>`).join('')}</div>
+    </div></div>`).join('')}</div>
   <p class="muted small" style="margin-top:14px">Quests check themselves each time you sync.</p>`;
 }
 
@@ -2769,7 +2767,7 @@ async function openGenus(id) {
     </div>
     <h3 style="margin-top:12px">Your gallery</h3>
     <div class="gallery">${g.photos.map(p => `<a href="https://www.inaturalist.org/observations/${p.id}" target="_blank" rel="noopener" style="background-image:url('${esc(photoSize(p.url,'small'))}')"></a>`).join('')}</div>
-    ${moduleOn(4) ? `<h3 style="margin-top:12px">XP ledger (${fmt(g.xp)} XP)</h3><div class="small" style="max-height:140px;overflow:auto">${g.xpLog.slice().reverse().map(e => `<div>${esc(e.d)} · ${esc(e.label)} <span class="reward">+${e.xp}</span></div>`).join('')}</div>` : ''}
+    ${moduleOn(4) ? `<h3 style="margin-top:12px">Mastery XP ledger (${fmt(g.xp)} XP)</h3><div class="small" style="max-height:140px;overflow:auto">${g.xpLog.slice().reverse().map(e => `<div>${esc(e.d)} · ${esc(e.label)} <span class="reward">+${e.xp}</span></div>`).join('')}</div>` : ''}
   ` : `
     <div class="small" style="letter-spacing:.2em">UNKNOWN</div>
     <h1 style="font-size:36px;font-style:italic;margin:2px 0">${esc(name)}</h1>${cnHtml(id, 'cnbig')}
@@ -4640,7 +4638,7 @@ function posterHtml(x, ctx, act) {
     ${stockCr(x.id) ? `<div class="wcredit">${esc(stockCr(x.id))}</div>` : ''}
     <div class="wname">${esc(S.nodes[x.id]?.n || '?')}</div>${cnHtml(x.id, 'wtribe')}<div class="wtribe">${esc(tribeOf(x.id))}</div>
     <ul class="wwhy">${wantedReasons(x, ctx).map(r => `<li>${r}</li>`).join('')}</ul>
-    <div class="wreward">REWARD · LEVEL ${S.M.G.size + 1} · +100 XP</div></div>`;
+    <div class="wreward">REWARD · LEVEL ${S.M.G.size + 1}</div></div>`;
 }
 function calendarHtml(list, ctx, act) {
   const m = ctx.month;
@@ -5895,7 +5893,7 @@ async function doSync(full) {
     if (S.M.homeCell) try { await scanActive(S.M.homeCell.k); } catch (e) { console.warn(e); }
     // quests completed by this sync
     const at = new Date().toISOString().slice(0,10);
-    for (const q of prevQuests) if (!['scan','base'].includes(q.kind) && questDone(q, S.M) && !S.u.completed.some(c => c.id === q.id && c.at === at)) S.u.completed.push({ id:q.id, title:q.title, reward:q.reward, at });
+    for (const q of prevQuests) if (!['scan','base'].includes(q.kind) && questDone(q, S.M) && !S.u.completed.some(c => c.id === q.id && c.at === at)) S.u.completed.push({ id:q.id, title:q.title, at });
     const fresh = S.M.genera.filter(g => !prevSeen.has(g.id));
     S.u.seen = S.M.genera.map(g => g.id); saveUser();
     if (S.tab !== 'map') render(); else paintMap3d();
