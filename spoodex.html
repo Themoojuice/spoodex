@@ -39,9 +39,9 @@
 [data-chassis="cabinet"] header.top { background:#1f1712; border-bottom-color:#8f6420; color:#efe4cc; }
 [data-chassis="cabinet"] header.top .muted, [data-chassis="cabinet"] .brand .sub { color:#c9b48f; }
 [data-chassis="cabinet"] header.top h1 { color:#e2bf7a; }
-[data-chassis="cabinet"] nav.tabs button { color:#efe4cc; }
+[data-chassis="cabinet"] nav.tabs .secs button { color:#efe4cc; }
 [data-chassis="cabinet"] header.top .lvl button { color:var(--ink); }
-[data-chassis="cabinet"] nav.tabs button.on { color:var(--ink); }
+[data-chassis="cabinet"] nav.tabs .secs button.on { color:var(--ink); }
 [data-chassis="cabinet"] #view > h2, [data-chassis="cabinet"] #view > h3, [data-chassis="cabinet"] #view > p,
 [data-chassis="cabinet"] #tripPlan > h2, [data-chassis="cabinet"] #tripPlan > p { color:#efe4cc; }
 [data-chassis="cabinet"] #view > h3 .muted { color:#c9b48f; }
@@ -183,9 +183,15 @@ header.top .wrap { padding-top:10px; padding-bottom:0; }
 .brand .sub { color:var(--muted); font-size:12px; }
 .lvl { margin-left:auto; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 .lvl b { font-family:var(--head); font-size:18px; }
-nav.tabs { display:flex; gap:4px; margin-top:8px; overflow-x:auto; scrollbar-width:none; }
-nav.tabs button { border-bottom:none; border-radius:var(--radius) var(--radius) 0 0; background:transparent; white-space:nowrap; }
-nav.tabs button.on { background:var(--panel); border-color:var(--line); font-weight:600; }
+nav.tabs { margin-top:8px; }
+nav.tabs .secs { display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; }
+nav.tabs .secs button { border-bottom:none; border-radius:var(--radius) var(--radius) 0 0; background:transparent; white-space:nowrap; }
+nav.tabs .secs button.on { background:var(--panel); border-color:var(--line); font-weight:600; }
+nav.tabs .views { display:flex; gap:2px; overflow-x:auto; scrollbar-width:none; background:var(--panel); border:1px solid var(--line); border-bottom:none;
+  border-radius:0 var(--radius) 0 0; padding:4px 6px; }
+nav.tabs .views button { background:transparent; border:1px solid transparent; border-radius:999px; padding:3px 12px; font-size:13px; white-space:nowrap; color:var(--muted); }
+nav.tabs .views button:hover { color:var(--ink); }
+nav.tabs .views button.on { background:var(--panel2); border-color:var(--line); color:var(--ink); font-weight:600; }
 .lvl .lbs { display:none; }
 main { padding-top:18px; }
 
@@ -540,7 +546,10 @@ details > summary.scsec { cursor:pointer; }
   .lvl b { font-size:15px; white-space:nowrap; margin-right:2px; }
   .lvl button { padding:4px 9px; min-height:34px; }
   nav.tabs { margin-top:6px; }
-  nav.tabs button { padding:5px 10px; font-size:13px; }
+  nav.tabs .secs { gap:2px; }
+  nav.tabs .secs button { padding:5px 8px; font-size:13px; flex:1 1 auto; }
+  nav.tabs .views { padding:3px 4px; }
+  nav.tabs .views button { padding:3px 10px; font-size:12.5px; }
   .modal .hero { height:200px; }
   #reveal h2 { font-size:30px; }
 }
@@ -1595,6 +1604,15 @@ const TABS = [
   { k:'crew', label:'Crew' },
   { k:'quests', label:'Quests' },
 ];
+// Four sections, each a row of views (v2.3, owner 2026-10-10: ten tabs in one row were too many). Views still unlock one by one
+// (`at`); a section shows once any of its views is open and reopens on the view you last used in it.
+const SECTIONS = [
+  { k:'collection', label:'Collection', tabs:['profile', 'dex', 'tree'] },
+  { k:'go', label:'Go spooding', tabs:['map', 'wanted', 'trip'] },
+  { k:'mates', label:'Mates', tabs:['crew', 'compare', 'ladder'] },
+  { k:'quests', label:'Quests', tabs:['quests'] },
+];
+const secOf = k => SECTIONS.find(x => x.tabs.includes(k)) || SECTIONS[0];
 const tabEarned = t => !t.at || S.M.G.size >= t.at || (S.u.tabs || []).includes(t.k);
 const tabOn = t => S.prefs.peek || tabEarned(t);
 // New tabs since last time get a toast and a dot until opened; the first look at a collection counts everything open as seen
@@ -1608,9 +1626,22 @@ function tabNews() {
     S.u.tabsSeen = [...S.u.tabsSeen, ...fresh];
     S.u.tabNew = [...new Set([...(S.u.tabNew || []), ...fresh.filter(k => k !== S.tab)])];
     saveUser();
-    toast(`New tab${fresh.length === 1 ? '' : 's'} unlocked: ${fresh.map(k => TABS.find(t => t.k === k).label).join(', ')}`);
+    toast(`Unlocked: ${fresh.map(k => `${TABS.find(t => t.k === k).label} (${secOf(k).label})`).join(', ')}`);
   }
   if (S.u.tabNew?.includes(S.tab)) { S.u.tabNew = S.u.tabNew.filter(k => k !== S.tab); saveUser(); }
+}
+function navHtml() {
+  const views = TABS.filter(tabOn), cur = secOf(S.tab);
+  const dot = k => k !== S.tab && ((k === 'crew' && crewUnseen()) || S.u.tabNew?.includes(k));
+  const news = ' <span class="news" aria-label="new">●</span>';
+  if (S.prefs.secLast?.[cur.k] !== S.tab) { S.prefs.secLast = { ...S.prefs.secLast, [cur.k]:S.tab }; savePrefs(); }
+  const secs = SECTIONS.map(x => ({ ...x, on:x.tabs.map(k => views.find(t => t.k === k)).filter(Boolean) })).filter(x => x.on.length);
+  const go = x => x.on.some(t => t.k === S.prefs.secLast?.[x.k]) ? S.prefs.secLast[x.k] : x.on[0].k;
+  const row = secs.find(x => x.k === cur.k)?.on || [];
+  $('#tabs').innerHTML = `<div class="secs">${secs.map(x => `<button data-tab="${go(x)}" class="${x.k === cur.k ? 'on' : ''}"${x.k === cur.k ? ' aria-current="true"' : ''}>${x.label}${x.k !== cur.k && x.on.some(t => dot(t.k)) ? news : ''}</button>`).join('')}</div>`
+    + (row.length > 1 ? `<div class="views">${row.map(t => `<button data-tab="${t.k}" class="${t.k === S.tab ? 'on' : ''}"${t.k === S.tab ? ' aria-current="page"' : ''}>${t.label}${dot(t.k) ? news : ''}</button>`).join('')}</div>` : '');
+  $('#tabs .secs .on')?.scrollIntoView({ block:'nearest', inline:'nearest' });
+  $('#tabs .views .on')?.scrollIntoView({ block:'nearest', inline:'nearest' });
 }
 let renderPending = false;
 function softRender() { if (renderPending) return; renderPending = true; setTimeout(() => { renderPending = false; if (S.tab !== 'map') render(); }, 400); }
@@ -1626,8 +1657,7 @@ function render() {
   $('#shareBtn').classList.toggle('hidden', isGuest());
   $('#lvlBadge').innerHTML = `<span class="lbl">LEVEL </span><span class="lbs">Lv </span>${M.G.size}`;
   tabNews();
-  $('#tabs').innerHTML = TABS.filter(tabOn).map(t => `<button data-tab="${t.k}" class="${S.tab===t.k?'on':''}">${t.label}${(t.k === 'crew' && S.tab !== 'crew' && crewUnseen()) || S.u.tabNew?.includes(t.k) ? ' <span class="news">●</span>' : ''}</button>`).join('');
-  $('#tabs .on')?.scrollIntoView({ block:'nearest', inline:'nearest' });
+  navHtml();
   const v = $('#view');
   // Ladder and crew fetch lazily when opened (errors stop the auto-retry until the player asks again)
   if (S.tab === 'ladder' && !ladderBusy && !ladderErr && ladderKey() && ladderNeedsLoad(S.ladder[ladderKey()])) loadLadder();
