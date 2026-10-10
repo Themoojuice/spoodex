@@ -37,11 +37,11 @@
   --paper:repeating-linear-gradient(95deg, rgba(0,0,0,.05) 0 3px, transparent 3px 9px, rgba(255,220,170,.025) 9px 11px, transparent 11px 17px);
 }
 [data-chassis="cabinet"] header.top { background:#1f1712; border-bottom-color:#8f6420; color:#efe4cc; }
-[data-chassis="cabinet"] header.top .muted, [data-chassis="cabinet"] .brand .sub { color:#c9b48f; }
+[data-chassis="cabinet"] header.top .muted { color:#c9b48f; }
 [data-chassis="cabinet"] header.top h1 { color:#e2bf7a; }
-[data-chassis="cabinet"] nav.tabs button { color:#efe4cc; }
+[data-chassis="cabinet"] nav.tabs .secs button { color:#efe4cc; }
 [data-chassis="cabinet"] header.top .lvl button { color:var(--ink); }
-[data-chassis="cabinet"] nav.tabs button.on { color:var(--ink); }
+[data-chassis="cabinet"] nav.tabs .secs button.on { color:var(--ink); }
 [data-chassis="cabinet"] #view > h2, [data-chassis="cabinet"] #view > h3, [data-chassis="cabinet"] #view > p,
 [data-chassis="cabinet"] #tripPlan > h2, [data-chassis="cabinet"] #tripPlan > p { color:#efe4cc; }
 [data-chassis="cabinet"] #view > h3 .muted { color:#c9b48f; }
@@ -180,12 +180,17 @@ header.top { position:sticky; top:0; z-index:500; background:var(--bg); border-b
 header.top .wrap { padding-top:10px; padding-bottom:0; }
 .brand { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
 .brand h1 { font-size:26px; margin:0; }
-.brand .sub { color:var(--muted); font-size:12px; }
 .lvl { margin-left:auto; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 .lvl b { font-family:var(--head); font-size:18px; }
-nav.tabs { display:flex; gap:4px; margin-top:8px; overflow-x:auto; scrollbar-width:none; }
-nav.tabs button { border-bottom:none; border-radius:var(--radius) var(--radius) 0 0; background:transparent; white-space:nowrap; }
-nav.tabs button.on { background:var(--panel); border-color:var(--line); font-weight:600; }
+nav.tabs { margin-top:8px; }
+nav.tabs .secs { display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; }
+nav.tabs .secs button { border-bottom:none; border-radius:var(--radius) var(--radius) 0 0; background:transparent; white-space:nowrap; }
+nav.tabs .secs button.on { background:var(--panel); border-color:var(--line); font-weight:600; }
+nav.tabs .views { display:flex; gap:2px; overflow-x:auto; scrollbar-width:none; background:var(--panel); border:1px solid var(--line); border-bottom:none;
+  border-radius:0 var(--radius) 0 0; padding:4px 6px; }
+nav.tabs .views button { background:transparent; border:1px solid transparent; border-radius:999px; padding:3px 12px; font-size:13px; white-space:nowrap; color:var(--muted); }
+nav.tabs .views button:hover { color:var(--ink); }
+nav.tabs .views button.on { background:var(--panel2); border-color:var(--line); color:var(--ink); font-weight:600; }
 .lvl .lbs { display:none; }
 main { padding-top:18px; }
 
@@ -423,10 +428,8 @@ details > summary.scsec { cursor:pointer; }
 .questgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); grid-auto-rows:340px; gap:16px; }
 .questgrid .quest { display:flex; flex-direction:column; overflow:hidden; min-width:0; }
 .questgrid .qbody { flex:1 1 auto; min-height:0; overflow-y:auto; padding-right:4px; }
-.questgrid .reward { flex:none; margin-top:8px; }
 .quest.daily { border-left-width:8px; }
 .quest h3 { margin-bottom:2px; }
-.reward { font-size:12px; color:var(--lit); }
 
 
 /* ---------- Spooding weather ---------- */
@@ -534,13 +537,16 @@ details > summary.scsec { cursor:pointer; }
   header.top .wrap { padding-top:6px; }
   .brand { flex-wrap:nowrap; align-items:center; gap:6px; }
   .brand h1 { font-size:17px; flex:1 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .brand .sub, #whoami, .lvl .lbl { display:none; }
+  #whoami, .lvl .lbl { display:none; }
   .lvl { margin-left:auto; gap:4px; flex-wrap:nowrap; flex:none; }
   .lvl .lbs { display:inline; }
   .lvl b { font-size:15px; white-space:nowrap; margin-right:2px; }
   .lvl button { padding:4px 9px; min-height:34px; }
   nav.tabs { margin-top:6px; }
-  nav.tabs button { padding:5px 10px; font-size:13px; }
+  nav.tabs .secs { gap:2px; }
+  nav.tabs .secs button { padding:5px 8px; font-size:13px; flex:1 1 auto; }
+  nav.tabs .views { padding:3px 4px; flex-wrap:wrap; row-gap:2px; }   /* Go spooding's four views take two short lines rather than hide one */
+  nav.tabs .views button { padding:3px 10px; font-size:12.5px; }
   .modal .hero { height:200px; }
   #reveal h2 { font-size:30px; }
 }
@@ -580,7 +586,7 @@ details > summary.scsec { cursor:pointer; }
 <div id="app" class="hidden">
   <header class="top"><div class="wrap">
     <div class="row brand">
-      <h1 id="chassisName">SPOODEX</h1><span class="sub" id="chassisSub"></span>
+      <h1 id="chassisName">SPOODEX</h1>
       <div class="lvl">
         <span class="muted" id="whoami"></span>
         <b id="lvlBadge"></b>
@@ -625,13 +631,13 @@ const BEH_RX = {
 };
 
 const TIERS = [
-  { min:0,   name:'SPOODEX Mk 0',          sub:'A slightly suspicious digital notebook', chassis:'notebook', module:'Genus records & nearby scanner' },
-  { min:5,   name:'Field Notebook',        sub:'Now with a pencil. Region statistics installed.', chassis:'notebook', module:'Region statistics' },
-  { min:15,  name:'SPOODEX Mk II',         sub:'Laminated. Mostly waterproof. Lineage tree installed.', chassis:'kit', module:'Lineage tree' },
-  { min:30,  name:'SPOODEX Mk III',        sub:'Rarity ledgers installed.', chassis:'kit', module:'Rarity ledgers' },
-  { min:50,  name:'Naturalist Cabinet',    sub:'Brass fittings. Mastery ledgers installed.', chassis:'cabinet', module:'Mastery XP ledger' },
-  { min:75,  name:'Arachnologist Rig',     sub:'Gilt edges on everything you have mastered.', chassis:'cabinet', module:'Gilded labels for mastered genera' },
-  { min:100, name:'Spood Research Station',sub:'Please wipe your boots.', chassis:'cabinet', module:'Everything, plus smugness' },
+  { min:0,   name:'SPOODEX Mk 0',          chassis:'notebook', module:'Genus records & nearby scanner' },
+  { min:5,   name:'Field Notebook',        chassis:'notebook', module:'Region statistics' },
+  { min:15,  name:'SPOODEX Mk II',         chassis:'kit', module:'Lineage tree' },
+  { min:30,  name:'SPOODEX Mk III',        chassis:'kit', module:'Rarity ledgers' },
+  { min:50,  name:'Naturalist Cabinet',    chassis:'cabinet', module:'Mastery points ledger' },
+  { min:75,  name:'Arachnologist Rig',     chassis:'cabinet', module:'Gilded labels for mastered genera' },
+  { min:100, name:'Spood Research Station',chassis:'cabinet', module:'Every module' },
 ];
 const tierIdx = n => TIERS.reduce((a,t,i)=> n>=t.min ? i : a, 0);
 
@@ -659,7 +665,23 @@ const ordinal = n => n + (['th','st','nd','rd'][(n%100-20)%10] || ['th','st','nd
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const photoSize = (url, size) => url ? url.replace(/\/(square|thumb|small|medium|large|original)\./, `/${size}.`) : '';
 const stripHtml = s => { const d = document.createElement('div'); d.innerHTML = s || ''; return d.textContent; };
-const cellLabel = c => c && c.label ? esc(c.label + (c.near ? ` (near ${c.near})` : '')) : c ? `${Math.abs(c.lat).toFixed(2)}°${c.lat<0?'S':'N'} ${Math.abs(c.lng).toFixed(2)}°${c.lng<0?'W':'E'}` : '';
+// What a square or point is called on screen (v2.3): its own label, else the county-level iNat place (admin level 20) most of your
+// records in its 25 km square share, else its centre to the nearest quarter degree. Nothing finer than the squares is ever printed.
+const cellNames = new WeakMap();
+function cellLabel(c) {
+  if (!c) return '';
+  if (c.label) return esc(c.label + (c.near ? ` (near ${c.near})` : ''));
+  const k = cellKey(c.lat, c.lng, .25), M = S.M, names = M && (cellNames.get(M) || cellNames.set(M, new Map()).get(M));
+  if (names && !names.has(k)) {
+    const cnt = {};
+    for (const o of M.obs) if (o.lat != null && cellKey(o.lat, o.lng, .25) === k) for (const p of o.pl) if (S.places[p]?.l === 20) cnt[p] = (cnt[p] || 0) + 1;
+    const top = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0];
+    names.set(k, top ? S.places[top].n : null);
+  }
+  if (names?.get(k)) return `near ${esc(names.get(k))}`;
+  const q = (x, pos, neg) => { const r = Math.round(Math.abs(x) * 4) / 4; return `${r.toFixed(2).replace(/\.?0+$/, '')}°${r ? (x < 0 ? neg : pos) : ''}`; };
+  return `about ${q(c.lat, 'N', 'S')} ${q(c.lng, 'E', 'W')}`;
+}
 const cellKey = (lat, lng, deg) => `${Math.floor(lat/deg)}:${Math.floor(lng/deg)}`;
 
 // Saves live in IndexedDB (localStorage caps out around 5 MB). Reads come from an in-memory copy loaded once at boot,
@@ -1125,6 +1147,18 @@ function scopeGenera(scope = S.prefs.scope) {
   const extras = S.M.genera.filter(g => !set.has(g.id)).map(g => g.id);
   return { ref, inScope, extras, found: inScope.filter(id => S.M.G.has(id)).length };
 }
+// The one collection count every screen prints (v2.3): genera found out of the scope's iNat list, plus any you've recorded that aren't
+// on it (owner, 2026-10-10: five different counts were confusing), so found + extra is always the level. null until the list loads.
+function headline(scope = S.prefs.scope) {
+  const sc = scopeGenera(scope);
+  if (!sc.ref || !sc.inScope.length) return null;
+  const pid = scopePlace(scope), away = sc.extras.every(id => !S.M.G.get(id).obs.some(o => o.pl?.includes(pid)));
+  return { found:sc.found, total:sc.inScope.length, extra:sc.extras.length, away, where:scopeLabel(scope) };
+}
+// "53 / 80 genera on iNat in Australia · +1 elsewhere" (bold numbers in HTML, plain for canvases)
+const headlineExtra = h => h.extra ? ` · +${h.extra} ${h.away ? 'elsewhere' : 'more'}` : '';
+const headlineHtml = h => `<b>${h.found} / ${h.total}</b> genera on iNat in ${esc(h.where)}${headlineExtra(h)}`;
+const headlineText = h => `${h.found} / ${h.total} genera on iNat in ${h.where}${headlineExtra(h)}`;
 // Taxonomic order: DFS through the merged tree, alphabetical within each node
 function taxonomicOrder(ids) {
   const want = new Set(ids), kids = {};
@@ -1488,26 +1522,26 @@ const titleHtml = (M, login) => { const [a, g] = titleParts(M, login); return `$
 function scanFor(cell) { return cell ? S.u.scans[cell.k] : null; }
 function buildQuests(M) {
   const q = [];
-  if (!M.G.size) q.push({ id:'first', kind:'first', icon:'🕷', title:'Your First Spood', text:'Find a jumping spider, photograph it and upload it to iNaturalist. Once it is identified to genus, sync SPOODEX and your first card unlocks.', reward:100 });
-  if (!M.homeCell) q.push({ id:'base', kind:'base', icon:'🏠', title:'Pick a Home Base', text:'Tell SPOODEX where you usually spood and it will list the genera recorded around you.', reward:0 });
+  if (!M.G.size) q.push({ id:'first', kind:'first', icon:'🕷', title:'Your First Spood', text:'Find a jumping spider, photograph it and upload it to iNaturalist. Once it is identified to genus, sync SPOODEX and your first card unlocks.' });
+  if (!M.homeCell) q.push({ id:'base', kind:'base', icon:'🏠', title:'Pick a Home Base', text:'Tell SPOODEX where you usually spood and it will list the genera recorded around you.' });
   const act = M.homeCell && S.u.active?.[M.homeCell.k];
   if (act) {
     const miss = act.g.filter(x => !M.G.has(x.id)).sort((a,b) => b.c - a.c);
     if (miss.length) q.push({ id:'active:'+M.homeCell.k+':'+act.d1, kind:'hunt', icon:'🔥', title:'Active Right Now',
       text:`${miss.length} genera you haven't recorded have been found within 25 km of your home base in the last ${ACTIVE_DAYS} days.`,
-      targets:miss.slice(0,6).map(x => x.id), recent:Object.fromEntries(miss.map(x => [x.id, x.c])), reward:300 });
+      targets:miss.slice(0,6).map(x => x.id), recent:Object.fromEntries(miss.map(x => [x.id, x.c])) });
     else if (act.g.length) q.push({ id:'active-mastery', kind:'info', icon:'🔥', title:'Everything Active Is Already Yours',
       text:`All ${act.g.length} genera recorded near your home base in the last ${ACTIVE_DAYS} days are in your SPOODEX.`,
-      targets:act.g.slice(0,6).map(x => x.id), reward:0 });
+      targets:act.g.slice(0,6).map(x => x.id) });
   }
   const scan = scanFor(M.homeCell);
   if (scan) {
     const missing = scan.g.filter(x => !M.G.has(x.id)).sort((a,b) => b.c - a.c);
     if (missing.length) q.push({ id:'hunt:'+M.homeCell.k, kind:'hunt', icon:'🎯', title:'Genus Hunt',
       text:`${missing.length} Salticidae genera recorded within 25 km of your home base aren't in your SPOODEX. Find one.`,
-      targets:missing.slice(0,6).map(x => x.id), reward:250 });
+      targets:missing.slice(0,6).map(x => x.id) });
   } else if (M.homeCell) {
-    q.push({ id:'scan-home', kind:'scan', icon:'📡', title:'Calibrate the scanner', text:'Scan the area around your home base to reveal nearby genera you have not recorded yet.', reward:0 });
+    q.push({ id:'scan-home', kind:'scan', icon:'📡', title:'Calibrate the scanner', text:'Scan the area around your home base to reveal nearby genera you have not recorded yet.' });
   }
   const ref = refFor(S.prefs.scope);
   if (ref && moduleOn(2)) {
@@ -1517,37 +1551,37 @@ function buildQuests(M) {
     const empty = tribes.map(id => ({ id, g:under(id) })).filter(t => t.g.length && !t.g.some(g => M.G.has(g)))
       .sort((a,b) => b.g.reduce((s,x) => s + (ref.g[x]||0), 0) - a.g.reduce((s,x) => s + (ref.g[x]||0), 0));
     if (empty[0]) q.push({ id:'lineage:'+empty[0].id, kind:'lineage', icon:'🌳', title:'Unexplored Lineage',
-      text:`You have nothing from ${S.nodes[empty[0].id].n} (${S.nodes[empty[0].id].r}). ${empty[0].g.length} ${empty[0].g.length===1?'genus':'genera'} from it ${empty[0].g.length===1?'is':'are'} recorded in ${scopeLabel(S.prefs.scope)}.`, node:empty[0].id, targets:empty[0].g, reward:300 });
+      text:`You have nothing from ${S.nodes[empty[0].id].n} (${S.nodes[empty[0].id].r}). ${empty[0].g.length} ${empty[0].g.length===1?'genus':'genera'} from it ${empty[0].g.length===1?'is':'are'} recorded in ${scopeLabel(S.prefs.scope)}.`, node:empty[0].id, targets:empty[0].g });
   }
   const gh = M.homeCell ? homeGhosts().filter(x => x.id && !M.G.has(x.id)) : [];
   if (gh.length) q.push({ id:'ghost:' + M.homeCell.k, kind:'ghost', icon:'🏛', title:'Bring It Into the Light',
     text:`${gh.length === 1 ? '1 genus has' : `${gh.length} genera have`} museum specimens from within 25 km of your home base but no iNat records there. Photograph one there and post it.`,
-    targets:gh.slice(0, 6).map(x => x.id), at:{ lat:M.homeCell.lat, lng:M.homeCell.lng }, reward:300 });
+    targets:gh.slice(0, 6).map(x => x.id), at:{ lat:M.homeCell.lat, lng:M.homeCell.lng } });
   const ns = nearestSet(refFor(S.prefs.scope));
   if (ns) q.push({ id:'set:' + ns.key + ':' + ns.have, kind:'hunt', icon:'🏆', title:`Complete the Set: ${ns.name}`,
     text:`You have ${ns.have} of the ${ns.ids.length} genera in the ${ns.name} set that are recorded in ${scopeLabel(S.prefs.scope)}. ${ns.left} to go. See them under SPOODEX › Sets.`,
-    targets:ns.ids.filter(id => !M.G.has(id)), reward:200 });
+    targets:ns.ids.filter(id => !M.G.has(id)) });
   if (M.leads.length) {
     const n = M.leads.reduce((s,l) => s + l.obs.length, 0);
     q.push({ id:'resolve', kind:'resolve', icon:'❓', title:'Something Is Lurking',
       text:`${n} mystery spood${n === 1 ? '' : 's'}: records not yet identified to genus (${M.leads.slice(0,3).map(l => l.name).join(', ')}…). Add face-on, top and side photos, or ask for an ID.`,
-      obs:M.leads.flatMap(l => l.obs.map(o => o.id)).slice(0,50), reward:100 });
+      obs:M.leads.flatMap(l => l.obs.map(o => o.id)).slice(0,50) });
   }
   const near = M.genera.filter(g => g.state !== 'MASTERED').sort((a,b) => b.level - a.level || b.obs.length - a.obs.length)[0];
   if (near) {
     const miss = CRITERIA.filter(c => !near.f[c.k]);
     q.push({ id:'master:'+near.id, kind:'master', icon:'🏅', title:`Towards Mastery: ${near.name}`,
-      text:`${near.name} is at level ${near.level}/10. Still to do: ${miss.slice(0,3).map(c => c.label.toLowerCase()).join('; ')}.`, gid:near.id, crit:miss[0]?.k, reward:150 });
+      text:`${near.name} is at level ${near.level}/10. Still to do: ${miss.slice(0,3).map(c => c.label.toLowerCase()).join('; ')}.`, gid:near.id, crit:miss[0]?.k });
   }
   const behs = [['feed','Feeding frenzy','Photograph a salticid feeding or with prey'],['court','Dance floor','Record courtship or display'],['egg','Silk & brood','Find an egg sac, retreat, nest or moult']]
     .sort((a,b) => M.behObs[a[0]] - M.behObs[b[0]]);
-  q.push({ id:'beh:'+behs[0][0], kind:'beh', icon:'🔍', title:`Behaviour: ${behs[0][1]}`, text:`${behs[0][2]}. You have ${M.behObs[behs[0][0]]} so far. Mention it in the description or tags so SPOODEX can see it.`, beh:behs[0][0], base:M.behObs[behs[0][0]], reward:80 });
+  q.push({ id:'beh:'+behs[0][0], kind:'beh', icon:'🔍', title:`Behaviour: ${behs[0][1]}`, text:`${behs[0][2]}. You have ${M.behObs[behs[0][0]]} so far. Mention it in the description or tags so SPOODEX can see it.`, beh:behs[0][0], base:M.behObs[behs[0][0]] });
   const holeMonths = [...Array(12).keys()].map(i => i+1).filter(m => !M.monthsAll.has(m));
   const thisMonth = new Date().getMonth() + 1;
-  if (holeMonths.includes(thisMonth)) q.push({ id:'month:'+thisMonth, kind:'month', icon:'🗓', title:'Off-Season Spooding', text:`You've never recorded a salticid in ${MONTHS[thisMonth-1]}.`, m:thisMonth, reward:120 });
-  q.push({ id:'explore', kind:'explore', icon:'🧭', title:'Change of Scenery', text:`Record a salticid in a new 25 km grid square (you have ${M.cells25.size}).`, base:M.cells25.size, reward:150 });
+  if (holeMonths.includes(thisMonth)) q.push({ id:'month:'+thisMonth, kind:'month', icon:'🗓', title:'Off-Season Spooding', text:`You've never recorded a salticid in ${MONTHS[thisMonth-1]}.`, m:thisMonth });
+  q.push({ id:'explore', kind:'explore', icon:'🧭', title:'Change of Scenery', text:`Record a salticid in a new 25 km grid square (you have ${M.cells25.size}).`, base:M.cells25.size });
   const oneSex = M.genera.filter(g => (g.f.male ^ g.f.female)).sort((a,b) => b.obs.length - a.obs.length)[0];
-  if (oneSex) q.push({ id:'sex:'+oneSex.id, kind:'master', icon:oneSex.f.male ? '♀' : '♂', title:'The Other Half', text:`You've recorded a ${oneSex.f.male ? 'male' : 'female'} ${oneSex.name} but never a ${oneSex.f.male ? 'female' : 'male'}. Annotate sex on iNat when you do.`, gid:oneSex.id, crit:oneSex.f.male ? 'female' : 'male', reward:40 });
+  if (oneSex) q.push({ id:'sex:'+oneSex.id, kind:'master', icon:oneSex.f.male ? '♀' : '♂', title:'The Other Half', text:`You've recorded a ${oneSex.f.male ? 'male' : 'female'} ${oneSex.name} but never a ${oneSex.f.male ? 'female' : 'male'}. Annotate sex on iNat when you do.`, gid:oneSex.id, crit:oneSex.f.male ? 'female' : 'male' });
   // Daily pick, seeded by date
   const seed = new Date().toISOString().slice(0,10).split('-').reduce((a,b) => a*31 + +b, 7);
   const pickable = q.filter(x => x.kind !== 'scan');
@@ -1583,6 +1617,14 @@ const TABS = [
   { k:'crew', label:'Crew' },
   { k:'quests', label:'Quests' },
 ];
+// Three sections, each a row of views (v2.3, owner 2026-10-10/11: ten tabs in one row were too many; Quests sits under Go spooding). Views still unlock one by one
+// (`at`); a section shows once any of its views is open and reopens on the view you last used in it.
+const SECTIONS = [
+  { k:'collection', label:'Collection', tabs:['profile', 'dex', 'tree'] },
+  { k:'go', label:'Go spooding', tabs:['map', 'quests', 'wanted', 'trip'] },
+  { k:'mates', label:'Mates', tabs:['crew', 'compare', 'ladder'] },
+];
+const secOf = k => SECTIONS.find(x => x.tabs.includes(k)) || SECTIONS[0];
 const tabEarned = t => !t.at || S.M.G.size >= t.at || (S.u.tabs || []).includes(t.k);
 const tabOn = t => S.prefs.peek || tabEarned(t);
 // New tabs since last time get a toast and a dot until opened; the first look at a collection counts everything open as seen
@@ -1596,9 +1638,22 @@ function tabNews() {
     S.u.tabsSeen = [...S.u.tabsSeen, ...fresh];
     S.u.tabNew = [...new Set([...(S.u.tabNew || []), ...fresh.filter(k => k !== S.tab)])];
     saveUser();
-    toast(`New tab${fresh.length === 1 ? '' : 's'} unlocked: ${fresh.map(k => TABS.find(t => t.k === k).label).join(', ')}`);
+    toast(`Unlocked: ${fresh.map(k => `${TABS.find(t => t.k === k).label} (${secOf(k).label})`).join(', ')}`);
   }
   if (S.u.tabNew?.includes(S.tab)) { S.u.tabNew = S.u.tabNew.filter(k => k !== S.tab); saveUser(); }
+}
+function navHtml() {
+  const views = TABS.filter(tabOn), cur = secOf(S.tab);
+  const dot = k => k !== S.tab && ((k === 'crew' && crewUnseen()) || S.u.tabNew?.includes(k));
+  const news = ' <span class="news" aria-label="new">●</span>';
+  if (S.prefs.secLast?.[cur.k] !== S.tab) { S.prefs.secLast = { ...S.prefs.secLast, [cur.k]:S.tab }; savePrefs(); }
+  const secs = SECTIONS.map(x => ({ ...x, on:x.tabs.map(k => views.find(t => t.k === k)).filter(Boolean) })).filter(x => x.on.length);
+  const go = x => x.on.some(t => t.k === S.prefs.secLast?.[x.k]) ? S.prefs.secLast[x.k] : x.on[0].k;
+  const row = secs.find(x => x.k === cur.k)?.on || [];
+  $('#tabs').innerHTML = `<div class="secs">${secs.map(x => `<button data-tab="${go(x)}" class="${x.k === cur.k ? 'on' : ''}"${x.k === cur.k ? ' aria-current="true"' : ''}>${x.label}${x.k !== cur.k && x.on.some(t => dot(t.k)) ? news : ''}</button>`).join('')}</div>`
+    + (row.length > 1 ? `<div class="views">${row.map(t => `<button data-tab="${t.k}" class="${t.k === S.tab ? 'on' : ''}"${t.k === S.tab ? ' aria-current="page"' : ''}>${t.label}${dot(t.k) ? news : ''}</button>`).join('')}</div>` : '');
+  $('#tabs .secs .on')?.scrollIntoView({ block:'nearest', inline:'nearest' });
+  $('#tabs .views .on')?.scrollIntoView({ block:'nearest', inline:'nearest' });
 }
 let renderPending = false;
 function softRender() { if (renderPending) return; renderPending = true; setTimeout(() => { renderPending = false; if (S.tab !== 'map') render(); }, 400); }
@@ -1609,13 +1664,11 @@ function render() {
   if (S.tab !== 'map') dropMap3d();
   document.body.dataset.chassis = S.prefs.chassis === 'auto' ? tier.chassis : S.prefs.chassis;
   $('#chassisName').textContent = tier.name;
-  $('#chassisSub').textContent = tier.sub;
   $('#whoami').textContent = who();
   $('#shareBtn').classList.toggle('hidden', isGuest());
   $('#lvlBadge').innerHTML = `<span class="lbl">LEVEL </span><span class="lbs">Lv </span>${M.G.size}`;
   tabNews();
-  $('#tabs').innerHTML = TABS.filter(tabOn).map(t => `<button data-tab="${t.k}" class="${S.tab===t.k?'on':''}">${t.label}${(t.k === 'crew' && S.tab !== 'crew' && crewUnseen()) || S.u.tabNew?.includes(t.k) ? ' <span class="news">●</span>' : ''}</button>`).join('');
-  $('#tabs .on')?.scrollIntoView({ block:'nearest', inline:'nearest' });
+  navHtml();
   const v = $('#view');
   // Ladder and crew fetch lazily when opened (errors stop the auto-retry until the player asks again)
   if (S.tab === 'ladder' && !ladderBusy && !ladderErr && ladderKey() && ladderNeedsLoad(S.ladder[ladderKey()])) loadLadder();
@@ -1639,7 +1692,7 @@ function render() {
 // number tiles (owner, 2026-10-08). Numbers that are still zero or tiny stay hidden until they mean something.
 let nextKey = '', nextAt = 0;
 function viewProfile() {
-  const M = S.M, sc = scopeGenera(), tier = M.tier, n = M.G.size;
+  const M = S.M, hl = headline(), tier = M.tier, n = M.G.size;
   const regions = {};
   M.genera.forEach(g => g.places.forEach(p => { const pl = S.places[p]; if (pl && pl.l != null && [0,10,20].includes(pl.l)) { (regions[p] = regions[p] || { id:p, n:pl.n, l:pl.l, g:0 }).g++; } }));
   const regionRows = lvl => Object.values(regions).filter(r => r.l === lvl).sort((a,b) => b.g - a.g);
@@ -1661,7 +1714,7 @@ function viewProfile() {
   const hero = `<div class="panel profhero">
       <div class="muted small">${esc(who().toUpperCase())}'S SPOODEX</div>
       <h1>Level ${n}</h1><div class="hand">${titleHtml(M)}</div>
-      ${sc.ref && sc.inScope.length ? `<div class="row" style="gap:8px;margin-top:6px"><span><b>${sc.found} / ${sc.inScope.length}</b> genera on iNat in ${esc(scopeLabel(S.prefs.scope))}</span>${bar(sc.found, sc.inScope.length)}</div>` : ''}
+      ${hl ? `<div class="row" style="gap:8px;margin-top:6px"><span>${headlineHtml(hl)}</span>${bar(hl.found, hl.total)}</div>` : ''}
       ${isGuest() || !n ? '' : `<p class="row herobtns"><button data-act="dexImage">📤 My SPOODEX image</button><button data-act="card">🪪 Title card</button>${M.fieldDays.length ? `<button data-act="wrapped">🎁 ${esc(wrappedYears()[0])} in spoods</button>` : ''}</p>`}
     </div>`;
   // your genera, newest first, then a few mystery spoods (records not yet identified to genus) with their photos
@@ -1692,7 +1745,7 @@ function viewProfile() {
     ['Field days', M.fieldDays.length && fmt(M.fieldDays.length)],
     ['Behaviour records', [['feed', 'feeding'], ['court', 'courtship'], ['egg', 'silk/brood']].filter(([k]) => M.behObs[k]).map(([k, l]) => `${M.behObs[k]} ${l}`).join(' · ')],
     [`New genera ${new Date().getFullYear()}`, M.newThisYear],
-    ['Naturalist XP', M.xp && fmt(M.xp)],
+    ['Mastery points', M.xp && fmt(M.xp)],
     ['Mystery spoods', mysteryCount() && `${fmt(mysteryCount())} not yet identified to genus <a href="#" class="small" data-act="needsid">see them</a>`],
   ].filter(([, v]) => v);
   const streak = M.streak ? `<p>${'🔥'.repeat(Math.min(M.streak,10))} <b>${M.streak}</b> consecutive field day${M.streak===1?'':'s'} with a new genus <span class="muted">(best ${M.bestStreak})</span></p>`
@@ -1717,7 +1770,7 @@ function viewProfile() {
   const A = isGuest() ? null : recordShare(M.home.state || M.home.country), pioN = isGuest() ? 0 : myPioneers().length;
   const ledger = kv.length || n ? `${kv.length ? `<div class="kv">${kv.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</div>` : ''}
     ${n ? `<h3 style="margin-top:16px">Chassis</h3>
-      <p><b>${esc(TIERS[tier].name)}</b> — <span class="muted">${esc(TIERS[tier].sub)}</span></p>
+      <p><b>${esc(TIERS[tier].name)}</b></p>
       ${next ? `<div class="row"><span class="small">Next: ${esc(next.name)} at ${next.min} genera</span>${bar(n - TIERS[tier].min, next.min - TIERS[tier].min)}<span class="small">${next.min - n} to go</span></div>` : '<p>Fully upgraded.</p>'}
       <ul class="checks" style="margin-top:10px">${TIERS.map((t,i) => `<li class="${i<=tier?'done':''}">${i<=tier?'☑':'☐'} ${esc(t.module)} <span class="muted small">(${t.min}+)</span></li>`).join('')}</ul>
       ${streak ? `<h3 style="margin-top:14px">Discovery streak</h3>${streak}` : ''}` : ''}` : '';
@@ -1775,7 +1828,7 @@ function viewDex() {
   if (S.prefs.layer === 'species') return viewDexSpecies();
   if (S.prefs.layer === 'sets') return viewSets();
   if (S.prefs.layer === 'needsid') return viewNeedsId();
-  const M = S.M, sc = scopeGenera(), P = S.prefs;
+  const M = S.M, sc = scopeGenera(), hl = headline(), P = S.prefs;
   const { order } = taxonomicOrder(sc.inScope);
   const num = new Map(order.map((id,i) => [id, i+1]));
   const filt = id => {
@@ -1798,12 +1851,12 @@ function viewDex() {
     <span class="muted">genera on iNat in</span>
     <select data-pref="scope">${['country','state','world'].map(s => `<option value="${s}" ${P.scope===s?'selected':''}>${esc(s==='world'?'World':scopeLabel(s))}</option>`).join('')}</select>
     <div class="bar" style="max-width:220px"><i style="width:${pct(sc.found, sc.inScope.length)}%"></i></div>
-    ${auHome() ? `<span class="small">· <b>${auFound()} / ${TAXA_AU.length}</b> known from Australia</span>` : ''}
+    ${hl?.extra ? `<span class="small">${headlineExtra(hl).slice(3)}</span>` : ''}
     <span>${chips.map(([k,l]) => `<span class="chip ${P.filter===k?'on':''}" data-filter="${k}" style="cursor:pointer">${l}</span>`).join(' ')}</span>
     <label class="small"><input type="checkbox" data-pref="reveal" ${P.reveal?'checked':''}> reveal names</label>
   </div>
   ${sc.ref ? '' : M.home.country || P.scope === 'world' ? '<p class="muted">Loading reference collection…</p>' : '<div class="panel"><p>Set a home base so SPOODEX knows which genera belong in your region.</p><button class="primary" data-tab="map">Set home base</button></div>'}
-  ${never ? `<p class="small muted">Genera known from Australia (the Australian Faunal Directory and the Identification aid's key) with no iNat records in Australia yet.</p>
+  ${never ? `<p class="small muted">You've recorded <b>${auFound()} of the ${TAXA_AU.length}</b> genera known from Australia (the Australian Faunal Directory and the Identification aid's key). These have no iNat records in Australia yet.</p>
     <div class="dexgrid">${auNever().map(plateHtml).join('')}</div>` : `<div class="dexgrid">${shown.map(id => cardHtml(id, num.get(id))).join('')}</div>`}
   ${sc.extras.length && !never ? `<h2 style="margin-top:22px">Recorded outside ${esc(scopeLabel(P.scope))} (+${sc.extras.length})</h2>
     <div class="dexgrid">${sc.extras.map(id => cardHtml(id, 0)).join('')}</div>` : ''}
@@ -2024,10 +2077,10 @@ function viewTree() {
   const loreNeed = n => !S.lore[n] || (taxaAu(n)?.inat == null && taxaAu(n) && !('syn' in S.lore[n]));
   [...new Set([...spots.map(x => x.n), ...(auHome() ? auNever().map(t => t.n) : [])])].filter(loreNeed).slice(0, 8)
     .forEach(n => ensureLore(n, 'genus').then(r => { if (r && S.tab === 'tree') softRender(); }).catch(() => {}));
-  const all = groups.flatMap(g => [...g.drawers.values()]), tot = all.reduce((a, d) => a + d.ids.length, 0), got = all.reduce((a, d) => a + d.ids.filter(id => M.G.has(id)).length, 0);
+  const all = groups.flatMap(g => [...g.drawers.values()]), hl = headline();
   const unexp = all.filter(d => !d.ids.some(id => M.G.has(id))).length;
   return `<div class="panel" style="margin-bottom:14px"><div class="row" style="justify-content:space-between;gap:8px"><h2 style="margin:0">Lineages</h2>${sw}</div>
-      <p style="margin:8px 0 0"><b>${got}</b> of <b>${tot}</b> genera on iNat in ${esc(scopeLabel(S.prefs.scope))} · <b>${all.length - unexp}</b> of ${all.length} lineages explored${auHome() ? ` · Australia's checklist: ${TAXA_AU.length} genera, ${auNever().length} never on iNat` : ''}</p>
+      <p style="margin:8px 0 0">${hl ? `${headlineHtml(hl)} · ` : ''}<b>${all.length - unexp}</b> of ${all.length} lineages explored${auHome() ? ` · Australia's checklist: ${TAXA_AU.length} genera, ${auNever().length} never on iNat` : ''}</p>
       <p class="small muted" style="margin:4px 0 0">Classification as used on iNaturalist (subfamily › tribe › genus). <label><input type="checkbox" data-pref="reveal" ${S.prefs.reveal ? 'checked' : ''}> reveal names</label></p></div>
     ${spots.length ? `<div class="spots">${spots.map(spotCard).join('')}</div>` : ''}
     ${groups.map(g => { const ids = [...g.drawers.values()].flatMap(d => d.ids), f = ids.filter(id => M.G.has(id)), hero = f.find(id => OWNER_PICKS[id]) || f[0];
@@ -2682,7 +2735,7 @@ function viewQuests() {
   ensurePheno(qs.flatMap(q => q.targets || []));
   const done = (S.u.completed || []).slice(-10).reverse();
   return `
-  ${done.length ? `<div class="panel" style="margin-bottom:14px"><h2>Completed since you started</h2>${done.map(q => `<div>✅ <b>${esc(q.title)}</b> <span class="small muted">${esc(q.at)}</span> <span class="reward">+${q.reward} XP</span></div>`).join('')}</div>` : ''}
+  ${done.length ? `<div class="panel" style="margin-bottom:14px"><h2>Completed since you started</h2>${done.map(q => `<div>✅ <b>${esc(q.title)}</b> <span class="small muted">${esc(q.at)}</span></div>`).join('')}</div>` : ''}
   <div class="questgrid">${qs.map(q => `<div class="panel quest ${q.daily?'daily':''}"><div class="qbody">
     ${q.daily ? '<div class="small" style="letter-spacing:.2em">★ TODAY\'S FIELD QUEST</div>' : ''}
     <h3>${q.icon} ${esc(q.title)}</h3><p>${esc(q.text)}</p>
@@ -2692,7 +2745,7 @@ function viewQuests() {
     ${q.kind === 'first' ? '<a class="btnlink" href="https://www.inaturalist.org/observations/upload" target="_blank" rel="noopener">Upload to iNaturalist ↗</a>' : ''}
     ${q.kind === 'base' ? '<button class="primary" data-tab="map">Set home base</button>' : ''}
     ${q.kind === 'resolve' ? `<a href="${esc(leadsUrl())}" target="_blank" rel="noopener">Open these on iNaturalist ↗</a> · <a href="#" data-act="needsid">see your mystery spoods</a>` : ''}
-    </div>${q.reward ? `<div class="reward">Reward: +${q.reward} Naturalist XP</div>` : ''}</div>`).join('')}</div>
+    </div></div>`).join('')}</div>
   <p class="muted small" style="margin-top:14px">Quests check themselves each time you sync.</p>`;
 }
 
@@ -2701,7 +2754,7 @@ async function openGenus(id) {
   const M = S.M, g = M.G.get(id), info = S.info[id] || {}, name = S.nodes[id]?.n || '?';
   const rt = rarityTier(id), scopeP = scopePlace(S.prefs.scope);
   const lin = lineageText(id);
-  const firstPlace = g ? (g.first.pg || '') : '';
+  const firstPlace = g?.first.lat != null ? cellLabel(g.first) : '';   // the square's name, never the record's place guess (owner, v2.3)
   const wl = wowLine(id), edit = notesOn() ? ` <a href="#" class="small" data-act="notes" data-v="${id}">✏️ ${ownNote(id) ? 'edit' : 'write your own line'}</a>` : '';
   const wow = wl ? `<p class="gwow">${esc(wl)}${ownNote(id) ? '' : ` <a class="small" href="${esc(info.w || `https://www.inaturalist.org/taxa/${id}`)}" target="_blank" rel="noopener">Wikipedia ↗</a>`}${edit}</p>` : edit ? `<p class="small">${edit}</p>` : '';
   const body = g ? `
@@ -2715,7 +2768,7 @@ async function openGenus(id) {
         <dt>Localities</dt><dd>${g.c01.size}</dd>
         ${altitudeLine(g)}
         <dt>Species-level taxa</dt><dd>${g.species.size ? [...g.species].map(s => `<i>${esc(s)}</i>`).join(', ') : '—'}</dd>
-        <dt>First recorded</dt><dd>${esc(g.first.d)}${firstPlace ? ' · ' + esc(firstPlace) : ''}</dd>
+        <dt>First recorded</dt><dd>${esc(g.first.d)}${firstPlace ? ' · ' + firstPlace : ''}</dd>
         <dt>Latest</dt><dd>${esc(g.last.d)}</dd>
         <dt>Best record</dt><dd>${g.f.rg ? 'Research Grade' : g.f.supported ? 'Community-supported genus' : 'Your ID (not yet community-supported)'}</dd>
         ${shareLine(g)}
@@ -2727,7 +2780,7 @@ async function openGenus(id) {
     </div>
     <h3 style="margin-top:12px">Your gallery</h3>
     <div class="gallery">${g.photos.map(p => `<a href="https://www.inaturalist.org/observations/${p.id}" target="_blank" rel="noopener" style="background-image:url('${esc(photoSize(p.url,'small'))}')"></a>`).join('')}</div>
-    ${moduleOn(4) ? `<h3 style="margin-top:12px">XP ledger (${fmt(g.xp)} XP)</h3><div class="small" style="max-height:140px;overflow:auto">${g.xpLog.slice().reverse().map(e => `<div>${esc(e.d)} · ${esc(e.label)} <span class="reward">+${e.xp}</span></div>`).join('')}</div>` : ''}
+    ${moduleOn(4) ? `<h3 style="margin-top:12px">Mastery points ledger (${fmt(g.xp)} points)</h3><div class="small" style="max-height:140px;overflow:auto">${g.xpLog.slice().reverse().map(e => `<div>${esc(e.d)} · ${esc(e.label)} <span class="reward">+${e.xp}</span></div>`).join('')}</div>` : ''}
   ` : `
     <div class="small" style="letter-spacing:.2em">UNKNOWN</div>
     <h1 style="font-size:36px;font-style:italic;margin:2px 0">${esc(name)}</h1>${cnHtml(id, 'cnbig')}
@@ -2801,7 +2854,7 @@ function revealNext() {
     ${wowLine(g.id) ? `<p class="rwow">${esc(wowLine(g.id))}</p>` : ''}
     ${o ? `<p class="rcn">Your mystery spood is ${esc(aGenus(g.name))}!${it.isNew ? ' Card unlocked.' : ''}</p>` : ''}
     ${it.isNew && !o ? `<p>Your ${ordinal(g.discIndex)} jumping spider genus</p>` : ''}
-    ${o ? `<p>Observed ${esc(o.d)}</p>` : `<p>First observed ${esc(g.first.d)}${g.first.pg ? ' · ' + esc(g.first.pg) : ''}</p>`}
+    ${o ? `<p>Observed ${esc(o.d)}</p>` : `<p>First observed ${esc(g.first.d)}${g.first.lat != null ? ' · ' + cellLabel(g.first) : ''}</p>`}
     ${it.more ? `<p>…and ${plural(it.more, 'more mystery spood')} identified.</p>` : ''}
     ${!list.length && it.isNew && !isGuest() ? '<p style="margin-top:14px"><button class="primary" data-act="dexImage">📤 Share my SPOODEX</button></p>' : ''}
     <p style="margin-top:18px;font-size:12px">${list.length ? `${list.length} more… ` : ''}tap to continue</p>`;
@@ -4598,7 +4651,7 @@ function posterHtml(x, ctx, act) {
     ${stockCr(x.id) ? `<div class="wcredit">${esc(stockCr(x.id))}</div>` : ''}
     <div class="wname">${esc(S.nodes[x.id]?.n || '?')}</div>${cnHtml(x.id, 'wtribe')}<div class="wtribe">${esc(tribeOf(x.id))}</div>
     <ul class="wwhy">${wantedReasons(x, ctx).map(r => `<li>${r}</li>`).join('')}</ul>
-    <div class="wreward">REWARD · LEVEL ${S.M.G.size + 1} · +100 XP</div></div>`;
+    <div class="wreward">REWARD · LEVEL ${S.M.G.size + 1}</div></div>`;
 }
 function calendarHtml(list, ctx, act) {
   const m = ctx.month;
@@ -5371,13 +5424,14 @@ async function openTitleCard() {
 // Only the naturalist's own photos, the level, "N / M genera on iNat in <country or state>" and the ?u= link: no places below
 // state level, no map, no squares, nothing about where.
 function drawDexImage(cv, tiles, square, photosOnly) {
-  const M = S.M, H = square ? 1080 : 1350, K = cardKit(cv, H), { C, text } = K, sc = scopeGenera();
+  const M = S.M, H = square ? 1080 : 1350, K = cardKit(cv, H), { C, text } = K;
   // room under each photo for the name and a common name on up to two lines
   const cols = 4, rows = square ? 2 : 3, tw = 200, gap = (920 - cols * tw) / (cols - 1), rowH = tw + 104, top = 272;
   K.frame(tierKicker(M));
   text(who(), 80, 190, '600 64px Fraunces, Georgia, serif', C.ink, 'left', 640);
   text(`Level ${M.G.size}`, 1000, 190, '600 64px Fraunces, Georgia, serif', C.accent, 'right', 300);
-  text(sc.ref && S.prefs.scope !== 'world' ? `${sc.found} / ${sc.inScope.length} genera on iNat in ${scopeLabel(S.prefs.scope)}`
+  const hl = S.prefs.scope !== 'world' && headline();
+  text(hl ? headlineText(hl)
     : `${M.G.size} jumping spider ${M.G.size === 1 ? 'genus' : 'genera'}`, 80, 244, '600 44px Caveat, cursive', C.accent);
   for (let i = 0; i < cols * rows; i++) K.tile(tiles[i], 80 + (i % cols) * (tw + gap), top + Math.floor(i / cols) * rowH, tw, tw, photosOnly, 2);
   const y = top + rows * rowH + 6;
@@ -5852,7 +5906,7 @@ async function doSync(full) {
     if (S.M.homeCell) try { await scanActive(S.M.homeCell.k); } catch (e) { console.warn(e); }
     // quests completed by this sync
     const at = new Date().toISOString().slice(0,10);
-    for (const q of prevQuests) if (!['scan','base'].includes(q.kind) && questDone(q, S.M) && !S.u.completed.some(c => c.id === q.id && c.at === at)) S.u.completed.push({ id:q.id, title:q.title, reward:q.reward, at });
+    for (const q of prevQuests) if (!['scan','base'].includes(q.kind) && questDone(q, S.M) && !S.u.completed.some(c => c.id === q.id && c.at === at)) S.u.completed.push({ id:q.id, title:q.title, at });
     const fresh = S.M.genera.filter(g => !prevSeen.has(g.id));
     S.u.seen = S.M.genera.map(g => g.id); saveUser();
     if (S.tab !== 'map') render(); else paintMap3d();
@@ -5924,11 +5978,11 @@ function flipCard(el) {
   el.querySelector('.cn').textContent = cnOf(id);
 }
 function revEndHtml() {
-  const M = S.M, n = M.G.size, sc = scopeGenera();
+  const M = S.M, n = M.G.size, hl = headline();
   return `<div class="panel revend" style="margin-top:8px">
     <div class="small muted">${esc(who().toUpperCase())}'S SPOODEX</div>
     <h2>Level ${n}</h2><div class="hand">${titleHtml(M)}</div>
-    <p>${n && sc.ref ? `<b>${n}</b> of the <b>${sc.inScope.length}</b> genera on iNat in ${esc(scopeLabel(S.prefs.scope))}.` : n ? '' : 'No public jumping spider records identified to genus yet.'}</p>
+    <p>${n && hl ? `${headlineHtml(hl)}.` : n ? '' : 'No public jumping spider records identified to genus yet.'}</p>
     ${M.leads.length ? `<p>❓ ${plural(mysteryCount(), 'mystery spood')} not yet identified to genus. <a href="#" data-act="needsid">See them →</a></p>` : ''}
     <p class="row"><button class="primary big" data-act="openDex">Open your SPOODEX</button>${n && !isGuest() ? '<button data-act="dexImage">📤 Share my SPOODEX</button>' : ''}</p>
     <div id="revNext">${nextThreeHtml()}</div>${tipsOnce()}</div>`;
