@@ -47,6 +47,10 @@
 [data-chassis="cabinet"] #view > h3 .muted { color:#c9b48f; }
 [data-chassis="cabinet"] .panel, [data-chassis="cabinet"] .card { box-shadow:0 2px 0 #1a120d, 0 6px 16px rgba(0,0,0,.35); }
 [data-chassis="cabinet"] .panel { border-top:3px solid #b08a45; }
+/* The one empty-slot drawing (v2.4): a generic jumping spider from above, ink line. Swap this url to redraw it everywhere. Used as a
+   mask, so it takes the theme's ink colour: <i class="sil"></i>, or mask:var(--sil) on a pseudo-element. */
+:root { --sil:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M24 17 L14 11 L9 4' stroke-width=%273.4%27/%3E%3Cpath d='M23 21 L12 18 L5 17'/%3E%3Cpath d='M23 26 L12 29 L6 35'/%3E%3Cpath d='M25 30 L16 40 L13 51'/%3E%3Cpath d='M40 17 L50 11 L55 4' stroke-width=%273.4%27/%3E%3Cpath d='M41 21 L52 18 L59 17'/%3E%3Cpath d='M41 26 L52 29 L58 35'/%3E%3Cpath d='M39 30 L48 40 L51 51'/%3E%3Cpath d='M29.5 12.5 L29 9.8 M34.5 12.5 L35 9.8'/%3E%3Cpath d='M23 17 Q23 12.5 27 12.5 H37 Q41 12.5 41 17 V27 Q41 32.5 35 33 H29 Q23 32.5 23 27 Z'/%3E%3Ccircle cx='26.2' cy='15.4' r='1.3' fill='%23000'/%3E%3Ccircle cx='37.8' cy='15.4' r='1.3' fill='%23000'/%3E%3Cpath d='M32 33 V35.5'/%3E%3Cpath d='M32 35.5 C38.5 35.5 40 41 39 46 C38 51.5 35 55.5 32 55.5 C29 55.5 26 51.5 25 46 C24 41 25.5 35.5 32 35.5 Z'/%3E%3C/svg%3E"); }
+.sil { display:block; width:56%; aspect-ratio:1; margin:auto; background:var(--ink); opacity:.4; -webkit-mask:var(--sil) center / contain no-repeat; mask:var(--sil) center / contain no-repeat; }
 * { box-sizing:border-box; }
 html,body { margin:0; }
 body { background:var(--bg); background-image:var(--paper); color:var(--ink); font:14px/1.5 var(--body); min-height:100vh; }
@@ -274,7 +278,7 @@ a.lcard:hover { border-color:var(--accent); }
 @media (max-width:600px) { .revgrid { grid-template-columns:repeat(3, minmax(0, 1fr)); gap:6px; } }
 .rcard { position:relative; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; min-width:0; }
 .rcard .ph { display:block; aspect-ratio:1; background:var(--panel2) center/cover no-repeat; filter:grayscale(1) sepia(.6) blur(7px) brightness(.6) contrast(1.2); transition:filter .8s ease-out; }
-.rcard::after { content:'?'; position:absolute; top:0; left:0; right:0; aspect-ratio:1; display:grid; place-items:center; font:44px var(--head); color:var(--ink); opacity:.55; transition:opacity .3s; pointer-events:none; }
+.rcard::after { content:''; position:absolute; top:0; left:0; right:0; aspect-ratio:1; background:var(--ink); -webkit-mask:var(--sil) center / 52% no-repeat; mask:var(--sil) center / 52% no-repeat; opacity:.55; transition:opacity .3s; pointer-events:none; }
 .rcard .nm { padding:5px 7px 0; font:italic 600 14px var(--head); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .rcard .nm.q { font-style:normal; letter-spacing:.2em; color:var(--muted); }
 .rcard .cn { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; margin:0 7px 6px; min-height:1.3em; overflow:hidden; }
@@ -299,7 +303,7 @@ a.lcard:hover { border-color:var(--accent); }
 .card:hover { transform:translateY(-2px); border-color:var(--accent); }
 .card .ph { aspect-ratio:1; background:var(--panel2) center/cover no-repeat; position:relative; }
 .card.unknown .ph, .modal .hero.unknown { filter:grayscale(1) sepia(.6) blur(7px) brightness(.6) contrast(1.2); }
-.card.unknown::after { content:'?'; position:absolute; top:0; left:0; right:0; aspect-ratio:1; display:grid; place-items:center; font:52px var(--head); color:var(--ink); opacity:.55; pointer-events:none; }
+.card.unknown::after { content:''; position:absolute; top:0; left:0; right:0; aspect-ratio:1; background:var(--ink); -webkit-mask:var(--sil) center / 52% no-repeat; mask:var(--sil) center / 52% no-repeat; opacity:.5; pointer-events:none; }
 .card .meta { padding:6px 8px 8px; }
 .card .cn { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .cnbig { font:400 19px Fraunces, Georgia, serif; margin:-2px 0 2px; }
@@ -2092,7 +2096,7 @@ function spotlights() {
 function spotCard(x) {
   const fs = factsFor(x.id, x.n, x.never).slice(0, 3), ph = x.never ? plateFor(x.n) : x.id ? treePh(x.id) : null;
   const go = x.never ? `href="${esc(afdUrl(taxaAu(x.n)))}" target="_blank" rel="noopener"` : `href="#" data-genus="${x.id}"`;
-  return `<div class="spot"><a class="sph ${x.never && !ph ? 'plateph' : ''} ${ph?.plate ? 'vint' : ''}" ${go} style="${ph ? plateBg(ph) : ''}">${ph ? '' : x.never ? '<span>🏛</span>' : '<span>?</span>'}</a>
+  return `<div class="spot"><a class="sph ${x.never && !ph ? 'plateph' : ''} ${ph?.plate ? 'vint' : ''}" ${go} style="${ph ? plateBg(ph) : ''}">${ph ? '' : x.never ? '<span>🏛</span>' : '<i class="sil"></i>'}</a>
     <div class="smeta"><div class="sk">DID YOU KNOW?</div><a class="snm" ${go}><i>${esc(x.n)}</i></a>${x.id && cnOf(x.id) ? `<div class="small muted">${esc(cnOf(x.id))}</div>` : ''}
       <ul class="sfacts">${fs.map(([i, t]) => `<li><span aria-hidden="true">${i}</span> ${esc(t)}</li>`).join('') || '<li class="muted">No records near you yet.</li>'}</ul>
       ${x.id && (wantedList() || []).some(w => w.id === x.id) ? `<button class="small" data-act="wanted" data-v="${x.id}">🧭 Where to look</button>` : ''}
@@ -3971,7 +3975,7 @@ function bestFindsHtml(R) {
   if (!top.length) return '';
   ensureInfo(top.map(f => f.gid));   // common names
   return `<div class="panel" style="margin-bottom:16px"><h3>Best finds</h3><div class="spoods">${top.map(f => `<a class="lcard" href="https://www.inaturalist.org/observations/${f.o.id}" target="_blank" rel="noopener" title="Open on iNaturalist">
-    ${evPhOk(f.o) ? `<span class="ph" style="background-image:url('${esc(photoSize(f.o.ph, 'small'))}')"></span>` : '<span class="ph noph">?</span>'}
+    ${evPhOk(f.o) ? `<span class="ph" style="background-image:url('${esc(photoSize(f.o.ph, 'small'))}')"></span>` : '<span class="ph noph"><i class="sil"></i></span>'}
     <span class="nm"><i>${esc(S.nodes[f.gid]?.n || '?')}</i></span>${cnOf(f.gid) ? `<span class="cn">${esc(cnOf(f.gid))}</span>` : ''}
     <span class="pts"><b>${f.pts} pts</b></span><span class="cr" title="${esc(evPhOk(f.o) ? evPhCredit(f.o) : f.login)}">${esc(evPhOk(f.o) ? evPhCredit(f.o) : `by ${f.login}`)}</span></a>`).join('')}</div></div>`;
 }
@@ -4866,7 +4870,7 @@ function findCard(x) {
     : `📚 ${fmt(x.state)} record${x.state === 1 ? '' : 's'} in ${where}`;
   const when = !p || p.few ? '' : p.text === 'year-round' ? '🌡 Recorded all year round' : p.now ? `🌡 In season now · peak ${esc(p.text)}` : `🗓 Peak ${esc(p.text)}`;
   return `<div class="fcard" data-act="wanted" data-v="${x.id}" title="Where and when to look">
-    ${ph ? `<div class="ph" style="background-image:url('${esc(ph.u)}')"></div>` : '<div class="ph none">?</div>'}
+    ${ph ? `<div class="ph" style="background-image:url('${esc(ph.u)}')"></div>` : '<div class="ph none"><i class="sil"></i></div>'}
     <div class="meta"><div class="nm"><i>${esc(S.nodes[x.id]?.n || '?')}</i></div>${cnOf(x.id) ? `<div class="cn">${esc(cnOf(x.id))}</div>` : ''}
       <div class="small">${near}</div>${when ? `<div class="small">${when}</div>` : ''}${ph ? `<div class="cr">${esc(ph.cr)}</div>` : ''}</div></div>`;
 }
