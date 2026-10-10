@@ -215,8 +215,20 @@ main { padding-top:18px; }
 .lcard { scroll-snap-align:start; display:flex; flex-direction:column; min-width:0; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; color:inherit; text-decoration:none; }
 a.lcard:hover { border-color:var(--accent); }
 .lcard .ph { display:block; aspect-ratio:1; background:var(--panel2) center/cover no-repeat; }
-.lcard.blank .ph { animation:pulse 1.4s ease-in-out infinite alternate; }
+.lcard.blank .ph { display:grid; place-items:center; }
 @keyframes pulse { to { opacity:.55; } }
+/* v2.4 loading skeletons: the shape of what's coming, the silhouette, a slow shimmer (none under reduced motion) */
+.skel { position:relative; overflow:hidden; background:var(--panel2); }
+.skel::before { content:''; position:absolute; inset:0; z-index:1; background:linear-gradient(100deg, transparent 30%, rgba(255,255,255,.5) 50%, transparent 70%) -150% 0 / 200% 100% no-repeat;
+  animation:shimmer 1.6s linear infinite; pointer-events:none; }
+@keyframes shimmer { to { background-position:250% 0; } }
+.skline { display:inline-block; height:.75em; width:9em; max-width:100%; vertical-align:middle; border-radius:99px; background:var(--dim); }
+.skline.short { width:5em; }
+.skelcard { cursor:default; }
+.skelcard .ph, .fcard.skelcard .ph { display:grid; place-items:center; }
+.fcard .ph .sil { width:auto; height:62%; }
+.skelcard .meta { display:flex; flex-direction:column; gap:6px; padding-top:8px; }
+@media (prefers-reduced-motion: reduce) { .skel::before { animation:none; background:none; } }
 .lcard .nm { padding:6px 8px 0; font:italic 600 15px var(--head); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .lcard .cn, .card .cn, .rcard .cn { font-size:11.5px; line-height:1.3; color:var(--ink); }
 .lcard .cn { padding:0 8px; }
@@ -598,7 +610,7 @@ details > summary.scsec { cursor:pointer; }
       <h1>SPOODEX</h1>
       <p class="pitch">A Pokédex for jumping spiders, filled in from your own iNaturalist photos.</p>
     </div>
-    <div id="landPhotos" class="landstrip" aria-label="Jumping spiders recorded on iNaturalist"><span class="lcard blank"><span class="ph"></span></span><span class="lcard blank"><span class="ph"></span></span><span class="lcard blank"><span class="ph"></span></span><span class="lcard blank"><span class="ph"></span></span><span class="lcard blank"><span class="ph"></span></span><span class="lcard blank"><span class="ph"></span></span></div>
+    <div id="landPhotos" class="landstrip" aria-label="Jumping spiders recorded on iNaturalist"><span class="lcard blank"><span class="ph skel"><i class="sil"></i></span></span><span class="lcard blank"><span class="ph skel"><i class="sil"></i></span></span><span class="lcard blank"><span class="ph skel"><i class="sil"></i></span></span><span class="lcard blank"><span class="ph skel"><i class="sil"></i></span></span><span class="lcard blank"><span class="ph skel"><i class="sil"></i></span></span><span class="lcard blank"><span class="ph skel"><i class="sil"></i></span></span></div>
     <div id="landStarts" class="landstarts">
       <button type="button" class="primary big" data-act="guest">🧭 See what jumping spiders live near you<small>No iNaturalist account needed</small></button>
       <form id="loginForm" class="panel">
@@ -2762,7 +2774,7 @@ function peakInfo(gid, pid = phenoPlace(), nowM = new Date().getMonth()) {
 }
 function phenoHtml(gid) {
   const p = peakInfo(gid);
-  if (!p) return '<span class="muted">· checking season…</span>';
+  if (!p) return '<span class="muted">· </span><span class="skline short skel" aria-label="checking season"></span>';
   if (p.few) return '<span class="muted">· too few records to call a season</span>';
   return `${p.now ? '<b class="inseason">🌡 in season now</b> · ' : ''}<span class="muted">peak ${esc(p.text)}</span>`;
 }
@@ -3200,7 +3212,7 @@ function viewLadder() {
     <td class="who"><span class="avatar" style="background-image:url('${esc(L.icons[r.login] || '')}')"></span><a href="https://www.inaturalist.org/people/${encodeURIComponent(r.login)}" target="_blank" rel="noopener">${esc(r.login)}</a>${isMe(r.login) ? ' <span class="small muted">(you)</span>' : ''}</td>
     <td class="${cls('gn')}">${r.gn}</td><td class="${cls('sn')}">${r.sn}</td><td class="${cls('pr')}">${fmt(r.pr)}</td><td class="n muted">${fmt(r.obs)}</td>
     <td class="acts">${isMe(r.login) ? '' : `<button data-act="vs" data-v="${esc(r.login)}">Compare</button> <button data-act="crewAdd" data-v="${esc(r.login)}" title="Add to your crew">+ Crew</button>`}</td></tr>`;
-  const pending = (L.queue || []).map(l => `<tr class="pending"><td class="rk">…</td><td class="who"><span class="avatar" style="background-image:url('${esc(L.icons[l] || '')}')"></span>${esc(l)}</td><td colspan="5" class="small">waiting to be read</td></tr>`).join('');
+  const pending = (L.queue || []).map(l => `<tr class="pending"><td class="rk">…</td><td class="who"><span class="avatar" style="background-image:url('${esc(L.icons[l] || '')}')"></span>${esc(l)}</td><td colspan="5" aria-label="waiting to be read"><span class="skline skel" style="width:60%"></span></td></tr>`).join('');
   return head + standing + `<div class="panel tablewrap"><table class="ladder">
     <tr><th></th><th>Naturalist</th><th class="${cls('gn')}">Genera</th><th class="${cls('sn')}">Species</th><th class="${cls('pr')}">Prestige ✦</th><th class="n">Records</th><th></th></tr>
     ${rows.map(tr).join('')}${pending}</table></div>`;
@@ -4903,10 +4915,13 @@ function findCard(x) {
     <div class="meta"><div class="nm"><i>${esc(S.nodes[x.id]?.n || '?')}</i></div>${cnOf(x.id) ? `<div class="cn">${esc(cnOf(x.id))}</div>` : ''}
       <div class="small">${near}</div>${when ? `<div class="small">${when}</div>` : ''}${ph ? `<div class="cr">${esc(ph.cr)}</div>` : ''}</div></div>`;
 }
+// Skeletons in the shape of the cards on their way (v2.4)
+const skelCards = n => `<div class="dexgrid" aria-busy="true">${'<div class="card skelcard"><div class="ph skel"><i class="sil"></i></div><div class="meta"><span class="skline skel"></span><span class="skline short skel"></span></div></div>'.repeat(n)}</div>`;
+const skelFinds = n => `<div class="finds" aria-busy="true">${'<div class="fcard skelcard"><div class="ph skel"><i class="sil"></i></div><div class="meta"><span class="skline skel"></span><span class="skline skel"></span><span class="skline short skel"></span></div></div>'.repeat(n)}</div>`;
 function nextThreeHtml() {
   const ctx = homeCtx(); if (!ctx.pid) return '';
   const xs = nextThree();
-  if (!xs || (nextBusy && !xs.length)) return '<p class="small muted">Checking what has been recorded near you…</p>';
+  if (!xs || (nextBusy && !xs.length)) return `<h3 style="margin-top:14px">Three to find next <span class="small muted">· ${MONTHS[ctx.month]}</span></h3>${skelFinds(3)}`;
   if (!xs.length) return '';
   return `<h3 style="margin-top:14px">Three to find next <span class="small muted">· ${MONTHS[ctx.month]}</span></h3><div class="finds">${xs.map(findCard).join('')}</div>`;
 }
@@ -5293,7 +5308,7 @@ function viewBounty() {
     <p style="margin:10px 0 0">${idAidBtn()}</p>
     ${bountyBusy ? '<p class="small">Checking the records…</p>' : ''}${bountyErr ? `<p>${esc(bountyErr)} <button data-act="bountyRefresh">Try again</button></p>` : ''}</div>`;
   if (!bountyWhere()) return head + '<p class="muted">Set a home base on the Map tab so SPOODEX knows where to look.</p>';
-  if (!b) return head + '<p class="muted">Loading bounties…</p>';
+  if (!b) return head + `<h2>Wanted, unconfirmed</h2>${skelCards(7)}`;
   return head + `<h2>Wanted, unconfirmed</h2>
     <p class="small muted">Records of genera you're missing, still at Needs ID (${fmt(b.confN)} in all).</p>
     ${b.conf.length ? `<div class="dexgrid">${b.conf.map(card).join('')}</div>` : '<p class="small">None right now.</p>'}
