@@ -356,7 +356,8 @@ a.lcard:hover { border-color:var(--accent); }
   .profhero .sticker { width:80px; top:-4px; }
   .profhero.stk h1 { padding-right:80px; }
   .landhead.stk { padding-right:0; }
-  .landhead.stk .sticker { width:84px; top:-4px; }
+  .landhead.stk .sticker { width:66px; top:-2px; }
+  .landhead.stk .pitch { padding-right:70px; }
   .casehead.stk { padding-right:84px; }
   .casehead .sticker { width:84px; }
   #impBox .sticker { width:64px; }
@@ -1648,9 +1649,44 @@ const TITLE_GEN = [
   [60, 'Euophrys', ['Exalted', 'Epic', 'Elite']], [75, 'Bagheera', ['Bold', 'Brilliant', 'Brave']],
   [90, 'Spartaeus', ['Splendid', 'Sovereign', 'Stalwart']], [100, 'Portia', ['Peerless', 'Prodigious', 'Phenomenal']],
 ];
+// Country ladders (v2.5, owner 2026-10-12: "the most well known genera from there, e.g. Phidippus in the US"): iNat place id → [genera
+// needed, genus], from the country's most-recorded genus down to rarer ones, every one recorded there on iNat (checked 2026-10-12). Thresholds
+// scale with the country's genus count. Australia and countries not listed keep TITLE_GEN. Adjectives alliterate by first letter.
+const TITLE_BY_COUNTRY = {
+  1:[[0, "Phidippus"], [1, "Platycryptus"], [4, "Hentzia"], [8, "Salticus"], [13, "Pelegrina"], [19, "Eris"], [25, "Colonus"], [33, "Maevia"], [40, "Paraphidippus"], [49, "Lyssomanes"], [58, "Zygoballus"], [67, "Sassacus"], [77, "Habronattus"]],   // United States: 103 genera on iNat
+  6712:[[0, "Salticus"], [1, "Phidippus"], [2, "Eris"], [4, "Platycryptus"], [6, "Attulus"], [9, "Pelegrina"], [12, "Habronattus"], [16, "Maevia"], [19, "Evarcha"], [23, "Naphrys"], [27, "Hentzia"], [32, "Tutelina"], [37, "Synageles"]],   // Canada: 49 genera on iNat
+  6793:[[0, "Paraphidippus"], [2, "Phidippus"], [6, "Menemerus"], [11, "Mexigonus"], [17, "Colonus"], [24, "Habronattus"], [33, "Messua"], [42, "Lyssomanes"], [52, "Corythalia"], [63, "Sassacus"], [74, "Frigga"], [86, "Balmaceda"]],   // Mexico: 115 genera on iNat
+  6878:[[0, "Menemerus"], [2, "Frigga"], [6, "Corythalia"], [11, "Hasarius"], [18, "Lyssomanes"], [26, "Phiale"], [34, "Chira"], [44, "Marma"], [55, "Megafreya"], [66, "Psecas"], [78, "Coryphasia"], [91, "Lurio"]],   // Brazil: 121 genera on iNat
+  7190:[[0, "Menemerus"], [1, "Megafreya"], [4, "Phiale"], [7, "Aphirape"], [11, "Frigga"], [16, "Dendryphantes"], [21, "Saitis"], [27, "Chira"], [33, "Breda"], [40, "Lyssomanes"], [47, "Titanattus"]],   // Argentina: 63 genera on iNat
+  7196:[[0, "Menemerus"], [1, "Frigga"], [4, "Lyssomanes"], [8, "Corythalia"], [13, "Mexigonus"], [18, "Phiale"], [24, "Colonus"], [31, "Pachomius"], [38, "Psecas"], [46, "Lurio"], [55, "Acragas"], [64, "Parnaenus"]],   // Colombia: 85 genera on iNat
+  6857:[[0, "Salticus"], [1, "Pseudeuophrys"], [2, "Heliophanus"], [3, "Attulus"], [4, "Marpissa"], [6, "Macaroeris"], [8, "Ballus"], [11, "Evarcha"], [13, "Euophrys"], [16, "Aelurillus"], [19, "Synageles"], [22, "Neon"]],   // United Kingdom: 29 genera on iNat
+  7207:[[0, "Salticus"], [1, "Marpissa"], [2, "Heliophanus"], [3, "Evarcha"], [5, "Pseudeuophrys"], [7, "Attulus"], [9, "Macaroeris"], [12, "Ballus"], [14, "Carrhotus"], [17, "Aelurillus"], [21, "Pellenes"], [24, "Synageles"]],   // Germany: 32 genera on iNat
+  6753:[[0, "Heliophanus"], [1, "Salticus"], [2, "Evarcha"], [4, "Pseudeuophrys"], [6, "Saitis"], [8, "Menemerus"], [11, "Marpissa"], [15, "Icius"], [18, "Carrhotus"], [22, "Philaeus"], [26, "Aelurillus"], [30, "Pellenes"]],   // France: 40 genera on iNat
+  6774:[[0, "Menemerus"], [1, "Heliophanus"], [2, "Salticus"], [4, "Icius"], [6, "Evarcha"], [8, "Plexippus"], [11, "Aelurillus"], [15, "Macaroeris"], [18, "Cyrba"], [22, "Thyene"], [26, "Phlegra"], [30, "Saitis"]],   // Spain: 40 genera on iNat
+  6973:[[0, "Menemerus"], [1, "Philaeus"], [2, "Icius"], [4, "Heliophanus"], [6, "Evarcha"], [8, "Salticus"], [11, "Pseudeuophrys"], [15, "Carrhotus"], [18, "Saitis"], [22, "Marpissa"], [26, "Macaroeris"], [30, "Phlegra"]],   // Italy: 40 genera on iNat
+  7506:[[0, "Marpissa"], [1, "Salticus"], [2, "Heliophanus"], [3, "Pseudeuophrys"], [4, "Ballus"], [5, "Evarcha"], [7, "Macaroeris"], [8, "Attulus"], [10, "Aelurillus"], [13, "Saitis"], [15, "Pellenes"], [17, "Synageles"]],   // Netherlands: 23 genera on iNat
+  6986:[[0, "Thyene"], [1, "Hyllus"], [4, "Menemerus"], [7, "Thyenula"], [11, "Baryphas"], [16, "Heliophanus"], [22, "Hasarius"], [28, "Myrmarachne"], [34, "Evarcha"], [42, "Natta"], [49, "Mexcala"], [57, "Tusitala"], [66, "Portia"]],   // South Africa: 88 genera on iNat
+  6681:[[0, "Plexippus"], [2, "Telamonia"], [6, "Menemerus"], [12, "Carrhotus"], [18, "Hyllus"], [26, "Phintella"], [35, "Hasarius"], [45, "Myrmarachne"], [56, "Stenaelurillus"], [67, "Rhene"], [80, "Chrysilla"], [93, "Epeus"], [106, "Portia"]],   // India: 142 genera on iNat
+  6737:[[0, "Myrmarachne"], [1, "Menemerus"], [3, "Hasarius"], [5, "Plexippus"], [8, "Carrhotus"], [12, "Evarcha"], [16, "Siler"], [20, "Mendoza"], [25, "Rhene"], [30, "Phintella"], [35, "Marpissa"], [41, "Orienticius"]],   // Japan: 55 genera on iNat
+  7887:[[0, "Ptocasius"], [1, "Menemerus"], [3, "Hasarius"], [6, "Epeus"], [10, "Rhene"], [14, "Myrmarachne"], [19, "Carrhotus"], [25, "Thiania"], [31, "Phintelloides"], [37, "Cosmophasis"], [44, "Telamonia"], [51, "Siler"], [58, "Burmattus"]],   // Taiwan: 78 genera on iNat
+  6967:[[0, "Plexippus"], [1, "Menemerus"], [3, "Carrhotus"], [6, "Phintelloides"], [10, "Cosmophasis"], [15, "Phintella"], [20, "Hasarius"], [25, "Telamonia"], [31, "Hyllus"], [37, "Rhene"], [44, "Myrmaplata"], [52, "Asemonea"], [59, "Siler"], [68, "Cytaea"]],   // Thailand: 90 genera on iNat
+  6734:[[0, "Cosmophasis"], [1, "Hyllus"], [4, "Chalcotropis"], [7, "Phintella"], [11, "Menemerus"], [16, "Carrhotus"], [21, "Thorelliola"], [27, "Telamonia"], [33, "Epeus"], [40, "Viciria"], [47, "Thiania"], [55, "Myrmarachne"], [63, "Pancorius"]],   // Singapore: 84 genera on iNat
+  7155:[[0, "Menemerus"], [1, "Plexippus"], [5, "Cosmophasis"], [9, "Hyllus"], [14, "Thiania"], [20, "Hasarius"], [26, "Phintella"], [34, "Epeus"], [42, "Parabathippus"], [50, "Telamonia"], [59, "Pancorius"], [69, "Siler"], [80, "Myrmarachne"]],   // Malaysia: 106 genera on iNat
+  6873:[[0, "Plexippus"], [1, "Cosmophasis"], [4, "Menemerus"], [7, "Chalcotropis"], [11, "Phintella"], [16, "Hasarius"], [21, "Telamonia"], [27, "Myrmarachne"], [33, "Carrhotus"], [40, "Bavia"], [48, "Lepidemathis"], [55, "Epeus"], [64, "Portia"]],   // Philippines: 85 genera on iNat
+  6966:[[0, "Cosmophasis"], [2, "Plexippus"], [6, "Menemerus"], [11, "Hyllus"], [17, "Cytaea"], [24, "Hasarius"], [32, "Artabrus"], [41, "Myrmarachne"], [51, "Phintella"], [62, "Epeus"], [73, "Telamonia"], [85, "Thiania"], [98, "Phintelloides"]],   // Indonesia: 131 genera on iNat
+  6803:[[0, "Trite"], [1, "Maratus"], [2, "Helpis"], [3, "Opisthoncus"], [4, "Holoplatys"], [5, "Adoxotoma"], [7, "Ourea"], [9, "Hinewaia"], [11, "Ocrisiona"]],   // New Zealand: 15 genera on iNat
+};
+const TITLE_ADJ = { A:['Adventurous', 'Audacious', 'Astonishing'], B:['Bold', 'Brilliant', 'Brave'], C:['Courageous', 'Cosmic', 'Commanding'],
+  D:['Daring', 'Dazzling', 'Dauntless'], E:['Exalted', 'Epic', 'Elite'], F:['Fearless', 'Fierce', 'Formidable'], G:['Gallant', 'Glorious', 'Gutsy'],
+  H:['Heroic', 'Hardy', 'Headstrong'], I:['Intrepid', 'Illustrious', 'Inspired'], L:['Legendary', 'Luminous', 'Lionhearted'],
+  M:['Mighty', 'Magnificent', 'Masterful'], N:['Noble', 'Nimble', 'Notable'], O:['Outstanding', 'Olympian', 'Original'],
+  P:['Plucky', 'Proud', 'Peerless'], R:['Radiant', 'Resolute', 'Remarkable'], S:['Spirited', 'Swift', 'Splendid'],
+  T:['Tenacious', 'Triumphant', 'Trailblazing'], V:['Valiant', 'Vivid', 'Victorious'], Z:['Zealous', 'Zesty', 'Zippy'] };
 function titleParts(M, login = S.login) {
+  const h = hash32(String(login || '').toLowerCase()), lad = TITLE_BY_COUNTRY[M.home?.country];
+  if (lad) { const [, genus] = lad.filter(([at]) => M.G.size >= at).pop(), adjs = TITLE_ADJ[genus[0]] || TITLE_ADJ.I; return [adjs[h % adjs.length], genus]; }
   const [, genus, adjs] = TITLE_GEN.filter(([at]) => M.G.size >= at).pop();
-  return [adjs[hash32(String(login || '').toLowerCase()) % adjs.length], genus];
+  return [adjs[h % adjs.length], genus];
 }
 const generatedTitle = (M, login) => titleParts(M, login).join(' ');
 const titleHtml = (M, login) => { const [a, g] = titleParts(M, login); return `${esc(a)} <i>${esc(g)}</i>`; };
