@@ -4,6 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SPOODEX</title>
+<meta name="description" content="A Pokédex for jumping spiders, filled in from your own iNaturalist photos. Enter your iNat username, or see what lives near you without an account.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SPOODEX">
+<meta property="og:title" content="SPOODEX: collect jumping spiders from your iNaturalist photos">
+<meta property="og:description" content="A Pokédex for jumping spiders, filled in from your own iNaturalist photos. Enter your iNat username, or see what lives near you without an account.">
+<meta property="og:url" content="https://themoojuice.github.io/spoodex/">
+<meta property="og:image" content="https://themoojuice.github.io/spoodex/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="SPOODEX: five jumping spider cards (Maratus, Portia, Mopsus, Cosmophasis, Myrmarachne) on a kraft notebook page">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#e7d8b9">
 <link rel="icon" href="icon-192.png" type="image/png">
@@ -1121,11 +1132,18 @@ const GUEST = '__guest';
 const SAMPLE_LOGIN = 'themoojuice';   // "Try a sample naturalist": any public account with plenty of salticids
 const isGuest = () => S.login === GUEST;
 const who = () => isGuest() ? 'Guest naturalist' : S.login;
+// iNat logins are lowercase and matched case-insensitively, so every login is kept lowercase (one save, one share link per person).
+// Also takes "@name" and a pasted profile or observations link.
+const cleanLogin = v => { v = String(v || '').trim(); const m = v.match(/inaturalist\.org\/(?:people|lifelists|observations)\/(?!\d+\b)([\w-]+)/i) || v.match(/[?&]user_id=([\w-]+)/i); return (m ? m[1] : v.replace(/^@/, '')).toLowerCase(); };
+// iNat answers 422 for a login it doesn't know
+const noUser = (e, login) => /returned 422/.test(e?.message || '') ? `No iNaturalist user called "${login}". Use your username (the name in your profile link, inaturalist.org/people/username), not your display name or email.` : e?.message || String(e);
+const poss = n => /s$/i.test(n) ? `${n}'` : `${n}'s`;   // "spiderpals' SPOODEX"
 
 async function fetchPlaces(ids, log = () => {}) {
   const need = [...new Set(ids)].filter(id => !S.places[id]);
-  if (need.length) log(`Looking up ${need.length} places…`);
+  if (need.length) log(`Looking up ${need.length} places…`, .82);
   for (let i = 0; i < need.length; i += 100) {
+    if (i) log(`Looking up ${need.length} places…`, .82 + .08 * i / need.length);
     const batch = need.slice(i, i+100);
     const d = await api('/places/' + batch.join(','));
     batch.forEach(id => S.places[id] = { n:null, l:null });
@@ -1143,20 +1161,20 @@ async function importRecords(login, save, { full=false, log=()=>{} } = {}) {
   const since = full ? null : save.meta.lastSync;
   const obs = full ? {} : (save.obs || {});
   let idAbove = 0, got = 0, total = null;
-  log(full ? `Asking iNaturalist for ${login}'s jumping spider records…` : `Checking ${login} for records updated since ${since.slice(0,16).replace('T',' ')}…`, 0);
+  log(full ? `Asking iNaturalist for ${poss(login)} jumping spider records…` : `Checking ${login} for records updated since ${since.slice(0,16).replace('T',' ')}…`, 0);
   while (true) {
     const d = await api('/observations', { taxon_id:SALTICIDAE, user_login:login, per_page:200, order_by:'id', order:'asc', id_above:idAbove || null, updated_since:since, fields:OBS_FIELDS }, API2);
     if (total == null) { total = d.total_results; log(`${fmt(total)} jumping spider record${total===1?'':'s'} ${full?'found':'updated'}.`, 0); }
     for (const o of d.results) obs[o.id] = trimObs(o);
     got += d.results.length;
-    if (d.results.length) log(`Read ${fmt(got)} of ${fmt(total)} records`, got / total);
+    if (d.results.length) log(`Read ${fmt(got)} of ${fmt(total)} records`, .75 * got / total);   // the rest of the bar: genera, places, checklists, photos
     if (d.results.length < 200) break;
     idAbove = d.results[d.results.length - 1].id;
   }
   save.obs = obs;
   if (full && !Object.keys(obs).length) log(`No public jumping spider records for "${login}" yet.`, 1);
   // Taxonomy tree of these records gives names/ranks for every ancestor (tribes, subfamilies, genera).
-  log('Sorting them into genera…');
+  log('Sorting them into genera…', .78);
   const tree = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, user_login:login });
   tree.results.forEach(addNode);
   await fetchPlaces(Object.values(obs).flatMap(o => o.pl), log);
@@ -1166,7 +1184,7 @@ async function importRecords(login, save, { full=false, log=()=>{} } = {}) {
 }
 
 async function loadRefs(log = () => {}) {
-  log('Loading the regional checklists…');
+  log('Loading the regional checklists…', .92);
   for (const sc of new Set(['country', 'state', S.prefs.scope])) if (sc === 'world' || scopePlace(sc)) await ensureRef(sc);
 }
 async function sync({ full=false, log=()=>{} } = {}) {
@@ -1406,6 +1424,7 @@ function buildModel(obsMap = S.u.obs, base = S.u.base) {
   const year = String(new Date().getFullYear());
   return {
     obs:all, G, genera, leads:[...leads.values()].sort((a,b) => b.obs.length - a.obs.length), xp:xpTotal,
+    pets:Object.values(obsMap).filter(o => o.cap).sort((a,b) => (b.d||'').localeCompare(a.d||'') || b.id - a.id),   // the Spoodarium (v2.7): never counted
     cells25, cellsAll01, fieldDays:days, dayDisc, streak:run, bestStreak:bestRun, home, homeCell, behObs, monthsAll,
     newThisYear: genera.filter(g => (g.first.d||'').startsWith(year)).length,
     S: SP, species: SP.size,
@@ -1841,6 +1860,10 @@ function buildQuests(M) {
   const q = [];
   if (!M.G.size) q.push({ id:'first', kind:'first', icon:'🕷', title:'Your First Spood', text:'Find a jumping spider, photograph it and upload it to iNaturalist. Once it is identified to genus, sync SPOODEX and your first card unlocks.' });
   if (!M.homeCell) q.push({ id:'base', kind:'base', icon:'🏠', title:'Pick a Home Base', text:'Tell SPOODEX where you usually spood and it will list the genera recorded around you.' });
+  const pw = petWild(M);
+  if (pw.length) q.push({ id:'pet:' + pw.join(','), kind:'hunt', icon:'🏺', title:'From Pet to Wild',
+    text:`You keep ${pw.slice(0, 3).map(id => S.nodes[id]?.n || '?').join(', ')}${pw.length > 3 ? '…' : ''}. Find ${pw.length === 1 ? 'one' : 'any of them'} in the wild and post it to iNaturalist. Where to look is in the Spoodarium.`,
+    targets:pw.slice(0, 6) });
   const act = M.homeCell && S.u.active?.[M.homeCell.k];
   if (act) {
     const miss = act.g.filter(x => !M.G.has(x.id)).sort((a,b) => b.c - a.c);
@@ -1926,6 +1949,7 @@ const TABS = [
   { k:'profile', label:'Profile' },
   { k:'dex', label:'SPOODEX' },
   { k:'album', label:'Album' },
+  { k:'pets', label:'Spoodarium', has:() => S.M.pets.length },   // only for naturalists with captive records
   { k:'tree', label:'Lineage tree', at:15 },
   { k:'map', label:'Map & scanner' },
   { k:'wanted', label:'Bounty board', at:10 },
@@ -1938,12 +1962,12 @@ const TABS = [
 // Three sections, each a row of views (v2.3, owner 2026-10-10/11: ten tabs in one row were too many; Quests sits under Go spooding). Views still unlock one by one
 // (`at`); a section shows once any of its views is open and reopens on the view you last used in it.
 const SECTIONS = [
-  { k:'collection', label:'Collection', tabs:['profile', 'dex', 'album', 'tree'] },
+  { k:'collection', label:'Collection', tabs:['profile', 'dex', 'album', 'pets', 'tree'] },
   { k:'go', label:'Go spooding', tabs:['map', 'quests', 'wanted', 'trip'] },
   { k:'mates', label:'Mates', tabs:['crew', 'compare', 'ladder'] },
 ];
 const secOf = k => SECTIONS.find(x => x.tabs.includes(k)) || SECTIONS[0];
-const tabEarned = t => !t.at || S.M.G.size >= t.at || (S.u.tabs || []).includes(t.k);
+const tabEarned = t => t.has ? !!t.has() : !t.at || S.M.G.size >= t.at || (S.u.tabs || []).includes(t.k);
 const tabOn = t => S.prefs.peek || tabEarned(t);
 // New tabs since last time get a toast and a dot until opened; the first look at a collection counts everything open as seen
 function tabNews() {
@@ -1998,9 +2022,10 @@ function render() {
   if (S.tab === 'crew') { S.crew.seen = Date.now(); saveCrew(); setTimeout(crewCeremony, 600); }
   if (S.tab === 'crew' && S.evOpen && S.events[S.evOpen] && !evErr[S.evOpen]) loadEvent(S.evOpen);
   if (S.tab === 'crew' && !S.evOpen && !S.evBroken && cupDue()) loadCups();
+  if (S.tab === 'pets') setTimeout(loadPetWild, 0);
   const plan = S.tab === 'trip' && $('#tripPlan');
   if (plan) plan.innerHTML = viewTripPlan();
-  else v.innerHTML = ({ profile:viewProfile, dex:viewDex, album:viewAlbum, tree:viewTree, map:viewMapShell, quests:viewQuests, compare:viewCompare, ladder:viewLadder, crew:viewCrew, wanted:viewWanted, trip:viewTrip })[S.tab]();
+  else v.innerHTML = ({ profile:viewProfile, dex:viewDex, album:viewAlbum, pets:viewPets, tree:viewTree, map:viewMapShell, quests:viewQuests, compare:viewCompare, ladder:viewLadder, crew:viewCrew, wanted:viewWanted, trip:viewTrip })[S.tab]();
   if (S.tab === 'map') { initMap(); loadWx(); }
   if (S.tab === 'trip') mountTripMap();
   if (S.tab === 'crew') { mountEventMap(); evAnimate(); }
@@ -2030,7 +2055,7 @@ function viewProfile() {
     setTimeout(() => loadNextThree(() => { if (S.tab === 'profile') softRender(); }), 0);
   }
   const hero = `<div class="panel profhero stk">${stickerHtml(stickerFor(S.login))}
-      <div class="muted small">${esc(who().toUpperCase())}'S SPOODEX</div>
+      <div class="muted small">${esc(poss(who()).toUpperCase())} SPOODEX</div>
       <h1>Level ${n}</h1><div class="hand">${titleHtml(M)}</div>
       ${hl ? `<div class="row" style="gap:8px;margin-top:6px"><span>${headlineHtml(hl)}</span>${bar(hl.found, hl.total)}</div>` : ''}
       ${isGuest() || !n ? '' : `<p class="row herobtns"><button data-act="dexImage">📤 My SPOODEX image</button><button data-act="caseEdit">🗄 Display case</button><button data-act="card">🪪 Title card</button>${M.fieldDays.length ? `<button data-act="wrapped">🎁 ${esc(wrappedYears()[0])} in spoods</button>` : ''}</p>`}
@@ -2049,10 +2074,11 @@ function viewProfile() {
     : `<div class="panel" style="margin-top:16px"><h3>Three to find next</h3><p>Set a home base and SPOODEX picks three jumping spiders recorded near you that you haven't found.</p>
         <button class="primary" data-tab="map">🏠 Set a home base</button></div>`;
   const starter = !n ? `<div class="panel" style="margin-top:16px"><h2>Your SPOODEX is empty, for now</h2>
-    <p>Every card is unlocked by a real jumping spider you have found:</p>
+    <p>Every card is unlocked by a real jumping spider you have found${M.pets.length ? ' in the wild (captive ones go in the Spoodarium)' : ''}:</p>
     <p class="hand">explore → photograph → upload to iNaturalist → get an ID → sync → unlock</p>
     <div class="row"><a class="btnlink" href="https://www.inaturalist.org/observations/upload" target="_blank" rel="noopener">Upload to iNaturalist ↗</a>
     ${M.homeCell ? '<button data-tab="map">📡 See what lives near your home base</button>' : ''}
+    ${M.pets.length ? `<button data-tab="pets">🏺 Your captive spoods and where to find wild ones</button>` : ''}
     ${isGuest() ? '<button data-act="switch">I have an iNaturalist account</button>' : ''}</div></div>` : '';
   const kv = [
     ['Observations', M.obs.length && fmt(M.obs.length)],
@@ -3201,7 +3227,7 @@ async function openGenus(id) {
     </dl>` : '';
   const hist = info.s ? `<h3 style="margin-top:12px">Natural history</h3><p>${esc(info.s)}</p><p class="small muted">Summary via iNaturalist / Wikipedia${info.w ? ` · <a href="${esc(info.w)}" target="_blank" rel="noopener">more</a>` : ''}</p>` : '';
   const cg = S.cmp?.M?.G.get(id);
-  const theirs = cg ? `<h3 style="margin-top:12px">${esc(S.cmp.login)}'s records</h3>
+  const theirs = cg ? `<h3 style="margin-top:12px">${esc(poss(S.cmp.login))} records</h3>
     <p class="small">${cg.obs.length} obs · level ${cg.level}/10 · ${cg.state.toLowerCase()} · first ${esc(cg.first.d)}</p>
     <div class="gallery">${cg.photos.slice(0,8).map(p => `<a href="https://www.inaturalist.org/observations/${p.id}" target="_blank" rel="noopener" style="background-image:url('${esc(photoSize(p.url,'small'))}')"></a>`).join('')}</div>` : '';
   const hero = g ? photoSize(g.cover, 'large') : photoSize(stockPh(id), 'large');
@@ -3282,7 +3308,7 @@ function viewCompare() {
   const both = [...M.G.values()].filter(g => T.G.has(g.id)).sort((a,b) => a.name.localeCompare(b.name));
   const envy = (gs, ss) => gs.reduce((n,g) => n + 10*starsFor(g.id,'g'), 0) + ss.reduce((n,s) => n + 3*starsFor(s.id,'s'), 0);
   const envyThem = envy(themG, themS), envyMe = envy(meG, meS), tot = Math.max(1, envyThem + envyMe);
-  const verdict = envyThem > envyMe * 1.2 ? `${them}'s cabinet has the edge. Time to go spooding.`
+  const verdict = envyThem > envyMe * 1.2 ? `${poss(them)} cabinet has the edge. Time to go spooding.`
     : envyMe > envyThem * 1.2 ? `Bragging rights are yours. Send ${them} the link.` : 'Neck and neck. The next field trip decides it.';
 
   // VS banner
@@ -3387,7 +3413,7 @@ function lineageRows(M, T) {
     .map(([n, v]) => `<tr><td>${esc(n)}</td><td class="${v.a>v.b?'win':''}">${v.a}</td><td class="${v.b>v.a?'win':''}">${v.b}</td></tr>`).join('');
 }
 async function loadCompare(login) {
-  login = String(login || '').trim().replace(/^@/, '');
+  login = cleanLogin(login);
   if (!login || S.cmp?.loading) return;
   if (login.toLowerCase() === String(S.login).toLowerCase()) { toast("That's you! Try someone else's username."); return; }
   track('compare');
@@ -3401,7 +3427,7 @@ async function loadCompare(login) {
     saveShared();
     S.cmp.M = buildModel(save.obs, null);
     if (!store.set('cmp', { login, save })) store.del('cmp');   // one cached rival at a time
-  } catch (e) { S.cmp.error = e.message; }
+  } catch (e) { S.cmp.error = noUser(e, login); }
   S.cmp.loading = false;
   updateUrl();
   if (S.tab === 'compare') render();
@@ -3529,7 +3555,7 @@ const saveCrew = () => store.set('crew', S.crew);
 function setCrew(list) {
   const seen = new Set(), out = [];
   for (let l of list) {
-    l = String(l).trim().replace(/^@/, '');
+    l = cleanLogin(l);
     if (!l || isMe(l) || seen.has(l.toLowerCase())) continue;
     seen.add(l.toLowerCase()); out.push(l);
   }
@@ -4200,6 +4226,14 @@ function cupEnsure(monthsAgo) {
   // a new or changed roster: keep the collections already read, refetch the rest
   return S.events[id] = { id, code:null, ev, sig, ts:Date.now(), pre:E?.pre, feed:E?.feed, shown:E?.shown };
 }
+// The monthly spood hunt (v2.7): one official open bioblitz a month, built from the month alone (name, dates, seed), so everyone who
+// opens it, from the Crew tab or a posted link, lands on the same event and the same leaderboard. Worldwide, no place, no roster.
+function huntEv(monthsAgo = 0) {
+  const now = new Date(), first = new Date(now.getFullYear(), now.getMonth() - monthsAgo, 1);
+  const d1 = isoDay(first.getTime()), d2 = isoDay(new Date(first.getFullYear(), first.getMonth() + 1, 0).getTime());
+  return { v:1, m:'blitz', n:`Spood hunt · ${MONTHS[first.getMonth()]} ${first.getFullYear()}`, d1, d2, s:hash32('spood-hunt:' + d1.slice(0, 7)) % 2 ** 31 };
+}
+const huntCode = (monthsAgo = 0) => evEncode(huntEv(monthsAgo));
 let cupLoading = false;
 async function loadCups() {
   if (cupLoading) return;
@@ -4224,7 +4258,7 @@ function eventsHtml() {
   const all = Object.values(S.events).filter(E => E.code).sort((a, b) => b.ts - a.ts);
   const active = all.filter(E => !E.final), done = all.filter(E => E.final);
   return `${S.evDraft ? evFormHtml() : ''}<div class="panel" style="margin-bottom:16px">
-    <div class="row"><h2 style="margin:0">Events</h2>${S.evDraft ? '' : `<span class="row" style="margin-left:auto;gap:6px"><button data-act="evHunt">🗓 This month's spood hunt</button><button class="primary" data-act="evNew">＋ New event</button></span>`}</div>
+    <div class="row"><h2 style="margin:0">Events</h2>${S.evDraft ? '' : `<span class="row" style="margin-left:auto;gap:6px"><button data-act="evHunt">🗓 ${esc(huntEv().n)}</button><button class="primary" data-act="evNew">＋ New event</button></span>`}</div>
     ${active.length ? `<div class="evcards">${active.map(evCardHtml).join('')}</div>` : '<p class="small muted" style="margin-bottom:0">Bioblitzes, bingo, turf wars, duels and dares, scored from everyone\'s public iNaturalist records. Make one and send the link.</p>'}
     ${done.length ? `<h3 style="margin-top:14px">Finished</h3>${done.map(E => { const me = evMe(E), w = E.res?.rows[0];
       return `<div class="feed small">${EV_MODES[E.ev.m].i} <a href="#" data-act="evOpen" data-v="${esc(E.id)}">${esc(E.ev.n)}</a> · ${evDates(E.ev)}
@@ -5242,6 +5276,68 @@ function nextThreeHtml() {
   return `<h3 style="margin-top:14px">Three to find next <span class="small muted">· ${MONTHS[ctx.month]}</span></h3><div class="finds">${xs.map(findCard).join('')}</div>`;
 }
 
+/* ---------------- spoodarium: captive records (v2.7) ---------------- */
+// Records marked captive / cultivated on iNat (pets, rescues, spiders being raised). The SPOODEX counts wild finds only (buildModel), so
+// these get a shelf of their own, and each kept genus not yet found wild gets a Three-to-find card: where and when to look for a wild one.
+const petGenera = (M = S.M) => [...new Set(M.pets.map(o => genusOf(o.anc)).filter(Boolean))];
+const petWild = (M = S.M) => petGenera(M).filter(id => !M.G.has(id));
+let petBusy = false, petKey = '';
+async function loadPetWild() {
+  const M = S.M, h = M.homeCell, ids = petWild(M), ctx = homeCtx(), k = `${h?.k}:${ctx.pid}:${ids}:${M.pets.length}`;
+  if (petBusy || k === petKey) return;
+  petBusy = true; petKey = k;
+  try {
+    await ensureInfo([...ids, ...M.pets.map(o => o.t.id)]);   // common names for the shelf, photos for the cards
+    if (ctx.pid) await ensureRef('state');
+    if (h) { if (!S.u.scans[h.k]) await fetchScan(h.k); await scanActive(h.k); }
+    await ownerPhotos(ids); await ensureCcPhotos(ids);
+    if (ctx.pid) ensurePheno(ids);
+  } catch (e) { console.warn(e); }
+  petBusy = false;
+  if (S.tab === 'pets') softRender();
+}
+// The same record counts Three to find next uses, for one genus
+function wildFor(id, ctx = homeCtx()) {
+  const ref = ctx.pid && S.ref['p' + ctx.pid], c = list => (list || []).find(x => x.id === id)?.c || 0;
+  const x = { id, state:ref?.g[id] || 0, near:c(ctx.near), recent:c(ctx.recent) };
+  if (ctx.pid && S.pheno[phenoKey(id, ctx.pid)]) x.peak = peakInfo(id, ctx.pid, ctx.month);
+  return x;
+}
+function viewPets() {
+  const M = S.M, ctx = homeCtx(), where = ctxWhere(ctx), login = isGuest() ? '' : S.login;
+  if (!M.pets.length) return `<div class="panel"><h2>🏺 Spoodarium</h2><p>Jumping spiders you post on iNaturalist marked as captive (pets, rescues, spiders you raise) are kept here.
+    They don't count towards your SPOODEX, which collects spiders found in the wild.</p></div>`;
+  // one shelf card per taxon kept, newest record's photo first
+  const by = new Map(); for (const o of M.pets) { const t = by.get(o.t.id) || { t:o.t, obs:[] }; t.obs.push(o); by.set(o.t.id, t); }
+  const shelf = [...by.values()].map(({ t, obs }) => {
+    const o = obs.find(x => x.ph.length) || obs[0], ital = (t.l ?? 99) <= 20;   // genus and below in italics
+    const href = obs.length === 1 ? `https://www.inaturalist.org/observations/${o.id}`
+      : `https://www.inaturalist.org/observations?user_id=${encodeURIComponent(login)}&taxon_id=${t.id}&captive=true&verifiable=any`;
+    return `<a class="ccard" href="${esc(href)}" target="_blank" rel="noopener" title="Open on iNaturalist">
+      ${o.ph.length ? `<span class="ph" style="background-image:url('${esc(photoSize(o.ph[0], 'medium'))}')"></span>` : '<span class="ph" style="display:grid;place-items:center"><i class="sil"></i></span>'}
+      <span class="meta"><span class="nm">${ital ? `<i>${esc(t.n || '?')}</i>` : esc(t.n || 'Unknown')}</span>${cnOf(t.id) ? `<span class="cn">${esc(cnOf(t.id))}</span>` : ''}
+        <span class="rl">${obs.length === 1 ? esc(o.d || '') : `${obs.length} records · latest ${esc(o.d || '')}`}</span></span></a>`;
+  }).join('');
+  const kept = petGenera(M), found = kept.filter(id => M.G.has(id)), todo = kept.filter(id => !M.G.has(id));
+  const wildCard = id => {
+    const x = wildFor(id, ctx);
+    if (x.state || x.near) return findCard(x);
+    const o = M.pets.find(p => genusOf(p.anc) === id && p.ph.length);
+    return `<div class="fcard" data-genus="${id}" title="Open the genus page">${o ? `<div class="ph" style="background-image:url('${esc(photoSize(o.ph[0], 'medium'))}')"></div>` : '<div class="ph none"><i class="sil"></i></div>'}
+      <div class="meta"><div class="nm"><i>${esc(S.nodes[id]?.n || '?')}</i></div>${cnOf(id) ? `<div class="cn">${esc(cnOf(id))}</div>` : ''}
+        <div class="small">No wild records on iNat in ${where}</div></div></div>`;
+  };
+  const wild = !todo.length ? '' : !ctx.pid
+    ? `<div class="panel" style="margin-top:16px"><h2>From pet to wild</h2><p>Set a home base to see where wild ${todo.map(id => `<i>${esc(S.nodes[id]?.n || '?')}</i>`).join(', ')} have been recorded near you.</p>
+        <button class="primary" data-tab="map">🏠 Set a home base</button></div>`
+    : `<div class="panel" style="margin-top:16px"><h2>From pet to wild</h2><p class="small">Find ${todo.length === 1 ? `a wild <i>${esc(S.nodes[todo[0]]?.n || '?')}</i>` : 'a wild one of the genera you keep'}, post it to iNaturalist, and once it's identified to genus its card unlocks in your SPOODEX.</p>
+        ${petBusy && !S.ref['p' + ctx.pid] ? skelFinds(Math.min(3, todo.length)) : `<div class="finds">${todo.map(wildCard).join('')}</div>`}</div>`;
+  return `<div class="panel"><h2>🏺 Spoodarium</h2>
+      <p>${plural(M.pets.length, 'captive record')} on iNaturalist${kept.length ? `, ${plural(kept.length, 'genus', 'genera')}` : ''}. They don't count towards your SPOODEX, which collects spiders found in the wild.</p>
+      ${found.length ? `<p class="small">Found wild too: ${found.map(id => `<a href="#" data-genus="${id}"><i>${esc(S.nodes[id]?.n || '?')}</i></a>`).join(', ')}</p>` : ''}
+      <div class="casegrid">${shelf}</div></div>${wild}`;
+}
+
 /* ---------------- trip planner: Most Wanted for anywhere you're going ---------------- */
 const TRIP_KM = 50, TRIP_TTL = 24 * 3600e3, TRIP_POSTERS = 10, TRIP_RECENT = 6;
 // cur: {label, lat, lng, area (place id when the destination is a whole country/state, else null), pid (region for seasons and counts),
@@ -5691,7 +5787,9 @@ function newsHtml() {
 
 /* ---------------- cards: shared canvas kit for the title card and wrapped ---------------- */
 // iNat serves most photos (all-rights-reserved ones) without CORS headers, so drawing them taints the canvas and blocks PNG export.
-// Cards are drawn with every photo for on-screen viewing/screenshots; the PNG download falls back to name plates for those.
+// Since v2.7 those go through IMG_PROXY (wsrv.nl, a free open-source image cache that adds CORS; it sees only the public photo URL),
+// so share images keep every photo. If the proxy fails, the PNG download falls back to name plates as before.
+const IMG_PROXY = u => /^https:\/\/static\.inaturalist\.org\//.test(u) ? `https://wsrv.nl/?url=${encodeURIComponent(u.slice(8))}` : '';
 function loadImg(url, cors) {
   return new Promise(res => {
     if (!url) return res(null);
@@ -5706,7 +5804,7 @@ async function cardPhotos(list) {
     const url = photoSize(g.cover, 'medium');
     // separate URL for the CORS load, so a copy cached from a plain <img>/CSS load (no CORS headers) can't be reused.
     // (Not '?cors': S3 treats that as a request for the bucket's CORS config.)
-    const open = url ? await loadImg(url + (url.includes('?') ? '&' : '?') + 'spoodex=card', true) : null;
+    const open = !url ? null : await loadImg(IMG_PROXY(url) || url + (url.includes('?') ? '&' : '?') + 'spoodex=card', true);
     return { g, open, any: open || await loadImg(url, false) };
   }));
 }
@@ -6162,7 +6260,9 @@ const GOATCOUNTER = 'https://themoojuice.goatcounter.com/count';
 function track(path, event = true) {
   try {
     if (!/^https?:$/.test(location.protocol) || /^(localhost|127\.|\[::1\]|0\.0\.0\.0)|\.(localhost|test)$/.test(location.hostname)) return;
-    const q = new URLSearchParams({ p:path, t:event ? path : 'SPOODEX', r:event ? '' : (document.referrer || '').split(/[?#]/)[0],
+    // ?ref=reddit (or any short word) on a posted link names the source: the Reddit and iNat apps often send no referrer
+    const ref = (new URLSearchParams(location.search).get('ref') || '').match(/^[\w.-]{1,30}$/)?.[0];
+    const q = new URLSearchParams({ p:path, t:event ? path : 'SPOODEX', r:event ? '' : ref ? 'ref:' + ref : (document.referrer || '').split(/[?#]/)[0],
       s:String(screen.width), e:String(event), rnd:Math.random().toString(36).slice(2, 7) });
     const url = `${GOATCOUNTER}?${q}`;
     if (!navigator.sendBeacon || !navigator.sendBeacon(url)) new Image().src = url;
@@ -6384,7 +6484,7 @@ async function onboard(login) {
   loadUser(login);
   $('#landStarts').classList.add('hidden'); $('#onboardWork').classList.remove('hidden');
   $('#impBox').classList.remove('hidden'); $('#revBox').classList.add('hidden');
-  $('#impHead').textContent = `Reading ${login}'s jumping spiders`;
+  $('#impHead').textContent = `Reading ${poss(login)} jumping spiders`;
   const line = $('#impLine'), bar = $('#impBar');
   const w = (t, f) => { line.textContent = t; if (f != null) bar.style.width = Math.round(100 * f) + '%'; };
   w('Asking iNaturalist…', 0);
@@ -6396,8 +6496,9 @@ async function onboard(login) {
     S.u.seen = S.M.genera.map(g => g.id); saveUser();
     await revealGenera();
   } catch (e) {
-    w(`Couldn't finish: ${e.message}`);
-    $('#landStarts').classList.remove('hidden');
+    w(/returned 422/.test(e.message) ? noUser(e, login) : `Couldn't finish: ${e.message}`);
+    if (/returned 422/.test(e.message)) { store.del('lastLogin'); store.del(ukey(login)); $('#impHead').textContent = 'Username not found'; }
+    $('#landStarts').classList.remove('hidden'); $('#loginInput').focus();
   }
 }
 // The first look at a collection: each genus flips from a blurred silhouette to the naturalist's own photo
@@ -6406,7 +6507,7 @@ let revSkip = false;
 async function revealGenera() {
   const M = S.M, all = M.genera, big = all.length > REVEAL_ALL;
   const list = big ? [...all].filter(g => g.cover).sort(rarestFirst).slice(0, REVEAL_TOP) : all;
-  $('#impLine').textContent = 'Developing the photos…';
+  $('#impLine').textContent = 'Developing the photos…'; $('#impBar').style.width = '97%';
   await ensureInfo(list.map(g => g.id));   // common names
   revSkip = false;
   // the naturalist's own photos take over from the landing strip
@@ -6441,9 +6542,10 @@ addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelecto
 function revEndHtml() {
   const M = S.M, n = M.G.size, hl = headline();
   return `<div class="panel revend" style="margin-top:8px">
-    <div class="small muted">${esc(who().toUpperCase())}'S SPOODEX</div>
+    <div class="small muted">${esc(poss(who()).toUpperCase())} SPOODEX</div>
     <h2>Level ${n}</h2><div class="hand">${titleHtml(M)}</div>
-    <p>${n && hl ? `${headlineHtml(hl)}.` : n ? '' : 'No public jumping spider records identified to genus yet.'}</p>
+    <p>${n && hl ? `${headlineHtml(hl)}.` : n ? '' : `No ${M.pets.length ? 'wild' : 'public'} jumping spider records identified to genus yet.`}</p>
+    ${M.pets.length ? `<p>🏺 ${plural(M.pets.length, 'captive record')} not counted: SPOODEX collects jumping spiders found in the wild. <a href="#" data-act="pets">See ${M.pets.length === 1 ? 'it' : 'them'} in your Spoodarium →</a></p>` : ''}
     ${M.leads.length ? `<p>❓ ${plural(mysteryCount(), 'mystery spood')} not yet identified to genus. <a href="#" data-act="needsid">See them →</a></p>` : ''}
     <p class="row"><button class="primary big" data-act="openDex">Open your SPOODEX</button>${n && !isGuest() ? '<button data-act="dexImage">📤 Share my SPOODEX</button>' : ''}</p>
     <div id="revNext">${nextThreeHtml()}</div>${tipsOnce()}</div>`;
@@ -6503,6 +6605,7 @@ function settings() {
     </div>
     ${installHtml()}
     <p class="small muted" style="margin-top:14px">Anonymous visit counts via GoatCounter: no cookies, no usernames, no locations.</p>
+    <p class="small muted">Share images fetch iNaturalist photos through wsrv.nl, an image cache, so the downloaded picture can include them. Sent: the photo's public address.</p>
     <p class="small">Weather units <select data-pref="units">${[['', `Automatic (${(() => { const u = S.prefs.units; S.prefs.units = ''; const r = imperial(); S.prefs.units = u; return r; })() ? '°F, inches' : '°C, mm'})`], ['metric', '°C, mm'], ['us', '°F, inches']].map(([v, l]) => `<option value="${v}" ${(S.prefs.units || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></p>
     <p class="small muted">Weather lookups send your home base, and the destination of a dated trip, rounded to ~10 km, to Open-Meteo.</p>
     ${auHome() ? `<p class="small"><label><input type="checkbox" data-pref="ext.ala" ${alaOn() ? 'checked' : ''}> Museum records</label> <span class="muted">Atlas of Living Australia. Sent: taxon names and your scan squares.</span></p>` : ''}
@@ -6590,10 +6693,7 @@ document.addEventListener('click', e => {
   if (a === 'wxRetry') loadWx(true);
   if (a === 'install') installApp();
   if (a === 'evNew') { S.evDraft = evDraftNew(); render(); }
-  if (a === 'evHunt') {   // open to anyone, the whole of this month, no place unless one is picked
-    const D = S.evDraft = evDraftNew('blitz'); evPreset(D, 'month');
-    Object.assign(D, { open:true, r:'', n:`Spood hunt · ${MONTHS[+D.d1.slice(5, 7) - 1]} ${D.d1.slice(0, 4)}` }); render();
-  }
+  if (a === 'evHunt') { $('#modalRoot').innerHTML = ''; openEventCode(huntCode(), false); }   // the official one: the same event for everyone
   if (a === 'evPostText') { S.evPost = !S.evPost; render(); }
   if (a === 'evPostCopy') { const ta = $('#evPostTxt'); if (ta) navigator.clipboard.writeText(ta.value).then(() => toast('Post text copied.'), () => { ta.focus(); ta.select(); }); }
   if (a === 'evCancel') { S.evDraft = null; render(); }
@@ -6617,7 +6717,8 @@ document.addEventListener('click', e => {
   if (a === 'evDel') { delete S.events[val]; evSave(); render(); }
   if (a === 'clearBase') { delete S.u.base; saveUser(); S.M = buildModel(); render(); }
   if (a === 'guest') startGuest();
-  if (a === 'openDex') enterApp();
+  if (a === 'openDex') enterApp(S.M.G.size ? 'dex' : S.M.pets.length ? 'pets' : undefined);
+  if (a === 'pets') { e.preventDefault(); if ($('#app').classList.contains('hidden')) enterApp('pets'); else { S.tab = 'pets'; updateUrl(); render(); } }
   if (a === 'profSheet') openProfSheet(val);
   if (a === 'treeView') { S.prefs.treeView = val; savePrefs(); render(); }
   if (a === 'notes') { e.preventDefault(); openNotes(val ? +val : null); }
@@ -6711,7 +6812,7 @@ $('#syncBtn').addEventListener('click', () => doSync(false));
 $('#shareBtn').addEventListener('click', copyLink);
 $('#menuBtn').addEventListener('click', settings);
 $('#revSkip').addEventListener('click', () => { revSkip = true; document.querySelectorAll('#revGrid .rcard').forEach(flipCard); });
-$('#loginForm').addEventListener('submit', e => { e.preventDefault(); const v = $('#loginInput').value.trim().replace(/^@/, ''); if (v) onboard(v); });
+$('#loginForm').addEventListener('submit', e => { e.preventDefault(); const v = cleanLogin($('#loginInput').value); if (v) onboard(v); });
 
 /* ---------------- display case: a read-only showpiece link (v2.5) ---------------- */
 // ?u=<login>&case shows that naturalist's 9 rarest genera (or ?u=<login>&case=<taxon id>,<taxon id>,… for their own picks, at most 9)
@@ -6725,10 +6826,8 @@ const caseIds = (M, picks) => {
   return mine.length ? mine : [...M.genera].filter(g => g.cover).sort((a, b) => home(a) - home(b) || rarestFirst(a, b)).slice(0, CASE_N).map(g => g.id);
 };
 const caseLink = (login, picks) => `${location.origin}${location.pathname.replace(/(index|spoodex)\.html$/, '')}?u=${encodeURIComponent(login)}&case${picks?.length ? '=' + picks.join(',') : ''}`;
-function caseHtml(login, M, ids) {
+function caseParts(login, M, ids) {
   const pid = M.home.country, hl = headline('country'), where = S.places[pid]?.n || '';
-  const mine = store.get('lastLogin'), own = mine && store.get(ukey(mine)) && mine.toLowerCase() !== login.toLowerCase();
-  const self = mine && mine.toLowerCase() === login.toLowerCase();
   const card = id => {
     const g = M.G.get(id), r = pid ? rarityOf(id, 'g', pid) : null, c = pid ? S.ref['p' + pid]?.g?.[id] : null;
     return `<a class="ccard${r && r.lv >= 2 ? ` rar rar${r.lv}` : ''}"${r && r.lv >= 2 ? ` style="--rc:${r.c}"` : ''} href="https://www.inaturalist.org/observations/${g.coverObs}" target="_blank" rel="noopener" title="Open the record on iNaturalist">
@@ -6736,14 +6835,22 @@ function caseHtml(login, M, ids) {
       <span class="meta"><span class="nm"><i>${esc(g.name)}</i></span>${cnOf(id) ? `<span class="cn">${esc(cnOf(id))}</span>` : ''}
         ${r ? `<span class="rl">${rarityChip(r)} ${c != null ? `${fmt(c)} iNat record${c === 1 ? '' : 's'} in ${esc(where)}` : `recorded outside ${esc(where)}`}</span>` : ''}</span></a>`;
   };
-  return `<div class="casehead stk">${stickerHtml(stickerFor(login))}<div class="small muted mono">${esc(login.toUpperCase())}'S DISPLAY CASE</div>
-      <h1>${esc(login)}</h1><div class="hand">${titleHtml(M, login)}</div>
-      <p>Level <b>${M.G.size}</b>${hl ? ` · ${headlineHtml(hl)}` : ''}</p></div>
-    ${ids.length ? `<div class="casegrid">${ids.map(card).join('')}</div>` : '<p>No genera recorded yet.</p>'}
+  return { head:`<div class="hand">${titleHtml(M, login)}</div><p>Level <b>${M.G.size}</b>${hl ? ` · ${headlineHtml(hl)}` : ''}</p>`,
+    cards:ids.length ? `<div class="casegrid">${ids.map(card).join('')}</div>` : '<p>No genera recorded yet.</p>' };
+}
+function caseHtml(login, { head, cards }) {
+  const mine = store.get('lastLogin'), own = mine && store.get(ukey(mine)) && mine.toLowerCase() !== login.toLowerCase();
+  const self = mine && mine.toLowerCase() === login.toLowerCase();
+  return `<div class="casehead stk">${stickerHtml(stickerFor(login))}<div class="small muted mono">DISPLAY CASE</div>
+      <h1>${esc(login)}</h1>${head}</div>${cards}
     <p class="row" style="margin-top:18px">${self ? `<a class="btnlink" href="?u=${encodeURIComponent(mine)}">Open my SPOODEX</a>`
       : own ? `<a class="btnlink" href="?u=${encodeURIComponent(mine)}&vs=${encodeURIComponent(login)}">Compare with mine</a>` : ''}
       ${self ? '' : `<a class="${own ? '' : 'btnlink'}" href="${location.pathname}">${own ? 'Open my SPOODEX' : 'Start your own SPOODEX'}</a>`}</p>`;
 }
+// The owner's default case, drawn at once for a first-time visitor (the case link in the launch posts) while the live one loads.
+// Regenerate on ?u=themoojuice&case with caseSnapCode() in the console and paste over this line.
+const CASE_SNAP = {"login":"themoojuice","ts":"2026-10-12","head":"<div class=\"hand\">Masterful <i>Mopsus</i></div><p>Level <b>58</b> · <b>57 / 81</b> genera on iNat in Australia · +1 elsewhere</p>","cards":"<div class=\"casegrid\"><a class=\"ccard rar rar5\" style=\"--rc:#c8322a\" href=\"https://www.inaturalist.org/observations/254324145\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/455516695/medium.jpeg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Maddisonia</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#c8322a\" title=\"Exceptional: rarity by how few iNat records it has\">Exceptional</span> 1 iNat record in Australia</span></span></a><a class=\"ccard rar rar5\" style=\"--rc:#c8322a\" href=\"https://www.inaturalist.org/observations/383764989\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/702453385/medium.jpg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Metacyrba</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#c8322a\" title=\"Exceptional: rarity by how few iNat records it has\">Exceptional</span> 1 iNat record in Australia</span></span></a><a class=\"ccard rar rar5\" style=\"--rc:#c8322a\" href=\"https://www.inaturalist.org/observations/327118838\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/592571470/medium.jpg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Huntiglennia</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#c8322a\" title=\"Exceptional: rarity by how few iNat records it has\">Exceptional</span> 2 iNat records in Australia</span></span></a><a class=\"ccard rar rar4\" style=\"--rc:#2f6fb5\" href=\"https://www.inaturalist.org/observations/377396401\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/690135137/medium.jpg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Yamangalea</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#2f6fb5\" title=\"Rare: rarity by how few iNat records it has\">Rare</span> 5 iNat records in Australia</span></span></a><a class=\"ccard rar rar4\" style=\"--rc:#2f6fb5\" href=\"https://www.inaturalist.org/observations/318585969\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/575808691/medium.jpg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Psenuc</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#2f6fb5\" title=\"Rare: rarity by how few iNat records it has\">Rare</span> 5 iNat records in Australia</span></span></a><a class=\"ccard rar rar4\" style=\"--rc:#2f6fb5\" href=\"https://www.inaturalist.org/observations/407294211\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/748447456/medium.jpg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Chalcolecta</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#2f6fb5\" title=\"Rare: rarity by how few iNat records it has\">Rare</span> 5 iNat records in Australia</span></span></a><a class=\"ccard rar rar4\" style=\"--rc:#2f6fb5\" href=\"https://www.inaturalist.org/observations/407662657\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/749193560/medium.jpg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Porius</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#2f6fb5\" title=\"Rare: rarity by how few iNat records it has\">Rare</span> 6 iNat records in Australia</span></span></a><a class=\"ccard rar rar4\" style=\"--rc:#2f6fb5\" href=\"https://www.inaturalist.org/observations/407331877\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/748527016/medium.jpg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Coccorchestes</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#2f6fb5\" title=\"Rare: rarity by how few iNat records it has\">Rare</span> 6 iNat records in Australia</span></span></a><a class=\"ccard rar rar3\" style=\"--rc:#e0b81c\" href=\"https://www.inaturalist.org/observations/281010169\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/504762407/medium.jpg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Phintella</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#e0b81c\" title=\"Scarce: rarity by how few iNat records it has\">Scarce</span> 17 iNat records in Australia</span></span></a></div>"};
+const caseSnapCode = () => `const CASE_SNAP = ${JSON.stringify({ login:S.caseLogin, ts:new Date().toISOString().slice(0, 10), ...caseParts(S.caseLogin, S.M, caseIds(S.M, [])) })};`;
 async function showCase(login, picksQ) {
   track('case');
   const picks = (picksQ || '').split(',').map(Number).filter(n => Number.isInteger(n) && n > 0);
@@ -6757,10 +6864,12 @@ async function showCase(login, picksQ) {
     if (S.M.home.country) await ensureRefPlace(S.M.home.country).catch(() => {});
     const ids = caseIds(S.M, picks);
     await ensureInfo(ids).catch(() => {});
-    box.innerHTML = caseHtml(login, S.M, ids);
+    box.innerHTML = caseHtml(login, caseParts(login, S.M, ids));
   };
+  S.caseLogin = login;
   if (hit) await draw();
-  else box.innerHTML = `<div class="panel" style="margin-top:24px"><h2>Opening ${esc(login)}'s display case</h2><p class="small mono" id="caseLog">Asking iNaturalist…</p></div>`;
+  else if (CASE_SNAP?.login === key && !picks.length) box.innerHTML = caseHtml(login, CASE_SNAP);
+  else box.innerHTML = `<div class="panel" style="margin-top:24px"><h2>Opening ${esc(poss(login))} display case</h2><p class="small mono" id="caseLog">Asking iNaturalist…</p></div>`;
   try {
     await importRecords(login, save, { log:line => { const el = $('#caseLog'); if (el) el.textContent = line; } });
     saveShared();
@@ -6768,7 +6877,7 @@ async function showCase(login, picksQ) {
     const keep = Object.entries(cases).sort((a, b) => b[1].ts - a[1].ts).slice(0, CASE_KEEP);
     if (!store.set('cases', Object.fromEntries(keep))) store.del('cases');
     await draw();
-  } catch (e) { if (!hit) box.innerHTML = `<div class="panel" style="margin-top:24px"><p>${esc(e.message)}</p><a class="btnlink" href="${location.pathname}">Open SPOODEX</a></div>`; }
+  } catch (e) { if (!hit && !$('#caseView .casegrid')) box.innerHTML = `<div class="panel" style="margin-top:24px"><p>${esc(noUser(e, login))}</p><a class="btnlink" href="${location.pathname}">Open SPOODEX</a></div>`; }
 }
 // The owner's side: pick up to 9 genera for the case, then copy or share the link
 function caseEditor() {
@@ -6791,7 +6900,7 @@ function casePick(id) {
 }
 async function caseShare(native) {
   const url = caseLink(S.login, (S.u.casePicks || []).filter(id => S.M.G.has(id)));
-  if (native && navigator.share) { try { await navigator.share({ title:`${S.login}'s SPOODEX display case`, url }); } catch {} return; }
+  if (native && navigator.share) { try { await navigator.share({ title:`${poss(S.login)} SPOODEX display case`, url }); } catch {} return; }
   try { await navigator.clipboard.writeText(url); toast('Display case link copied'); } catch { window.prompt('Copy this link:', url); }
 }
 
@@ -6808,13 +6917,13 @@ const PERSISTED = ['artTags', 'nodes', 'places', 'info', 'ref', 'observers', 'ph
   for (const E of Object.values(S.events)) delete E.queued;
   store.del('report');   // the Spood Report (This week tab) was removed in v2.2
   const q = new URLSearchParams(location.search);
-  const u = (q.get('u') || '').trim().replace(/^@/, '');
-  S.pendingVs = (q.get('vs') || '').trim() || null;
-  S.pendingCrew = q.get('crew') ? q.get('crew').split(',') : null;
+  const u = cleanLogin(q.get('u'));
+  S.pendingVs = cleanLogin(q.get('vs')) || null;
+  S.pendingCrew = q.get('crew') ? q.get('crew').split(',').map(cleanLogin).filter(Boolean) : null;
   S.pendingEv = (q.get('ev') || '').trim() || null;
   $('#landSticker').src = STICKERS[1]; $('#impSticker').src = STICKERS[3];
   if (u && q.has('case')) { showCase(u, q.get('case')); return; }
-  const target = u || store.get('lastLogin');
+  const target = u || cleanLogin(store.get('lastLogin'));
   if (target && store.get(ukey(target))) {
     loadUser(target);
     try { S.M = buildModel(); enterApp(); doSync(false); return; } catch (e) { console.warn(e); }
