@@ -657,6 +657,49 @@ details > summary.scsec { cursor:pointer; }
   .modal .hero { height:200px; }
   #reveal h2 { font-size:30px; }
 }
+/* v2.8: rewards & routines */
+.herobtns .small.muted { align-self:center; }
+.streak { margin:6px 0 0; }
+.whatsnew ul { margin:6px 0; padding-left:20px; } .whatsnew li { margin:3px 0; }
+.feat { display:flex; gap:14px; align-items:flex-start; }
+.feat .ph { flex:none; width:120px; aspect-ratio:1; border-radius:var(--radius); background:var(--panel2) center/cover; border:1px solid var(--line); }
+.feat .ph.sil { -webkit-mask:var(--sil) center/70% no-repeat; mask:var(--sil) center/70% no-repeat; background:var(--muted); border:0; }
+.feat h3 { margin:2px 0 0; font-size:22px; } .feat .fbody p { margin:6px 0; } .feat .fbody { min-width:0; }
+.trophy.stamp { border-style:dashed; }
+.mranges { display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:10px; }
+.mrange { border:1px solid var(--line); border-radius:var(--radius); background:var(--panel2); padding:10px; display:flex; flex-direction:column; gap:4px; }
+.mrange.locked { background:transparent; border-style:dashed; color:var(--muted); }
+.marts { display:flex; gap:4px; flex-wrap:wrap; color:var(--accent); }
+.mrange.locked .marts { color:var(--muted); }
+.mart { width:40px; height:40px; fill:none; stroke:currentColor; stroke-width:2; stroke-linejoin:round; stroke-linecap:round; }
+.mrange.locked .mart { fill:currentColor; fill-opacity:.16; stroke-opacity:.55; }
+.mgift { display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-top:1px solid var(--dim); }
+.mgift .gi { font-size:20px; line-height:1.2; } .mgift.locked { color:var(--muted); }
+.mcode { display:inline-flex; gap:8px; align-items:center; margin-top:4px; flex-wrap:wrap; }
+.mcode code { font:600 15px var(--mono); padding:3px 8px; border:1px dashed var(--accent); border-radius:4px; background:var(--panel); color:var(--ink); }
+.owner { border-left:3px solid var(--accent); padding-left:8px; }
+#reveal.mreveal .marts.big { color:#d9b56a; justify-content:center; animation:zoom 1.2s cubic-bezier(.2,.8,.2,1) both; }
+#reveal.mreveal .marts.big .mart { width:96px; height:96px; stroke-width:1.6; }
+#reveal.mreveal h2 { margin:6px 0; }
+#reveal.mreveal button { background:#f6eedb; color:#2a1d12; border-color:#d9b56a; }
+#reveal.mreveal .btnlink { background:#d9b56a; color:#2a1d12; }
+#reveal.mreveal .mcode code { background:#f6eedb; color:#2a1d12; }
+.wxd { position:relative; }
+.wxcal { padding:2px 6px; font-size:12px; min-height:0; margin-top:2px; }
+.outp h3 { margin-top:0; } .outp p { margin:6px 0; }
+.dextable tr.sgrp td { background:var(--panel2); padding-top:10px; font-family:var(--head); }
+.dextable tr.tgrp td { font-style:italic; color:var(--muted); padding-top:6px; }
+.dextable tr.miss td { color:var(--muted); }
+.dextable td.cn { font-size:12px; }
+.thb { background:none; border:0; padding:0; font:inherit; font-weight:600; color:inherit; cursor:pointer; min-height:0; box-shadow:none; }
+.thb.on { color:var(--accent); }
+.howto section { margin-top:14px; } .howto table.cmp { max-width:560px; }
+@media (max-width:600px) {
+  .feat .ph { width:84px; }
+  .dextable .hm { display:none; }
+  .mranges { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; }
+  .mart { width:32px; height:32px; }
+}
 </style>
 </head>
 <body data-chassis="notebook">
@@ -1186,6 +1229,11 @@ function wikiLine(id) {
 }
 const cnHtml = (id, cls = 'cn') => cnOf(id) ? `<div class="${cls}">${esc(cnOf(id))}</div>` : '';
 
+// Mastery points per record (the "How SPOODEX works" sheet prints this table)
+const XP = { genus:100, sex:40, juv:40, beh:80, supported:50, species:60, locality:40, month:20, dup:10 };
+const XP_RULES = [['First record of a genus', XP.genus], ['A male, a female or a juvenile (first of each)', XP.sex], ['Feeding, courtship, or silk and brood (first of each)', XP.beh],
+  ['First community-supported genus ID', XP.supported], ['A new species in the genus', XP.species], ['A new locality, about 10 km apart', XP.locality],
+  ['A new month of the year', XP.month], ['Anything else: a repeat record', `${XP.dup}, then less each time`]];
 function buildModel(obsMap = S.u.obs, base = S.u.base) {
   const all = Object.values(obsMap).filter(o => !o.cap).sort((a,b) => (a.d||'').localeCompare(b.d||'') || a.id - b.id);
   const G = new Map(), leads = new Map(), SP = new Map();
@@ -1214,7 +1262,7 @@ function buildModel(obsMap = S.u.obs, base = S.u.base) {
       g = { id:gid, name:S.nodes[gid]?.n || '?', obs:[], first:o, species:new Set(), c01:new Set(), months:new Set(), years:new Set(),
             f:{}, xp:0, xpLog:[], photos:[], places:new Set(), dup:0 };
       G.set(gid, g);
-      events.push(['New genus', 100]);
+      events.push(['New genus', XP.genus]);
       if (o.d) dayDisc.set(o.d, (dayDisc.get(o.d) || 0) + 1);
     }
     g.obs.push(o);
@@ -1227,25 +1275,25 @@ function buildModel(obsMap = S.u.obs, base = S.u.base) {
       (g.sp = g.sp || new Set()).add(sid);
     }
     const f = g.f, mark = (k, label, xp) => { if (!f[k]) { f[k] = true; if (g.obs.length > 1) events.push([label, xp]); } };
-    if (o.ann.includes(ANN.MALE)) mark('male', 'Male recorded', 40);
-    if (o.ann.includes(ANN.FEMALE)) mark('female', 'Female recorded', 40);
-    if (o.ann.includes(ANN.JUV) || o.ann.includes(ANN.NYMPH)) mark('juv', 'Juvenile recorded', 40);
-    if (o.beh.includes('feed')) mark('feed', 'Feeding behaviour', 80);
-    if (o.beh.includes('court')) mark('court', 'Courtship / display', 80);
-    if (o.beh.includes('egg') || o.ann.includes(ANN.EGG) || o.ann.includes(ANN.MOLT) || o.ann.includes(ANN.CONSTRUCTION)) mark('egg', 'Silk & brood evidence', 80);
-    if (o.ct && o.ct.includes(gid)) mark('supported', 'Community-supported ID', 50);
+    if (o.ann.includes(ANN.MALE)) mark('male', 'Male recorded', XP.sex);
+    if (o.ann.includes(ANN.FEMALE)) mark('female', 'Female recorded', XP.sex);
+    if (o.ann.includes(ANN.JUV) || o.ann.includes(ANN.NYMPH)) mark('juv', 'Juvenile recorded', XP.juv);
+    if (o.beh.includes('feed')) mark('feed', 'Feeding behaviour', XP.beh);
+    if (o.beh.includes('court')) mark('court', 'Courtship / display', XP.beh);
+    if (o.beh.includes('egg') || o.ann.includes(ANN.EGG) || o.ann.includes(ANN.MOLT) || o.ann.includes(ANN.CONSTRUCTION)) mark('egg', 'Silk & brood evidence', XP.beh);
+    if (o.ct && o.ct.includes(gid)) mark('supported', 'Community-supported ID', XP.supported);
     if (o.q === 'research') f.rg = true;
     if (o.t.l != null && o.t.l <= 10) {
       const sp = o.t.l === 10 ? o.t.n : o.t.n.split(' ').slice(0,2).join(' ');
-      if (!g.species.has(sp)) { g.species.add(sp); f.species = true; if (g.obs.length > 1) events.push(['New species in genus', 60]); }
+      if (!g.species.has(sp)) { g.species.add(sp); f.species = true; if (g.obs.length > 1) events.push(['New species in genus', XP.species]); }
     }
-    if (o.lat != null) { const k = cellKey(o.lat,o.lng,.1); if (!g.c01.has(k)) { g.c01.add(k); if (g.obs.length > 1) events.push(['New locality', 40]); } }
+    if (o.lat != null) { const k = cellKey(o.lat,o.lng,.1); if (!g.c01.has(k)) { g.c01.add(k); if (g.obs.length > 1) events.push(['New locality', XP.locality]); } }
     if (o.d) {
-      const m = +o.d.slice(5,7); if (!g.months.has(m)) { g.months.add(m); if (g.obs.length > 1) events.push(['New month', 20]); }
+      const m = +o.d.slice(5,7); if (!g.months.has(m)) { g.months.add(m); if (g.obs.length > 1) events.push(['New month', XP.month]); }
       g.years.add(o.d.slice(0,4));
     }
     o.pl.forEach(p => g.places.add(p));
-    if (!events.length) { g.dup++; events.push(['Duplicate record', Math.max(1, Math.round(10 / g.dup))]); }
+    if (!events.length) { g.dup++; events.push(['Duplicate record', Math.max(1, Math.round(XP.dup / g.dup))]); }
     for (const [label, xp] of events) { g.xp += xp; xpTotal += xp; g.xpLog.push({ d:o.d, label, xp, id:o.id }); }
     for (const p of o.ph) if (g.photos.length < 24) g.photos.push({ url:p, id:o.id });
   }
@@ -1281,7 +1329,7 @@ function buildModel(obsMap = S.u.obs, base = S.u.base) {
   return {
     obs:all, G, genera, leads:[...leads.values()].sort((a,b) => b.obs.length - a.obs.length), xp:xpTotal,
     pets:Object.values(obsMap).filter(o => o.cap).sort((a,b) => (b.d||'').localeCompare(a.d||'') || b.id - a.id),   // the Spoodarium (v2.7): never counted
-    cells25, cellsAll01, fieldDays:days, dayDisc, streak:run, bestStreak:bestRun, home, homeCell, behObs, monthsAll,
+    cells25, cellsAll01, fieldDays:days, dayDisc, streak:run, bestStreak:bestRun, week:weekStreak(days), home, homeCell, behObs, monthsAll,
     newThisYear: genera.filter(g => (g.first.d||'').startsWith(year)).length,
     S: SP, species: SP.size,
     tier: tierIdx(G.size),
@@ -1841,7 +1889,7 @@ function tabNews() {
 }
 function navHtml() {
   const views = TABS.filter(tabOn), cur = secOf(S.tab);
-  const dot = k => k !== S.tab && ((k === 'crew' && crewUnseen()) || S.u.tabNew?.includes(k));
+  const dot = k => k !== S.tab && ((k === 'crew' && (crewUnseen() || outCrew().length)) || S.u.tabNew?.includes(k));
   const news = ' <span class="news" aria-label="new">●</span>';
   if (S.prefs.secLast?.[cur.k] !== S.tab) { S.prefs.secLast = { ...S.prefs.secLast, [cur.k]:S.tab }; savePrefs(); }
   const secs = SECTIONS.map(x => ({ ...x, on:x.tabs.map(k => views.find(t => t.k === k)).filter(Boolean) })).filter(x => x.on.length);
@@ -1913,6 +1961,8 @@ function viewProfile() {
       <div class="muted small">${esc(poss(who()).toUpperCase())} SPOODEX</div>
       <h1>Level ${n}</h1><div class="hand">${titleHtml(M)}</div>
       ${hl ? `<div class="row" style="gap:8px;margin-top:6px"><span>${headlineHtml(hl)}</span>${bar(hl.found, hl.total)}</div>` : ''}
+      ${n ? weekStreakHtml(M.week) : ''}
+      ${isGuest() ? '' : `<p class="row herobtns"><button class="primary" data-act="syncNow">📥 Check my new uploads</button>${S.u.meta.lastSync ? `<span class="small muted">checked ${agoShort(Date.parse(S.u.meta.lastSync))}</span>` : ''}</p>`}
       ${isGuest() || !n ? '' : `<p class="row herobtns"><button data-act="dexImage">📤 My SPOODEX image</button><button data-act="caseEdit">🗄 Display case</button><button data-act="card">🪪 Title card</button>${M.fieldDays.length ? `<button data-act="wrapped">🎁 ${esc(wrappedYears()[0])} in spoods</button>` : ''}</p>`}
     </div>`;
   // your genera, newest first, then a few mystery spoods (records not yet identified to genus) with their photos
@@ -1947,8 +1997,8 @@ function viewProfile() {
     ['Mastery points', M.xp && fmt(M.xp)],
     ['Mystery spoods', mysteryCount() && `${fmt(mysteryCount())} not yet identified to genus <a href="#" class="small" data-act="needsid">see them</a>`],
   ].filter(([, v]) => v);
-  const streak = M.streak ? `<p>${'🔥'.repeat(Math.min(M.streak,10))} <b>${M.streak}</b> consecutive field day${M.streak===1?'':'s'} with a new genus <span class="muted">(best ${M.bestStreak})</span></p>`
-    : M.bestStreak >= 2 ? `<p>Best: <b>${M.bestStreak}</b> field days in a row with a new genus</p>` : '';
+  const streak = weekStreakHtml(M.week, true) + (M.streak >= 2 ? `<p>Discovery run: <b>${M.streak}</b> field days in a row with a new genus <span class="muted">(best ${M.bestStreak})</span></p>`
+    : M.bestStreak >= 2 ? `<p>Best discovery run: <b>${M.bestStreak}</b> field days in a row with a new genus</p>` : '');
   const share = isGuest() ? '' : shareHtml(), pio = isGuest() ? '' : myPioneers().length ? pioneerHtml() : '';
   const regionsHtml = moduleOn(1) && Object.keys(regions).length ? `<div class="panel">
       <h2>Regions</h2>
@@ -1972,7 +2022,7 @@ function viewProfile() {
       <p><b>${esc(TIERS[tier].name)}</b></p>
       ${next ? `<div class="row"><span class="small">Next: ${esc(next.name)} at ${next.min} genera</span>${bar(n - TIERS[tier].min, next.min - TIERS[tier].min)}<span class="small">${next.min - n} to go</span></div>` : '<p>Fully upgraded.</p>'}
       <ul class="checks" style="margin-top:10px">${TIERS.map((t,i) => `<li class="${i<=tier?'done':''}">${i<=tier?'☑':'☐'} ${esc(t.module)} <span class="muted small">(${t.min}+)</span></li>`).join('')}</ul>
-      ${streak ? `<h3 style="margin-top:14px">Discovery streak</h3>${streak}` : ''}` : ''}` : '';
+      ${streak ? `<h3 style="margin-top:14px">Streaks</h3>${streak}` : ''}` : ''}` : '';
   const yearsHtml = ys.length >= 2 ? `<div class="row" style="align-items:flex-end;gap:6px;height:120px">
       ${ys.map(y => `<div style="text-align:center;flex:1;min-width:28px"><div class="small">${years[y]}</div><div style="height:${Math.round(80*years[y]/maxY)}px;background:var(--lit);border-radius:3px 3px 0 0;box-shadow:var(--glow)"></div><div class="small muted">${y}</div></div>`).join('')}
     </div>` : '';
@@ -1994,9 +2044,9 @@ function viewProfile() {
     tile('pioneer', `<span data-piocount>${fmt(pioN)}</span>`, 'pioneer badges'),
     tile('years', fmt(M.newThisYear), `new genera in ${new Date().getFullYear()}`),
   ].join('');
-  return `${hero}${spoods}${finds}${n ? '' : starter}${news ? `<div style="margin-top:16px">${news}</div>` : ''}
+  return `${hero}${whatsNewHtml()}${spoods}${finds}${featHtml()}${n ? '' : starter}${news ? `<div style="margin-top:16px">${news}</div>` : ''}
   ${tips ? `<div style="margin-top:16px">${tips}</div>` : ''}
-  ${trophyHtml()}
+  ${trophyHtml()}${merchHtml()}
   ${tiles ? `<div class="panel" style="margin-top:16px"><h2>Your numbers</h2><div class="stiles">${tiles}</div></div>` : ''}`;
 }
 // The detail behind a Profile number tile, from the last Profile render
@@ -2054,6 +2104,7 @@ function viewDex() {
   if (S.prefs.layer === 'species') return viewDexSpecies();
   if (S.prefs.layer === 'sets') return viewSets();
   if (S.prefs.layer === 'needsid') return viewNeedsId();
+  if (S.prefs.layer === 'table') return viewDexTable();
   const M = S.M, sc = scopeGenera(), hl = headline(), P = S.prefs;
   const { order } = taxonomicOrder(sc.inScope);
   const num = new Map(order.map((id,i) => [id, i+1]));
@@ -2184,7 +2235,7 @@ function viewNeedsId() {
 }
 // Opens the Identification aid in one reused popup window (a tab on phones, or if popups are blocked)
 const idAidBtn = () => !auHome() ? '' : `<a class="btnlink" href="${ID_AID}" target="spoodex-idaid" data-act="idaid">🔑 Identification aid ↗</a>`;
-const layerSwitch = () => `<span>${[['genus','Genera'],['species','Species'],['sets','Sets'],['needsid',`❓ Mystery spoods (${mysteryCount()})`]].map(([k,l]) => `<span class="chip ${(S.prefs.layer||'genus')===k?'on':''}" data-layer="${k}" style="cursor:pointer">${l}</span>`).join(' ')}</span>`;
+const layerSwitch = () => `<span>${[['genus','Genera'],['species','Species'],['sets','Sets'],['table','📋 Table'],['needsid',`❓ Mystery spoods (${mysteryCount()})`]].map(([k,l]) => `<span class="chip ${(S.prefs.layer||'genus')===k?'on':''}" data-layer="${k}" style="cursor:pointer">${l}</span>`).join(' ')}</span>`;
 function speciesSection(gid) {
   const M = S.M, ref = refFor(S.prefs.scope), cm = S.cmp?.M;
   const ids = new Set();
@@ -2919,6 +2970,7 @@ function phenoUpdated() {
   document.querySelectorAll('[data-phenochart]').forEach(el => { const d = el.dataset;
     el.innerHTML = phenoChart(+d.phenochart, d.phenopid ? +d.phenopid : undefined, d.phenom ? +d.phenom : undefined); });
   if (['wanted', 'trip'].includes(S.tab) && !$('#modalRoot').innerHTML) softRender();
+  if (((S.tab === 'profile' && featWait && featPool().every(x => S.pheno[phenoKey(x)])) || (S.tab === 'dex' && S.prefs.layer === 'sets' && !phenoQueue.size)) && !$('#modalRoot').innerHTML) softRender();
 }
 
 /* ---------------- mastery fix-it: point at the exact records that could tick a box ---------------- */
@@ -3072,6 +3124,7 @@ function revealQueue(list) {
 function revealNext() {
   const list = revealList, it = list.shift(); if (!it) return;
   if (it.hon) return honourReveal(it.hon, it.crew);
+  if (it.merch) return merchReveal(it.merch);
   const g = it.g, o = it.o;
   const el = document.createElement('div');
   el.id = 'reveal';
@@ -3440,6 +3493,7 @@ function viewCrewMain() {
     ${crewBusy ? `<p class="small">Reading crew records… (about a second per person)</p>` : ''}
     ${crewErr ? `<p>${esc(crewErr)} <button data-act="crewRefresh">Try again</button></p>` : ''}
     ${members.filter(m => m.err).map(m => `<p class="small">⚠ ${esc(m.login)}: ${esc(m.err)}</p>`).join('')}</div>`;
+  if (outOn()) { form += `<div class="panel outp" id="outBox" style="margin-bottom:16px">${outHtml()}</div>`; setTimeout(() => loadOut(), 0); }
   if (ready.some(m => !m.me)) form += crewFeedHtml(ready);
   if (ready.length < 2) return form + (S.crew.logins.length ? '' : `<p class="muted">Add at least ${isGuest() ? 'two naturalists' : 'one other naturalist'}. Tip: the <a href="#" data-tab="ladder">Ladder</a> has a “+ Crew” button on every row.</p>`);
 
@@ -4332,9 +4386,11 @@ function trophies() {
   return out.sort((a, b) => b.E.ev.d2.localeCompare(a.E.ev.d2));
 }
 function trophyHtml() {
-  const t = trophies(), hon = honoursHtml(); if (!t.length && !hon) return '';
+  const t = trophies(), hon = honoursHtml(), st = featStamps(); if (!t.length && !hon && !st.length) return '';
+  const stamps = st.length ? `<h3 style="margin-top:10px">Genus of the month</h3><div class="trophies">${st.map(([mk, id]) =>
+    `<span class="trophy stamp" data-genus="${id}" style="cursor:pointer">🗓 <b><i>${esc(S.nodes[id]?.n || '?')}</i></b> <span class="muted">${MONTHS[+mk.slice(5) - 1]} ${mk.slice(0, 4)}</span></span>`).join('')}</div>` : '';
   return `<div class="panel" style="margin-top:16px"><h2>Trophy cabinet</h2>${t.length ? `<div class="trophies">${t.map(({ E, icon }) =>
-    `<span class="trophy" ${E.code ? `data-act="evOpen" data-v="${esc(E.id)}" style="cursor:pointer"` : ''}>${icon} <b>${esc(E.ev.n)}</b> <span class="muted">${EV_MODES[E.ev.m].i} ${MONTHS[+E.ev.d2.slice(5, 7) - 1]} ${E.ev.d2.slice(0, 4)}</span></span>`).join('')}</div>` : ''}${hon}</div>`;
+    `<span class="trophy" ${E.code ? `data-act="evOpen" data-v="${esc(E.id)}" style="cursor:pointer"` : ''}>${icon} <b>${esc(E.ev.n)}</b> <span class="muted">${EV_MODES[E.ev.m].i} ${MONTHS[+E.ev.d2.slice(5, 7) - 1]} ${E.ev.d2.slice(0, 4)}</span></span>`).join('')}</div>` : ''}${stamps}${hon}</div>`;
 }
 
 // ---- the create form ----
@@ -5329,6 +5385,9 @@ const THEMES = [
   { k:'ghost', icon:'👻', name:'The ghost list', unit:'g', computed:true,
     pick:ref => ref ? Object.keys(ref.g).map(Number).filter(id => ref.g[id] <= GHOST_MAX) : [],
     blurb:w => `Genera with ${GHOST_MAX} or fewer verifiable iNat records in ${w}.` },
+  { k:'season', icon:'🌡', name:'In season now', unit:'g', computed:true, of:'genera in season this month',
+    pick:ref => ref ? featPool().filter(id => { const p = peakInfo(id); return ref.g[id] != null && p && !p.few && p.now && p.text !== 'year-round'; }) : [],
+    blurb:() => `Genera whose busiest months on iNat in ${esc(S.places[phenoPlace()]?.n || 'your state')} include ${monthName(todayIso().slice(0, 7))}, from the ${FEAT_POOL} most recorded there. A new set each month.` },
   { k:'couples', icon:'💞', name:'Couples', unit:'s', computed:true, mine:true,
     pick:() => [...S.M.S.keys()], got:id => bothSexes(id), gotLabel:'Both sexes photographed', missLabel:'Still missing a male or a female',
     of:'of your species with both a male and a female annotated',
@@ -5416,6 +5475,7 @@ async function loadSetRefs() {
 function viewSets() {
   const M = S.M, P = S.prefs, ref = refFor(P.scope), world = S.ref.world, where = esc(scopeLabel(P.scope));
   if ((!world || !ref) && !setsBusy) setTimeout(loadSetRefs, 0);
+  ensurePheno(featPool());   // In season now
   const all = setStats(ref), done = all.filter(x => !x.left);
   const num = new Map(taxonomicOrder(ref ? Object.keys(ref.g).map(Number) : []).order.map((id, i) => [id, i + 1]));
   const byName = (a, b) => (S.nodes[a]?.n || '').localeCompare(S.nodes[b]?.n || '');
@@ -6011,7 +6071,8 @@ function wxCardsHtml(f, days) {
   const day = d => d === today ? 'Today' : days.length > 7 ? new Date(d + 'T12:00:00Z').toLocaleDateString('en-AU', { weekday:'short', day:'numeric', timeZone:'UTC' }) : wxDay(d, today);
   const card = x => x.none ? `<div class="wxd none"><span class="d">${day(x.d)}</span>${stripe(x)}<span class="t">Daylight's over</span></div>`
     : `<div class="wxd${x === top ? ' top' : ''}"><span class="d">${day(x.d)}</span>${wxStars(x.stars)}<span class="w">${wxSpan(x.from, x.to)}</span>${stripe(x)}
-      <span class="t">${tDeg(x.temp)} · ${x.sky}${x.rain >= WX.dry.pp[0] ? ` · ${x.rain}% rain` : ''}</span>${x.why.length ? `<span class="why">${x.why.map(esc).join('<br>')}</span>` : ''}</div>`;
+      <span class="t">${tDeg(x.temp)} · ${x.sky}${x.rain >= WX.dry.pp[0] ? ` · ${x.rain}% rain` : ''}</span>${x.why.length ? `<span class="why">${x.why.map(esc).join('<br>')}</span>` : ''}${cal(x)}</div>`;
+  const cal = x => `<button class="wxcal" data-act="ics" data-v="${esc([x.d, x.from, x.to, f.off, x.stars, stripHtml([tDeg(x.temp), x.sky, ...x.why].join(' · '))].join('|'))}" aria-label="Add ${day(x.d)} ${wxSpan(x.from, x.to)} to your calendar" title="Add to calendar">🗓</button>`;
   return `<div class="wxdays${days.length > 7 ? ' many' : ''}">${days.map(card).join('')}</div>
     ${top ? `<p class="wxbest">Best bet: <b>${day(top.d)} ${wxSpan(top.from, top.to)}</b> ${wxStars(top.stars)} ${tDeg(top.temp)} · ${top.sky}${top.why.length ? ` · ${esc(top.why[0])}` : ''}</p>` : ''}
     <p class="small muted" style="margin:0">Stars rate each day's best stretch for warmth, sun, rain and wind, and rise when it clears after rain, wind or a cool spell, or turns warm and humid. The bar is the day hour by hour; the outlined part is that stretch.</p>`;
@@ -6224,7 +6285,7 @@ async function doSync(full) {
   const btn = $('#syncBtn'); btn.disabled = true; btn.innerHTML = '⟳<span class="lbl"> Syncing…</span>';
   const prevQuests = S.M ? buildQuests(S.M) : [];
   const prevSeen = new Set(S.u.seen), prevLeads = S.M ? S.M.leads.flatMap(l => l.obs.map(o => o.id)) : [];
-  const prevRank = S.M && S.u.meta.lastSync ? rankTargets() : null, prevFull = S.u.meta.lastFull;
+  const prevRank = S.M && S.u.meta.lastSync ? rankTargets() : null, prevFull = S.u.meta.lastFull, prevN = Object.keys(S.u.obs).length;
   try {
     await sync({ full });
     if (S.u.meta.lastFull !== prevFull) for (const k of rankTargets().keys()) if (S.pioneer[k]) S.pioneer[k].rts = 0;
@@ -6239,7 +6300,12 @@ async function doSync(full) {
     // mystery spoods identified since the last sync: records that were above genus and now sit in a genus (no extra call)
     const solved = prevLeads.map(id => S.u.obs[id]).filter(o => o && !o.cap && genusOf(o.anc));
     const items = celebrations(fresh, solved);
-    if (items.length) revealQueue(items); else if (!isGuest()) toast('Synced. No new genera this time.');
+    if (items.length) revealQueue(items);
+    merchCheck(!!S.u.merch);
+    if (!items.length && !isGuest() && !$('#reveal')) {
+      const newN = Object.keys(S.u.obs).length - prevN, nx = merchOn() && merchNext();
+      toast(`${newN > 0 ? `${plural(newN, 'new record')}, no new genera.` : 'No new records since the last check.'}${nx ? ` ${merchToGo(nx.at)} to your next reward.` : ''}`);
+    }
     queueRanks(prevRank);
     loadHomeGhosts();
   } catch (e) { toast(e.message); }
@@ -6261,6 +6327,8 @@ async function onboard(login) {
     if (fresh) track('new-spoodex');
     fillElev();
     S.u.seen = S.M.genera.map(g => g.id); saveUser();
+    if (fresh) { S.prefs.seenVer = CHANGES[0].v; savePrefs(); }
+    merchCheck(false);
     await revealGenera();
   } catch (e) {
     w(/returned 422/.test(e.message) ? noUser(e, login) : `Couldn't finish: ${e.message}`);
@@ -6363,6 +6431,8 @@ function settings() {
     <p>${isGuest() ? 'Browsing as a guest.' : `Viewing <b>${esc(S.login)}</b> (public data only). Last sync ${esc((S.u.meta.lastSync||'').slice(0,16).replace('T',' '))}.`}</p>
     <div class="row"><label>Chassis skin <select data-pref="chassis">${['auto','notebook','kit','cabinet'].map(c => `<option ${S.prefs.chassis===c?'selected':''}>${c}</option>`).join('')}</select></label>
     <label><input type="checkbox" data-pref="peek" ${S.prefs.peek?'checked':''}> Show every tab and module</label></div>
+    <p class="row" style="margin-top:12px"><button data-act="howto">📖 How SPOODEX works</button><button data-act="changes">What changed</button></p>
+    ${isGuest() ? '' : '<p class="row"><button data-act="csv" data-v="g">📥 My genera (spreadsheet)</button><button data-act="csv" data-v="r">📥 My records (spreadsheet)</button></p>'}
     ${notesOn() ? '<p style="margin-top:12px"><button data-act="notes">✏️ Genus lines and facts</button></p>' : ''}
     <div class="row" style="margin-top:14px">
       ${isGuest() ? '' : '<button data-act="share">🔗 Copy share link</button><button data-act="full">Full resync</button>'}
@@ -6487,6 +6557,18 @@ document.addEventListener('click', e => {
   if (a === 'notesView') { notesView = val; openNotes(); }
   if (a === 'notesCopy') { const c = notesCode(); navigator.clipboard.writeText(c).then(() => toast('Genus lines copied.'), () => { const t = $('#notesCode'); if (t) { t.closest('details').open = true; t.select(); } }); }
   if (a === 'tipsDone') { S.prefs.tipsDone = true; savePrefs(); render(); }
+  if (a === 'syncNow') doSync(false);
+  if (a === 'verSeen') { S.prefs.seenVer = CHANGES[0].v; savePrefs(); render(); }
+  if (a === 'changes') { e.preventDefault(); openChanges(); }
+  if (a === 'howto') { e.preventDefault(); howTo(val); }
+  if (a === 'howJump') { e.preventDefault(); $('#how-' + val)?.scrollIntoView({ block:'start', behavior:'smooth' }); }
+  if (a === 'csv') { e.preventDefault(); if (val === 'r') csvRecords(); else csvGenera(); }
+  if (a === 'ics') icsDownload(val);
+  if (a === 'tblSort') { e.preventDefault(); if (val === S.prefs.tblSort && val !== 'tax') S.prefs.tblDir = -(S.prefs.tblDir || 1); else { S.prefs.tblSort = val; S.prefs.tblDir = val === 'n' || val === 'st' ? -1 : 1; } savePrefs(); render(); }
+  if (a === 'merchCopy') navigator.clipboard.writeText(val).then(() => toast('Code copied.'), () => window.prompt('Copy this code:', val));
+  if (a === 'revCont') { $('#reveal')?.remove(); revealNext(); }
+  if (a === 'outGo') outSet(+val);
+  if (a === 'outRefresh') { S.out.ok = null; paintOut(); loadOut(true); }
   if (a === 'sample') { $('#loginInput').value = SAMPLE_LOGIN; onboard(SAMPLE_LOGIN); }
   if (a === 'switch') { store.del('lastLogin'); location.href = location.pathname; }
   if (a === 'wipe') { store.del(ukey(S.login)); store.del('lastLogin'); store.flush().finally(() => location.href = location.pathname); }
@@ -6574,6 +6656,385 @@ $('#shareBtn').addEventListener('click', copyLink);
 $('#menuBtn').addEventListener('click', settings);
 $('#revSkip').addEventListener('click', () => { revSkip = true; document.querySelectorAll('#revGrid .rcard').forEach(flipCard); });
 $('#loginForm').addEventListener('submit', e => { e.preventDefault(); const v = cleanLogin($('#loginInput').value); if (v) onboard(v); });
+
+/* ---------------- rewards & routines (v2.8): merch cabinet, weekly streaks, genus of the month, calendar, table, CSV, how it works, what changed, spooding now ---------------- */
+// What changed, newest first: shown once on Profile to returning players, and in full from Settings. The owner's rule (2026-10-13):
+// sections and views stay where they are; when something has to move, it gets a line here.
+const CHANGES = [
+  { v:'2.8', d:'2026-10-13', items:[
+    { h:'Profile: <b>📥 Check my new uploads</b> under your level, and your <b>weekly streak</b>. A week counts when you record any wild jumping spider in it, and one missed week a month is covered automatically.' },
+    { h:'<b>Genus of the month</b> on Profile: record it during the month for a stamp in your trophy cabinet. Sets gain <b>In season now</b>.' },
+    { h:'<b>Merch cabinet</b> on Profile: shop ranges open and gifts arrive as your collection grows.', show:() => merchOn() },
+    { h:'Spooding weather: <b>🗓</b> on each day adds its best window to your calendar.' },
+    { h:'SPOODEX › <b>📋 Table</b>: every genus in your region in one sortable table, with each tribe\'s progress.' },
+    { h:'Crew: <b>🧭 Spooding now</b> lets your crew know you\'re out, and shows who else is.', show:() => !!srvUrl() },
+    { h:'⚙ Settings: <b>📖 How SPOODEX works</b> (every rule in one place) and <b>📥 your data as a spreadsheet</b>.' },
+  ] },
+];
+const changeItems = c => c.items.filter(x => !x.show || x.show());
+function whatsNewHtml() {
+  const c = CHANGES[0];
+  if (S.prefs.seenVer === c.v) return '';
+  return `<div class="panel whatsnew" style="margin-top:16px"><h3>What changed in v${esc(c.v)}</h3>
+    <ul>${changeItems(c).map(x => `<li>${x.h}</li>`).join('')}</ul>
+    <p class="row" style="margin:6px 0 0"><button class="small" data-act="verSeen">Got it</button><a href="#" class="small" data-act="changes">Every change</a></p></div>`;
+}
+function openChanges() {
+  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(720px,100%)"><button class="x" data-close="1">✕</button><div class="body">
+    <h2>What changed</h2>${CHANGES.map(c => `<h3>v${esc(c.v)} <span class="small muted">${esc(c.d)}</span></h3><ul>${changeItems(c).map(x => `<li>${x.h}</li>`).join('')}</ul>`).join('')}</div></div></div>`;
+}
+
+// ---- weekly streaks ----
+// A week (Monday to Sunday) counts when you record any wild jumping spider in it, identified or not. One missed week per calendar month
+// is covered automatically (a freeze) as long as the week after it counts; two missed weeks in a row end the run. This week can't end
+// it until it's over. By observed date, so uploading older photos can fill a gap.
+const weekOf = d => Math.floor((Date.parse(d + 'T00:00:00Z') / 864e5 + 3) / 7);   // weeks since Monday 29 Dec 1969
+const weekMonth = w => new Date((w * 7 - 3) * 864e5).toISOString().slice(0, 7);   // the month a week's Monday falls in
+function weekStreak(days, today = todayIso()) {
+  const set = new Set(days.filter(Boolean).map(weekOf)), now = weekOf(today), used = new Set();
+  if (!set.size) return { run:0, best:0, frozen:0, thisWeek:false, freezeLeft:true };
+  let run = 0, best = 0, frozen = 0;
+  for (let w = Math.min(...set); w <= now; w++) {
+    if (set.has(w)) { run++; best = Math.max(best, run); continue; }
+    if (w === now) break;
+    const m = weekMonth(w);
+    if (run && !used.has(m) && (set.has(w + 1) || w + 1 === now)) { used.add(m); frozen++; continue; }
+    run = 0; frozen = 0;
+  }
+  return { run, best, frozen, thisWeek:set.has(now), freezeLeft:!used.has(weekMonth(now)) };
+}
+function weekStreakHtml(W, long) {
+  if (!W.best) return '';
+  const fz = W.freezeLeft ? '1 freeze left this month' : 'this month\'s freeze is used';
+  if (!W.run) return `<p class="streak">Weekly streak: record any wild spood this week to start one${long ? ` <span class="muted">(best ${plural(W.best, 'week')})</span>` : ''}</p>`;
+  return `<p class="streak">🔥 <b>${plural(W.run, 'week')}</b> in a row · ${W.thisWeek ? 'this week ✓' : 'this week: not yet, any wild spood counts'}
+    <span class="muted small">· ${fz}${W.frozen ? ` · ${plural(W.frozen, 'week')} covered` : ''}${long ? ` · best ${plural(W.best, 'week')}` : ''}</span></p>`;
+}
+
+// ---- genus of the month ----
+// One genus a month per state, in season there: the owner's pick for the month (FEATURED) if there is one, else drawn from the state's
+// most-recorded genera whose busiest months include this one. Record it during the month for a stamp in the trophy cabinet.
+// The pick is kept per player (S.u.feat), so a season that loads later can't swap it mid-month.
+const FEATURED = {};   // 'YYYY-MM' -> genus name, the owner's choice for everyone that month
+const FEAT_MIN = 10, FEAT_POOL = 40;
+let featWait = false;
+function featPool() {
+  const pid = phenoPlace(), ref = pid && S.ref['p' + pid];
+  return ref ? Object.keys(ref.g).map(Number).filter(id => ref.g[id] >= FEAT_MIN).sort((a, b) => ref.g[b] - ref.g[a]).slice(0, FEAT_POOL) : [];
+}
+function featured() {
+  const mk = todayIso().slice(0, 7), U = S.u.feat = S.u.feat || {};
+  if (U[mk]) return U[mk];
+  let id = FEATURED[mk] && taxonByName(FEATURED[mk]);
+  if (!id) {
+    const pool = featPool(); if (!pool.length) return null;
+    ensurePheno(pool);
+    if (pool.some(x => !S.pheno[phenoKey(x)])) { featWait = true; return null; }   // the seasons are still loading
+    const live = pool.filter(x => { const p = peakInfo(x); return p && !p.few && p.now && p.text !== 'year-round'; }).sort((a, b) => a - b);   // seasonal ones only
+    const from = live.length ? live : [...pool].sort((a, b) => a - b);
+    id = from[hash32(mk + ':' + phenoPlace()) % from.length];
+  }
+  featWait = false;
+  U[mk] = id; saveUser();
+  return id;
+}
+const monthName = mk => new Date(mk + '-15T00:00:00Z').toLocaleDateString('en', { month:'long', timeZone:'UTC' });
+const featStamped = (mk, id) => !!S.M.G.get(id)?.obs.some(o => (o.d || '').startsWith(mk));
+function featHtml() {
+  if (!S.M.home.state && !S.M.home.country) return '';
+  const id = featured(); if (!id) return '';
+  const mk = todayIso().slice(0, 7), g = S.M.G.get(id), ph = treePh(id), pid = phenoPlace(), c = S.ref['p' + pid]?.g?.[id];
+  ensureInfo([id]);
+  const name = S.nodes[id]?.n || '?', done = featStamped(mk, id);
+  return `<div class="panel feat" style="margin-top:16px">
+    <span class="ph${ph ? '' : ' sil'}"${ph ? ` style="background-image:url('${esc(ph.u)}')"` : ''}></span>
+    <div class="fbody"><div class="small muted mono">GENUS OF THE MONTH · ${monthName(mk).toUpperCase()}</div>
+      <h3><a href="#" data-genus="${id}"><i>${esc(name)}</i></a></h3>${cnHtml(id)}
+      <p class="small"><span data-pheno="${id}">${phenoHtml(id)}</span>${c != null ? ` · ${fmt(c)} iNat record${c === 1 ? '' : 's'} in ${esc(S.places[pid]?.n || '')}` : ''}</p>
+      <p>${done ? `✅ Stamped: you recorded <i>${esc(name)}</i> this month.` : `Record ${g ? 'it again' : 'it'} before the month ends for this month's stamp.`}</p>
+      ${done ? '' : `<p class="row" style="margin:0">${g ? `<button data-genus="${id}">Open the card</button>` : `<button data-act="wanted" data-v="${id}">🧭 Where to look</button>`}</p>`}
+      ${ph?.cr && !ph.mine ? `<p class="small muted" style="margin:6px 0 0">Photo ${esc(ph.cr)}</p>` : ''}</div></div>`;
+}
+const featStamps = () => isGuest() ? [] : Object.entries(S.u.feat || {}).filter(([mk, id]) => featStamped(mk, id)).sort((a, b) => b[0].localeCompare(a[0]));
+
+// ---- merch cabinet ----
+// The owner's rewards plan (2026-10-13): the core range is open to everyone; other ranges open, and gifts arrive, as a collection
+// grows. Thresholds are written for Australia (MERCH.ref genera on iNat there) and shrink for countries with fewer genera, never grow.
+// Codes are fixed per reward: a shared code still needs a paid order (or the postage) to use, so a leaked one costs little.
+// Until MERCH.shop is set, only the owner sees any of this.
+const MERCH = {
+  shop:'',             // the shop's address, e.g. 'https://spoodex.myshopify.com'
+  freePost:'A$50',     // free postage over this ('' to leave the line out)
+  ref:80,
+  core:{ name:'Core range', items:['sticker', 'tee'], url:'' },
+  rungs:[
+    { k:'welcome', at:{ g:1 }, gift:{ title:'Welcome to SPOODEX', text:'10% off your first order.', code:'', art:['sticker', 'tee'] } },
+    { k:'stationery', at:{ g:5 }, opens:{ name:'Stationery', items:['notebook', 'pencilcase', 'bookmark', 'postcard'], url:'' },
+      gift:{ title:'A free sticker', text:'Congrats on your {n} genus! To celebrate, have a sticker from our merch shop, free, with love from all of us here at team SPOODEX. We\'ll go halves on the postage, or it ships free with any order.', code:'', art:['sticker'] } },
+    { k:'desk', at:{ g:10 }, opens:{ name:'Desk & home', items:['mug', 'mousepad', 'magnet', 'coaster'], url:'' },
+      gift:{ title:'A postcard of your first genus', text:'A postcard of {first}, your first genus, free with any order.', code:'', art:['postcard'] } },
+    { k:'mastery', at:{ m:1 }, opens:{ name:'Mastery editions', items:['print'], note:'Any product, printed with a genus you\'ve mastered', url:'' },
+      gift:{ title:'Your first mastered genus', text:'15% off a Mastery edition of {mastered}.', code:'', art:['print'] } },
+    { k:'premium', at:{ g:20, m:3 }, opens:{ name:'Premium', items:['hoodie', 'tote', 'frame'], url:'' },
+      gift:{ title:'A free magnet or postcard pack', text:'Free with any order.', code:'', art:['magnet', 'postcard'] } },
+    { k:'collector', at:{ g:35, m:10 }, opens:{ name:'Collector', items:['poster', 'numbered'], url:'' },
+      gift:{ title:'Your SPOODEX, printed', text:'20% off a personalised My SPOODEX poster of your own collection.', code:'', art:['poster'] } },
+  ],
+  hunt:{ title:'A free print of the hunt\'s best find', text:'For finishing in the top 3 of {hunt}: a print of its best find, free.', code:'', art:['print'] },
+};
+const MERCH_NAMES = { sticker:'Stickers', tee:'T-shirts', notebook:'Field notebook', pencilcase:'Pencil case', bookmark:'Bookmark', postcard:'Postcards',
+  mug:'Mug', mousepad:'Mousepad', magnet:'Fridge magnets', coaster:'Coasters', print:'Art print', hoodie:'Hoodie', tote:'Tote bag', frame:'Framed print',
+  poster:'My SPOODEX poster', numbered:'Numbered print' };
+// Line drawings on a 48 px grid: outlined when a range is open, filled as a silhouette while it's locked
+const MERCH_ART = {
+  sticker:'<path d="M11 8h21l8 8v22a2 2 0 0 1-2 2H11a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2z"/><path d="M32 8v8h8"/>',
+  tee:'<path d="M17 7 8 12l3 8 5-2v22h16V18l5 2 3-8-9-5c-1 3-4 5-7 5s-6-2-7-5z"/>',
+  notebook:'<rect x="11" y="6" width="27" height="36" rx="2"/><path d="M17 6v36M22 14h11"/>',
+  pencilcase:'<rect x="5" y="15" width="38" height="19" rx="9.5"/><path d="M10 24h28M38 24l3 5"/>',
+  bookmark:'<path d="M16 6h16v36l-8-7-8 7z"/>',
+  postcard:'<rect x="5" y="11" width="38" height="26" rx="2"/><path d="M27 15v18M31 17h8v6h-8z"/>',
+  mug:'<path d="M9 12h24v22a6 6 0 0 1-6 6H15a6 6 0 0 1-6-6z"/><path d="M33 17h3a5 5 0 0 1 0 10h-3"/>',
+  mousepad:'<rect x="5" y="9" width="38" height="30" rx="6"/><path d="M28 20a5 5 0 0 1 10 0v6a5 5 0 0 1-10 0z"/>',
+  magnet:'<path d="M12 8h8v16a4 4 0 0 0 8 0V8h8v16a12 12 0 0 1-24 0z"/><path d="M12 14h8M28 14h8"/>',
+  coaster:'<circle cx="24" cy="24" r="16"/><circle cx="24" cy="24" r="10"/>',
+  print:'<rect x="9" y="6" width="30" height="36" rx="1"/><path d="M14 33l7-9 5 6 4-4 4 7z"/><circle cx="31" cy="15" r="3"/>',
+  hoodie:'<path d="M18 6c-2 2-3 5-3 8l-8 5 3 9 5-2v16h18V26l5 2 3-9-8-5c0-3-1-6-3-8-2 3-4 4-6 4s-4-1-6-4z"/>',
+  tote:'<path d="M9 18h30l-2 24H11z"/><path d="M17 18v-4a7 7 0 0 1 14 0v4"/>',
+  frame:'<rect x="7" y="7" width="34" height="34" rx="1"/><rect x="13" y="13" width="22" height="22"/>',
+  poster:'<rect x="10" y="5" width="28" height="38" rx="1"/><path d="M14 11h8v8h-8zM26 11h8v8h-8zM14 23h8v8h-8zM26 23h8v8h-8zM15 37h18"/>',
+  numbered:'<rect x="9" y="6" width="30" height="36" rx="1"/><path d="M14 30l6-8 5 5 4-4 5 7"/><circle cx="32" cy="36" r="5"/>',
+};
+const mArt = k => `<svg class="mart" viewBox="0 0 48 48" aria-hidden="true">${MERCH_ART[k] || ''}</svg>`;
+const merchOn = () => !!S.u && !isGuest() && !!(MERCH.shop || isMe(OWNER));
+const masteredN = () => S.M.genera.filter(g => g.state === 'MASTERED').length;
+function merchScale() {
+  const ref = S.M.home.country && S.ref['p' + S.M.home.country], t = ref ? Object.keys(ref.g).length : 0;
+  return t ? Math.min(1, t / MERCH.ref) : 1;
+}
+const merchNeed = at => ({ g:at.g ? Math.max(1, Math.round(at.g * merchScale())) : 0, m:at.m ? Math.max(1, Math.round(at.m * merchScale())) : 0 });
+const merchMet = at => { const n = merchNeed(at); return S.M.G.size >= n.g && masteredN() >= n.m; };
+const merchNeedTxt = at => { const n = merchNeed(at); return [n.g && plural(n.g, 'genus', 'genera'), n.m && `${n.m} mastered`].filter(Boolean).join(' and '); };
+const merchToGo = at => { const n = merchNeed(at), a = Math.max(0, n.g - S.M.G.size), b = Math.max(0, n.m - masteredN());
+  return [a && plural(a, 'genus', 'genera'), b && `${b} more mastered`].filter(Boolean).join(' and '); };
+const huntWins = () => Object.values(S.events).filter(E => E.final && E.ev.m === 'blitz' && !E.ev.r && /^Spood hunt · /.test(E.ev.n))
+  .map(E => ({ E, me:evMe(E) })).filter(x => x.me && x.me.val > 0 && x.me.rank <= 3);
+// Every reward with what it says for this player; `earned` from the collection as it stands
+function merchGifts() {
+  const M = S.M, first = M.genera[0], mast = M.genera.find(g => g.state === 'MASTERED');
+  const fill = (t, at) => t.replace('{n}', ordinal(merchNeed(at).g)).replace('{first}', first ? `<i>${esc(first.name)}</i>` : 'your first genus')
+    .replace('{mastered}', mast ? `<i>${esc(mast.name)}</i>` : 'your first mastered genus');
+  const out = MERCH.rungs.filter(r => r.gift).map(r => ({ k:r.k, at:r.at, title:r.gift.title, text:fill(r.gift.text, r.at), code:r.gift.code, art:r.gift.art, opens:r.opens, earned:merchMet(r.at) }));
+  for (const { E } of huntWins()) out.push({ k:'hunt:' + E.ev.d1.slice(0, 7), title:MERCH.hunt.title, text:MERCH.hunt.text.replace('{hunt}', esc(E.ev.n)), code:MERCH.hunt.code, art:MERCH.hunt.art, earned:true, hunt:true });
+  return out.filter(x => x.code || !MERCH.shop);   // a reward with no code yet stays hidden from players (the owner sees it, to fill in)
+}
+// New rewards since last time: a ceremony after a sync; the first time (no record yet) they're filed quietly
+function merchCheck(celebrate) {
+  if (!merchOn()) return;
+  const U = S.u.merch = S.u.merch || { got:{}, seen:[] }, fresh = merchGifts().filter(x => x.earned && !U.got[x.k]);
+  if (!fresh.length) return;
+  fresh.forEach(x => U.got[x.k] = todayIso()); saveUser();
+  if (celebrate) revealQueue(fresh.map(x => ({ merch:x })));
+}
+function merchNext() {
+  return MERCH.rungs.filter(r => !merchMet(r.at)).map(r => ({ r, n:merchNeed(r.at) }))
+    .sort((a, b) => (a.n.g - S.M.G.size) + 5 * (a.n.m - masteredN()) - ((b.n.g - S.M.G.size) + 5 * (b.n.m - masteredN())))[0]?.r || null;
+}
+const shopUrl = u => u || MERCH.shop;
+const codeHtml = x => x.code ? `<span class="mcode"><code>${esc(x.code)}</code><button class="small" data-act="merchCopy" data-v="${esc(x.code)}">Copy code</button></span>`
+  : isMe(OWNER) ? '<span class="small muted">(no code yet: add one in MERCH)</span>' : '';
+function merchHtml() {
+  if (!merchOn()) return '';
+  const U = S.u.merch || { got:{}, seen:[] }, gifts = merchGifts(), next = merchNext();
+  const range = (x, at) => {
+    const open = !at || merchMet(at), url = shopUrl(x.url);
+    return `<div class="mrange${open ? '' : ' locked'}"><div class="marts">${x.items.map(mArt).join('')}</div>
+      <b>${esc(x.name)}</b><span class="small">${open ? esc(x.note || x.items.map(k => MERCH_NAMES[k]).join(' · ')) : `🔒 Opens at ${merchNeedTxt(at)} · ${merchToGo(at)} to go`}</span>
+      ${open && url ? `<a class="small" href="${esc(url)}" target="_blank" rel="noopener">Shop ↗</a>` : ''}</div>`;
+  };
+  const got = gifts.filter(x => x.earned).sort((a, b) => (U.got[b.k] || '').localeCompare(U.got[a.k] || '')), soon = gifts.find(x => !x.earned && !x.hunt && x.k === next?.k);
+  const gift = x => `<div class="mgift${x.earned ? '' : ' locked'}"><span class="gi">${x.earned ? '🎁' : '🔒'}</span><div><b>${esc(x.title)}</b>${x.earned && !U.seen.includes(x.k) ? ' <span class="news">● new</span>' : ''}
+      <div class="small">${x.text}</div>${x.earned ? codeHtml(x) : `<div class="small muted">At ${merchNeedTxt(x.at)} · ${merchToGo(x.at)} to go</div>`}</div></div>`;
+  setTimeout(() => { if (S.u.merch && got.some(x => !S.u.merch.seen.includes(x.k))) { S.u.merch.seen = [...new Set([...S.u.merch.seen, ...got.map(x => x.k)])]; saveUser(); } }, 0);
+  return `<div class="panel merch" id="merch" style="margin-top:16px"><h2>Merch cabinet</h2>
+    ${MERCH.shop ? '' : '<p class="small owner">Owner preview: players see this once <code>MERCH.shop</code> is set in spoodex.html. Rewards without a code stay hidden from them.</p>'}
+    <p class="small muted">Ranges open as your collection grows${MERCH.shop ? ` · <a href="${esc(MERCH.shop)}" target="_blank" rel="noopener">the shop ↗</a>` : ''}${MERCH.freePost ? ` · free postage over ${esc(MERCH.freePost)}` : ''}.</p>
+    <div class="mranges">${range(MERCH.core)}${MERCH.rungs.filter(r => r.opens).map(r => range(r.opens, r.at)).join('')}</div>
+    ${got.length || soon ? `<h3 style="margin-top:14px">Your rewards</h3>${[...got, ...(soon ? [soon] : [])].map(gift).join('')}` : ''}
+    <p class="small" style="margin:10px 0 0"><a href="#" data-act="howto" data-v="merch">How rewards work</a></p></div>`;
+}
+function merchReveal(x) {
+  const el = document.createElement('div');
+  el.id = 'reveal'; el.className = 'mreveal';
+  const items = x.art || x.opens?.items || ['sticker'];
+  el.innerHTML = `<div class="marts big">${items.slice(0, 3).map(mArt).join('')}</div>
+    <div class="k">${x.hunt ? 'HUNT REWARD' : 'REWARD UNLOCKED'}</div><h2>${esc(x.title.toUpperCase())}</h2>
+    <p class="rwow">${x.text}</p>${x.code ? `<p>${codeHtml(x)}</p>` : ''}
+    ${x.opens ? `<p>Now open in the shop: <b>${esc(x.opens.name)}</b> · ${esc(x.opens.note || x.opens.items.map(k => MERCH_NAMES[k]).join(', '))}</p>` : ''}
+    <p class="row" style="justify-content:center;margin-top:14px">${MERCH.shop ? `<a class="btnlink" href="${esc(shopUrl(x.opens?.url))}" target="_blank" rel="noopener">Open the shop ↗</a>` : ''}<button data-act="revCont">${revealList.length ? `Continue (${revealList.length} more)` : 'Continue'}</button></p>`;
+  el.addEventListener('click', e => { if (e.target.closest('a, button')) return; el.remove(); revealNext(); });
+  document.body.appendChild(el);
+}
+
+// ---- spooding weather in your calendar ----
+const icsEsc = s => String(s).replace(/[\\;,]/g, m => '\\' + m).replace(/\n/g, '\\n');
+function icsDownload(v) {
+  const [d, from, to, off, stars, ...rest] = v.split('|'), txt = rest.join('|');
+  const t = h => new Date(Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10), +h) - off * 1000).toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
+  const now = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
+  const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//SPOODEX//Spooding weather//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'BEGIN:VEVENT',
+    `UID:spooding-${d}-${from}@spoodex`, `DTSTAMP:${now}`, `DTSTART:${t(from)}`, `DTEND:${t(to)}`,
+    `SUMMARY:${icsEsc(`Spooding window ${'★'.repeat(+stars)}`)}`, `DESCRIPTION:${icsEsc(txt)}`,
+    'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:Spooding window', 'TRIGGER:-PT30M', 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+  saveFile(`spooding-${d}.ics`, ics, 'text/calendar');
+  track('calendar');
+}
+function saveFile(name, text, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10e3);
+}
+
+// ---- the whole region in one table ----
+const ST_RANK = { MISSING:0, DISCOVERED:1, SUPPORTED:2, MASTERED:3 };
+function viewDexTable() {
+  const M = S.M, P = S.prefs, sc = scopeGenera(), where = esc(scopeLabel(P.scope)), ref = refFor(P.scope);
+  const sort = P.tblSort || 'tax', dir = P.tblDir === -1 ? -1 : 1;
+  const groups = sc.ref ? treeGroups() : [];
+  const row = id => { const g = M.G.get(id), L = lineage(id);
+    return { id, g, name:S.nodes[id]?.n || '?', known:!!g || P.reveal, st:g ? g.state : 'MISSING', lv:g ? g.level : -1, n:g ? g.obs.length : 0,
+      c:refCount(id), r:tierIn(ref?.g, id), first:g?.first.d || '', tribe:(L.find(n => n.r === 'tribe') || L.find(n => n.r === 'subfamily') || {}).n || '' }; };
+  const all = groups.flatMap(s => [...s.drawers.values()].flatMap(d => d.ids)).map(row);
+  ensureInfo(all.filter(x => x.known).map(x => x.id).slice(0, 300));
+  const key = { name:x => x.known ? x.name : '~', st:x => ST_RANK[x.st] * 100 + x.lv, n:x => x.n, c:x => x.c ?? 1e9, r:x => x.r ? -x.r.lv : 0, first:x => x.first || '~' }[sort];
+  const cmp = (a, b) => { const p = key(a), q = key(b); return (typeof p === 'string' ? p.localeCompare(q) : p - q) * dir || a.name.localeCompare(b.name); };
+  const th = (k, l, cls = '') => `<th class="${cls}"><button class="thb${sort === k ? ' on' : ''}" data-act="tblSort" data-v="${k}">${l}${sort === k ? (dir === 1 ? ' ▲' : ' ▼') : ''}</button></th>`;
+  const tr = x => `<tr class="${x.g ? 'have' : 'miss'}"><td><a href="#" data-genus="${x.id}">${x.known ? `<i>${esc(x.name)}</i>` : '???'}</a>${sort !== 'tax' ? ` <span class="small muted">${esc(x.tribe)}</span>` : ''}</td>
+      <td class="hm cn">${x.known ? esc(cnOf(x.id)) : ''}</td><td>${x.g ? x.st.toLowerCase() : '<span class="muted">missing</span>'}</td><td class="n">${x.g ? `${x.g.level}/10` : ''}</td>
+      <td class="n">${x.n ? fmt(x.n) : ''}</td><td class="n hm">${x.c != null ? fmt(x.c) : ''}</td><td class="hm">${rarityChip(x.r)}</td><td class="hm">${esc(x.first)}</td></tr>`;
+  const stat = ids => { const f = ids.filter(id => M.G.has(id)), m = f.filter(id => M.G.get(id).state === 'MASTERED');
+    return `${f.length} / ${ids.length} found (${pct(f.length, ids.length)}%)${m.length ? ` · ${m.length} mastered` : ''}`; };
+  const byId = new Map(all.map(x => [x.id, x]));
+  const body = sort === 'tax' ? groups.map(s => { const sIds = [...s.drawers.values()].flatMap(d => d.ids);
+      return `<tr class="sgrp"><td colspan="8"><b>${esc(s.n)}</b> <span class="small">${stat(sIds)}</span></td></tr>`
+        + [...s.drawers.values()].map(d => `<tr class="tgrp"><td colspan="8">${esc(d.n)} <span class="small muted">${d.r} · ${stat(d.ids)}</span></td></tr>${d.ids.map(id => tr(byId.get(id))).join('')}`).join(''); }).join('')
+    : [...all].sort(cmp).map(tr).join('');
+  const mast = all.filter(x => x.st === 'MASTERED').length;
+  return `<div class="panel row" style="margin-bottom:14px">
+      ${layerSwitch()}
+      <b style="font-family:var(--head);font-size:20px">${sc.found} / ${sc.inScope.length || '?'}</b><span class="muted">genera on iNat in</span>
+      <select data-pref="scope">${['country','state','world'].map(s => `<option value="${s}" ${P.scope === s ? 'selected' : ''}>${esc(s === 'world' ? 'World' : scopeLabel(s))}</option>`).join('')}</select>
+      <label class="small"><input type="checkbox" data-pref="reveal" ${P.reveal ? 'checked' : ''}> reveal names</label></div>
+    ${!sc.ref ? '<p class="muted">Loading reference collection…</p>' : `<p class="small">${mast ? `${mast} mastered · ` : ''}${sort === 'tax' ? 'Grouped by subfamily and tribe as on iNat' : `Sorted by ${{ name:'genus', st:'status', n:'your records', c:'iNat records', r:'rarity', first:'first recorded' }[sort]} · <a href="#" data-act="tblSort" data-v="tax">back to taxonomic order</a>`}.
+      Includes genera you've recorded outside ${where}. <a href="#" data-act="csv" data-v="g">📥 Download as a spreadsheet</a></p>
+    <div class="panel tablewrap"><table class="cmp dextable"><thead><tr>${th('name', 'Genus')}<th class="hm">Common name</th>${th('st', 'Status')}<th class="n">Mastery</th>${th('n', 'Your records', 'n')}${th('c', `iNat records`, 'n hm')}${th('r', 'Rarity', 'hm')}${th('first', 'First recorded', 'hm')}</tr></thead>
+      <tbody>${body}</tbody></table></div>`}`;
+}
+
+// ---- your data as spreadsheets ----
+const csvCell = v => { const s = v == null ? '' : String(v); return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+const csvSave = (kind, rows) => { saveFile(`spoodex-${S.login}-${kind}-${todayIso()}.csv`, '﻿' + rows.map(r => r.map(csvCell).join(',')).join('\r\n'), 'text/csv;charset=utf-8'); track('csv-' + kind); };
+function csvGenera() {
+  const M = S.M, sc = scopeGenera(), where = scopeLabel(S.prefs.scope), ref = refFor(S.prefs.scope);
+  const ids = taxonomicOrder([...new Set([...sc.inScope, ...sc.extras])]).order.filter(id => S.nodes[id]?.r === 'genus');
+  const rows = [['Genus', 'Common name', 'Subfamily', 'Tribe', 'Status', 'Mastery (of 10)', 'Criteria met', 'Your records', 'Your species', 'First recorded', 'Last recorded',
+    'Your 25 km squares', 'Mastery points', `iNat records in ${where}`, `Rarity in ${where}`]];
+  for (const id of ids) {
+    const g = M.G.get(id), L = lineage(id), r = tierIn(ref?.g, id);
+    rows.push([S.nodes[id]?.n, cnOf(id), L.find(n => n.r === 'subfamily')?.n, L.find(n => n.r === 'tribe')?.n, g ? g.state.toLowerCase() : 'missing', g?.level,
+      g ? CRITERIA.filter(c => g.f[c.k]).map(c => c.label).join('; ') : '', g?.obs.length, g?.sp.size, g?.first.d, g?.last.d, g ? squaresOf(id) : '', g?.xp, refCount(id), r?.n]);
+  }
+  csvSave('genera', rows);
+}
+function csvRecords() {
+  const rows = [['Observation', 'Observed', 'Genus', 'Identified as', 'Rank', 'Quality grade', 'Captive', 'Square (about 25 km)', 'Link']];
+  for (const o of Object.values(S.u.obs).sort((a, b) => (a.d || '').localeCompare(b.d || '') || a.id - b.id))
+    rows.push([o.id, o.d, S.nodes[genusOf(o.anc)]?.n || '', o.t.n, o.t.r, o.q, o.cap ? 'yes' : 'no', o.lat != null ? stripHtml(cellLabel({ lat:o.lat, lng:o.lng })) : '',
+      `https://www.inaturalist.org/observations/${o.id}`]);
+  csvSave('records', rows);
+}
+
+// ---- how SPOODEX works: every rule, read from the same constants the game uses ----
+function howTo(focus) {
+  const sec = (k, h, b) => `<section id="how-${k}"><h3>${h}</h3>${b}</section>`;
+  const prev = i => i ? RARITY[i - 1].p : 0;
+  const parts = [
+    sec('level', 'Level', `<p>Your level is the number of jumping spider genera you've recorded in the wild on iNaturalist. One record identified to genus or finer unlocks that genus's card.
+      Species are a side collection and never change your level. Captive records go in the Spoodarium and don't count. Records stuck above genus are mystery spoods until someone identifies them.</p>
+      <table class="cmp"><tr><th class="n">Genera</th><th>Chassis</th><th>Adds</th></tr>${TIERS.map(t => `<tr><td class="n">${t.min}+</td><td>${esc(t.name)}</td><td class="muted">${esc(t.module)}</td></tr>`).join('')}</table>
+      <p>Views open with the collection: ${TABS.filter(t => t.at).sort((a, b) => a.at - b.at).map(t => `${esc(t.label)} at ${t.at}`).join(', ')}. A link that takes you to one opens it for good.</p>`),
+    sec('mastery', 'Card states and mastery', `<p><b>Discovered</b>: any record in the genus. <b>Supported</b>: the community ID of one of your records sits in the genus.
+      <b>Mastered</b>: ${MASTERY_AT} of these 10 ticked.</p><ul>${CRITERIA.map(c => `<li>${c.icon} ${esc(c.label)}</li>`).join('')}</ul>`),
+    sec('points', 'Mastery points', `<p>Each record earns points in its genus for what it adds:</p>
+      <table class="cmp">${XP_RULES.map(([l, p]) => `<tr><td>${esc(l)}</td><td class="n">${esc(String(p))}</td></tr>`).join('')}</table>`),
+    sec('rarity', 'Rarity', `<p>Every genus (or species) recorded in the scope you choose is ranked by how many verifiable iNat records it has there, fewest first:</p>
+      <table class="cmp">${RARITY.map((r, i) => `<tr><td>${rarityChip(r)}</td><td>${i === RARITY.length - 1 ? `the rest (most recorded ${Math.round(100 - prev(i) * 100)}%)` : `the ${prev(i) ? `next ${Math.round((r.p - prev(i)) * 100)}%` : `fewest ${Math.round(r.p * 100)}%`}${i ? '' : ', or none recorded there'}`}</td></tr>`).join('')}</table>
+      <p>Prestige ✦ adds 10 × the tier (Common 1 to Exceptional 5) for each genus and 3 × the tier for each species.</p>`),
+    sec('streak', 'Weekly streak', `<p>A week, Monday to Sunday, counts when you record any wild jumping spider in it, identified or not, by the date you observed it.
+      One missed week each calendar month is covered automatically, as long as the week after it counts; two missed weeks in a row end the streak. This week can't end it until Sunday is over.</p>`),
+    sec('month', 'Genus of the month', `<p>Each month, a genus that's in season in your state: from the ${FEAT_POOL} most recorded there (at least ${FEAT_MIN} iNat records), one whose busiest months on iNat include this one.
+      Record it during the month, even if you've had it before, for that month's stamp in your trophy cabinet.</p>`),
+    sec('events', 'Crew events and the monthly hunt', `<p>Points only for <b>inked</b> records: someone outside the event has identified it to genus or finer. The rest show as pencilled.</p>
+      <ul><li>${EV_POINTS.genus} per genus</li><li>+${EV_POINTS.tier} per rarity star in the event's area</li><li>+${EV_POINTS.newToYou} if it's new to you</li>
+      <li>+${EV_POINTS.nobodyHad} if no other player had it</li><li>+${EV_POINTS.pair} for an inked male and female</li><li>×${EV_POINTS.target} for a bioblitz target</li>
+      <li>Bingo: ${EV_POINTS.line} a line, +${EV_POINTS.firstLine} for the event's first line, +${EV_POINTS.blackout} for a full card</li></ul>
+      <p>Results are final ${EV_FINAL_DAYS} days after the end, so late identifications count.</p>`),
+    sec('weather', 'Spooding weather stars', '<p>Each daylight hour is scored for warmth, rain, sun and wind. A day\'s window is its best stretch from now on; its stars rise after rain, a windy spell or a cool day, or when it turns warm and humid, and fall when it\'s been very wet or the window is short. Five stars need a rebound and at least three hours. 🗓 adds a window to your calendar with a reminder 30 minutes before.</p>'),
+    merchOn() ? sec('merch', 'Merch rewards', `<p>The core range (${MERCH.core.items.map(k => MERCH_NAMES[k]).join(', ')}) is open to everyone. The rest open, and gifts arrive, at these points${merchScale() < 1 ? ', scaled for your country, which has fewer genera on iNat than Australia' : ''}:</p>
+      <table class="cmp">${MERCH.rungs.map(r => `<tr><td>${merchNeedTxt(r.at)}</td><td>${r.opens ? `<b>${esc(r.opens.name)}</b> opens` : ''}${r.opens && r.gift ? ' · ' : ''}${r.gift ? esc(r.gift.title) : ''}</td></tr>`).join('')}
+        <tr><td>Top 3 in a monthly hunt</td><td>${esc(MERCH.hunt.title)}</td></tr></table>
+      <p>A reward appears in your merch cabinet on Profile after the check that earns it, with its code. Unlocks are permanent.</p>`) : '',
+  ];
+  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal howto" style="width:min(760px,100%)"><button class="x" data-close="1">✕</button><div class="body">
+    <h2>How SPOODEX works</h2><p class="small">${parts.filter(Boolean).map(p => { const k = /id="how-(\w+)"/.exec(p)[1], h = /<h3>(.*?)<\/h3>/.exec(p)[1]; return `<a href="#how-${k}" data-act="howJump" data-v="${k}">${h}</a>`; }).join(' · ')}</p>
+    ${parts.join('')}</div></div></div>`;
+  if (focus) $('#how-' + focus)?.scrollIntoView({ block:'start' });
+}
+
+// ---- spooding now: tell your crew you're out (the one feature that needs the SPOODEX server, server/) ----
+// Only "out until <time>" is stored, never where; entries expire on their own. Without a server address the panel doesn't appear.
+const SERVER = '';   // 'https://spoodex.<account>.workers.dev' once server/ is deployed (server/README.md)
+const srvUrl = () => SERVER || (/^(localhost|127\.0\.0\.1|.+\.localhost|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)$/.test(location.hostname) ? `http://${location.hostname}:8787` : '');
+const OUT_TTL = 120e3, OUT_POLL = 180e3;
+S.out = { at:0, list:[], ok:null, busy:false };
+async function srv(path, opts = {}) {
+  const r = await fetch(srvUrl() + path, opts.body ? { ...opts, headers:{ 'content-type':'application/json' } } : opts);
+  if (!r.ok) throw new Error(`The SPOODEX server answered ${r.status}`);
+  return r.json();
+}
+const outOn = () => !!srvUrl() && !!S.u && !isGuest() && S.crew.logins.length > 0;
+const outCrew = () => S.out.list.filter(x => !isMe(x.u) && x.until > Date.now());
+const outMe = () => S.out.list.find(x => isMe(x.u) && x.until > Date.now());
+async function loadOut(force) {
+  if (!outOn() || S.out.busy || (!force && Date.now() - S.out.at < OUT_TTL)) return;
+  S.out.busy = true;
+  try { const d = await srv(`/out?u=${encodeURIComponent([S.login, ...S.crew.logins].join(','))}`); S.out.list = d.out || []; S.out.ok = true; }
+  catch (e) { console.warn(e); S.out.ok = false; }
+  S.out.at = Date.now(); S.out.busy = false;
+  paintOut();
+  if (!$('#app').classList.contains('hidden')) navHtml();
+}
+async function outSet(h) {
+  try {
+    if (h) { const d = await srv('/out', { method:'POST', body:JSON.stringify({ u:S.login, h }) }); S.out.list = [...S.out.list.filter(x => !isMe(x.u)), d]; track('spooding-now'); }
+    else { await srv(`/out?u=${encodeURIComponent(S.login)}`, { method:'DELETE' }); S.out.list = S.out.list.filter(x => !isMe(x.u)); }
+    S.out.ok = true;
+  } catch (e) { toast(e.message); }
+  paintOut();
+}
+const hhmm = t => new Date(t).toLocaleTimeString([], { hour:'numeric', minute:'2-digit' });
+function outHtml() {
+  if (S.out.ok === false) return `<h3>🧭 Spooding now</h3><p class="small">Couldn't reach the SPOODEX server. <button class="small" data-act="outRefresh">Try again</button></p>`;
+  const me = outMe(), them = outCrew();
+  return `<h3>🧭 Spooding now</h3>
+    ${S.out.ok == null ? '<p class="small muted">Checking…</p>' : them.length ? them.map(x => `<p><b>${esc(x.u)}</b> is out spooding <span class="small muted">since ${hhmm(x.at)}, until about ${hhmm(x.until)}</span></p>`).join('')
+      : '<p class="small muted">Nobody in your crew is out right now.</p>'}
+    ${me ? `<p>You're out until about <b>${hhmm(me.until)}</b> <button class="small" data-act="outGo" data-v="0">I'm back</button></p>`
+      : `<p class="row">Heading out? Tell your crew: ${[1, 2, 3].map(h => `<button class="small" data-act="outGo" data-v="${h}">${plural(h, 'hour')}</button>`).join('')}</p>`}
+    <p class="small muted" style="margin:0">Shows your crew that you're out and until when, never where.</p>`;
+}
+function paintOut() { const el = $('#outBox'); if (el) el.innerHTML = outHtml(); }
+setInterval(() => { if (!document.hidden && S.u && !$('#app').classList.contains('hidden')) loadOut(); }, OUT_POLL);
 
 /* ---------------- display case: a read-only showpiece link (v2.5) ---------------- */
 // ?u=<login>&case shows that naturalist's 9 rarest genera (or ?u=<login>&case=<taxon id>,<taxon id>,… for their own picks, at most 9)
