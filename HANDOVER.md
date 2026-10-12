@@ -1,6 +1,7 @@
 # SPOODEX — handover
 
-**As of 2026-10-12 · v2.7.1 "Launch" (without v2.6 field plates), live at https://themoojuice.github.io/spoodex/?u=themoojuice (tags `v1.20.0`, `v2.0.0`, `v2.7.0`, `v2.7.1`)**
+**As of 2026-10-13 · v2.7.1 "Launch" (without v2.6 field plates), live at https://themoojuice.github.io/spoodex/?u=themoojuice (tags `v1.20.0`, `v2.0.0`, `v2.7.0`, `v2.7.1`).
+v2.8 "Rewards and routines" is on branch `feature/rewards-and-routines`, awaiting the owner's test (§12, §13).**
 
 Launch checkpoint: [REVIEW-2026-10-12.md](REVIEW-2026-10-12.md) (what was tested, what was fixed, ideas). Launch posts and links: [LAUNCH.md](LAUNCH.md).
 
@@ -19,9 +20,10 @@ to start safely. The rest is reference. When you change something, update this f
 - **Run it**: from the repo root, `python -m http.server 8765`, then open
   `http://localhost:8765/spoodex.html?u=themoojuice` (add `&vs=laz` to test Compare). Never test via `file://`.
 - **Golden rules** (details in §9):
-  1. Keep the app in one self-contained HTML file. The only sidecars (owner-approved, v1.15) are `sw.js`, `manifest.webmanifest`
-     and `icon-192.png`/`icon-512.png`, plus `og.png` (v2.7, the link-preview image): put nothing in the service worker that can live in `spoodex.html`. Every iNat request goes
-     through the throttled `api()` helper.
+  1. The app is `spoodex.html` plus the approved sidecars (`sw.js`, `manifest.webmanifest`, `icon-192.png`/`icon-512.png`, `og.png`).
+     **Since v2.8 (owner, 2026-10-13) more files and a server are allowed**: the SPOODEX server lives in `server/` (a Cloudflare Worker,
+     §3). Keep app code in `spoodex.html` while it shares that file's internals, and put nothing in the service worker that can live in
+     the page. Every iNat request goes through the throttled `api()` helper.
   2. `esc()` every interpolated string that came from iNat or a user.
   3. Naturalist look (kraft paper → herbarium → museum cabinet). Never a terminal/"matrix" look.
   4. Honest labels without disclaimers: call rarity "few iNat records" (never conservation status), say "on iNat" not "endemic".
@@ -96,7 +98,8 @@ python -m http.server 8765        # any static server works
 | `IDEAS.md` | Ideas noted during builds, for the owner to choose from later (not built, not promised) |
 | `ARCHITECTURE.md` | The original v1 design doc. Historical: its tier table and roadmap are stale |
 | (linked, not copied) | The **Identification aid** (owner's interactive key to Australian salticid genera) lives in its own repo, https://github.com/Themoojuice/Identification-aid, and its own Pages site, https://themoojuice.github.io/Identification-aid/ (React/Vite, deployed by that repo's Actions workflow). SPOODEX only links to it via the `ID_AID` constant and `idAidBtn()`. Don't copy its build in here: it has its own service worker and offline package tied to `/Identification-aid/`, and a copy would go stale |
-| `.gitignore` | Ignores `.claude/` and `site/` |
+| `server/` (v2.8) | **The SPOODEX server**, a Cloudflare Worker: `worker.js` (one job so far, "Spooding now": `GET /out?u=a,b`, `POST /out {u, h}`, `DELETE /out?u=`; stores only `out:<login>` → `{at, until}` in Workers KV, expiring by itself after ≤ 4 h; answers only `themoojuice.github.io` and local test origins), `dev.mjs` (the same code on port 8787 with an in-memory store: `node server/dev.mjs`, or the `spoodex-server` preview configuration), `wrangler.toml` (KV binding `OUT`), `README.md` (deploy steps, limits). The app finds it through `SERVER` in `spoodex.html`; empty = the panel is hidden on the live site, while localhost and LAN addresses look for port 8787. Not cached by the service worker, not copied to `site/` |
+| `.gitignore` | Ignores `.claude/`, `site/` and the server's `node_modules/` and `.wrangler/` |
 
 External dependencies (CDN): Leaflet 1.9.4 (cdnjs), Google Fonts (Special Elite, Fraunces, IBM Plex Mono, Caveat; since v2.4 `--body` is Fraunces for reading text, `--mono` IBM Plex Mono for buttons, chips, labels, catalogue numbers and table headers; nothing on screen is below 11 px, and `--muted` passes WCAG AA on both panel colours in every chassis: 4.8–5.5:1), and
 **MapLibre GL JS 5.24.0** (cdnjs, loaded lazily the first time the 3D map opens; `MAPLIBRE` constant). MapLibre 6 is ESM-only
@@ -124,6 +127,8 @@ External services besides iNat:
   `https://biocache-ws.ala.org.au/ws/occurrences/search` / `/occurrence/<uuid>` (holotypes, earliest specimens, specimen genera in a box).
   No key; CORS works from localhost and github.io. Its own queue per host (`extFetch`, ≈1 request/s), not `api()`. Details in §7.
 - **GoatCounter**: anonymous counts (§5 "analytics").
+- **The SPOODEX server** (v2.8, `server/`, once the owner deploys it): gets the player's login and how many hours they're out when they
+  say they're heading out, and the crew's logins when the Crew tab asks who's out. Nothing else; no locations.
 
 ## 4. What the app does, tab by tab
 
@@ -186,6 +191,7 @@ Search for `/* ---------------- <name>` to jump. Line numbers drift; names don't
 | stickers (v2.5) | `STICKERS` (8 of the owner's sticker drawings as 220 px WebP data URIs, ~140 KB), `stickerHtml(i, cls)`, `stickerFor(login)`, `.stk`/`.sticker` CSS | Decoration only: landing title, import box, Profile header and display case (one per naturalist, from `hash32` of the login), empty Compare, Trip planner and Crew panels. 0 is *Sandalodes*, 4 *Papuaneon* (labelled on the art); the rest unnamed. App icons (`icon-192.png`, `icon-512.png`) are the *Sandalodes* sticker on kraft. Checked at 375 px and 1280 px: no sticker covers text (landing pitch keeps 70 px clear on phones) |
 | launch (v2.7) | `cleanLogin`, `noUser`, `poss`; `petGenera`, `petWild`, `loadPetWild`, `wildFor`, `viewPets`; `caseParts`, `caseHtml(login, {head, cards})`, `CASE_SNAP`, `caseSnapCode()`; `huntEv`, `huntCode`; `IMG_PROXY` | **Logins** are lowercase everywhere (iNat logins are; 500 of 500 checked): `cleanLogin` takes `@name`, a pasted `inaturalist.org/people/<login>` or `?user_id=` link, trims and lowercases at every entry (login box, `?u`, `?vs`, `?crew`, Compare, Crew, `lastLogin`). **Unknown user**: iNat answers 422; `noUser` says to use the username from the profile link, not the display name or email, and the failed name isn't kept as `lastLogin`. **Display case snapshot**: `CASE_SNAP` is the owner's default case (header + cards HTML, no sticker, no buttons) drawn at once for a first-time visitor while `importRecords` refreshes it (~15 s cold before). Regenerate on `?u=themoojuice&case` with `caseSnapCode()` in the console and paste over the `const CASE_SNAP` line. **Spood hunt**: `huntEv(monthsAgo)` builds the month's official open worldwide bioblitz from the month alone (name "Spood hunt · Oct 2026", first to last day, seed `hash32('spood-hunt:YYYY-MM')`), so 🗓 on the Crew tab opens the same event id for everyone; ＋ New event still makes custom ones. **Pet to wild** quest (`kind:'hunt'`, 🏺) targets kept genera not yet found wild. **`?ref=<word>`** on any link is sent to GoatCounter as the referrer `ref:<word>` (the pageview only), for counting launch posts. Import progress: records 0–75%, genera 78%, places 82–90%, checklists 92%, photos 97% |
 | challenges (v2.5) | `dareGenus(id)`, `dareWho()`, `dareBanner(ev)`; actions `dareGenus`, `evDareWho`, `duelRival` | **🎯 Challenge a friend** on a found genus (genus page, card back) opens the existing Dare form with the genus (`q:'g<id>'`), you as challenger and a 7-day deadline; chips under the players box fill the dared slot from your crew and latest Compare rival; "Create and copy event link" works as before. **⚔️ Challenge <rival> to a duel** on Compare opens a 2-day Duel the same way. A **new visitor** opening a dare link (no saved account) gets the landing page with a banner ("A dared B to find *Genus* (common name) by <date>", licence-checked photo) above the three starts instead of going straight to guest mode; whichever start they pick, `enterApp` then opens the dare as before |
+| rewards & routines (v2.8) | `CHANGES`, `whatsNewHtml`, `openChanges`; `weekOf`, `weekMonth`, `weekStreak(days)` (→ `M.week`), `weekStreakHtml`; `FEATURED`, `FEAT_MIN` 10, `FEAT_POOL` 40, `featPool`, `featured`, `monthName`, `featStamped`, `featHtml`, `featStamps`; `MERCH`, `MERCH_NAMES`, `MERCH_ART`, `mArt`, `merchOn`, `merchScale`, `merchNeed`/`merchMet`/`merchNeedTxt`/`merchToGo`, `huntWins`, `merchGifts`, `merchCheck(celebrate)`, `merchNext`, `merchHtml`, `merchReveal`; `icsDownload`, `saveFile`; `viewDexTable`, `ST_RANK`; `csvGenera`, `csvRecords`; `XP`, `XP_RULES` (model section), `howTo(focus)`; `SERVER`, `srvUrl`, `srv`, `outOn`, `outCrew`, `outMe`, `loadOut`, `outSet`, `outHtml`, `paintOut` | **What changed**: `CHANGES` (newest first; items `{h, show?}`) shows once on Profile to returning players until **Got it** (`S.prefs.seenVer`); a fresh import sets it, so new players don't see it; Settings › What changed lists them all. **Weekly streak**: a Monday-to-Sunday week counts with any wild record (identified or not, by observed date); one missed week per calendar month is frozen if the week after counts (or is this week); two missed in a row end it; this week never ends it. Shown under the level on Profile and in the ledger (the old discovery streak stays there as "Discovery run"). **Genus of the month**: `FEATURED['YYYY-MM']` (the owner's pick, a genus name) or, per state, `hash32(month + state)` over the `FEAT_POOL` most-recorded state genera with ≥ `FEAT_MIN` records whose peak (`peakInfo`) includes this month and isn't year-round; waits for their seasons (≈40 histogram calls once a month per state, shared with Best months), then is kept in `S.u.feat` so it can't change mid-month. A record of it dated in the month = a stamp (trophy cabinet). Sets › **In season now** uses the same pool. **Merch** (§8): Profile panel after the trophy cabinet; owner-only until `MERCH.shop` is set; rewards with no code are hidden from players. `merchCheck(true)` after each sync queues `{merch}` ceremonies (`revealNext` → `merchReveal`); the first check (no `S.u.merch`) files quietly. **Calendar**: 🗓 on each weather day card (home and trips) downloads an .ics of that day's window (UTC times from the forecast's offset, 30-minute reminder, no location). **Table**: SPOODEX › 📋 Table (`S.prefs.layer = 'table'`), every genus in scope plus extras via `treeGroups()`, subfamily and tribe rows with found/mastered, sortable (`S.prefs.tblSort`/`tblDir`; any sort but taxonomic is a flat list); names follow "reveal names"; phones hide common name, iNat records, rarity and first date. **CSV**: Settings (and the table) → genera (every genus in scope, found or not) or records (all, captive flagged, square names only, never coordinates). **How it works**: one modal built from `TIERS`, `TABS`, `CRITERIA`, `XP_RULES`, `RARITY`, `EV_POINTS`, `MERCH`, so it can't drift from the rules. **Spooding now**: Crew tab panel when there's a crew and a server (`outOn`); polls at most every 2 min while open, every 3 min app-wide; a crew member out lights the Mates dot |
 | display case (v2.5) | `CASE_N` (9), `CASE_KEEP`, `caseIds(M, picks)`, `caseLink(login, picks)`, `caseHtml`, `showCase(login, picksQ)`, `caseEditor`, `casePick`, `caseShare` | `?u=<login>&case[=ids]` is caught in `boot()` before the login is loaded: `showCase` hides the landing and the app and draws `#caseView` from the `cases` cache, then refreshes with `importRecords` (the Compare path: one v2 page per 200 records, then one `/observations/taxonomy` for the country if not cached, and `ensureInfo` for the 9). It sets `S.M` to the owner's model and `S.prefs.scope` to 'country' in memory only, and never calls `loadUser`, so `lastLogin` and the visitor's own save are untouched. Default contents: the owner's genera recorded in their country, rarest first, then any from elsewhere; picks (taxon ids in the link, ones the owner hasn't got ignored) override. Each card links to the record its photo comes from (`g.coverObs`, v2.5). Buttons: "Compare with mine" (`?u=<visitor>&vs=<owner>`) when the visitor has their own save, "Open my SPOODEX" for the owner, else "Start your own SPOODEX". GoatCounter counts `case` |
 | cards (v2.4) | `rarAttrs(id)` → `{r, cls, style}` (edge class `rar rarN` and `--rc`, Uncommon up), `cardBack(id)`, `turnCard(card, open)` (`data-act="flip"`) | Used by `cardHtml`, Profile's Your spoods (`.lcard`), the reveal's tiles (`flipCard`) and the My SPOODEX image (`K.tile` strokes the tile in the rarity colour) |
 | views | `TABS` (`at` = genera to open the tab), `SECTIONS`, `secOf(k)`, `navHtml()` (both header rows), `tabEarned`, `tabOn`, `tabNews`, `render`, `softRender`, `viewProfile` (builds `profSheets` {key: {t title, h html}} for the number tiles; `openProfSheet(k)` shows one; the pioneer tile's count is a `[data-piocount]` span that `pioneerUpdated` updates in place, so the 440-check drain doesn't redraw Profile) (`nextKey`/`nextAt`: Three to find reloads when the home square, region or month changes, or after 6 h), `cardHtml`, `viewDex`, `viewTree`, `viewQuests` | `render()` swaps `#view` innerHTML and triggers lazy loads per tab (map: `initMap()` then `loadWx()`). `softRender()` debounces 400 ms and skips the map tab |
@@ -274,6 +280,10 @@ the least recently opened; the open one is never dropped.
 `ext` (v2.0: `{ala}`, false = no requests to the Atlas of Living Australia anywhere), `ladderScope`, `ladderSort`, `wantedView` (bounty|posters; default bounty), `leadFilter` (taxon id or null), `map3d` (false = 2D Leaflet map;
 unset/true = 3D when WebGL2 is available), `mapLayers {fog, mine, front}` (false = hidden; `front` is off unless true), `scanKm` ('sq'|5|10|25|50|100, default 25),
 `scanPer` (all|90|60|30|month, default all), `scanTab` (g|s).
+
+v2.8 prefs: `seenVer` (the last "What changed" dismissed), `tblSort` (tax|name|st|n|c|r|first), `tblDir` (1|-1). v2.8 per-user: `S.u.feat`
+(`'YYYY-MM'` → genus id, the month's pick), `S.u.merch` (`{got:{key: date earned}, seen:[keys shown in the cabinet]}`; keys are rung `k`s and
+`hunt:YYYY-MM`). `S.out` (Spooding now) lives in memory only.
 
 Per-user save `S.u` (key `u:<login lowercased>`): `obs` (id → trimmed obs), `meta {lastSync, lastFull}`, `seen` (revealed genus ids),
 `scans` (point key → `{ts, b:1, g:[{id,c}]}`, ±25 km squares), `active` (same, last 30 days, with `d1`), `mscan` (the last map scan:
@@ -424,7 +434,14 @@ Scan-point keys: a 0.25° cell `"lat:lng"` (integers) or an arbitrary point `"pt
 - Tiers/chassis: 0 Mk 0 · 5 Field Notebook · 15 Mk II (lineage tree) · 30 Mk III (rarity) · 50 Naturalist Cabinet · 75 Arachnologist Rig ·
   100 Research Station. Skins `notebook` / `kit` / `cabinet`. ⚙ → "peek" unlocks everything.
 - Rarity: five colour tiers by record count within scope (red Exceptional, blue Rare, yellow Scarce, green Uncommon, white Common; not recorded in scope = red). Prestige ✦ = Σ genera 10 × tier level (white 1 … red 5) + Σ species 3 × tier level.
-- Streaks count consecutive **field days** with a new genus.
+- **Weekly streak** (v2.8, the main streak): weeks in a row with any wild record, one automatic freeze per calendar month (§5 "rewards & routines").
+  The **discovery run** (consecutive field days with a new genus) is kept in the ledger, Compare and Wrapped.
+- **Genus of the month** (v2.8): one per state per month, in season; record it during the month for a stamp. Proposal values: `FEAT_MIN` 10, `FEAT_POOL` 40.
+- **Merch rewards** (v2.8, the owner's plan of 2026-10-13; thresholds for Australia, scaled by `min(1, country genera / 80)`, never below 1):
+  core range (stickers, tees) for everyone · 1 genus: welcome 10% off · 5: free sticker (halves on postage or free with an order) + Stationery ·
+  10: first-genus postcard + Desk & home · 1 mastered: 15% off its Mastery edition + Mastery editions · 20 genera and 3 mastered: magnet or
+  postcard pack + Premium · 35 and 10 mastered: 20% off a My SPOODEX poster + Collector · top 3 in a monthly spood hunt: a print of its best
+  find. Free postage over A$50. All wording, prices and codes are the owner's to change in `MERCH`.
 - **Sets** (`THEMES` + automatic):
   - Curated (taxon names at any rank; starter content for the owner to edit): 🦚 Peacock spiders (*Maratus* species),
     🐜 Ant mimics (hand-picked genera; the tribe Myrmarachnini wasn't used because it also holds *Judalana*, *Damoetas* etc.),
@@ -477,8 +494,13 @@ Scan-point keys: a 0.25° cell `"lat:lng"` (integers) or an arbitrary point `"pt
   genus, `s<id>` species (dares), `n` new to you, `x` no player had it, `t` tribe new to you, `M`/`F`/`J` male/female/juvenile, `s`
   species-level ID, `q` three 25 km squares, `bf`/`bc`/`be` feeding / courtship / egg sac, retreat or moult (keyword or Evidence
   annotation). GoatCounter gets only `event-created` and `event-opened`, never names, usernames or places.
-- **No backend** yet; public read-only iNat data; no OAuth. Third parties: GoatCounter (anonymous counts, §5), Open-Meteo (weather, §3) and wsrv.nl (photo proxy for share images, v2.7, §11).
-  Single file plus the approved offline sidecars until it clearly outgrows that (then Vite + TS).
+- **One small server** (v2.8, `server/`, owner-approved 2026-10-13): Spooding now only. Public read-only iNat data; no OAuth (so the server
+  trusts the login it's sent; it stores nothing but "out until"). Third parties: GoatCounter (anonymous counts, §5), Open-Meteo (weather, §3)
+  and wsrv.nl (photo proxy for share images, v2.7, §11).
+- **Keep the layout stable** (owner, 2026-10-13, for players who rely on things staying put): sections, views and buttons stay where they
+  are. When something has to move or change, add a line to `CHANGES` (newest first) so returning players see it once on Profile.
+- **Merch**: rewards follow fixed milestones, never chance (a chance-based prize is a trade promotion lottery under Australian state law).
+  Nothing in the app takes payment; it shows codes and links to the shop.
 - **Mobile matters**: most visitors will be on phones. No horizontal page scroll at 375 px.
 - Never help find or enter the owner's credentials (or anyone's).
 - **GoatCounter** gets event names only (§5 "analytics"): never usernames, places or coordinates.
@@ -539,6 +561,14 @@ session, the second configuration in `.claude/launch.json` (`spoodex-alt`, port 
 **Testing the v1.20 moments without waiting for iNat**: the ID celebration:
 `const o = structuredClone(S.M.leads[0].obs[0]); o.anc.push(S.M.genera[0].id); revealQueue(celebrations([], [o]))`;
 a tab unlock: `S.u.tabsSeen = ['profile','dex','map','crew','quests']; render()`; the photo checklist again: `S.prefs.tipsDone = false`.
+
+**Testing v2.8** (console, on `?u=themoojuice`): add `'table'` to the dex layer loop of the smoke test and `['howto', () => howTo()]`,
+`['changes', openChanges]` to its modals. A merch ceremony: `delete S.u.merch.got.stationery; merchCheck(true)`. What changed again:
+`S.prefs.seenVer = ''; render()`. A new month's pick: `delete S.u.feat; render()` (waits for ~40 season calls on a fresh origin).
+**Spooding now locally**: start the `spoodex-server` preview configuration (or `node server/dev.mjs`), give yourself a crew, then
+`fetch(srvUrl() + '/out', { method:'POST', headers:{ 'content-type':'application/json' }, body:JSON.stringify({ u:'laz', h:2 }) })` and open
+Crew. The dev server keeps nothing between restarts. A phone on the same Wi-Fi can test both at `http://<this PC's LAN address>:8765/spoodex.html`
+(the app looks for the server on the same host, port 8787; Windows may ask to let Python and Node through the firewall).
 
 **Testing events** (console, on `?u=themoojuice`): build one without the form and open it:
 ```js
@@ -624,6 +654,15 @@ Work on a new branch, merge it to `main` with `--no-ff`, tag the release.
   tabs and opens the rest with their level, and the phone header is one line; grouping is still open.
 - **Test outside Australia**; consider showing progress as a % of the regional total for low-diversity regions (e.g. the UK has ~20 genera).
 - **Full-photo share cards**: DONE in v2.7 via wsrv.nl (`IMG_PROXY`, §11). A Worker of our own is only needed if wsrv.nl ever stops serving.
+
+**v2.8 Rewards and routines: the owner's to-do before and after shipping** (branch `feature/rewards-and-routines`):
+- Merch: open the shop, then set `MERCH.shop`, each range's `url` (hidden collections) and each reward's `code` in `spoodex.html`. Until
+  `MERCH.shop` is set only the owner sees the cabinet; rewards without a code stay hidden from players. Check the wording (the sticker text is
+  the owner's own, lightly edited) and the thresholds.
+- Spooding now: deploy `server/` (server/README.md, ~10 minutes, free Cloudflare account) and put its address in `SERVER`. Until then the
+  live site hides the panel and its "What changed" line.
+- Proposals to confirm: the freeze rule (one a calendar month), `FEAT_MIN`/`FEAT_POOL`, whether year-round genera should ever be genus of
+  the month (now: no), and `FEATURED` picks for months the owner wants to choose himself.
 
 **Field plates (v2.6) is not live** (owner, 2026-10-12): it went out with v2.7.0 by mistake (the owner hadn't approved it) and was removed in
 v2.7.1 by reverting its commit (`a05f1ab`); history wasn't rewritten, so `art/` is still in the public repo's history. The work is intact on
@@ -844,6 +883,7 @@ cards progressively during a first import; generalising beyond jumping spiders (
 | v1.7 | IndexedDB storage (with migration), v2 imports with `fields=` (~6% of the download), Trip planner |
 | v1.8 | Sets (themed + complete-the-lineage), Bounty board, "since your last visit" |
 | v1.9 | Most Wanted tab renamed Bounty board (bounties first), SPOODEX › Needs ID layer, fixed-height quest tiles |
+| v2.8 | Rewards and routines (branch `feature/rewards-and-routines`, 2026-10-13, not yet shipped; from the owner's merch plan and the neurodivergent-friendly list): Profile's 📥 Check my new uploads and a sync summary toast; weekly streaks with a monthly freeze; genus of the month with stamps, and Sets › In season now; merch cabinet with ranges, gifts, codes and reward ceremonies (owner-only until the shop is set); 🗓 weather windows to the calendar (.ics); SPOODEX › 📋 Table; CSV downloads; How SPOODEX works; What changed (`CHANGES`); Crew › Spooding now on the new SPOODEX server (`server/`, Cloudflare Worker) |
 | v2.7.1 | v2.7 without field plates (2026-10-12): v2.6's commit reverted (Album, card faces, Field art, art tagger, `art/`, `tools/art.py`, the service worker's art cache); everything from the launch kept |
 | v2.7 | Launch (2026-10-12, tag `v2.7.0`, from [REVIEW-2026-10-12.md](REVIEW-2026-10-12.md)): link previews (`og:` tags in both HTML files, `og.png`); 🏺 Spoodarium tab for captive records with "From pet to wild" cards and quest, and the reveal says captive records aren't counted; friendly unknown-username message; logins case-insensitive (always lowercase) and pasted profile links accepted; the owner's display case drawn instantly from `CASE_SNAP`; one official monthly spood hunt for everyone; share images keep all-rights-reserved photos via wsrv.nl; `?ref=` source tags; "Open your SPOODEX" opens the SPOODEX view; import progress spread over every step; possessives ("spiderpals' SPOODEX"); display case header names the naturalist once |
 | v2.6 | Field plates (branch `feature/field-plates`; live by mistake in v2.7.0 for about an hour, removed in v2.7.1): the owner's 100 artworks in `art/` via `tools/art.py`; ⚙ Tag the artwork; illustrated card faces (sticker when recorded, plate at mastery 5 with a supported ID); Field art on genus pages; Collection › Album with printable blank pages |

@@ -1,13 +1,15 @@
 # SPOODEX
 
-Gamified iNaturalist Salticidae collection: a single-file web app (`spoodex.html`), live on GitHub Pages, installable and offline-capable
+Gamified iNaturalist Salticidae collection: a web app (`spoodex.html`), live on GitHub Pages, installable and offline-capable
 via two approved sidecars (`sw.js`, `manifest.webmanifest`) plus `icon-192.png`/`icon-512.png` and (v2.7) `og.png`, the link-preview image, built by `tools/og.py`.
+Since v2.8 there is also a small server in `server/` (a Cloudflare Worker; `node server/dev.mjs` runs it locally on port 8787).
 
 **Before doing any work, read [HANDOVER.md](HANDOVER.md), at least §0.** It has setup from a fresh clone, the code map,
 the state/storage model, verified iNaturalist API facts, test accounts, the owner's guardrails, a smoke test and the backlog.
 
 Quick rules:
-- Keep the app in one self-contained HTML file (only the sidecars above live outside it); all iNat calls go through the throttled `api()` helper.
+- App code stays in `spoodex.html` (more files and the server are allowed since v2.8, owner 2026-10-13); all iNat calls go through the throttled `api()` helper.
+- Keep the layout stable: when a section, view or button moves or changes, add a line to `CHANGES` (HANDOVER §9).
 - `esc()` every interpolated string; syntax-check the script with `node --check` after edits (command in HANDOVER.md §10).
 - New field read by `trimObs` → add it to `OBS_FIELDS`. New persisted module-level `store.get` → add the key to `PERSISTED`.
 - Naturalist aesthetic (no terminal/matrix look); rarity is "few iNat records" (never "conservation status"), say "on iNat" not "endemic";
