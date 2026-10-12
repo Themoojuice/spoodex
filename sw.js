@@ -2,10 +2,10 @@
    Scope is this folder (/spoodex/ on Pages). The Identification aid on the same origin has its own worker (/Identification-aid/)
    and its own caches (salticidae-core:*); this one only ever touches caches named spoodex-*.
    iNat API responses are never cached here: the app keeps its data in IndexedDB. */
-const VERSION = '2.5.0';   // bump on every release (HANDOVER §10 "Ship")
+const VERSION = '2.7.0';   // bump on every release (HANDOVER §10 "Ship")
 const SHELL = `spoodex-shell-${VERSION}`, LIBS = `spoodex-libs-${VERSION}`;
-const TILES = 'spoodex-tiles', PHOTOS = 'spoodex-photos';   // content, not code: kept across releases, oldest out past the cap
-const CAP = { [TILES]:600, [PHOTOS]:400 };
+const TILES = 'spoodex-tiles', PHOTOS = 'spoodex-photos', ART = 'spoodex-art';   // content, not code: kept across releases, oldest out past the cap
+const CAP = { [TILES]:600, [PHOTOS]:400, [ART]:300 };   // art/<id>.webp: named by content, so a cached copy never goes stale
 const SCOPE = new URL(self.registration.scope);
 const SHELL_FILES = ['spoodex.html', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 const LIB_FILES = ['https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css', 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'];
@@ -25,7 +25,7 @@ self.addEventListener('install', e => e.waitUntil((async () => {
 })()));
 
 self.addEventListener('activate', e => e.waitUntil((async () => {
-  const keep = new Set([SHELL, LIBS, TILES, PHOTOS]);
+  const keep = new Set([SHELL, LIBS, TILES, PHOTOS, ART]);
   for (const k of await caches.keys()) if (k.startsWith('spoodex-') && !keep.has(k)) await caches.delete(k);
   await self.clients.claim();
 })()));
@@ -37,6 +37,7 @@ self.addEventListener('fetch', e => {
   if (url.origin === SCOPE.origin) {
     if (!url.pathname.startsWith(SCOPE.pathname)) return;
     if (req.mode === 'navigate' || SHELL_FILES.some(f => url.pathname === SCOPE.pathname + f)) e.respondWith(networkFirst(e, url));
+    else if (url.pathname.startsWith(SCOPE.pathname + 'art/')) e.respondWith(cacheFirst(e, ART));   // the owner's artwork, as viewed (v2.6)
     return;
   }
   if (LIB_HOSTS.test(url.hostname)) e.respondWith(cacheFirst(e, LIBS));

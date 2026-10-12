@@ -1,7 +1,8 @@
 # SPOODEX
 
 Gamified iNaturalist Salticidae collection: a single-file web app (`spoodex.html`), live on GitHub Pages, installable and offline-capable
-via two approved sidecars (`sw.js`, `manifest.webmanifest`) plus `icon-192.png`/`icon-512.png`.
+via two approved sidecars (`sw.js`, `manifest.webmanifest`) plus `icon-192.png`/`icon-512.png`, (v2.6) the `art/` folder of the owner's
+artwork, built by `tools/art.py`, and (v2.7) `og.png`, the link-preview image, built by `tools/og.py`.
 
 **Before doing any work, read [HANDOVER.md](HANDOVER.md), at least §0.** It has setup from a fresh clone, the code map,
 the state/storage model, verified iNaturalist API facts, test accounts, the owner's guardrails, a smoke test and the backlog.
@@ -18,5 +19,5 @@ Quick rules:
   Other people's photos only under CC0 / CC BY / CC BY-NC, credited and linked; prefer the owner's own (`themoojuice`).
 - Test via the `spoodex` preview server (port 8765; recreate `.claude/launch.json` from HANDOVER.md §2 if missing) with
   `?u=themoojuice` and `&vs=laz`. Check phone width (375 px) too.
-- Ship: bump `VERSION` in `sw.js`, `cp index.html spoodex.html sw.js manifest.webmanifest icon-192.png icon-512.png site/`, then `git commit`,
+- Ship: bump `VERSION` in `sw.js`, `cp index.html spoodex.html sw.js manifest.webmanifest icon-192.png icon-512.png og.png site/ && cp -r art site/`, then `git commit`,
   then `git push` (Pages updates in ~30 s). Update HANDOVER.md in the same commit.
