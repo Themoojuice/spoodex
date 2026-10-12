@@ -1,7 +1,7 @@
 # SPOODEX — handover
 
-**As of 2026-10-13 · v2.7.1 "Launch" (without v2.6 field plates), live at https://themoojuice.github.io/spoodex/?u=themoojuice (tags `v1.20.0`, `v2.0.0`, `v2.7.0`, `v2.7.1`).
-v2.8 "Rewards and routines" is on branch `feature/rewards-and-routines`, awaiting the owner's test (§12, §13).**
+**As of 2026-10-13 · v2.8 "Rewards and routines", live at https://themoojuice.github.io/spoodex/?u=themoojuice (tags `v1.20.0`, `v2.0.0`, `v2.7.0`, `v2.7.1`, `v2.8.0`).
+Merch is owner-only until `MERCH.shop` is set, and Spooding now waits for the server to be deployed (§12).**
 
 Launch checkpoint: [REVIEW-2026-10-12.md](REVIEW-2026-10-12.md) (what was tested, what was fixed, ideas). Launch posts and links: [LAUNCH.md](LAUNCH.md).
 
@@ -655,7 +655,7 @@ Work on a new branch, merge it to `main` with `--no-ff`, tag the release.
 - **Test outside Australia**; consider showing progress as a % of the regional total for low-diversity regions (e.g. the UK has ~20 genera).
 - **Full-photo share cards**: DONE in v2.7 via wsrv.nl (`IMG_PROXY`, §11). A Worker of our own is only needed if wsrv.nl ever stops serving.
 
-**v2.8 Rewards and routines: the owner's to-do before and after shipping** (branch `feature/rewards-and-routines`):
+**v2.8 Rewards and routines: the owner's to-do** (shipped 2026-10-13):
 - Merch: open the shop, then set `MERCH.shop`, each range's `url` (hidden collections) and each reward's `code` in `spoodex.html`. Until
   `MERCH.shop` is set only the owner sees the cabinet; rewards without a code stay hidden from players. Check the wording (the sticker text is
   the owner's own, lightly edited) and the thresholds.
@@ -883,7 +883,7 @@ cards progressively during a first import; generalising beyond jumping spiders (
 | v1.7 | IndexedDB storage (with migration), v2 imports with `fields=` (~6% of the download), Trip planner |
 | v1.8 | Sets (themed + complete-the-lineage), Bounty board, "since your last visit" |
 | v1.9 | Most Wanted tab renamed Bounty board (bounties first), SPOODEX › Needs ID layer, fixed-height quest tiles |
-| v2.8 | Rewards and routines (branch `feature/rewards-and-routines`, 2026-10-13, not yet shipped; from the owner's merch plan and the neurodivergent-friendly list): Profile's 📥 Check my new uploads and a sync summary toast; weekly streaks with a monthly freeze; genus of the month with stamps, and Sets › In season now; merch cabinet with ranges, gifts, codes and reward ceremonies (owner-only until the shop is set); 🗓 weather windows to the calendar (.ics); SPOODEX › 📋 Table; CSV downloads; How SPOODEX works; What changed (`CHANGES`); Crew › Spooding now on the new SPOODEX server (`server/`, Cloudflare Worker) |
+| v2.8 | Rewards and routines (shipped 2026-10-13, tag `v2.8.0`; from the owner's merch plan and the neurodivergent-friendly list): Profile's 📥 Check my new uploads and a sync summary toast; weekly streaks with a monthly freeze; genus of the month with stamps, and Sets › In season now; merch cabinet with ranges, gifts, codes and reward ceremonies (owner-only until the shop is set); 🗓 weather windows to the calendar (.ics); SPOODEX › 📋 Table; CSV downloads; How SPOODEX works; What changed (`CHANGES`); Crew › Spooding now on the new SPOODEX server (`server/`, Cloudflare Worker) |
 | v2.7.1 | v2.7 without field plates (2026-10-12): v2.6's commit reverted (Album, card faces, Field art, art tagger, `art/`, `tools/art.py`, the service worker's art cache); everything from the launch kept |
 | v2.7 | Launch (2026-10-12, tag `v2.7.0`, from [REVIEW-2026-10-12.md](REVIEW-2026-10-12.md)): link previews (`og:` tags in both HTML files, `og.png`); 🏺 Spoodarium tab for captive records with "From pet to wild" cards and quest, and the reveal says captive records aren't counted; friendly unknown-username message; logins case-insensitive (always lowercase) and pasted profile links accepted; the owner's display case drawn instantly from `CASE_SNAP`; one official monthly spood hunt for everyone; share images keep all-rights-reserved photos via wsrv.nl; `?ref=` source tags; "Open your SPOODEX" opens the SPOODEX view; import progress spread over every step; possessives ("spiderpals' SPOODEX"); display case header names the naturalist once |
 | v2.6 | Field plates (branch `feature/field-plates`; live by mistake in v2.7.0 for about an hour, removed in v2.7.1): the owner's 100 artworks in `art/` via `tools/art.py`; ⚙ Tag the artwork; illustrated card faces (sticker when recorded, plate at mastery 5 with a supported ID); Field art on genus pages; Collection › Album with printable blank pages |
