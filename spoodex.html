@@ -73,7 +73,7 @@ button:hover { border-color:var(--accent); }
 button.primary { background:var(--accent); color:var(--panel); border-color:var(--accent); font-weight:600; }
 input, select { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:6px 10px; }
 /* v2.4 type: Fraunces for reading, IBM Plex Mono only for controls, labels, catalogue numbers and figures */
-button, select, input, textarea, .chip, .rchip, .badge, .num, .kv dt, table th, .stile span, .lvl, nav.tabs { font-family:var(--mono); }
+button, select, input, textarea, .chip, .rchip, .badge, .num, .kv dt, table th, .hstat span, .lvl, nav.tabs { font-family:var(--mono); }
 button, select, input { font-size:14px; }
 .mono, .wreward, .small.mono { font-family:var(--mono); }
 h1,h2,h3 { font-family:var(--head); font-weight:400; margin:0 0 8px; letter-spacing:.02em; }
@@ -250,6 +250,14 @@ a.lcard:hover { border-color:var(--accent); }
 #loginForm label { display:block; font-weight:600; margin-bottom:8px; }
 .profhero h1 { font-size:36px; margin:4px 0 0; }
 .herobtns { gap:6px; margin:10px 0 0; }
+.herostats { display:flex; flex-wrap:wrap; gap:6px 14px; align-items:baseline; margin-top:4px; }
+.hstat b { font:600 22px/1.1 var(--head); color:var(--accent); }
+.hstat span { font-size:12.5px; color:var(--muted); }
+button.hstat { background:none; border:0; border-bottom:1px dashed var(--muted); border-radius:0; padding:0 0 1px; min-height:0; box-shadow:none; cursor:pointer; }
+button.hstat:hover b { text-decoration:underline; }
+.worth { font:600 11px/1 var(--mono); font-style:normal; color:var(--accent); white-space:nowrap; }
+.rworth { font:600 18px/1.2 var(--head); color:#f3d27a; }
+.ptable td { padding:3px 10px 3px 0; } .ptable .n { text-align:right; }
 .herobtns button { padding:5px 10px; font-size:13px; }
 .spoods { display:grid; grid-auto-flow:column; grid-auto-columns:116px; gap:8px; overflow-x:auto; padding-bottom:6px; scrollbar-width:thin; }
 .spoods .lcard { cursor:pointer; }
@@ -293,11 +301,6 @@ a.lcard:hover { border-color:var(--accent); }
 .dnext { margin:0; padding:0 14px 12px; font-size:13px; }
 .dex-plates { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; padding:12px; background:var(--panel); border:1px solid var(--line); border-top:none; border-radius:0 0 var(--radius) var(--radius); }
 @media (max-width:600px) { .spots { grid-auto-columns:minmax(280px, 88vw); } .spot .sph { width:96px; } .tban { height:96px; } .dtiles { grid-template-columns:repeat(3, minmax(0, 1fr)); gap:6px; } }
-.stiles { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; }
-.stile { display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; padding:12px 14px; min-height:84px; white-space:normal; }
-.stile b { font:600 30px/1.1 Fraunces, Georgia, serif; color:var(--accent); }
-.stile span { font-size:12.5px; color:var(--muted); }
-@media (max-width:600px) { .stiles { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; } .stile b { font-size:24px; } }
 .spoods .lcard.myst { border-style:dashed; }
 .spoods .lcard .cn { padding-bottom:6px; }
 #impBox h2 { margin-bottom:4px; }
@@ -394,6 +397,51 @@ a.lcard:hover { border-color:var(--accent); }
 .casepick button i { padding:3px 6px; font:italic 13px var(--body); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .casepick button.on { border:3px solid var(--accent); }
 @media (max-width:600px) { .casegrid { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; } .casehead h1 { font-size:30px; } .ccard .nm { font-size:16px; } }
+/* v2.9 Spoodarium: the owner's sticker art big, glass jars on a shelf, a terrarium you kit out with prestige */
+.spoodhead { position:relative; overflow:hidden; min-height:230px; padding-right:min(46%, 420px); background:radial-gradient(ellipse at 85% 45%, rgba(110,150,80,.28), transparent 60%), var(--panel); }
+.spoodhead .artband { position:absolute; inset:0 0 0 auto; width:min(48%, 440px); pointer-events:none; }
+.spoodhead .sticker { position:absolute; top:auto; right:auto; filter:drop-shadow(0 6px 10px rgba(0,0,0,.25)); }
+.spoodhead .sticker.a0 { width:190px; right:8px; top:6px; transform:rotate(8deg); z-index:3; }
+.spoodhead .sticker.a1 { width:150px; right:170px; top:70px; transform:rotate(-12deg); z-index:2; }
+.spoodhead .sticker.a2 { width:120px; right:120px; top:-14px; transform:rotate(18deg); z-index:1; opacity:.9; }
+.spoodhead h2 { font-size:30px; }
+.shelfpanel { position:relative; background:linear-gradient(180deg, var(--panel) 0, var(--panel2) 100%); }
+.shelfpanel .casegrid { position:relative; z-index:1; }
+.shelfboard { height:16px; margin:-6px -6px 0; border-radius:3px; background:linear-gradient(180deg, #8a5f3a, #5e3d22); box-shadow:0 6px 10px rgba(0,0,0,.25); }
+.ccard.jar { position:relative; overflow:visible; border:2px solid rgba(150,175,170,.9); border-radius:18px 18px 12px 12px; background:linear-gradient(90deg, rgba(255,255,255,.55), rgba(255,255,255,0) 18%, rgba(255,255,255,0) 82%, rgba(255,255,255,.35)), var(--panel); margin-top:14px; }
+.ccard.jar .lid { position:absolute; top:-14px; left:10%; right:10%; height:16px; border-radius:5px; background:linear-gradient(180deg, #d9d6cc, #8c887c); border:1px solid #5c5a52; }
+.ccard.jar .ph { display:grid; place-items:center; border-radius:14px 14px 0 0; margin:4px 4px 0; }
+.ccard.jar .ph .sil { width:50%; height:50%; }
+.ccard .petnm { font-size:26px; line-height:1; }
+.petname { margin-top:6px; width:100%; font:15px var(--body); padding:5px 8px; }
+.tankwrap { display:grid; grid-template-columns:minmax(0, 1.25fr) minmax(0, 1fr); gap:18px; align-items:start; }
+.tankstage { position:sticky; top:8px; }
+#tankScene svg { display:block; width:100%; height:auto; border-radius:var(--radius); background:radial-gradient(ellipse at 50% 30%, rgba(255,255,255,.5), transparent 70%); }
+.plaque { margin:6px auto 0; width:max-content; max-width:100%; text-align:center; padding:6px 16px; background:linear-gradient(180deg, #e9cf86, #c9a03a); color:#3a2a10; border:1px solid #7a5a1c; border-radius:3px; box-shadow:0 2px 4px rgba(0,0,0,.25); font:15px var(--body); }
+.plaque b { font:600 18px Fraunces, Georgia, serif; }
+.plaque span { display:block; font:11px var(--mono); letter-spacing:.12em; text-transform:uppercase; }
+.tankctl { display:flex; flex-direction:column; gap:12px; min-width:0; }
+.grow > b, .grow label > b { display:block; font-size:13px; margin-bottom:4px; }
+.grow input, .grow select { width:100%; }
+.gchips { display:flex; flex-wrap:wrap; gap:6px; }
+.gchip { padding:4px 10px; font-size:13px; min-height:32px; }
+.gchip.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+.gchip.lock { opacity:.55; cursor:not-allowed; }
+.gchip.lock span { font-size:11px; }
+.artpick { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:6px; }
+.artpick button { position:relative; padding:0; aspect-ratio:1; overflow:hidden; background:var(--panel2); }
+.artpick button.on { border:3px solid var(--accent); background:var(--panel); }
+.artpick .sticker.pick { position:absolute; inset:5px; top:5px; right:5px; width:calc(100% - 10px); height:calc(100% - 10px); object-fit:contain; transform:none; }
+.keeppanel { padding-right:240px; min-height:220px; }
+.keeppanel .sticker.big { width:210px; top:10px; right:16px; transform:rotate(-8deg); }
+.keeplist { margin:0 0 12px; padding-left:20px; } .keeplist li { margin:4px 0; }
+@media (max-width:760px) { .tankwrap { grid-template-columns:1fr; } .tankstage { position:static; } }
+@media (max-width:600px) {
+  .spoodhead { padding-right:16px; padding-top:150px; min-height:0; background:var(--panel); }
+  .spoodhead .artband { inset:0 0 auto 0; width:auto; height:150px; }
+  .spoodhead .sticker.a0 { width:130px; right:6px; top:4px; } .spoodhead .sticker.a1 { width:110px; right:auto; left:8px; top:24px; } .spoodhead .sticker.a2 { width:96px; right:128px; top:4px; }
+  .keeppanel { padding-right:16px; padding-top:150px; } .keeppanel .sticker.big { width:140px; top:6px; right:auto; left:50%; margin-left:-70px; }
+}
 /* v2.4 cards: rarity edge (Uncommon up), foil on Rare/Exceptional, specimen label, a back you turn to */
 .card.rar, .lcard.rar, .rcard.rar { border:2px solid var(--rc); }
 .card.gilded.rar { border-color:#b08a45; box-shadow:inset 0 0 0 3px var(--rc); }
@@ -1417,6 +1465,33 @@ function prestige(M) {
   M.S.forEach((s, id) => p += 3 * starsFor(id, 's'));
   return p;
 }
+// Prestige everywhere (v2.9, owner: "works really well" on the Ladder): with the title, on card backs, find cards, the reveal and trips,
+// and the highest you've reached unlocks Spoodarium gear (it can dip when the scope or iNat's counts change, so gear keys off the best).
+const worthG = id => 10 * starsFor(id, 'g');
+function prestigeBest(M = S.M) {
+  const p = prestige(M);
+  if (!isGuest() && S.u && p > (S.u.pBest || 0)) { S.u.pBest = p; saveUser(); }
+  return Math.max(p, isGuest() ? 0 : S.u?.pBest || 0);
+}
+const heroStats = M => `<div class="herostats"><span class="hstat"><b>${fmt(M.G.size)}</b> <span>${M.G.size === 1 ? 'genus' : 'genera'}</span></span>
+  <span class="hstat"><b>${fmt(M.S.size)}</b> <span>species</span></span>
+  <button class="hstat pr" data-act="prestige" title="How prestige adds up, and what it unlocks"><b>${fmt(prestige(M))}</b> <span>✦ prestige</span></button></div>`;
+function openPrestige() {
+  const M = S.M, where = esc(scopeLabel(S.prefs.scope)), p = prestige(M), best = prestigeBest(M);
+  const byTier = RARITY.map((t, i) => ({ t, g:[...M.G.keys()].filter(id => starsFor(id, 'g') === i + 1).length })).filter(x => x.g);
+  const top = [...M.G.keys()].map(id => ({ id, w:worthG(id) })).sort((a, b) => b.w - a.w || (refCount(a.id) ?? 0) - (refCount(b.id) ?? 0)).slice(0, 6);
+  const nx = GEAR_ALL.filter(x => x.at > best).sort((a, b) => a.at - b.at)[0];
+  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(560px,100%)"><button class="x" data-close="1">✕</button><div class="body">
+    <h2>${fmt(p)} ✦ prestige</h2>
+    <p>Each genus you've recorded is worth 10 ✦ for every rarity star it has in ${where} (1 for Common up to 5), each species 3 ✦ a star.</p>
+    <table class="ptable">${byTier.map(x => `<tr><td>${rarityChip(x.t)}</td><td class="n">${x.g} ${x.g === 1 ? 'genus' : 'genera'}</td><td class="n">× ${10 * x.t.lv} ✦</td></tr>`).join('')}
+      <tr><td>Species</td><td class="n">${fmt(M.S.size)}</td><td class="n">${fmt(p - [...M.G.keys()].reduce((n, id) => n + worthG(id), 0))} ✦</td></tr></table>
+    ${top.length ? `<h3>Worth the most</h3><p>${top.map(x => `<a href="#" data-genus="${x.id}"><i>${esc(S.nodes[x.id]?.n || '?')}</i></a> ${x.w} ✦`).join(' · ')}</p>` : ''}
+    <h3>Spoodarium gear</h3>
+    <p>Your best so far, ${fmt(best)} ✦, has unlocked ${GEAR_ALL.filter(x => x.at <= best).length} of ${GEAR_ALL.length} pieces of terrarium gear and drip.${nx ? ` Next: <b>${esc(nx.n)}</b> at ${fmt(nx.at)} ✦ (${fmt(nx.at - best)} to go).` : ''}</p>
+    <p class="row"><button class="primary" data-tab="pets">🏺 Open the Spoodarium</button><button data-tab="ladder">🏆 Ladder by prestige</button></p>
+  </div></div></div>`;
+}
 const moduleOn = minTier => S.prefs.peek || S.M.tier >= minTier;
 
 /* ---------------- checklist: Australia's jumping spider genera (iNat plus the owner's Lucid key) ---------------- */
@@ -1852,7 +1927,7 @@ function questDone(q, M) {
 const TABS = [
   { k:'profile', label:'Profile' },
   { k:'dex', label:'SPOODEX' },
-  { k:'pets', label:'Spoodarium', has:() => S.M.pets.length },   // only for naturalists with captive records
+  { k:'pets', label:'Spoodarium', has:() => S.M.pets.length || S.M.G.size },   // captive records, or a first genus (v2.9: the terrarium)
   { k:'tree', label:'Lineage tree', at:15 },
   { k:'map', label:'Map & scanner' },
   { k:'wanted', label:'Bounty board', at:10 },
@@ -1911,7 +1986,7 @@ function render() {
   $('#chassisName').textContent = tier.name;
   $('#whoami').textContent = who();
   $('#shareBtn').classList.toggle('hidden', isGuest());
-  $('#lvlBadge').innerHTML = `<span class="lbl">LEVEL </span><span class="lbs">Lv </span>${M.G.size}`;
+  $('#lvlBadge').innerHTML = `<span class="lbl">LEVEL </span><span class="lbs">Lv </span>${M.G.size}${M.G.size ? `<span class="lbl lpr"> · ${fmt(prestige(M))} ✦</span>` : ''}`;
   tabNews();
   navHtml();
   const v = $('#view');
@@ -1938,19 +2013,8 @@ function render() {
 // number tiles (owner, 2026-10-08). Numbers that are still zero or tiny stay hidden until they mean something.
 let nextKey = '', nextAt = 0;
 function viewProfile() {
-  const M = S.M, hl = headline(), tier = M.tier, n = M.G.size;
-  const regions = {};
-  M.genera.forEach(g => g.places.forEach(p => { const pl = S.places[p]; if (pl && pl.l != null && [0,10,20].includes(pl.l)) { (regions[p] = regions[p] || { id:p, n:pl.n, l:pl.l, g:0 }).g++; } }));
-  const regionRows = lvl => Object.values(regions).filter(r => r.l === lvl).sort((a,b) => b.g - a.g);
-  const refC = S.ref['p'+M.home.country], refS = S.ref['p'+M.home.state];
+  const M = S.M, hl = headline(), n = M.G.size;
   const bar = (a, b) => `<div class="bar"><i style="width:${pct(a,b)}%"></i></div>`;
-  const next = TIERS[tier+1];
-  const favs = favouriteLineages(M).slice(0,6), maxFav = favs[0]?.g || 1;
-  const style = fieldStyle(M);
-  const rare = M.genera.map(g => ({ g, r:rarityTier(g.id) })).filter(x => x.r).sort((a,b) => a.r.count - b.r.count).slice(0,5);
-  const years = {}; M.genera.forEach(g => { const y = (g.first.d||'????').slice(0,4); years[y] = (years[y]||0) + 1; });
-  const ys = Object.keys(years).sort(), maxY = Math.max(1, ...Object.values(years));
-  const setsAll = setStats(refFor(S.prefs.scope)), setsDone = setsAll.filter(x => !x.left);
   // three to find: refreshed when home or the month changes, or every 6 hours
   const nk = `${M.homeCell?.k}:${homeCtx().pid}:${new Date().getMonth()}`;
   if (homeCtx().pid && !nextBusy && (nk !== nextKey || Date.now() - nextAt > 6 * 3600e3)) {
@@ -1960,6 +2024,7 @@ function viewProfile() {
   const hero = `<div class="panel profhero stk">${stickerHtml(stickerFor(S.login))}
       <div class="muted small">${esc(poss(who()).toUpperCase())} SPOODEX</div>
       <h1>Level ${n}</h1><div class="hand">${titleHtml(M)}</div>
+      ${n ? heroStats(M) : ''}
       ${hl ? `<div class="row" style="gap:8px;margin-top:6px"><span>${headlineHtml(hl)}</span>${bar(hl.found, hl.total)}</div>` : ''}
       ${n ? weekStreakHtml(M.week) : ''}
       ${isGuest() ? '' : `<p class="row herobtns"><button class="primary" data-act="syncNow">📥 Check my new uploads</button>${S.u.meta.lastSync ? `<span class="small muted">checked ${agoShort(Date.parse(S.u.meta.lastSync))}</span>` : ''}</p>`}
@@ -1985,76 +2050,10 @@ function viewProfile() {
     ${M.homeCell ? '<button data-tab="map">📡 See what lives near your home base</button>' : ''}
     ${M.pets.length ? `<button data-tab="pets">🏺 Your captive spoods and where to find wild ones</button>` : ''}
     ${isGuest() ? '<button data-act="switch">I have an iNaturalist account</button>' : ''}</div></div>` : '';
-  const kv = [
-    ['Observations', M.obs.length && fmt(M.obs.length)],
-    ['Species (side collection)', M.S.size && `${fmt(M.S.size)}${refFor(S.prefs.scope)?.s ? ` · ${speciesInScope().filter(id => M.S.has(id)).length} / ${speciesInScope().length} on iNat in ${esc(scopeLabel(S.prefs.scope))}` : ''}`],
-    ['Sets complete', setsDone.length && `${setsDone.length} / ${setsAll.length} ${setsDone.slice(0, 4).map(x => x.icon || '🏆').join('')} <a href="#" class="small" data-act="sets">view sets</a>`],
-    ['Collection prestige', n && `${fmt(prestige(M))} ✦ <span class="small muted">(rarity-weighted)</span>`],
-    ['Localities (~10 km)', M.cellsAll01.size && fmt(M.cellsAll01.size)],
-    ['Field days', M.fieldDays.length && fmt(M.fieldDays.length)],
-    ['Behaviour records', [['feed', 'feeding'], ['court', 'courtship'], ['egg', 'silk/brood']].filter(([k]) => M.behObs[k]).map(([k, l]) => `${M.behObs[k]} ${l}`).join(' · ')],
-    [`New genera ${new Date().getFullYear()}`, M.newThisYear],
-    ['Mastery points', M.xp && fmt(M.xp)],
-    ['Mystery spoods', mysteryCount() && `${fmt(mysteryCount())} not yet identified to genus <a href="#" class="small" data-act="needsid">see them</a>`],
-  ].filter(([, v]) => v);
-  const streak = weekStreakHtml(M.week, true) + (M.streak >= 2 ? `<p>Discovery run: <b>${M.streak}</b> field days in a row with a new genus <span class="muted">(best ${M.bestStreak})</span></p>`
-    : M.bestStreak >= 2 ? `<p>Best discovery run: <b>${M.bestStreak}</b> field days in a row with a new genus</p>` : '');
-  const share = isGuest() ? '' : shareHtml(), pio = isGuest() ? '' : myPioneers().length ? pioneerHtml() : '';
-  const regionsHtml = moduleOn(1) && Object.keys(regions).length ? `<div class="panel">
-      <h2>Regions</h2>
-      ${refC ? `<div class="row"><span style="min-width:150px">${esc(S.places[M.home.country]?.n)}</span>${bar(Object.keys(refC.g).filter(id => M.G.has(+id)).length, Object.keys(refC.g).length)}<span class="small">${Object.keys(refC.g).filter(id => M.G.has(+id)).length}/${Object.keys(refC.g).length}</span></div>` : ''}
-      ${refS && M.home.state !== M.home.country ? `<div class="row"><span style="min-width:150px">${esc(S.places[M.home.state]?.n)}</span>${bar(Object.keys(refS.g).filter(id => M.G.has(+id)).length, Object.keys(refS.g).length)}<span class="small">${Object.keys(refS.g).filter(id => M.G.has(+id)).length}/${Object.keys(refS.g).length}</span></div>` : ''}
-      ${[[0, 'Countries', 99], [10, 'States / provinces', 8], [20, 'Local areas', 10]].map(([l, h, k]) => { const rs = regionRows(l).slice(0, k);
-        return rs.length ? `<h3 style="margin-top:10px">${h}</h3>${rs.map(r => `<div class="small">${esc(r.n)}: <b>${r.g}</b> ${r.g === 1 ? 'genus' : 'genera'}</div>`).join('')}` : ''; }).join('')}
-    </div>` : '';
-  const lineHtml = favs[0]?.g >= 2 || style.length || (moduleOn(3) && rare.length) ? `<div class="panel">
-      ${favs[0]?.g >= 2 ? `<h2>Favourite lineages</h2>${favs.map(f => `<div class="row"><span style="min-width:140px">${esc(f.n)}</span><div class="bar"><i style="width:${pct(f.g,maxFav)}%"></i></div><span class="small">${f.g} gen.</span></div>`).join('')}` : ''}
-      ${style.length ? `<h2 style="margin-top:14px">Field style</h2>${style.map(s => `<div>${s[0]} <b>${esc(s[1])}</b> <span class="muted small">${esc(s[2])}</span></div>`).join('')}` : ''}
-      ${moduleOn(3) && rare.length ? `<h2 style="margin-top:14px">Rarest discoveries</h2>
-        <p class="small muted">Fewest iNat records in ${esc(scopeLabel(S.prefs.scope))}.</p>
-        ${rare.map(x => `<div><a href="#" data-genus="${x.g.id}"><i>${esc(x.g.name)}</i></a> <span class="small muted">${fmt(x.r.count)} record${x.r.count === 1 ? '' : 's'}</span></div>`).join('')}` : ''}
-    </div>` : '';
   const news = newsHtml(), tips = tipsOnce(true);
-  // Everything else is a row of number tiles; each opens its detail in a sheet (profSheet), so Profile stays short
-  const A = isGuest() ? null : recordShare(M.home.state || M.home.country), pioN = isGuest() ? 0 : myPioneers().length;
-  const ledger = kv.length || n ? `${kv.length ? `<div class="kv">${kv.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</div>` : ''}
-    ${n ? `<h3 style="margin-top:16px">Chassis</h3>
-      <p><b>${esc(TIERS[tier].name)}</b></p>
-      ${next ? `<div class="row"><span class="small">Next: ${esc(next.name)} at ${next.min} genera</span>${bar(n - TIERS[tier].min, next.min - TIERS[tier].min)}<span class="small">${next.min - n} to go</span></div>` : '<p>Fully upgraded.</p>'}
-      <ul class="checks" style="margin-top:10px">${TIERS.map((t,i) => `<li class="${i<=tier?'done':''}">${i<=tier?'☑':'☐'} ${esc(t.module)} <span class="muted small">(${t.min}+)</span></li>`).join('')}</ul>
-      ${streak ? `<h3 style="margin-top:14px">Streaks</h3>${streak}` : ''}` : ''}` : '';
-  const yearsHtml = ys.length >= 2 ? `<div class="row" style="align-items:flex-end;gap:6px;height:120px">
-      ${ys.map(y => `<div style="text-align:center;flex:1;min-width:28px"><div class="small">${years[y]}</div><div style="height:${Math.round(80*years[y]/maxY)}px;background:var(--lit);border-radius:3px 3px 0 0;box-shadow:var(--glow)"></div><div class="small muted">${y}</div></div>`).join('')}
-    </div>` : '';
-  const strip = h => h.replace(/^<div class="panel">\s*/, '').replace(/<\/div>\s*$/, '');   // the region/lineage panels, without their own frame
-  profSheets = {
-    ledger:{ t:'Ledger', h:ledger },
-    regions:{ t:'Regions', h:regionsHtml && strip(regionsHtml).replace('<h2>Regions</h2>', '') },
-    lineages:{ t:'Lineages and field style', h:lineHtml && strip(lineHtml) },
-    share:{ t:'Your share of the record', h:share },
-    pioneer:{ t:'Pioneer badges', h:pio && '<div data-pioneer>' + pio + '</div>' },
-    years:{ t:'New genera per year', h:yearsHtml },
-  };
-  const tile = (k, big, label) => profSheets[k].h ? `<button class="stile" data-act="profSheet" data-v="${k}"><b>${big}</b><span>${label}</span></button>` : '';
-  const tiles = [
-    tile('ledger', fmt(M.obs.length), 'records · ledger'),
-    tile('regions', fmt(regionRows(20).length), `local area${regionRows(20).length === 1 ? '' : 's'}`),
-    tile('lineages', fmt(favouriteLineages(M).length), 'lineages · field style'),
-    A && share ? tile('share', pctTxt(A.pc), `of ${esc(A.where)}'s records`) : '',
-    tile('pioneer', `<span data-piocount>${fmt(pioN)}</span>`, 'pioneer badges'),
-    tile('years', fmt(M.newThisYear), `new genera in ${new Date().getFullYear()}`),
-  ].join('');
   return `${hero}${whatsNewHtml()}${spoods}${finds}${featHtml()}${n ? '' : starter}${news ? `<div style="margin-top:16px">${news}</div>` : ''}
   ${tips ? `<div style="margin-top:16px">${tips}</div>` : ''}
-  ${trophyHtml()}${merchHtml()}
-  ${tiles ? `<div class="panel" style="margin-top:16px"><h2>Your numbers</h2><div class="stiles">${tiles}</div></div>` : ''}`;
-}
-// The detail behind a Profile number tile, from the last Profile render
-let profSheets = {};
-function openProfSheet(k) {
-  const x = profSheets[k]; if (!x?.h) return;
-  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(720px,100%)"><button class="x" data-close="1">✕</button><div class="body">
-    <h2>${esc(x.t)}</h2>${x.h}</div></div></div>`;
+  ${trophyHtml()}${merchHtml()}`;
 }
 
 // A found genus's rarity as card attributes (v2.4): a coloured edge from Uncommon up, foil on Rare and Exceptional; Common stays plain
@@ -2071,6 +2070,7 @@ function cardBack(id) {
     ds.length > 1 ? `${esc(ds[0])} → ${esc(ds[ds.length - 1])}` : ds[0] && esc(ds[0]),
     [plural(g.obs.length, 'record'), sq && `${sq} × 25 km square${sq === 1 ? '' : 's'}`, g.sp.size && plural(g.sp.size, 'species', 'species')].filter(Boolean).join(' · '),
     r && `${rarityChip(r)}${note ? ` ${esc(note)}` : ''}`,
+    `Worth ${worthG(id)} ✦ prestige`,
     `Mastery ${g.level} / 10 · ${g.state.toLowerCase()}`,
     g.cover && `Photo: ${esc(who())}`,
   ].filter(Boolean);
@@ -3133,6 +3133,7 @@ function revealNext() {
     ${wowLine(g.id) ? `<p class="rwow">${esc(wowLine(g.id))}</p>` : ''}
     ${o ? `<p class="rcn">Your mystery spood is ${esc(aGenus(g.name))}!${it.isNew ? ' Card unlocked.' : ''}</p>` : ''}
     ${it.isNew && !o ? `<p>Your ${ordinal(g.discIndex)} jumping spider genus</p>` : ''}
+    ${it.isNew ? `<p class="rworth">+${worthG(g.id)} ✦ prestige</p>` : ''}
     ${o ? `<p>Observed ${esc(o.d)}</p>` : `<p>First observed ${esc(g.first.d)}${g.first.lat != null ? ' · ' + cellLabel(g.first) : ''}</p>`}
     ${it.more ? `<p>…and ${plural(it.more, 'more mystery spood')} identified.</p>` : ''}
     ${!list.length && it.isNew && !isGuest() ? '<p style="margin-top:14px"><button class="primary" data-act="dexImage">📤 Share my SPOODEX</button></p>' : ''}
@@ -4487,21 +4488,6 @@ function recordShare(pid) {
   M.S.forEach(sp => { const m = sp.obs.filter(o => inPlace(o, pid)).length; if (m && ref.s && m >= (ref.s[sp.id] || 0)) spSole++; });
   return { rows, mine, total, pc:total ? mine / total : 0, sole:rows.filter(r => r.mine >= r.all), spSole, where:S.places[pid]?.n || 'your region' };
 }
-function shareHtml() {
-  const M = S.M, st = M.home.state, co = M.home.country;
-  const A = recordShare(st || co);
-  if (!A) return '';
-  const B = co && st && co !== st ? recordShare(co) : null, where = esc(A.where);
-  const partial = A.rows.filter(r => r.mine < r.all && r.pc >= .01).slice(0, 8);
-  if (A.pc < .01 && !A.sole.length && !partial.length) return '';   // nothing worth showing yet
-  return `${A.pc >= .01 ? `<div class="envy"><div class="big">You've made <b>${pctTxt(A.pc)}</b> of all verifiable salticid records on iNat in ${where}.</div>
-      <div class="small muted">${fmt(A.mine)} of ${fmt(A.total)}${B && B.pc >= .01 ? ` · and ${pctTxt(B.pc)} of ${esc(B.where)}'s (${fmt(B.mine)} of ${fmt(B.total)})` : ''}</div></div>` : ''}
-    ${A.sole.length ? `<p>🗝 Every ${where} record of ${A.sole.length === 1 ? 'this genus' : `these ${A.sole.length} genera`} is yours: ${A.sole.map(r => gLink(r.g.id)).join(', ')}</p>` : ''}
-    ${A.spSole ? `<p class="small">…plus ${A.spSole} species where every ${where} record is yours.</p>` : ''}
-    ${partial.length ? `<h3 style="margin-top:10px">Biggest shares in ${where}</h3>
-      ${partial.map(r => `<div class="row" style="gap:8px"><a href="#" data-genus="${r.g.id}" style="min-width:130px"><i>${esc(r.g.name)}</i></a><div class="bar"><i style="width:${Math.round(r.pc * 100)}%"></i></div><span class="small">${pctTxt(r.pc)} <span class="muted">(${r.mine} of ${fmt(r.all)})</span></span></div>`).join('')}` : ''}
-    <p class="small muted">Your verifiable records as a share of every verifiable iNaturalist record in the region.</p>`;
-}
 function shareLine(g) {
   const pid = S.M.home.state || S.M.home.country, ref = pid && S.ref['p' + pid]; if (!ref) return '';
   const mine = g.obs.filter(o => inPlace(o, pid)).length; if (!mine) return '';
@@ -4654,17 +4640,6 @@ function myPioneers() {
   return pioneerTargets().map(k => { const p = S.pioneer[k]; if (!p || !isMe(p.u)) return null;
     const [gid, pid] = k.split(':').map(Number); return { gid, pid, lvl:S.places[pid]?.l, d:p.d, id:p.id }; }).filter(Boolean);
 }
-function pioneerHtml() {
-  const t = pioneerTargets(), R = [...rankTargets().keys()], done = t.filter(k => S.pioneer[k]?.ts).length + R.filter(k => S.pioneer[k]?.rts).length, all = t.length + R.length, mine = myPioneers();
-  const levels = [[0, '🌏', 'National firsts'], [10, '🗺', 'State firsts'], [20, '📍', 'Local firsts']];
-  const where = p => esc(S.places[p.pid]?.n || '?');
-  return `${done < all ? `<p class="small">Checking iNat's earliest records… ${done} of ${all}${pioneerBusy ? ` (about ${Math.ceil((all - done) * 1.1 / 60)} min left)` : ' (resumes while this page is open)'}</p>` : ''}
-    ${mine.length ? `<div class="envy"><div class="big"><b>${mine.length}</b> pioneer badge${mine.length === 1 ? '' : 's'}</div></div>` : ''}
-    ${levels.map(([l, icon, label]) => { const xs = mine.filter(p => p.lvl === l).sort((a,b) => (a.d || '').localeCompare(b.d || ''));
-      return xs.length ? `<h3 style="margin-top:10px">${icon} ${label} (${xs.length})</h3>${xs.map(p => `<div class="small">${gLink(p.gid)} in ${where(p)} · <a href="https://www.inaturalist.org/observations/${p.id}" target="_blank" rel="noopener">${esc(p.d)} ↗</a></div>`).join('')}` : ''; }).join('')}
-    ${!mine.length && done ? '<p class="muted">No firsts so far.</p>' : ''}
-    <p class="small muted">A pioneer badge means your record is the earliest verifiable iNaturalist record of that genus in the place, by date observed.</p>`;
-}
 function pioneerLine(gid) {
   const xs = pioneerTargets().filter(k => k.startsWith(gid + ':')).map(k => ({ pid:+k.split(':')[1], p:S.pioneer[k] })).filter(x => x.p && x.p.u);
   if (!xs.length) return '';
@@ -4672,14 +4647,11 @@ function pioneerLine(gid) {
 }
 let honoursN = -1;
 function pioneerUpdated() {
-  const els = document.querySelectorAll('[data-pioneer]'), cnt = document.querySelectorAll('[data-piocount]');
-  els.forEach(el => el.innerHTML = pioneerHtml());
-  cnt.forEach(el => el.textContent = fmt(myPioneers().length));
   document.querySelectorAll('[data-history]').forEach(el => el.innerHTML = historyHtml(+el.dataset.history));
   document.querySelectorAll('[data-splore]').forEach(el => el.innerHTML = spLoreHtml(+el.dataset.splore));
   const hn = S.u?.honours?.length || 0, grew = hn !== honoursN; honoursN = hn;
-  // the pioneer panel appears with the first badge, the honours with the first honour
-  if (S.tab === 'profile' && ((!els.length && !cnt.length && myPioneers().length) || grew)) softRender();
+  // the trophy cabinet shows a new honour
+  if (S.tab === 'profile' && grew) softRender();
 }
 
 /* ---------------- naturalist honours: the ceremony, the cabinet, the share card and the dispatch ---------------- */
@@ -5118,7 +5090,7 @@ function findCard(x) {
   const when = !p || p.few ? '' : p.text === 'year-round' ? '🌡 Recorded all year round' : p.now ? `🌡 In season now · peak ${esc(p.text)}` : `🗓 Peak ${esc(p.text)}`;
   return `<div class="fcard" data-act="wanted" data-v="${x.id}" title="Where and when to look">
     ${ph ? `<div class="ph" style="background-image:url('${esc(ph.u)}')"></div>` : '<div class="ph none"><i class="sil"></i></div>'}
-    <div class="meta"><div class="nm"><i>${esc(S.nodes[x.id]?.n || '?')}</i></div>${cnOf(x.id) ? `<div class="cn">${esc(cnOf(x.id))}</div>` : ''}
+    <div class="meta"><div class="nm"><i>${esc(S.nodes[x.id]?.n || '?')}</i> <span class="worth" title="Prestige it would add">+${worthG(x.id)} ✦</span></div>${cnOf(x.id) ? `<div class="cn">${esc(cnOf(x.id))}</div>` : ''}
       <div class="small">${near}</div>${when ? `<div class="small">${when}</div>` : ''}${ph ? `<div class="cr">${esc(ph.cr)}</div>` : ''}</div></div>`;
 }
 // Skeletons in the shape of the cards on their way (v2.4)
@@ -5132,7 +5104,7 @@ function nextThreeHtml() {
   return `<h3 style="margin-top:14px">Three to find next <span class="small muted">· ${MONTHS[ctx.month]}</span></h3><div class="finds">${xs.map(findCard).join('')}</div>`;
 }
 
-/* ---------------- spoodarium: captive records (v2.7) ---------------- */
+/* ---------------- spoodarium: captive records (v2.7) and your terrarium (v2.9) ---------------- */
 // Records marked captive / cultivated on iNat (pets, rescues, spiders being raised). The SPOODEX counts wild finds only (buildModel), so
 // these get a shelf of their own, and each kept genus not yet found wild gets a Three-to-find card: where and when to look for a wild one.
 const petGenera = (M = S.M) => [...new Set(M.pets.map(o => genusOf(o.anc)).filter(Boolean))];
@@ -5140,7 +5112,7 @@ const petWild = (M = S.M) => petGenera(M).filter(id => !M.G.has(id));
 let petBusy = false, petKey = '';
 async function loadPetWild() {
   const M = S.M, h = M.homeCell, ids = petWild(M), ctx = homeCtx(), k = `${h?.k}:${ctx.pid}:${ids}:${M.pets.length}`;
-  if (petBusy || k === petKey) return;
+  if (petBusy || k === petKey || !M.pets.length) return;
   petBusy = true; petKey = k;
   try {
     await ensureInfo([...ids, ...M.pets.map(o => o.t.id)]);   // common names for the shelf, photos for the cards
@@ -5159,22 +5131,23 @@ function wildFor(id, ctx = homeCtx()) {
   if (ctx.pid && S.pheno[phenoKey(id, ctx.pid)]) x.peak = peakInfo(id, ctx.pid, ctx.month);
   return x;
 }
+// Open to everyone since v2.9 (the terrarium); the shelf and From pet to wild only appear with captive records. The owner's sticker art,
+// big, is the decoration throughout (alt="", decoration only, as everywhere else).
 function viewPets() {
-  const M = S.M, ctx = homeCtx(), where = ctxWhere(ctx), login = isGuest() ? '' : S.login;
-  if (!M.pets.length) return `<div class="panel"><h2>🏺 Spoodarium</h2><p>Jumping spiders you post on iNaturalist marked as captive (pets, rescues, spiders you raise) are kept here.
-    They don't count towards your SPOODEX, which collects spiders found in the wild.</p></div>`;
-  // one shelf card per taxon kept, newest record's photo first
+  const M = S.M, ctx = homeCtx(), where = ctxWhere(ctx), login = isGuest() ? '' : S.login, names = S.u.petNames || {};
+  const kept = petGenera(M), found = kept.filter(id => M.G.has(id)), todo = kept.filter(id => !M.G.has(id));
+  // one shelf jar per taxon kept, newest record's photo first; a name of your own if they had one
   const by = new Map(); for (const o of M.pets) { const t = by.get(o.t.id) || { t:o.t, obs:[] }; t.obs.push(o); by.set(o.t.id, t); }
   const shelf = [...by.values()].map(({ t, obs }) => {
     const o = obs.find(x => x.ph.length) || obs[0], ital = (t.l ?? 99) <= 20;   // genus and below in italics
     const href = obs.length === 1 ? `https://www.inaturalist.org/observations/${o.id}`
       : `https://www.inaturalist.org/observations?user_id=${encodeURIComponent(login)}&taxon_id=${t.id}&captive=true&verifiable=any`;
-    return `<a class="ccard" href="${esc(href)}" target="_blank" rel="noopener" title="Open on iNaturalist">
-      ${o.ph.length ? `<span class="ph" style="background-image:url('${esc(photoSize(o.ph[0], 'medium'))}')"></span>` : '<span class="ph" style="display:grid;place-items:center"><i class="sil"></i></span>'}
-      <span class="meta"><span class="nm">${ital ? `<i>${esc(t.n || '?')}</i>` : esc(t.n || 'Unknown')}</span>${cnOf(t.id) ? `<span class="cn">${esc(cnOf(t.id))}</span>` : ''}
-        <span class="rl">${obs.length === 1 ? esc(o.d || '') : `${obs.length} records · latest ${esc(o.d || '')}`}</span></span></a>`;
+    return `<div class="ccard jar"><span class="lid"></span>
+      <a class="ph" href="${esc(href)}" target="_blank" rel="noopener" title="Open on iNaturalist"${o.ph.length ? ` style="background-image:url('${esc(photoSize(o.ph[0], 'medium'))}')"` : ''}>${o.ph.length ? '' : '<i class="sil"></i>'}</a>
+      <span class="meta">${names[t.id] ? `<span class="petnm hand">${esc(names[t.id])}</span>` : ''}<span class="nm">${ital ? `<i>${esc(t.n || '?')}</i>` : esc(t.n || 'Unknown')}</span>${cnOf(t.id) ? `<span class="cn">${esc(cnOf(t.id))}</span>` : ''}
+        <span class="rl">${obs.length === 1 ? esc(o.d || '') : `${obs.length} records · latest ${esc(o.d || '')}`}</span>
+        ${isGuest() ? '' : `<input class="petname" data-petname="${t.id}" value="${esc(names[t.id] || '')}" maxlength="30" placeholder="Their name, if they had one" aria-label="Name for this spood" autocomplete="off">`}</span></div>`;
   }).join('');
-  const kept = petGenera(M), found = kept.filter(id => M.G.has(id)), todo = kept.filter(id => !M.G.has(id));
   const wildCard = id => {
     const x = wildFor(id, ctx);
     if (x.state || x.near) return findCard(x);
@@ -5188,11 +5161,277 @@ function viewPets() {
         <button class="primary" data-tab="map">🏠 Set a home base</button></div>`
     : `<div class="panel" style="margin-top:16px"><h2>From pet to wild</h2><p class="small">Find ${todo.length === 1 ? `a wild <i>${esc(S.nodes[todo[0]]?.n || '?')}</i>` : 'a wild one of the genera you keep'}, post it to iNaturalist, and once it's identified to genus its card unlocks in your SPOODEX.</p>
         ${petBusy && !S.ref['p' + ctx.pid] ? skelFinds(Math.min(3, todo.length)) : `<div class="finds">${todo.map(wildCard).join('')}</div>`}</div>`;
-  return `<div class="panel"><h2>🏺 Spoodarium</h2>
-      <p>${plural(M.pets.length, 'captive record')} on iNaturalist${kept.length ? `, ${plural(kept.length, 'genus', 'genera')}` : ''}. They don't count towards your SPOODEX, which collects spiders found in the wild.</p>
-      ${found.length ? `<p class="small">Found wild too: ${found.map(id => `<a href="#" data-genus="${id}"><i>${esc(S.nodes[id]?.n || '?')}</i></a>`).join(', ')}</p>` : ''}
-      <div class="casegrid">${shelf}</div></div>${wild}`;
+  const art = stickerFor(S.login);
+  const head = `<div class="panel spoodhead"><div class="artband" aria-hidden="true">${[art + 2, art + 5, art + 3].map((i, k) => stickerHtml(i, 'a' + k)).join('')}</div>
+    <h2>🏺 Spoodarium</h2>
+    ${M.pets.length ? `<p>${plural(M.pets.length, 'captive record')} on iNaturalist${kept.length ? `, ${plural(kept.length, 'genus', 'genera')}` : ''}. These spoods were once captive; enter their names if/where applicable, and take a moment to remember some of the good times you had together.</p>
+      ${found.length ? `<p class="small">Found wild too: ${found.map(id => `<a href="#" data-genus="${id}"><i>${esc(S.nodes[id]?.n || '?')}</i></a>`).join(', ')}</p>` : ''}`
+    : `<p>Jumping spiders you post on iNaturalist marked as captive (pets, rescues, spiders you raise) go on a shelf here. Below, build a terrarium for a spood of your own.</p>`}
+    </div>`;
+  const shelfHtml = M.pets.length ? `<div class="panel shelfpanel" style="margin-top:16px"><h2>The shelf</h2><div class="casegrid">${shelf}</div><div class="shelfboard" aria-hidden="true"></div></div>` : '';
+  const keep = `<div class="panel keeppanel stk" style="margin-top:16px">${stickerHtml(art + 1, 'big')}<h2>Keep one for a while</h2>
+    <ul class="keeplist">
+      <li>A clear tub or jar taller than it is wide, with small air holes: jumping spiders build their silk retreats up high.</li>
+      <li>A twig or leaf to climb, and a light mist on one wall every couple of days for drinking.</li>
+      <li>Live prey smaller than the spider, such as flies, every few days; take out anything left uneaten.</li>
+      <li>When you're done, let it go where you found it.</li>
+      <li>Post it to iNaturalist marked <b>captive / cultivated</b> and it joins your shelf here.</li>
+    </ul>
+    <p class="row" style="margin:0"><a class="btnlink" href="https://www.inaturalist.org/observations/upload" target="_blank" rel="noopener">Upload to iNaturalist ↗</a></p></div>`;
+  return head + shelfHtml + tankHtml() + keep + wild;
 }
+
+// ---- your terrarium (v2.9, owner 2026-10-16): a resident drawn from the sticker art, kitted out with gear the prestige you've reached unlocks ----
+// Gear unlocks at fixed prestige milestones (never chance) and is never spent. Saved with the naturalist in this browser (S.u.tank).
+// Drawn as one SVG, 600 × 440, so the same scene goes on screen and into the saved picture.
+const TANK_W = 600, TANK_H = 440;
+const GEAR = {
+  enc:{ n:'Enclosure', one:true, items:[['jar', 'Glass jar', 0], ['cube', 'Glass cube', 100], ['tall', 'Tall arboreal tank', 350], ['dome', 'Bell dome', 900], ['cabinet', 'Museum cabinet', 2000]] },
+  back:{ n:'Backdrop', one:true, items:[['kraft', 'Kraft paper', 0], ['rain', 'Rainforest', 50], ['dunes', 'Red dunes', 250], ['night', 'Night sky', 600], ['herb', 'Herbarium sheets', 1200]] },
+  sub:{ n:'Floor', one:true, items:[['coco', 'Coco fibre', 0], ['litter', 'Leaf litter', 75], ['moss', 'Moss', 300], ['sand', 'Red sand', 700], ['pebble', 'River pebbles', 1500]] },
+  plant:{ n:'Plants', max:3, items:[['pothos', 'Pothos', 0], ['grass', 'Grass tussock', 150], ['fern', 'Fern', 400], ['brom', 'Bromeliad', 800], ['orchid', 'Orchid', 1300], ['xan', 'Grass tree', 2500]] },
+  decor:{ n:'Decor', max:3, items:[['leaf', 'Silk retreat leaf', 0], ['cork', 'Cork branch', 100], ['rock', 'Basalt rock', 250], ['ledge', 'Feeding ledge', 500], ['mirror', 'Hand mirror', 1000], ['trophy', 'Tiny trophy', 1800], ['disco', 'Disco ball', 3500]] },
+  head:{ n:'Hat', one:true, none:true, items:[['party', 'Party hat', 50], ['pith', 'Explorer\'s helmet', 200], ['top', 'Top hat', 700], ['crown', 'Crown', 3000]] },
+  face:{ n:'Eyewear', one:true, none:true, items:[['specs', 'Round specs', 150], ['mono', 'Monocle', 450], ['shades', 'Shades', 1100]] },
+  neck:{ n:'Neckwear', one:true, none:true, items:[['bow', 'Bow tie', 25], ['scarf', 'Bandana', 300], ['chain', 'Gold chain', 1600], ['medal', 'Prestige medal', 5000]] },
+  light:{ n:'Lighting', one:true, items:[['day', 'Daylight', 0], ['gold', 'Golden hour', 350], ['moon', 'Moonlight', 850], ['uv', 'UV glow', 2200]] },
+};
+const GEAR_ALL = Object.entries(GEAR).flatMap(([c, g]) => g.items.map(([k, n, at]) => ({ c, k, n, at })));
+const gearAt = (c, k) => GEAR[c].items.find(x => x[0] === k)?.[2] ?? Infinity;
+// Where each sticker's head, eyes and chin sit (fractions of the image) and which way its head tilts, for the drip
+const STICKER_FIT = [
+  { h:[.52, .19], f:[.53, .29], n:[.52, .44], r:0 }, { h:[.47, .31], f:[.47, .39], n:[.47, .5], r:0 },
+  { h:[.5, .63], f:[.5, .72], n:[.5, .8], r:0 }, { h:[.52, .7], f:[.52, .79], n:[.52, .88], r:0 },
+  { h:[.23, .2], f:[.2, .33], n:[.2, .5], r:-25 }, { h:[.33, .27], f:[.31, .38], n:[.27, .5], r:-20 },
+  { h:[.22, .29], f:[.18, .43], n:[.2, .58], r:-30 }, { h:[.62, .34], f:[.62, .46], n:[.62, .56], r:0 },
+];
+function tankState() {
+  const t = S.u.tank || (S.u.tank = { art:stickerFor(S.login), name:'', enc:'jar', back:'kraft', sub:'coco', plant:['pothos'], decor:['leaf'], head:'', face:'', neck:'', light:'day' });
+  for (const c of ['plant', 'decor']) if (!Array.isArray(t[c])) t[c] = [];
+  return t;
+}
+// Gear above your best prestige comes off (shown again once it's back up)
+const tankWorn = (t, best) => Object.fromEntries(Object.keys(GEAR).map(c => [c, GEAR[c].max ? t[c].filter(k => gearAt(c, k) <= best)
+  : t[c] && gearAt(c, t[c]) <= best ? t[c] : GEAR[c].none ? '' : GEAR[c].items[0][0]]));
+
+// ---- the scene ----
+const ENC = {
+  jar:{ x:170, y:78, w:260, h:322, r:34 }, cube:{ x:105, y:82, w:390, h:318, r:10 }, tall:{ x:180, y:28, w:240, h:372, r:8 },
+  dome:{ x:125, y:40, w:350, h:350, r:0 }, cabinet:{ x:70, y:46, w:460, h:344, r:0 },
+};
+const encPath = (k, E) => k === 'dome' ? `M${E.x},${E.y + E.h} V${E.y + 175} A${E.w / 2},175 0 0 1 ${E.x + E.w},${E.y + 175} V${E.y + E.h} Z`
+  : `M${E.x + E.r},${E.y} H${E.x + E.w - E.r} Q${E.x + E.w},${E.y} ${E.x + E.w},${E.y + E.r} V${E.y + E.h - E.r} Q${E.x + E.w},${E.y + E.h} ${E.x + E.w - E.r},${E.y + E.h} H${E.x + E.r} Q${E.x},${E.y + E.h} ${E.x},${E.y + E.h - E.r} V${E.y + E.r} Q${E.x},${E.y} ${E.x + E.r},${E.y} Z`;
+function tankBack(k, E) {
+  const R = rng(7), box = `x="${E.x}" y="${E.y}" width="${E.w}" height="${E.h}"`;
+  if (k === 'rain') return `<rect ${box} fill="url(#tgRain)"/>` + Array.from({ length:26 }, () => { const x = E.x + R() * E.w, y = E.y + R() * E.h * .8, s = 14 + R() * 26;
+    return `<ellipse cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" rx="${(s / 2.6).toFixed(0)}" ry="${s.toFixed(0)}" transform="rotate(${(R() * 140 - 70).toFixed(0)} ${x.toFixed(0)} ${y.toFixed(0)})" fill="${['#1f4a2c', '#2d6239', '#3d7a45'][Math.floor(R() * 3)]}" opacity=".75"/>`; }).join('');
+  if (k === 'dunes') return `<rect ${box} fill="url(#tgDune)"/><circle cx="${E.x + E.w * .72}" cy="${E.y + E.h * .3}" r="26" fill="#fff3c4" opacity=".9"/>
+    <path d="M${E.x},${E.y + E.h * .62} Q${E.x + E.w * .3},${E.y + E.h * .45} ${E.x + E.w * .55},${E.y + E.h * .6} T${E.x + E.w},${E.y + E.h * .55} V${E.y + E.h} H${E.x} Z" fill="#c45a2c"/>
+    <path d="M${E.x},${E.y + E.h * .74} Q${E.x + E.w * .4},${E.y + E.h * .6} ${E.x + E.w},${E.y + E.h * .72} V${E.y + E.h} H${E.x} Z" fill="#a8441f"/>`;
+  if (k === 'night') return `<rect ${box} fill="url(#tgNight)"/>` + Array.from({ length:60 }, () => `<circle cx="${(E.x + R() * E.w).toFixed(0)}" cy="${(E.y + R() * E.h * .75).toFixed(0)}" r="${(R() * 1.6 + .4).toFixed(1)}" fill="#fff" opacity="${(.4 + R() * .6).toFixed(2)}"/>`).join('')
+    + `<circle cx="${E.x + E.w * .25}" cy="${E.y + E.h * .22}" r="20" fill="#f4f1dc"/><circle cx="${E.x + E.w * .25 + 8}" cy="${E.y + E.h * .22 - 5}" r="17" fill="#1a2547"/>`;
+  if (k === 'herb') return `<rect ${box} fill="#d8ccb0"/>` + [[.04, .05, -4], [.36, .02, 3], [.66, .07, -2]].map(([fx, fy, r]) => { const x = E.x + fx * E.w, y = E.y + fy * E.h, w = E.w * .32, h = E.h * .62;
+    return `<g transform="rotate(${r} ${x + w / 2} ${y + h / 2})"><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#f6efdc" stroke="#b8a77f"/><path d="M${x + w / 2},${y + h * .9} C${x + w * .4},${y + h * .6} ${x + w * .6},${y + h * .35} ${x + w / 2},${y + h * .1}" stroke="#5d6b3c" stroke-width="2" fill="none"/>
+      ${[.25, .4, .55, .7].map(f => `<ellipse cx="${x + w * (f * 10 % 2 > 1 ? .38 : .62)}" cy="${y + h * f}" rx="${w * .12}" ry="${w * .05}" fill="#7b8a4e" transform="rotate(${f * 10 % 2 > 1 ? 30 : -30} ${x + w * (f * 10 % 2 > 1 ? .38 : .62)} ${y + h * f})"/>`).join('')}
+      <rect x="${x + w * .55}" y="${y + h * .8}" width="${w * .38}" height="${h * .12}" fill="#fffaf0" stroke="#b8a77f"/></g>`; }).join('');
+  return `<rect ${box} fill="#e9dcbf"/>` + Array.from({ length:Math.floor(E.h / 22) }, (_, i) => `<line x1="${E.x}" x2="${E.x + E.w}" y1="${E.y + 22 * (i + 1)}" y2="${E.y + 22 * (i + 1)}" stroke="#8a6d3f" stroke-opacity=".12"/>`).join('');
+}
+function tankFloor(k, E, fy) {
+  const R = rng(11), bottom = E.y + E.h + 2, top = `M${E.x - 2},${fy} Q${E.x + E.w * .25},${fy - 10} ${E.x + E.w * .5},${fy} T${E.x + E.w + 2},${fy} V${bottom} H${E.x - 2} Z`;
+  const dots = (n, cols, rmax) => Array.from({ length:n }, () => `<circle cx="${(E.x + R() * E.w).toFixed(0)}" cy="${(fy + 4 + R() * (bottom - fy - 4)).toFixed(0)}" r="${(R() * rmax + .6).toFixed(1)}" fill="${cols[Math.floor(R() * cols.length)]}"/>`).join('');
+  if (k === 'litter') return `<path d="${top}" fill="#5a3a22"/>` + Array.from({ length:40 }, () => { const x = E.x + R() * E.w, y = fy + R() * (bottom - fy);
+    return `<ellipse cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" rx="${(7 + R() * 7).toFixed(0)}" ry="${(3 + R() * 3).toFixed(0)}" transform="rotate(${(R() * 180).toFixed(0)} ${x.toFixed(0)} ${y.toFixed(0)})" fill="${['#9a5b2a', '#b9772f', '#7a4a24', '#c58b3c', '#6d5a2a'][Math.floor(R() * 5)]}"/>`; }).join('');
+  if (k === 'moss') return `<path d="${top}" fill="#4e7a33"/>` + Array.from({ length:30 }, () => `<circle cx="${(E.x + R() * E.w).toFixed(0)}" cy="${(fy + R() * 8).toFixed(0)}" r="${(6 + R() * 9).toFixed(0)}" fill="${['#5d8f3c', '#6fa246', '#456e2c'][Math.floor(R() * 3)]}"/>`).join('') + dots(40, ['#82b552', '#3c6126'], 1.5);
+  if (k === 'sand') return `<path d="${top}" fill="#c4612f"/>` + dots(90, ['#d97a45', '#a84d22', '#e8a06a'], 1.3);
+  if (k === 'pebble') return `<path d="${top}" fill="#6f6a60"/>` + Array.from({ length:45 }, () => `<ellipse cx="${(E.x + R() * E.w).toFixed(0)}" cy="${(fy + 3 + R() * (bottom - fy - 3)).toFixed(0)}" rx="${(5 + R() * 8).toFixed(0)}" ry="${(4 + R() * 5).toFixed(0)}" fill="${['#9b958a', '#c9c2b4', '#7d776c', '#b3a48c', '#5f5a52'][Math.floor(R() * 5)]}" stroke="#4a463f" stroke-width=".6"/>`).join('');
+  return `<path d="${top}" fill="#6b4528"/>` + dots(80, ['#8a5b35', '#4d3019', '#a06d42'], 1.4);
+}
+// Plants stand at x on the floor line, `s` scales them to the enclosure
+function tankPlant(k, x, fy, s) {
+  const g = body => `<g transform="translate(${x.toFixed(0)} ${fy}) scale(${s.toFixed(2)})">${body}</g>`;
+  if (k === 'pothos') return g(`<path d="M0,0 C-10,-60 20,-110 -5,-170" stroke="#3f6b2a" stroke-width="3" fill="none"/>` + [[-4, -30, -40], [8, -62, 35], [-6, -95, -30], [10, -125, 40], [-3, -155, -20]].map(([lx, ly, r]) =>
+    `<path d="M${lx},${ly} c-14,-6 -22,-22 -12,-30 c6,-4 12,0 12,6 c0,-6 6,-10 12,-6 c10,8 2,24 -12,30 z" fill="#4f9a3a" stroke="#2f5e22" stroke-width="1" transform="rotate(${r} ${lx} ${ly})"/>`).join(''));
+  if (k === 'grass') return g(Array.from({ length:13 }, (_, i) => { const a = -60 + i * 10, h = 70 + (i % 4) * 18, ex = Math.sin(a * Math.PI / 180) * h;
+    return `<path d="M${i - 6},0 Q${(ex * .3).toFixed(0)},${(-h * .7).toFixed(0)} ${ex.toFixed(0)},${-h}" stroke="${i % 3 ? '#7f9a3c' : '#a3b553'}" stroke-width="3" fill="none" stroke-linecap="round"/>`; }).join(''));
+  if (k === 'fern') return g([-50, -25, 0, 25, 50].map((a, i) => { const h = 110 - Math.abs(a) * .6;
+    return `<g transform="rotate(${a})"><path d="M0,0 Q8,${-h / 2} 0,${-h}" stroke="#2f6a32" stroke-width="2.5" fill="none"/>${Array.from({ length:9 }, (_, j) => { const y = -12 - j * (h - 14) / 9, w = 22 - j * 2;
+      return `<path d="M2,${y.toFixed(0)} q${w},-4 ${w},-10 M0,${y.toFixed(0)} q${-w},-4 ${-w},-10" stroke="#3f8a3e" stroke-width="3" fill="none" stroke-linecap="round"/>`; }).join('')}</g>`; }).join(''));
+  if (k === 'brom') return g([-70, -45, -20, 0, 20, 45, 70].map(a => `<path d="M0,0 C-10,-40 -8,-70 0,-95 C8,-70 10,-40 0,0 Z" fill="${Math.abs(a) > 30 ? '#5e8f3a' : '#79a948'}" stroke="#3b5f22" transform="rotate(${a})"/>`).join('')
+    + `<path d="M0,-8 C-8,-30 -6,-46 0,-58 C6,-46 8,-30 0,-8 Z" fill="#d23c3c"/><path d="M-4,-14 C-14,-30 -16,-40 -12,-48 M4,-14 C14,-30 16,-40 12,-48" stroke="#e85a4a" stroke-width="5" stroke-linecap="round" fill="none"/>`);
+  if (k === 'orchid') return g(`<path d="M-14,0 C-30,-14 -36,-24 -24,-30 M14,0 C30,-14 36,-24 24,-30" stroke="#3f7a35" stroke-width="10" stroke-linecap="round" fill="none"/>
+    <path d="M0,0 C4,-60 30,-110 60,-130" stroke="#5a6b30" stroke-width="2.5" fill="none"/>` + [[18, -70], [34, -96], [52, -118], [66, -132]].map(([fx, fy2]) =>
+    `<g transform="translate(${fx} ${fy2})">${[0, 72, 144, 216, 288].map(r => `<ellipse cx="0" cy="-8" rx="5" ry="9" fill="#f2b8d6" stroke="#c7779f" stroke-width=".8" transform="rotate(${r})"/>`).join('')}<circle r="3.5" fill="#b0306a"/></g>`).join(''));
+  if (k === 'xan') return g(`<path d="M-9,0 L-7,-70 L7,-70 L9,0 Z" fill="#2a2420"/><path d="M-7,-30 h14 M-7,-50 h14" stroke="#4a3e34" stroke-width="2"/>`
+    + Array.from({ length:34 }, (_, i) => { const a = -170 + i * 10.3, l = 55 + (i % 5) * 9, ex = Math.cos(a * Math.PI / 180) * l, ey = Math.sin(a * Math.PI / 180) * l;
+      return `<path d="M0,-70 Q${(ex * .5).toFixed(0)},${(-70 + ey * .5 - 10).toFixed(0)} ${ex.toFixed(0)},${(-70 + ey + (a > -90 ? 25 : 25)).toFixed(0)}" stroke="${i % 2 ? '#6e8f3a' : '#93ad4f'}" stroke-width="1.6" fill="none"/>`; }).join('')
+    + `<path d="M0,-118 L0,-200" stroke="#7a5a2c" stroke-width="5" stroke-linecap="round"/><path d="M0,-150 L0,-198" stroke="#c9b26a" stroke-width="9" stroke-linecap="round" stroke-dasharray="2 3"/>`);
+  return '';
+}
+// Decor has fixed spots so pieces never land on each other
+function tankDecor(k, E, fy) {
+  const X = f => (E.x + E.w * f).toFixed(0);
+  if (k === 'leaf') return `<g transform="translate(${X(.2)} ${(E.y + E.h * .2).toFixed(0)})"><path d="M0,0 C30,-10 60,0 66,30 C40,40 10,30 0,0 Z" fill="#7d6a32" stroke="#4d3e1c"/><path d="M0,0 C24,8 46,16 66,30" stroke="#4d3e1c" fill="none"/>
+    <path d="M6,8 C20,26 40,34 60,34 M10,4 C26,18 44,26 64,28 M4,12 C22,30 36,40 56,40" stroke="#fff" stroke-opacity=".75" stroke-width=".8" fill="none"/><path d="M0,0 L-6,-40" stroke="#fff" stroke-opacity=".6" stroke-width=".7"/></g>`;
+  if (k === 'cork') return `<path d="M${X(.05)},${fy - 6} C${X(.3)},${fy - 70} ${X(.6)},${fy - 140} ${X(.95)},${(E.y + E.h * .28).toFixed(0)}" stroke="#5a3b22" stroke-width="22" stroke-linecap="round" fill="none"/>
+    <path d="M${X(.05)},${fy - 6} C${X(.3)},${fy - 70} ${X(.6)},${fy - 140} ${X(.95)},${(E.y + E.h * .28).toFixed(0)}" stroke="#8a5f3a" stroke-width="14" stroke-linecap="round" fill="none" stroke-dasharray="6 5"/>`;
+  if (k === 'rock') return `<path d="M${X(.66)},${fy + 6} l10,-34 l26,-12 l30,8 l12,30 l-4,12 Z" fill="#3c3a3a" stroke="#222" stroke-width="1.5"/><path d="M${+X(.66) + 14},${fy - 22} l18,-8 l14,4" stroke="#6a6766" stroke-width="2" fill="none"/>`;
+  if (k === 'ledge') return `<g transform="translate(${X(.68)} ${(E.y + E.h * .42).toFixed(0)})"><rect x="0" y="0" width="70" height="8" rx="2" fill="#a0784c" stroke="#5e4226"/><path d="M8,8 l10,14 M62,8 l-10,14" stroke="#5e4226" stroke-width="3"/>
+    <g transform="translate(40 -6)"><ellipse rx="6" ry="4" fill="#222"/><ellipse cx="-3" cy="-4" rx="5" ry="3" fill="#cfe6f2" opacity=".8" transform="rotate(-20)"/><ellipse cx="3" cy="-4" rx="5" ry="3" fill="#cfe6f2" opacity=".8" transform="rotate(20)"/><circle cx="-6" cy="0" r="2.4" fill="#8a2020"/></g></g>`;
+  if (k === 'mirror') return `<g transform="translate(${X(.27)} ${fy - 2}) rotate(-14)"><rect x="-4" y="0" width="8" height="34" rx="3" fill="#b0873a" transform="rotate(180)"/><ellipse cx="0" cy="-58" rx="22" ry="28" fill="#c79a3e"/><ellipse cx="0" cy="-58" rx="17" ry="23" fill="#d9eef5"/>
+    <path d="M-8,-70 l10,-6 M-10,-60 l16,-10" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></g>`;
+  if (k === 'trophy') return `<g transform="translate(${X(.84)} ${fy + 2})"><rect x="-14" y="-8" width="28" height="8" fill="#6b4a1f"/><rect x="-4" y="-22" width="8" height="14" fill="#d9a632"/><path d="M-14,-50 h28 c0,18 -6,28 -14,28 c-8,0 -14,-10 -14,-28 Z" fill="#f0c043" stroke="#a87b1c"/>
+    <path d="M-14,-46 c-10,0 -10,14 0,14 M14,-46 c10,0 10,14 0,14" stroke="#d9a632" stroke-width="3" fill="none"/><text x="0" y="-32" font-size="12" text-anchor="middle" fill="#7a5410">✦</text></g>`;
+  if (k === 'disco') return `<g transform="translate(${X(.5)} ${(E.y + 6).toFixed(0)})"><line x1="0" y1="0" x2="0" y2="26" stroke="#888"/><circle cx="0" cy="48" r="22" fill="#c9ccd6" stroke="#7a7d88"/>
+    ${[-14, -7, 0, 7, 14].map(y => `<line x1="-21" x2="21" y1="${48 + y}" y2="${48 + y}" stroke="#7a7d88" stroke-width=".7"/>`).join('')}${[-14, -7, 0, 7, 14].map(x => `<line y1="27" y2="69" x1="${x}" x2="${x}" stroke="#7a7d88" stroke-width=".7"/>`).join('')}
+    <circle cx="-8" cy="40" r="4" fill="#fff"/>${[[-60, 90], [50, 110], [-30, 160], [70, 60], [10, 200]].map(([x, y]) => `<path d="M${x},${y} l3,-8 l3,8 l8,3 l-8,3 l-3,8 l-3,-8 l-8,-3 Z" fill="#fff6c8" opacity=".85"/>`).join('')}</g>`;
+  return '';
+}
+// Drip: drawn about a 60-unit head, centred on the anchor
+const DRIP = {
+  party:`<path d="M-16,4 L0,-44 L16,4 Z" fill="#e2574c" stroke="#7a2a22" stroke-width="1.5"/><path d="M-10,-12 L10,-6 M-6,-26 L7,-21" stroke="#ffd34d" stroke-width="4"/><circle cy="-46" r="6" fill="#ffd34d"/>`,
+  pith:`<ellipse cx="0" cy="0" rx="34" ry="8" fill="#c9b27a" stroke="#6e5a2c" stroke-width="1.5"/><path d="M-22,0 C-22,-30 22,-30 22,0 Z" fill="#d8c48d" stroke="#6e5a2c" stroke-width="1.5"/><path d="M-22,-4 H22" stroke="#7a5a2c" stroke-width="4"/>`,
+  top:`<ellipse cx="0" cy="0" rx="30" ry="7" fill="#1b1714"/><rect x="-18" y="-42" width="36" height="42" fill="#221d19" stroke="#000"/><rect x="-18" y="-10" width="36" height="6" fill="#a8412a"/>`,
+  crown:`<path d="M-24,0 L-24,-24 L-12,-12 L0,-30 L12,-12 L24,-24 L24,0 Z" fill="#f2c443" stroke="#9a7413" stroke-width="1.5"/><circle cx="0" cy="-8" r="4" fill="#c0283a"/><circle cx="-14" cy="-6" r="3" fill="#2a63c0"/><circle cx="14" cy="-6" r="3" fill="#2a8a3c"/>`,
+  specs:`<circle cx="-13" cy="0" r="11" fill="#fff" fill-opacity=".15" stroke="#3a2a1a" stroke-width="3"/><circle cx="13" cy="0" r="11" fill="#fff" fill-opacity=".15" stroke="#3a2a1a" stroke-width="3"/><path d="M-2,-1 Q0,-4 2,-1" stroke="#3a2a1a" stroke-width="3" fill="none"/>`,
+  mono:`<circle cx="11" cy="0" r="12" fill="#fff" fill-opacity=".2" stroke="#c9a03a" stroke-width="3"/><path d="M22,4 C30,20 26,34 18,44" stroke="#c9a03a" stroke-width="1.5" fill="none" stroke-dasharray="2 2"/>`,
+  shades:`<path d="M-27,-6 H-3 V2 C-3,10 -25,10 -27,2 Z M3,-6 H27 V2 C25,10 3,10 3,2 Z" fill="#141414" stroke="#000"/><path d="M-3,-4 H3" stroke="#000" stroke-width="3"/><path d="M-22,-3 l6,0" stroke="#fff" stroke-width="2" opacity=".6"/>`,
+  bow:`<path d="M0,0 L-20,-12 L-20,12 Z M0,0 L20,-12 L20,12 Z" fill="#b32a2a" stroke="#5e1414" stroke-width="1.5"/><circle r="5" fill="#d23c3c" stroke="#5e1414"/>`,
+  scarf:`<path d="M-24,-6 Q0,6 24,-6 L0,24 Z" fill="#c0392b" stroke="#6e1f17" stroke-width="1.5"/><circle cx="-8" cy="2" r="2" fill="#fff"/><circle cx="6" cy="6" r="2" fill="#fff"/><circle cx="0" cy="14" r="2" fill="#fff"/>`,
+  chain:`<path d="M-24,-8 Q0,22 24,-8" stroke="#e2b53c" stroke-width="5" fill="none" stroke-dasharray="5 2"/><circle cx="0" cy="12" r="8" fill="#f2c443" stroke="#9a7413"/><text x="0" y="16" font-size="11" text-anchor="middle" fill="#7a5410">$</text>`,
+  medal:`<path d="M-10,-14 L-4,6 M10,-14 L4,6" stroke="#2a63c0" stroke-width="7"/><circle cx="0" cy="16" r="12" fill="#f2c443" stroke="#9a7413" stroke-width="2"/><text x="0" y="21" font-size="14" text-anchor="middle" fill="#7a5410">✦</text>`,
+};
+// The whole scene. Stickers go in as data URLs, so the SVG can be drawn onto a canvas for the saved picture.
+let tankN = 0;   // gradient and clip ids are made unique per drawing, so two scenes on one page never borrow each other's
+function tankSvg(t, best, w = '100%') { const u = ++tankN; return tankSvg0(t, best, w).replace(/\btg([A-Z][a-z]+)\b/g, `tg$1${u}`); }
+function tankSvg0(t, best, w) {
+  const T = tankWorn(t, best), E = ENC[T.enc], fy = E.y + E.h - Math.round(E.h * .16), clip = encPath(T.enc, E);
+  const art = ((t.art % STICKERS.length) + STICKERS.length) % STICKERS.length, fit = STICKER_FIT[art];
+  const sw = Math.min(E.w * .62, E.h * .58, 230), sh = sw * STICKER_WH[art][1] / STICKER_WH[art][0], sx = E.x + E.w / 2 - sw / 2, sy = fy + 14 - sh;
+  const s = sw / 220, at = ([fx, fy2]) => [sx + fx * sw, sy + fy2 * sh];
+  const drip = (slot, anchor) => T[slot] && DRIP[T[slot]] ? (([x, y]) => `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${fit.r}) scale(${(s * 1.05).toFixed(2)})">${DRIP[T[slot]]}</g>`)(at(anchor)) : '';
+  const slots = [.13, .87, .66], ps = Math.min(1.1, E.h / 330);
+  const plants = T.plant.slice(0, 3).map((k, i) => tankPlant(k, E.x + E.w * slots[i], fy + 4, ps * (i === 2 ? .8 : 1)));
+  const back3 = plants[2] || '', front = plants.slice(0, 2).join('');
+  const light = { gold:`<rect x="0" y="0" width="${TANK_W}" height="${TANK_H}" fill="#ffb347" opacity=".2"/><path d="M${E.x + E.w},${E.y} L${E.x + E.w * .3},${E.y + E.h} L${E.x + E.w * .6},${E.y + E.h} Z" fill="#fff0b0" opacity=".18"/>`,
+    moon:`<rect x="0" y="0" width="${TANK_W}" height="${TANK_H}" fill="#1b2d6b" opacity=".35"/>`, uv:`<rect x="0" y="0" width="${TANK_W}" height="${TANK_H}" fill="#6a2cff" opacity=".22"/>` }[T.light] || '';
+  const frame = {
+    jar:`<rect x="${E.x - 10}" y="${E.y - 34}" width="${E.w + 20}" height="34" rx="6" fill="url(#tgLid)" stroke="#5c5a52" stroke-width="2"/>${Array.from({ length:9 }, (_, i) => `<line x1="${E.x - 4 + i * (E.w + 8) / 8}" x2="${E.x - 4 + i * (E.w + 8) / 8}" y1="${E.y - 30}" y2="${E.y - 4}" stroke="#5c5a52" stroke-opacity=".5"/>`).join('')}`,
+    cube:`<rect x="${E.x - 6}" y="${E.y - 14}" width="${E.w + 12}" height="14" fill="#2b2b2b"/><rect x="${E.x + 20}" y="${E.y - 12}" width="${E.w - 40}" height="8" fill="none" stroke="#666" stroke-dasharray="2 2"/>`,
+    tall:`<rect x="${E.x - 4}" y="${E.y - 18}" width="${E.w + 8}" height="18" fill="#1e1e1e"/><rect x="${E.x + 10}" y="${E.y - 14}" width="${E.w - 20}" height="10" fill="url(#tgMesh)"/><rect x="${E.x - 4}" y="${E.y + E.h}" width="${E.w + 8}" height="14" fill="#1e1e1e"/>`,
+    dome:`<rect x="${E.x - 22}" y="${E.y + E.h}" width="${E.w + 44}" height="22" rx="4" fill="#6b4426" stroke="#3d2614" stroke-width="2"/><circle cx="${E.x + E.w / 2}" cy="${E.y - 6}" r="9" fill="#c9a03a" stroke="#7a5a1c"/>`,
+    cabinet:`<path d="M${E.x - 26},${E.y - 26} H${E.x + E.w + 26} V${E.y + E.h + 30} H${E.x - 26} Z M${E.x},${E.y} V${E.y + E.h} H${E.x + E.w} V${E.y} Z" fill="url(#tgWood)" fill-rule="evenodd" stroke="#2a180c" stroke-width="2"/>
+      ${[[E.x - 26, E.y - 26], [E.x + E.w + 6, E.y - 26], [E.x - 26, E.y + E.h + 10], [E.x + E.w + 6, E.y + E.h + 10]].map(([x, y]) => `<rect x="${x}" y="${y}" width="20" height="20" fill="#c9a03a" stroke="#7a5a1c"/>`).join('')}
+      <rect x="${E.x + E.w / 2 - 60}" y="${E.y + E.h + 7}" width="120" height="18" fill="#f3e6c4" stroke="#c9a03a"/><text x="${E.x + E.w / 2}" y="${E.y + E.h + 20}" font-size="11" font-family="Georgia, serif" text-anchor="middle" fill="#3a2a1a">SALTICIDAE</text>`,
+  }[T.enc];
+  const shadow = `<ellipse cx="${E.x + E.w / 2}" cy="${E.y + E.h + (T.enc === 'cabinet' ? 32 : T.enc === 'dome' ? 24 : 10)}" rx="${E.w / 2 + 30}" ry="10" fill="#000" opacity=".18"/>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${TANK_W} ${TANK_H}" width="${w}" role="img" aria-label="${esc(t.name || 'Your spood')}'s terrarium">
+    <defs><clipPath id="tgClip"><path d="${clip}"/></clipPath>
+      <linearGradient id="tgRain" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9cc48a"/><stop offset="1" stop-color="#2f5d3a"/></linearGradient>
+      <linearGradient id="tgDune" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6d79a"/><stop offset="1" stop-color="#ec9a5a"/></linearGradient>
+      <linearGradient id="tgNight" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0c1430"/><stop offset="1" stop-color="#263a6b"/></linearGradient>
+      <linearGradient id="tgLid" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9d6cc"/><stop offset=".5" stop-color="#a9a598"/><stop offset="1" stop-color="#7c786c"/></linearGradient>
+      <linearGradient id="tgWood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6a4326"/><stop offset=".5" stop-color="#4e2f18"/><stop offset="1" stop-color="#6a4326"/></linearGradient>
+      <linearGradient id="tgGlass" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".12" stop-color="#fff" stop-opacity="0"/><stop offset=".85" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".22"/></linearGradient>
+      <pattern id="tgMesh" width="4" height="4" patternUnits="userSpaceOnUse"><path d="M0,0 L4,4 M4,0 L0,4" stroke="#777" stroke-width=".6"/></pattern></defs>
+    ${shadow}
+    <g clip-path="url(#tgClip)">${tankBack(T.back, E)}${T.decor.includes('leaf') ? tankDecor('leaf', E, fy) : ''}${T.decor.includes('ledge') ? tankDecor('ledge', E, fy) : ''}${T.decor.includes('disco') ? tankDecor('disco', E, fy) : ''}
+      ${back3}${T.decor.includes('cork') ? tankDecor('cork', E, fy) : ''}${tankFloor(T.sub, E, fy)}${['rock', 'mirror', 'trophy'].filter(k => T.decor.includes(k)).map(k => tankDecor(k, E, fy)).join('')}
+      <image href="${STICKERS[art]}" xlink:href="${STICKERS[art]}" x="${sx.toFixed(1)}" y="${sy.toFixed(1)}" width="${sw.toFixed(1)}" height="${sh.toFixed(1)}"/>
+      ${drip('neck', fit.n)}${drip('face', fit.f)}${drip('head', fit.h)}${front}${light}
+      <rect x="${E.x}" y="${E.y}" width="${E.w}" height="${E.h}" fill="url(#tgGlass)"/></g>
+    <path d="${clip}" fill="none" stroke="#9fb4b0" stroke-width="3" stroke-opacity=".9"/><path d="M${E.x + 14},${E.y + 30} V${E.y + E.h * .55}" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".45"/>${frame}
+  </svg>`;
+}
+const STICKER_WH = [[220, 199], [166, 220], [212, 220], [159, 220], [220, 169], [220, 186], [220, 196], [220, 157]];
+function tankHtml() {
+  const t = tankState(), best = prestigeBest(), T = tankWorn(t, best), n = GEAR_ALL.filter(x => x.at <= best).length;
+  const nx = GEAR_ALL.filter(x => x.at > best).sort((a, b) => a.at - b.at)[0];
+  const tags = [...new Map([...S.M.pets.map(o => [o.t.id, o.t]), ...S.M.genera.map(g => [g.id, { id:g.id, n:g.name, l:20 }])]).values()].sort((a, b) => (a.n || '').localeCompare(b.n || ''));
+  const chip = (c, k, label, at) => { const on = GEAR[c].max ? T[c].includes(k) : T[c] === k, lock = at > best;
+    return `<button class="gchip${on ? ' on' : ''}${lock ? ' lock' : ''}" data-act="gear" data-v="${c}|${k}" ${lock ? `disabled title="Unlocks at ${fmt(at)} ✦ prestige"` : ''} aria-pressed="${on}">${lock ? `🔒 ${esc(label)} <span>${fmt(at)} ✦</span>` : esc(label)}</button>`; };
+  const rows = Object.entries(GEAR).map(([c, g]) => `<div class="grow"><b>${esc(g.n)}${g.max ? ` <span class="small muted">up to ${g.max}</span>` : ''}</b><div class="gchips">${g.none ? chip(c, '', 'None', 0) : ''}${g.items.map(([k, label, at]) => chip(c, k, label, at)).join('')}</div></div>`).join('');
+  const tag = t.tag && tags.find(x => x.id === t.tag);
+  return `<div class="panel tankpanel" style="margin-top:16px"><h2>Your terrarium</h2>
+    <p class="small">Pick a resident, name it and kit it out. Gear unlocks with your prestige: ${fmt(best)} ✦ so far, ${n} of ${GEAR_ALL.length} pieces open${nx ? `, next <b>${esc(nx.n)}</b> at ${fmt(nx.at)} ✦` : ''}.</p>
+    <div class="tankwrap"><div class="tankstage"><div id="tankScene">${tankSvg(t, best)}</div>
+      <div class="plaque"><b>${esc(t.name || 'Unnamed spood')}</b>${tag ? ` · ${(tag.l ?? 99) <= 20 ? `<i>${esc(tag.n)}</i>` : esc(tag.n)}` : ''}<span>${esc(poss(who()))} Spoodarium</span></div>
+      <p class="row" style="justify-content:center;margin:8px 0 0"><button data-act="tankCard">📤 Save a picture</button></p></div>
+    <div class="tankctl">
+      <div class="grow"><b>Resident</b><div class="artpick">${STICKERS.map((_, i) => `<button class="${i === t.art ? 'on' : ''}" data-act="tankArt" data-v="${i}" aria-label="Resident ${i + 1}" aria-pressed="${i === t.art}">${stickerHtml(i, 'pick')}</button>`).join('')}</div></div>
+      <div class="grow"><label><b>Name</b> <input data-tank="name" value="${esc(t.name || '')}" maxlength="30" placeholder="e.g. Sir Hops-a-lot" autocomplete="off"></label></div>
+      ${tags.length ? `<div class="grow"><label><b>Plaque</b> <select data-tank="tag"><option value="">No taxon</option>${tags.map(x => `<option value="${x.id}" ${x.id === t.tag ? 'selected' : ''}>${esc(x.n || '?')}</option>`).join('')}</select></label></div>` : ''}
+      ${rows}</div></div></div>`;
+}
+function setGear(c, k) {
+  const t = tankState(), g = GEAR[c]; if (!g || gearAt(c, k) > prestigeBest() && k) return;
+  if (g.max) t[c] = t[c].includes(k) ? t[c].filter(x => x !== k) : [...t[c], k].slice(-g.max);
+  else t[c] = k;
+  saveUser(); paintTank();
+}
+// Redraw the scene and its controls without re-rendering the tab (keeps the name field focused while typing)
+function paintTank(controls = true) {
+  const sc = $('#tankScene'); if (!sc) return render();
+  if (!controls) { sc.innerHTML = tankSvg(tankState(), prestigeBest()); const p = $('.plaque b'); if (p) p.textContent = tankState().name || 'Unnamed spood'; return; }
+  const y = scrollY; $('.tankpanel').outerHTML = tankHtml(); scrollTo(0, y);
+}
+async function openTankCard() {
+  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(640px,100%)"><button class="x" data-close="1">✕</button><div class="body">
+    <h2>Your terrarium</h2><div id="cardOut"><p class="muted">Developing the print…</p></div></div></div></div>`;
+  const t = tankState(), svg = tankSvg(t, prestigeBest(), TANK_W * 2);
+  const im = await loadImg('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
+  const out = $('#cardOut'); if (!out) return;
+  if (!im) { out.innerHTML = '<p>Could not draw the picture in this browser.</p>'; return; }
+  const tag = t.tag && (S.nodes[t.tag]?.n || S.M.pets.find(o => o.t.id === t.tag)?.t.n);
+  await mountCard(out, cv => {
+    const K = cardKit(cv, 1080), { C, text } = K;
+    K.frame('SPOODEX · SPOODARIUM');
+    K.x.drawImage(im, 80, 150, 920, 920 * TANK_H / TANK_W);
+    text(t.name || 'Unnamed spood', 540, 900, '600 60px Fraunces, Georgia, serif', C.ink, 'center');
+    if (tag) text(tag, 540, 948, 'italic 400 34px Fraunces, Georgia, serif', C.muted, 'center');
+    text(location.host + location.pathname.replace(/(index|spoodex)\.html$/, '') + (isGuest() ? '' : '?u=' + S.login), 540, 1000, '600 19px "IBM Plex Mono", monospace', C.ink, 'center');
+    return false;
+  }, `spoodarium-${S.login || 'guest'}`);
+}
+
+/* ---------------- place search: iNat places plus towns from a geocoder ---------------- */
+// iNat has places for parks, regions and council areas but none for most small towns (Pambula, Eden, Mission Beach), so towns and
+// localities come from Open-Meteo's geocoder (GeoNames). Only the typed text is sent. Towns in your home country first, then iNat places.
+const GEO = 'https://geocoding-api.open-meteo.com/v1/search';
+async function findPlaces(q) {
+  const home = S.places[S.M?.home.country]?.n || '', name = q.split(',')[0].trim();
+  const [ip, gp] = await Promise.allSettled([
+    api('/places/autocomplete', { q, per_page:8 }),
+    name.length < 2 ? Promise.resolve({}) : fetch(`${GEO}?${new URLSearchParams({ name, count:10, language:'en', format:'json' })}`)
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(`Place search returned ${r.status}`))),
+  ]);
+  if (ip.status === 'rejected' && gp.status === 'rejected') throw ip.reason;
+  const places = (ip.value?.results || []).filter(p => p.location).map(p => { const [lat, lng] = p.location.split(',');
+    // Countries, states and big regions are planned as a whole; towns and parks by what's within TRIP_KM
+    return { lat:+lat, lng:+lng, label:p.display_name || p.name, area:[0, 10].includes(p.admin_level) || p.bbox_area > 4 ? p.id : null }; });
+  const seen = new Set(places.map(p => p.label.split(',')[0].trim().toLowerCase()));
+  const towns = (gp.value?.results || []).filter(p => !seen.has(String(p.name).toLowerCase()))
+    .map(p => ({ lat:p.latitude, lng:p.longitude, label:[p.name, p.admin2 && p.admin2 !== p.name ? p.admin2 : '', p.admin1, p.country].filter(Boolean).join(', '), home:p.country === home }));
+  return [...towns.filter(t => t.home), ...places, ...towns.filter(t => !t.home)].slice(0, 10);
+}
+// Results as they're typed (after a pause) and on Enter; a newer search replaces an older one's answer
+let placeSeq = 0, placeTimer = null;
+async function placeResults(form) {
+  const q = form.q.value.trim(), trip = form.dataset.form === 'tripSearch', out = $(trip ? '#tripResults' : '#placeResults'), seq = ++placeSeq;
+  if (!out) return;
+  if (q.length < 2) { out.innerHTML = ''; return; }
+  out.textContent = 'Searching…';
+  try {
+    const hits = await findPlaces(q);
+    if (seq !== placeSeq) return;
+    out.innerHTML = hits.map(p => trip
+      ? `<div><a href="#" data-trip="${esc(`${p.lat}|${p.lng}|${p.area || ''}|${p.label}`)}">${esc(p.label)}</a>${p.area ? ' <span class="muted">(whole region)</span>' : ''}</div>`
+      : `<div><a href="#" data-base="${esc(`${p.lat}|${p.lng}|${p.label}`)}">${esc(p.label)}</a></div>`).join('') || 'No places found. Try the nearest town.';
+  } catch (err) { if (seq === placeSeq) out.textContent = err.message; }
+}
+document.addEventListener('input', e => {
+  const form = e.target.name === 'q' && e.target.closest('[data-form="tripSearch"],[data-form="placeSearch"]'); if (!form) return;
+  clearTimeout(placeTimer); placeTimer = setTimeout(() => placeResults(form), 500);
+});
 
 /* ---------------- trip planner: Most Wanted for anywhere you're going ---------------- */
 const TRIP_KM = 50, TRIP_TTL = 24 * 3600e3, TRIP_POSTERS = 10, TRIP_RECENT = 6;
@@ -5275,7 +5514,7 @@ function viewTrip() {
   const recent = (S.trip.recent || []).filter(r => !t || r.label !== t.label);
   return `<div class="panel${t ? '' : ' stk'}" style="margin-bottom:16px">${t ? '' : stickerHtml(2)}<h2>Trip planner</h2>
     <p class="small muted">Going somewhere? Search a town, park, state or country and get its wanted list: which genera you're missing that have been recorded there, what's in season for the month you're going, and which 25 km squares hold the records.</p>
-    <form class="row" data-form="tripSearch"><input name="q" placeholder="Destination, e.g. Lamington National Park" style="flex:1;min-width:160px"><button class="primary">Plan</button></form>
+    <form class="row" data-form="tripSearch"><input name="q" placeholder="Destination, e.g. Pambula or Lamington National Park" autocomplete="off" style="flex:1;min-width:160px"><button class="primary">Plan</button></form>
     <div id="tripResults" class="small" style="margin-top:6px"></div>
     ${recent.length ? `<div class="small" style="margin-top:8px">Recent: ${recent.map(r => `<a href="#" data-trip="${esc(`${r.lat}|${r.lng}|${r.area || ''}|${r.label}`)}">${esc(r.label)}</a>`).join(' · ')}</div>` : ''}</div>
     <div id="tripPlan">${viewTripPlan()}</div>`;
@@ -5303,7 +5542,7 @@ function viewTripPlan() {
       <div><b>+${newS.length}</b><div class="small">species for your side collection<br><span class="muted">of ${(t.s || []).length} recorded there</span></div></div>
       <div><b>${inSeason.length}</b><div class="small">wanted ${inSeason.length === 1 ? 'genus' : 'genera'} in season in ${MONTHS[m]}<br><span class="muted">of the top ${list.length}${list.some(x => !x.curve) ? ', still checking' : ''}</span></div></div>
     </div>
-    ${newG.length ? `<p class="small" style="margin-bottom:0">Find them all and you'd go from <b>level ${M.G.size}</b> to <b>level ${M.G.size + newG.length}</b>.</p>` : `<p class="small hand" style="margin-bottom:0">You've already recorded every genus iNat knows ${areaTxt}. Go for species, or be the first to find something new.</p>`}</div>`;
+    ${newG.length ? `<p class="small" style="margin-bottom:0">Find them all and you'd go from <b>level ${M.G.size}</b> to <b>level ${M.G.size + newG.length}</b>, and gain <b>${fmt(newG.reduce((n, x) => n + worthG(x.id), 0))} ✦</b> prestige.</p>` : `<p class="small hand" style="margin-bottom:0">You've already recorded every genus iNat knows ${areaTxt}. Go for species, or be the first to find something new.</p>`}</div>`;
   if (!list.length) return body;
   const spots = tripSpots(list.slice(0, ctx.posters), ctx);
   const gl = ids => ids.map(id => `<a href="#" data-act="tripCase" data-v="${id}"><i>${esc(S.nodes[id]?.n || '?')}</i></a>`).join(', ');
@@ -6443,7 +6682,7 @@ function settings() {
     <p class="small muted" style="margin-top:14px">Anonymous visit counts via GoatCounter: no cookies, no usernames, no locations.</p>
     <p class="small muted">Share images fetch iNaturalist photos through wsrv.nl, an image cache, so the downloaded picture can include them. Sent: the photo's public address.</p>
     <p class="small">Weather units <select data-pref="units">${[['', `Automatic (${(() => { const u = S.prefs.units; S.prefs.units = ''; const r = imperial(); S.prefs.units = u; return r; })() ? '°F, inches' : '°C, mm'})`], ['metric', '°C, mm'], ['us', '°F, inches']].map(([v, l]) => `<option value="${v}" ${(S.prefs.units || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></p>
-    <p class="small muted">Weather lookups send your home base, and the destination of a dated trip, rounded to ~10 km, to Open-Meteo.</p>
+    <p class="small muted">Weather lookups send your home base, and the destination of a dated trip, rounded to ~10 km, to Open-Meteo. Place searches send what you type to iNaturalist and Open-Meteo.</p>
     ${auHome() ? `<p class="small"><label><input type="checkbox" data-pref="ext.ala" ${alaOn() ? 'checked' : ''}> Museum records</label> <span class="muted">Atlas of Living Australia. Sent: taxon names and your scan squares.</span></p>` : ''}
     ${isMe(OWNER) ? taxonomyReviewHtml() : ''}
     <p class="small muted" id="storeInfo">Saved in this browser${store.db ? ' (IndexedDB)' : ' (localStorage, about 5 MB at most)'}.</p></div></div></div>`;
@@ -6496,6 +6735,9 @@ document.addEventListener('click', e => {
   if (a === 'casePick') { e.preventDefault(); casePick(+val); return; }
   if (a === 'caseCopy') { e.preventDefault(); caseShare(false); return; }
   if (a === 'caseShare') { e.preventDefault(); caseShare(true); return; }
+  if (a === 'gear') { const [c, k] = val.split('|'); setGear(c, k); return; }
+  if (a === 'tankArt') { tankState().art = +val; saveUser(); paintTank(); return; }
+  if (a === 'tankCard') openTankCard();
   if (a === 'flip') { e.preventDefault(); const c = t.closest('.card'); if (c) turnCard(c); return; }
   if (a === 'needsid') { e.preventDefault(); S.prefs.layer = 'needsid'; savePrefs(); if ($('#app').classList.contains('hidden')) enterApp('dex'); else { S.tab = 'dex'; render(); } }
   if (a === 'leadFilter') { S.prefs.leadFilter = val === 'all' ? null : val; savePrefs(); render(); }
@@ -6551,7 +6793,6 @@ document.addEventListener('click', e => {
   if (a === 'guest') startGuest();
   if (a === 'openDex') enterApp(S.M.G.size ? 'dex' : S.M.pets.length ? 'pets' : undefined);
   if (a === 'pets') { e.preventDefault(); if ($('#app').classList.contains('hidden')) enterApp('pets'); else { S.tab = 'pets'; updateUrl(); render(); } }
-  if (a === 'profSheet') openProfSheet(val);
   if (a === 'treeView') { S.prefs.treeView = val; savePrefs(); render(); }
   if (a === 'notes') { e.preventDefault(); openNotes(val ? +val : null); }
   if (a === 'notesView') { notesView = val; openNotes(); }
@@ -6569,6 +6810,7 @@ document.addEventListener('click', e => {
   if (a === 'revCont') { $('#reveal')?.remove(); revealNext(); }
   if (a === 'outGo') outSet(+val);
   if (a === 'outRefresh') { S.out.ok = null; paintOut(); loadOut(true); }
+  if (a === 'prestige') openPrestige();
   if (a === 'sample') { $('#loginInput').value = SAMPLE_LOGIN; onboard(SAMPLE_LOGIN); }
   if (a === 'switch') { store.del('lastLogin'); location.href = location.pathname; }
   if (a === 'wipe') { store.del(ukey(S.login)); store.del('lastLogin'); store.flush().finally(() => location.href = location.pathname); }
@@ -6594,32 +6836,19 @@ document.addEventListener('submit', async e => {
     } catch (err) { D.msg = err.message; }
     render();
   }
-  if (f === 'placeSearch') {
-    const q = e.target.q.value.trim(); if (!q) return;
-    const out = $('#placeResults'); out.textContent = 'Searching…';
-    try {
-      const d = await api('/places/autocomplete', { q, per_page:8 });
-      out.innerHTML = d.results.filter(p => p.location).map(p => {
-        const [lat, lng] = p.location.split(','), label = p.display_name || p.name;
-        return `<div><a href="#" data-base="${esc(`${lat}|${lng}|${label}`)}">${esc(label)}</a></div>`;
-      }).join('') || 'No places found.';
-    } catch (err) { out.textContent = err.message; }
-  }
-  if (f === 'tripSearch') {
-    const q = e.target.q.value.trim(); if (!q) return;
-    const out = $('#tripResults'); out.textContent = 'Searching…';
-    try {
-      const d = await api('/places/autocomplete', { q, per_page:8 });
-      out.innerHTML = d.results.filter(p => p.location).map(p => {
-        const [lat, lng] = p.location.split(','), label = p.display_name || p.name;
-        // Countries, states and big regions are planned as a whole; towns and parks by what's within TRIP_KM
-        const area = [0, 10].includes(p.admin_level) || p.bbox_area > 4 ? p.id : '';
-        return `<div><a href="#" data-trip="${esc(`${lat}|${lng}|${area}|${label}`)}">${esc(label)}</a>${area ? ' <span class="muted">(whole region)</span>' : ''}</div>`;
-      }).join('') || 'No places found.';
-    } catch (err) { out.textContent = err.message; }
-  }
+  if (f === 'placeSearch' || f === 'tripSearch') { clearTimeout(placeTimer); placeResults(e.target); }
 });
 // Event form: typing updates the draft without redrawing (keeps focus); toggles redraw
+// Spoodarium: names are kept as they're typed, without redrawing the tab
+document.addEventListener('input', e => {
+  const d = e.target.dataset || {};
+  if (d.petname) { const v = e.target.value.trim().slice(0, 30), nm = S.u.petNames || (S.u.petNames = {}); if (v) nm[d.petname] = v; else delete nm[d.petname]; saveUser(); }
+  if (d.tank === 'name') { tankState().name = e.target.value.trim().slice(0, 30); saveUser(); paintTank(false); }
+});
+document.addEventListener('change', e => {
+  if (e.target.dataset?.petname && S.tab === 'pets') render();
+  if (e.target.dataset?.tank === 'tag') { tankState().tag = +e.target.value || null; saveUser(); paintTank(); }
+});
 document.addEventListener('input', e => { if (e.target.dataset?.note) noteInput(e.target); if (e.target.dataset?.fact != null) factInput(e.target); });
 document.addEventListener('input', e => { const k = e.target.dataset?.evf; if (S.evDraft && ['n', 'r', 'd1', 'd2'].includes(k)) S.evDraft[k] = e.target.value; });
 document.addEventListener('change', async e => {
@@ -6661,6 +6890,12 @@ $('#loginForm').addEventListener('submit', e => { e.preventDefault(); const v = 
 // What changed, newest first: shown once on Profile to returning players, and in full from Settings. The owner's rule (2026-10-13):
 // sections and views stay where they are; when something has to move, it gets a line here.
 const CHANGES = [
+  { v:'2.9', d:'2026-10-16', items:[
+    { h:'Profile: your <b>genera, species and ✦ prestige</b> sit under your title; tap prestige to see how it adds up. <b>Your numbers</b> is gone.' },
+    { h:'Prestige shows on card backs, on Three to find next (what each would add), on new-genus reveals and in the Trip planner.' },
+    { h:'<b>Spoodarium</b> (Collection) is open to everyone with a genus: build a terrarium for a spood of your own, with gear that unlocks as your prestige grows. Captive spoods can be given their names.' },
+    { h:'Trip planner and home base search now find towns iNat has no place for (Pambula, Eden…).' },
+  ] },
   { v:'2.8', d:'2026-10-13', items:[
     { h:'Profile: <b>📥 Check my new uploads</b> under your level, and your <b>weekly streak</b>. A week counts when you record any wild jumping spider in it, and one missed week a month is covered automatically.' },
     { h:'<b>Genus of the month</b> on Profile: record it during the month for a stamp in your trophy cabinet. Sets gain <b>In season now</b>.' },
