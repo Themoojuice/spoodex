@@ -2,7 +2,7 @@
 
 **As of 2026-10-13 · v2.8 "Rewards and routines", live at https://themoojuice.github.io/spoodex/?u=themoojuice (tags `v1.20.0`, `v2.0.0`, `v2.7.0`, `v2.7.1`, `v2.8.0`).
 Merch is owner-only until `MERCH.shop` is set, and Spooding now waits for the server to be deployed (§12).
-v2.9 "Spoodarium and prestige" is built on branch `feature/spoodarium-prestige`, not shipped (§12, §13).**
+v2.9 "Spoodarium and prestige" shipped 2026-10-16 (tag `v2.9.0`), with 22 of the owner's field-plate artworks in `art/` (§3, §12).**
 
 Launch checkpoint: [REVIEW-2026-10-12.md](REVIEW-2026-10-12.md) (what was tested, what was fixed, ideas). Launch posts and links: [LAUNCH.md](LAUNCH.md).
 
@@ -87,6 +87,7 @@ python -m http.server 8765        # any static server works
 |---|---|
 | `spoodex.html` | **The entire app**: HTML + CSS + JS (~5,500 lines). Script sections are marked `/* ---------------- <name>` |
 | `index.html` | Redirects to `spoodex.html`, keeping `?query`, so `/spoodex/?u=x` works |
+| `art/` | v2.9: 22 of the owner's field-plate artworks as slimmed `.webp`s named by id (10 Spoodarium residents, 12 gallery paintings; `RESIDENTS`, `GALLERY`). Cache-first in the service worker (`spoodex-art`) |
 | `sw.js` | Service worker (v1.15), registered as `./sw.js` so its scope is `/spoodex/`. Caching rules in §5 "offline & install". **Bump `VERSION` on every release** |
 | `manifest.webmanifest` | Web app manifest: `start_url ./spoodex.html` (boot reopens `lastLogin`), `scope ./`, `display standalone`, background and theme `#e7d8b9` (notebook `--bg`) |
 | `og.png` (v2.7) | The 1200×630 link-preview image (`og:image` in both `index.html` and `spoodex.html`; Reddit's scraper reads `index.html`, whose JS redirect it doesn't follow). Built by `tools/og.py` from five `OWNER_PICKS` photos and the *Sandalodes* sticker; rebuild after changing those |
@@ -609,7 +610,7 @@ Work on a new branch, merge it to `main` with `--no-ff`, tag the release.
 **Ship**:
 1. **Bump `VERSION` in `sw.js`** (e.g. `1.15.0` → `1.16.0`) on every release, even if `sw.js` didn't otherwise change: it renames the
    shell and library caches, and the changed bytes make browsers install the new worker (which then drops the old `spoodex-*` caches).
-2. `cp index.html spoodex.html sw.js manifest.webmanifest icon-192.png icon-512.png og.png site/`
+2. `cp index.html spoodex.html sw.js manifest.webmanifest icon-192.png icon-512.png og.png site/ && cp -r art site/`
 3. `git commit` (message ends with the attribution line from the session's system reminder) → `git push`.
 4. Confirm it's live: `curl -s "https://themoojuice.github.io/spoodex/spoodex.html?nc=$RANDOM" | grep -c <new identifier>`.
    Installed copies pick up the new shell on their next online launch (network-first), or the one after if the network took over 5 s.
@@ -672,14 +673,17 @@ Work on a new branch, merge it to `main` with `--no-ff`, tag the release.
 - Proposals to confirm: the freeze rule (one a calendar month), `FEAT_MIN`/`FEAT_POOL`, whether year-round genera should ever be genus of
   the month (now: no), and `FEATURED` picks for months the owner wants to choose himself.
 
-**v2.9 Spoodarium and prestige: the owner's to-do** (built 2026-10-16 on `feature/spoodarium-prestige`, not shipped):
+**v2.9 Spoodarium and prestige: the owner's to-do** (shipped 2026-10-16; the owner approved it all and asked for some plate artwork in it):
 - **Keeping notes** in Spoodarium › Keep one for a while are general husbandry lines written for you to check (enclosure, misting, prey,
   release, posting as captive). Edit or cut them in `viewPets` before shipping.
 - **Gear thresholds** (`GEAR`): you had 1,748 ✦ on 2026-10-16, which opens 36 of 43 pieces; the museum cabinet (2,000), grass tree (2,500),
   UV glow (2,200), crown (3,000), disco ball (3,500) and prestige medal (5,000) are still to chase. A 10-genus player has roughly 200–300 ✦.
 - **Spoodarium for everyone**: it now opens with a first genus (a tab unlock toast), not only for captive records. Say if it should wait for a level.
-- **Bigger art**: the residents and decoration use the 8 approved stickers (220 px). The 100 field-plate artworks (`feature/field-plates`) could
-  go in as backdrops or extra residents if you approve them for the live site.
+- **Field-plate art in the Spoodarium** (owner, 2026-10-16: "make use of some of the plate artworks"): 10 stickers as extra residents
+  (`RESIDENTS` 8–17, unlocking at 100–2,400 ✦) and 12 paintings on the gallery wall (`GALLERY`, click to enlarge), credited "Paintings by
+  themoojuice". Slimmed copies in `art/` (stickers ≤360 px, paintings 720 px, ~0.9 MB in all, loaded only on that tab, cached by the service
+  worker as viewed). None is tagged with a genus, so nothing names them. Swap ids in `RESIDENTS`/`GALLERY` (originals on `feature/field-plates`;
+  re-encode with Pillow as in this commit) to change the picks. The rest of field plates (card faces, Album, tagger) is still not live.
 
 **Field plates (v2.6) is not live** (owner, 2026-10-12): it went out with v2.7.0 by mistake (the owner hadn't approved it) and was removed in
 v2.7.1 by reverting its commit (`a05f1ab`); history wasn't rewritten, so `art/` is still in the public repo's history. The work is intact on
@@ -900,7 +904,7 @@ cards progressively during a first import; generalising beyond jumping spiders (
 | v1.7 | IndexedDB storage (with migration), v2 imports with `fields=` (~6% of the download), Trip planner |
 | v1.8 | Sets (themed + complete-the-lineage), Bounty board, "since your last visit" |
 | v1.9 | Most Wanted tab renamed Bounty board (bounties first), SPOODEX › Needs ID layer, fixed-height quest tiles |
-| v2.9 | Spoodarium and prestige (branch `feature/spoodarium-prestige`, not shipped; owner's notes 2026-10-16): prestige with the title (genera · species · ✦), a prestige sheet, ✦ in the header on wider screens, on card backs, Three to find cards, new-genus reveals and trips; Profile's Your numbers removed; Spoodarium open to anyone with a genus, decorated with the sticker art, pet names on a shelf of jars, the owner's remembrance line, a terrarium with prestige-unlocked gear and drip and a saved picture, keeping notes; trip and home-base search find towns via Open-Meteo's geocoder |
+| v2.9 | Spoodarium and prestige (shipped 2026-10-16, tag `v2.9.0`; owner's notes 2026-10-16): prestige with the title (genera · species · ✦), a prestige sheet, ✦ in the header on wider screens, on card backs, Three to find cards, new-genus reveals and trips; Profile's Your numbers removed; Spoodarium open to anyone with a genus, decorated with the sticker art, pet names on a shelf of jars, the owner's remembrance line, a terrarium with prestige-unlocked gear and drip and a saved picture, keeping notes; trip and home-base search find towns via Open-Meteo's geocoder; 22 field-plate artworks (10 residents, a 12-painting gallery wall) in `art/` |
 | v2.8 | Rewards and routines (shipped 2026-10-13, tag `v2.8.0`; from the owner's merch plan and the neurodivergent-friendly list): Profile's 📥 Check my new uploads and a sync summary toast; weekly streaks with a monthly freeze; genus of the month with stamps, and Sets › In season now; merch cabinet with ranges, gifts, codes and reward ceremonies (owner-only until the shop is set); 🗓 weather windows to the calendar (.ics); SPOODEX › 📋 Table; CSV downloads; How SPOODEX works; What changed (`CHANGES`); Crew › Spooding now on the new SPOODEX server (`server/`, Cloudflare Worker) |
 | v2.7.1 | v2.7 without field plates (2026-10-12): v2.6's commit reverted (Album, card faces, Field art, art tagger, `art/`, `tools/art.py`, the service worker's art cache); everything from the launch kept |
 | v2.7 | Launch (2026-10-12, tag `v2.7.0`, from [REVIEW-2026-10-12.md](REVIEW-2026-10-12.md)): link previews (`og:` tags in both HTML files, `og.png`); 🏺 Spoodarium tab for captive records with "From pet to wild" cards and quest, and the reveal says captive records aren't counted; friendly unknown-username message; logins case-insensitive (always lowercase) and pasted profile links accepted; the owner's display case drawn instantly from `CASE_SNAP`; one official monthly spood hunt for everyone; share images keep all-rights-reserved photos via wsrv.nl; `?ref=` source tags; "Open your SPOODEX" opens the SPOODEX view; import progress spread over every step; possessives ("spiderpals' SPOODEX"); display case header names the naturalist once |

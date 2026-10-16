@@ -432,6 +432,18 @@ button.hstat:hover b { text-decoration:underline; }
 .artpick button { position:relative; padding:0; aspect-ratio:1; overflow:hidden; background:var(--panel2); }
 .artpick button.on { border:3px solid var(--accent); background:var(--panel); }
 .artpick .sticker.pick { position:absolute; inset:5px; top:5px; right:5px; width:calc(100% - 10px); height:calc(100% - 10px); object-fit:contain; transform:none; }
+.artpick button.lock { cursor:not-allowed; }
+.artpick button.lock .sticker { filter:grayscale(1) brightness(.6); opacity:.5; }
+.artpick .rlock { position:absolute; left:0; right:0; bottom:3px; font:600 10px var(--mono); text-align:center; color:var(--ink); }
+.gwallpanel { background:linear-gradient(180deg, #6b4a2e, #4e331d); color:#f3e6c8; border-color:#3a2414; }
+.gwallpanel h2, .gwallpanel .muted { color:#f3e6c8; }
+.gwall { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:16px; }
+.gframe { padding:8px; background:#f6efdc; border:6px solid #c9a03a; border-radius:2px; box-shadow:inset 0 0 0 1px #7a5a1c, 0 6px 12px rgba(0,0,0,.4); min-height:0; }
+.gframe:nth-child(3n+1) { transform:rotate(-1deg); } .gframe:nth-child(3n) { transform:rotate(1deg); }
+.gframe img { display:block; width:100%; aspect-ratio:4/3; object-fit:cover; }
+.gframe:hover { border-color:#e2bf7a; }
+.platebox { width:min(900px, 100%); padding:10px; } .platebox img { display:block; width:100%; height:auto; }
+@media (max-width:600px) { .gwall { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; } .gframe { padding:4px; border-width:4px; } }
 .keeppanel { padding-right:240px; min-height:220px; }
 .keeppanel .sticker.big { width:210px; top:10px; right:16px; transform:rotate(-8deg); }
 .keeplist { margin:0 0 12px; padding-left:20px; } .keeplist li { margin:4px 0; }
@@ -5178,7 +5190,10 @@ function viewPets() {
       <li>Post it to iNaturalist marked <b>captive / cultivated</b> and it joins your shelf here.</li>
     </ul>
     <p class="row" style="margin:0"><a class="btnlink" href="https://www.inaturalist.org/observations/upload" target="_blank" rel="noopener">Upload to iNaturalist ↗</a></p></div>`;
-  return head + shelfHtml + tankHtml() + keep + wild;
+  const gallery = `<div class="panel gwallpanel" style="margin-top:16px"><h2>The gallery</h2>
+    <div class="gwall">${GALLERY.map((id, i) => `<button class="gframe" data-act="plate" data-v="${id}" aria-label="Enlarge painting ${i + 1}"><img src="${ART_DIR}${id}.webp" alt="Painting of a jumping spider by themoojuice" loading="lazy" decoding="async"></button>`).join('')}</div>
+    <p class="small muted" style="margin:8px 0 0">Paintings by themoojuice.</p></div>`;
+  return head + shelfHtml + tankHtml() + gallery + keep + wild;
 }
 
 // ---- your terrarium (v2.9, owner 2026-10-16): a resident drawn from the sticker art, kitted out with gear the prestige you've reached unlocks ----
@@ -5199,18 +5214,37 @@ const GEAR = {
 const GEAR_ALL = Object.entries(GEAR).flatMap(([c, g]) => g.items.map(([k, n, at]) => ({ c, k, n, at })));
 const gearAt = (c, k) => GEAR[c].items.find(x => x[0] === k)?.[2] ?? Infinity;
 // Where each sticker's head, eyes and chin sit (fractions of the image) and which way its head tilts, for the drip
+const STICKER_WH = [[220, 199], [166, 220], [212, 220], [159, 220], [220, 169], [220, 186], [220, 196], [220, 157]];
 const STICKER_FIT = [
   { h:[.52, .19], f:[.53, .29], n:[.52, .44], r:0 }, { h:[.47, .31], f:[.47, .39], n:[.47, .5], r:0 },
   { h:[.5, .63], f:[.5, .72], n:[.5, .8], r:0 }, { h:[.52, .7], f:[.52, .79], n:[.52, .88], r:0 },
   { h:[.23, .2], f:[.2, .33], n:[.2, .5], r:-25 }, { h:[.33, .27], f:[.31, .38], n:[.27, .5], r:-20 },
   { h:[.22, .29], f:[.18, .43], n:[.2, .58], r:-30 }, { h:[.62, .34], f:[.62, .46], n:[.62, .56], r:0 },
 ];
+// The owner's field-plate artwork (v2.9, owner 2026-10-16: "make use of some of the plate artworks"): ten more sticker residents, which
+// unlock with prestige like the gear, and twelve paintings for the gallery wall. Slimmed copies in art/<id>.webp (360 px / 720 px), served
+// as files (cached by the service worker as viewed). Untagged, so no genus is claimed for any of them.
+const ART_DIR = 'art/';
+const RESIDENTS = [
+  ...STICKER_FIT.map((fit, i) => ({ src:STICKERS[i], w:STICKER_WH[i][0], h:STICKER_WH[i][1], fit, at:0 })),
+  ...[['7102707957', 191, 218, 100, { h:[.47, .29], f:[.47, .45], n:[.45, .63], r:-8 }], ['8395851a26', 331, 296, 200, { h:[.6, .1], f:[.6, .21], n:[.56, .36], r:10 }],
+    ['76be58bb0d', 360, 261, 300, { h:[.36, .34], f:[.37, .48], n:[.42, .6], r:-20 }], ['0cf8bf58e1', 360, 320, 450, { h:[.5, .3], f:[.5, .5], n:[.5, .63], r:0 }],
+    ['08a208d37a', 269, 360, 600, { h:[.5, .28], f:[.5, .41], n:[.5, .55], r:0 }], ['d3dde7f087', 175, 184, 750, { h:[.31, .12], f:[.33, .25], n:[.4, .42], r:-20 }],
+    ['b2ced4562d', 261, 245, 950, { h:[.47, .68], f:[.47, .8], n:[.47, .9], r:0 }], ['e157e41df8', 360, 297, 1150, { h:[.63, .44], f:[.66, .6], n:[.62, .75], r:10 }],
+    ['3d11121c00', 249, 237, 1400, { h:[.68, .13], f:[.62, .34], n:[.56, .5], r:10 }], ['b8bdae23e4', 360, 359, 2400, { h:[.6, .12], f:[.6, .25], n:[.5, .45], r:15 }],
+  ].map(([id, w, h, at, fit]) => ({ src:ART_DIR + id + '.webp', w, h, fit, at })),
+];
+RESIDENTS.forEach((r, i) => { if (r.at) GEAR_ALL.push({ c:'res', k:String(i), n:`Resident ${i + 1}`, at:r.at }); });
+const GALLERY = ['bc1559c228', 'a7d4f7a0af', 'ed4632bcf3', 'a8180a7b0f', '991a836732', '1dbda2554e', 'f81237d446', '4bd43ceec6', '037f381c57', '80ee3b69c2', '3cbe466036', 'b54a92a564'];
+const resImg = (i, cls = '') => i < STICKERS.length ? stickerHtml(i, cls) : `<img class="sticker ${cls}" src="${RESIDENTS[i].src}" alt="" aria-hidden="true" decoding="async" loading="lazy" draggable="false">`;
 function tankState() {
   const t = S.u.tank || (S.u.tank = { art:stickerFor(S.login), name:'', enc:'jar', back:'kraft', sub:'coco', plant:['pothos'], decor:['leaf'], head:'', face:'', neck:'', light:'day' });
   for (const c of ['plant', 'decor']) if (!Array.isArray(t[c])) t[c] = [];
   return t;
 }
 // Gear above your best prestige comes off (shown again once it's back up)
+// A resident above your best prestige falls back to your own sticker
+const tankArt = (t, best) => RESIDENTS[t.art] && RESIDENTS[t.art].at <= best ? t.art : stickerFor(S.login);
 const tankWorn = (t, best) => Object.fromEntries(Object.keys(GEAR).map(c => [c, GEAR[c].max ? t[c].filter(k => gearAt(c, k) <= best)
   : t[c] && gearAt(c, t[c]) <= best ? t[c] : GEAR[c].none ? '' : GEAR[c].items[0][0]]));
 
@@ -5292,7 +5326,7 @@ const DRIP = {
   pith:`<ellipse cx="0" cy="0" rx="34" ry="8" fill="#c9b27a" stroke="#6e5a2c" stroke-width="1.5"/><path d="M-22,0 C-22,-30 22,-30 22,0 Z" fill="#d8c48d" stroke="#6e5a2c" stroke-width="1.5"/><path d="M-22,-4 H22" stroke="#7a5a2c" stroke-width="4"/>`,
   top:`<ellipse cx="0" cy="0" rx="30" ry="7" fill="#1b1714"/><rect x="-18" y="-42" width="36" height="42" fill="#221d19" stroke="#000"/><rect x="-18" y="-10" width="36" height="6" fill="#a8412a"/>`,
   crown:`<path d="M-24,0 L-24,-24 L-12,-12 L0,-30 L12,-12 L24,-24 L24,0 Z" fill="#f2c443" stroke="#9a7413" stroke-width="1.5"/><circle cx="0" cy="-8" r="4" fill="#c0283a"/><circle cx="-14" cy="-6" r="3" fill="#2a63c0"/><circle cx="14" cy="-6" r="3" fill="#2a8a3c"/>`,
-  specs:`<circle cx="-13" cy="0" r="11" fill="#fff" fill-opacity=".15" stroke="#3a2a1a" stroke-width="3"/><circle cx="13" cy="0" r="11" fill="#fff" fill-opacity=".15" stroke="#3a2a1a" stroke-width="3"/><path d="M-2,-1 Q0,-4 2,-1" stroke="#3a2a1a" stroke-width="3" fill="none"/>`,
+  specs:`<g fill="none" stroke="#f3e6c4" stroke-width="6"><circle cx="-13" cy="0" r="11"/><circle cx="13" cy="0" r="11"/><path d="M-2,-1 Q0,-4 2,-1"/></g><circle cx="-13" cy="0" r="11" fill="#fff" fill-opacity=".2" stroke="#3a2a1a" stroke-width="3"/><circle cx="13" cy="0" r="11" fill="#fff" fill-opacity=".2" stroke="#3a2a1a" stroke-width="3"/><path d="M-2,-1 Q0,-4 2,-1" stroke="#3a2a1a" stroke-width="3" fill="none"/>`,
   mono:`<circle cx="11" cy="0" r="12" fill="#fff" fill-opacity=".2" stroke="#c9a03a" stroke-width="3"/><path d="M22,4 C30,20 26,34 18,44" stroke="#c9a03a" stroke-width="1.5" fill="none" stroke-dasharray="2 2"/>`,
   shades:`<path d="M-27,-6 H-3 V2 C-3,10 -25,10 -27,2 Z M3,-6 H27 V2 C25,10 3,10 3,2 Z" fill="#141414" stroke="#000"/><path d="M-3,-4 H3" stroke="#000" stroke-width="3"/><path d="M-22,-3 l6,0" stroke="#fff" stroke-width="2" opacity=".6"/>`,
   bow:`<path d="M0,0 L-20,-12 L-20,12 Z M0,0 L20,-12 L20,12 Z" fill="#b32a2a" stroke="#5e1414" stroke-width="1.5"/><circle r="5" fill="#d23c3c" stroke="#5e1414"/>`,
@@ -5302,11 +5336,11 @@ const DRIP = {
 };
 // The whole scene. Stickers go in as data URLs, so the SVG can be drawn onto a canvas for the saved picture.
 let tankN = 0;   // gradient and clip ids are made unique per drawing, so two scenes on one page never borrow each other's
-function tankSvg(t, best, w = '100%') { const u = ++tankN; return tankSvg0(t, best, w).replace(/\btg([A-Z][a-z]+)\b/g, `tg$1${u}`); }
-function tankSvg0(t, best, w) {
+function tankSvg(t, best, w = '100%', hrefs) { const u = ++tankN; return tankSvg0(t, best, w, hrefs).replace(/\btg([A-Z][a-z]+)\b/g, `tg$1${u}`); }
+function tankSvg0(t, best, w, hrefs) {
   const T = tankWorn(t, best), E = ENC[T.enc], fy = E.y + E.h - Math.round(E.h * .16), clip = encPath(T.enc, E);
-  const art = ((t.art % STICKERS.length) + STICKERS.length) % STICKERS.length, fit = STICKER_FIT[art];
-  const sw = Math.min(E.w * .62, E.h * .58, 230), sh = sw * STICKER_WH[art][1] / STICKER_WH[art][0], sx = E.x + E.w / 2 - sw / 2, sy = fy + 14 - sh;
+  const R0 = RESIDENTS[tankArt(t, best)], fit = R0.fit, src = (hrefs && hrefs[R0.src]) || R0.src;
+  const sw = Math.min(E.w * .62, E.h * .58, 230), sh = sw * R0.h / R0.w, sx = E.x + E.w / 2 - sw / 2, sy = fy + 14 - sh;
   const s = sw / 220, at = ([fx, fy2]) => [sx + fx * sw, sy + fy2 * sh];
   const drip = (slot, anchor) => T[slot] && DRIP[T[slot]] ? (([x, y]) => `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${fit.r}) scale(${(s * 1.05).toFixed(2)})">${DRIP[T[slot]]}</g>`)(at(anchor)) : '';
   const slots = [.13, .87, .66], ps = Math.min(1.1, E.h / 330);
@@ -5336,13 +5370,12 @@ function tankSvg0(t, best, w) {
     ${shadow}
     <g clip-path="url(#tgClip)">${tankBack(T.back, E)}${T.decor.includes('leaf') ? tankDecor('leaf', E, fy) : ''}${T.decor.includes('ledge') ? tankDecor('ledge', E, fy) : ''}${T.decor.includes('disco') ? tankDecor('disco', E, fy) : ''}
       ${back3}${T.decor.includes('cork') ? tankDecor('cork', E, fy) : ''}${tankFloor(T.sub, E, fy)}${['rock', 'mirror', 'trophy'].filter(k => T.decor.includes(k)).map(k => tankDecor(k, E, fy)).join('')}
-      <image href="${STICKERS[art]}" xlink:href="${STICKERS[art]}" x="${sx.toFixed(1)}" y="${sy.toFixed(1)}" width="${sw.toFixed(1)}" height="${sh.toFixed(1)}"/>
+      <image href="${src}" xlink:href="${src}" x="${sx.toFixed(1)}" y="${sy.toFixed(1)}" width="${sw.toFixed(1)}" height="${sh.toFixed(1)}"/>
       ${drip('neck', fit.n)}${drip('face', fit.f)}${drip('head', fit.h)}${front}${light}
       <rect x="${E.x}" y="${E.y}" width="${E.w}" height="${E.h}" fill="url(#tgGlass)"/></g>
     <path d="${clip}" fill="none" stroke="#9fb4b0" stroke-width="3" stroke-opacity=".9"/><path d="M${E.x + 14},${E.y + 30} V${E.y + E.h * .55}" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".45"/>${frame}
   </svg>`;
 }
-const STICKER_WH = [[220, 199], [166, 220], [212, 220], [159, 220], [220, 169], [220, 186], [220, 196], [220, 157]];
 function tankHtml() {
   const t = tankState(), best = prestigeBest(), T = tankWorn(t, best), n = GEAR_ALL.filter(x => x.at <= best).length;
   const nx = GEAR_ALL.filter(x => x.at > best).sort((a, b) => a.at - b.at)[0];
@@ -5357,7 +5390,8 @@ function tankHtml() {
       <div class="plaque"><b>${esc(t.name || 'Unnamed spood')}</b>${tag ? ` · ${(tag.l ?? 99) <= 20 ? `<i>${esc(tag.n)}</i>` : esc(tag.n)}` : ''}<span>${esc(poss(who()))} Spoodarium</span></div>
       <p class="row" style="justify-content:center;margin:8px 0 0"><button data-act="tankCard">📤 Save a picture</button></p></div>
     <div class="tankctl">
-      <div class="grow"><b>Resident</b><div class="artpick">${STICKERS.map((_, i) => `<button class="${i === t.art ? 'on' : ''}" data-act="tankArt" data-v="${i}" aria-label="Resident ${i + 1}" aria-pressed="${i === t.art}">${stickerHtml(i, 'pick')}</button>`).join('')}</div></div>
+      <div class="grow"><b>Resident</b><div class="artpick">${RESIDENTS.map((r, i) => { const on = i === tankArt(t, best), lock = r.at > best;
+        return `<button class="${on ? 'on' : ''}${lock ? ' lock' : ''}" data-act="tankArt" data-v="${i}" aria-label="Resident ${i + 1}${lock ? `, unlocks at ${fmt(r.at)} prestige` : ''}" aria-pressed="${on}" ${lock ? `disabled title="Unlocks at ${fmt(r.at)} ✦ prestige"` : ''}>${resImg(i, 'pick')}${lock ? `<span class="rlock">🔒 ${fmt(r.at)} ✦</span>` : ''}</button>`; }).join('')}</div></div>
       <div class="grow"><label><b>Name</b> <input data-tank="name" value="${esc(t.name || '')}" maxlength="30" placeholder="e.g. Sir Hops-a-lot" autocomplete="off"></label></div>
       ${tags.length ? `<div class="grow"><label><b>Plaque</b> <select data-tank="tag"><option value="">No taxon</option>${tags.map(x => `<option value="${x.id}" ${x.id === t.tag ? 'selected' : ''}>${esc(x.n || '?')}</option>`).join('')}</select></label></div>` : ''}
       ${rows}</div></div></div>`;
@@ -5377,7 +5411,12 @@ function paintTank(controls = true) {
 async function openTankCard() {
   $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(640px,100%)"><button class="x" data-close="1">✕</button><div class="body">
     <h2>Your terrarium</h2><div id="cardOut"><p class="muted">Developing the print…</p></div></div></div></div>`;
-  const t = tankState(), svg = tankSvg(t, prestigeBest(), TANK_W * 2);
+  const t = tankState(), best = prestigeBest(), R0 = RESIDENTS[tankArt(t, best)], hrefs = {};
+  if (!R0.src.startsWith('data:')) try {   // an SVG drawn as an image can't fetch files, so the art goes in as a data URL
+    const b = await (await fetch(R0.src)).blob();
+    hrefs[R0.src] = await new Promise((ok, no) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.onerror = no; fr.readAsDataURL(b); });
+  } catch {}
+  const svg = tankSvg(t, best, TANK_W * 2, hrefs);
   const im = await loadImg('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
   const out = $('#cardOut'); if (!out) return;
   if (!im) { out.innerHTML = '<p>Could not draw the picture in this browser.</p>'; return; }
@@ -6736,7 +6775,8 @@ document.addEventListener('click', e => {
   if (a === 'caseCopy') { e.preventDefault(); caseShare(false); return; }
   if (a === 'caseShare') { e.preventDefault(); caseShare(true); return; }
   if (a === 'gear') { const [c, k] = val.split('|'); setGear(c, k); return; }
-  if (a === 'tankArt') { tankState().art = +val; saveUser(); paintTank(); return; }
+  if (a === 'tankArt') { if ((RESIDENTS[+val]?.at ?? Infinity) <= prestigeBest()) { tankState().art = +val; saveUser(); paintTank(); } return; }
+  if (a === 'plate') { $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal platebox"><button class="x" data-close="1">✕</button><img src="${ART_DIR}${esc(val)}.webp" alt="Painting of a jumping spider by themoojuice"></div></div>`; return; }
   if (a === 'tankCard') openTankCard();
   if (a === 'flip') { e.preventDefault(); const c = t.closest('.card'); if (c) turnCard(c); return; }
   if (a === 'needsid') { e.preventDefault(); S.prefs.layer = 'needsid'; savePrefs(); if ($('#app').classList.contains('hidden')) enterApp('dex'); else { S.tab = 'dex'; render(); } }
@@ -6893,7 +6933,7 @@ const CHANGES = [
   { v:'2.9', d:'2026-10-16', items:[
     { h:'Profile: your <b>genera, species and ✦ prestige</b> sit under your title; tap prestige to see how it adds up. <b>Your numbers</b> is gone.' },
     { h:'Prestige shows on card backs, on Three to find next (what each would add), on new-genus reveals and in the Trip planner.' },
-    { h:'<b>Spoodarium</b> (Collection) is open to everyone with a genus: build a terrarium for a spood of your own, with gear that unlocks as your prestige grows. Captive spoods can be given their names.' },
+    { h:'<b>Spoodarium</b> (Collection) is open to everyone with a genus: build a terrarium for a spood of your own, with gear that unlocks as your prestige grows. Captive spoods can be given their names, and a gallery of paintings by themoojuice hangs there, with more painted residents to unlock.' },
     { h:'Trip planner and home base search now find towns iNat has no place for (Pambula, Eden…).' },
   ] },
   { v:'2.8', d:'2026-10-13', items:[

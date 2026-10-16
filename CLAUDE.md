@@ -1,7 +1,7 @@
 # SPOODEX
 
 Gamified iNaturalist Salticidae collection: a web app (`spoodex.html`), live on GitHub Pages, installable and offline-capable
-via two approved sidecars (`sw.js`, `manifest.webmanifest`) plus `icon-192.png`/`icon-512.png` and (v2.7) `og.png`, the link-preview image, built by `tools/og.py`.
+via two approved sidecars (`sw.js`, `manifest.webmanifest`) plus `icon-192.png`/`icon-512.png` and (v2.7) `og.png`, the link-preview image, built by `tools/og.py`, and (v2.9) `art/`, a few of the owner's field-plate artworks (slimmed `.webp`s) for the Spoodarium.
 Since v2.8 there is also a small server in `server/` (a Cloudflare Worker; `node server/dev.mjs` runs it locally on port 8787).
 
 **Before doing any work, read [HANDOVER.md](HANDOVER.md), at least §0.** It has setup from a fresh clone, the code map,
@@ -20,5 +20,5 @@ Quick rules:
   Other people's photos only under CC0 / CC BY / CC BY-NC, credited and linked; prefer the owner's own (`themoojuice`).
 - Test via the `spoodex` preview server (port 8765; recreate `.claude/launch.json` from HANDOVER.md §2 if missing) with
   `?u=themoojuice` and `&vs=laz`. Check phone width (375 px) too.
-- Ship: bump `VERSION` in `sw.js`, `cp index.html spoodex.html sw.js manifest.webmanifest icon-192.png icon-512.png og.png site/`, then `git commit`,
+- Ship: bump `VERSION` in `sw.js`, `cp index.html spoodex.html sw.js manifest.webmanifest icon-192.png icon-512.png og.png site/ && cp -r art site/`, then `git commit`,
   then `git push` (Pages updates in ~30 s). Update HANDOVER.md in the same commit.
