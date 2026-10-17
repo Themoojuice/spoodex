@@ -5176,7 +5176,7 @@ function viewPets() {
   const art = stickerFor(S.login);
   const head = `<div class="panel spoodhead"><div class="artband" aria-hidden="true">${[art + 2, art + 5, art + 3].map((i, k) => stickerHtml(i, 'a' + k)).join('')}</div>
     <h2>🏺 Spoodarium</h2>
-    ${M.pets.length ? `<p>${plural(M.pets.length, 'captive record')} on iNaturalist${kept.length ? `, ${plural(kept.length, 'genus', 'genera')}` : ''}. These spoods were once captive; enter their names if/where applicable, and take a moment to remember some of the good times you had together.</p>
+    ${M.pets.length ? `<p>${plural(M.pets.length, 'captive record')} on iNaturalist${kept.length ? `, ${plural(kept.length, 'genus', 'genera')}` : ''}. Your captive spoods, past and present. Give them their names, and take a moment to enjoy the good times you've had together.</p>
       ${found.length ? `<p class="small">Found wild too: ${found.map(id => `<a href="#" data-genus="${id}"><i>${esc(S.nodes[id]?.n || '?')}</i></a>`).join(', ')}</p>` : ''}`
     : `<p>Jumping spiders you post on iNaturalist marked as captive (pets, rescues, spiders you raise) go on a shelf here. Below, build a terrarium for a spood of your own.</p>`}
     </div>`;
