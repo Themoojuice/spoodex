@@ -28,8 +28,10 @@ preview without the image shows up, Reddit has cached it. A new `ref` value forc
 > where you live, a map that shows what's been recorded around you that you haven't found yet, and quests built from your gaps.
 > No iNat account? "See what jumping spiders live near you" works without one.
 >
-> Keep a pet spood? Captive records don't count towards the collection, but they get a shelf of their own (the Spoodarium) with where to find
-> a wild one of the same genus near you.
+> Keep a pet spood? Captive records don't count towards the collection, but they get a shelf of their own in the Spoodarium, where you can
+> give each one its name. There's also a terrarium to build for a spood of your own: pick a resident (some are my paintings), then kit it out
+> with plants, decor, hats and bow ties that unlock as your wild finds rack up prestige. It also shows where to find a wild one of the
+> genera you keep, near you.
 >
 > There's also a monthly spood hunt anyone can join: photograph jumping spiders anywhere this month, and the top 25 iNat observers make the
 > leaderboard: [October's hunt](hunt link above).
