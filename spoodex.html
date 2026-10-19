@@ -183,6 +183,15 @@ details.set > summary, .set details > summary { cursor:pointer; }
 .card.lead .nm { font-style:normal; }
 .card.lead .ph { display:block; }
 .card.lead .few { color:var(--accent); }
+.sstamp { position:absolute; top:6px; left:6px; z-index:2; width:34px; height:34px; padding:0; border-radius:50%; display:grid; place-items:center; font:700 13px var(--mono); color:var(--ink); background:color-mix(in srgb, var(--rc) 30%, var(--panel)); border:2px solid var(--rc); box-shadow:0 0 0 2px var(--panel), 0 1px 3px #0006; cursor:pointer; }
+.sstamp.big { position:static; flex:none; width:58px; height:58px; font-size:22px; cursor:default; }
+.bestmini .sstamp { position:static; flex:none; }
+.sbars { display:grid; gap:10px; margin:14px 0; }
+.sbar .bar { max-width:none; margin:3px 0; }
+.bestrow { display:grid; gap:8px; }
+.bestmini { display:flex; gap:8px; align-items:center; }
+.bestmini .thumb { flex:none; width:52px; height:52px; border-radius:6px; background:var(--panel2) center/cover no-repeat; }
+.card.best .meta .small:last-child { margin-top:3px; }
 .lacts { display:flex; flex-wrap:wrap; gap:4px 10px; margin-top:4px; font-size:12px; font-weight:600; }
 details.tips { background:var(--panel2); border:1px solid var(--line); border-radius:var(--radius); padding:8px 12px; margin-top:8px; }
 details.tips summary { cursor:pointer; }
@@ -1212,18 +1221,18 @@ const ensureRef = (scope, force = false) => ensureRefPlace(scopePlace(scope), fo
 async function ensureRefPlace(pid, force = false) {
   const key = pid ? 'p' + pid : 'world';
   const cur = S.ref[key];
-  if (!force && cur && cur.s && cur.t != null && Date.now() - cur.ts < REF_TTL) return cur;
+  if (!force && cur && cur.s && cur.dg && cur.t != null && Date.now() - cur.ts < REF_TTL) return cur;
   const d = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, place_id:pid, verifiable:true });
-  const g = {}, s = {};
+  const g = {}, s = {}, dg = {};   // dg: records that stop at exactly the genus (the Spood score's stop rate)
   let t = 0;
   d.results.forEach(r => {
     addNode(r);
     const c = r.descendant_obs_count || r.count || 0;
-    if (r.rank === 'genus') g[r.id] = c;
+    if (r.rank === 'genus') { g[r.id] = c; dg[r.id] = r.direct_obs_count || 0; }
     if (r.rank === 'species') s[r.id] = c;
     if (r.id === SALTICIDAE) t = c;
   });
-  S.ref[key] = { ts:Date.now(), g, s, t };
+  S.ref[key] = { ts:Date.now(), g, s, t, dg, ex:cur?.ex, ext:cur?.ext };   // ex: the Spood score's experienced identifiers, kept
   saveShared();
   return S.ref[key];
 }
@@ -2117,6 +2126,7 @@ function viewDex() {
   if (S.prefs.layer === 'sets') return viewSets();
   if (S.prefs.layer === 'needsid') return viewNeedsId();
   if (S.prefs.layer === 'table') return viewDexTable();
+  if (S.prefs.layer === 'best') return viewBestFinds();
   const M = S.M, sc = scopeGenera(), hl = headline(), P = S.prefs;
   const { order } = taxonomicOrder(sc.inScope);
   const num = new Map(order.map((id,i) => [id, i+1]));
@@ -2226,9 +2236,12 @@ const mysteryCount = () => S.M.leads.reduce((n, l) => n + l.obs.length, 0);
 // Mystery spoods: records stuck above genus (Needs ID layer). Each one could be a genus you haven't unlocked.
 function viewNeedsId() {
   const M = S.M, f = S.prefs.leadFilter, lead = M.leads.find(l => String(l.id) === String(f));
+  const best = S.prefs.leadSort === 'score' && !isGuest();
+  if (!isGuest()) wantScores();
   const all = M.leads.flatMap(l => l.obs), obs = (lead ? lead.obs : all).slice().sort((a,b) => (b.d || '').localeCompare(a.d || '') || b.id - a.id);
+  if (best) { const sv = new Map(obs.map(o => [o.id, spoodScore(o)?.raw ?? -1])); obs.sort((a, b) => sv.get(b.id) - sv.get(a.id)); }
   const tile = o => { const url = `https://www.inaturalist.org/observations/${o.id}`, n = o.ph.length;
-    return `<div class="card lead"><a class="ph" href="${url}" target="_blank" rel="noopener" title="Open on iNaturalist" style="background-image:url('${esc(photoSize(o.ph[0] || '', 'medium'))}')">${n ? '' : '<span class="nophoto">no photo</span>'}</a>
+    return `<div class="card lead"><a class="ph" href="${url}" target="_blank" rel="noopener" title="Open on iNaturalist" style="background-image:url('${esc(photoSize(o.ph[0] || '', 'medium'))}')">${n ? '' : '<span class="nophoto">no photo</span>'}</a>${scoreStamp(spoodScore(o), o.id)}
       <div class="meta"><div class="nm">Mystery spood</div>
       <div class="small muted">${esc(o.t.n || 'Unknown')} (${esc(o.t.r || '')}) · ${esc(o.d || 'no date')}${o.q === 'casual' ? ' · casual' : ''}</div>
       <div class="small ${n < 3 ? 'few' : ''}">📸 ${n >= 3 ? '3 or more photos' : n === 1 ? '1 photo' : `${n} photos`}</div>
@@ -2237,9 +2250,10 @@ function viewNeedsId() {
   const chip = (k, label, n) => `<span class="chip ${String(f || 'all') === String(k) ? 'on' : ''}" data-act="leadFilter" data-v="${k}" style="cursor:pointer">${esc(label)} (${n})</span>`;
   return `<div class="panel row" style="margin-bottom:14px">${layerSwitch()}</div>
     <div class="panel" style="margin-bottom:14px"><h2>❓ Mystery spoods</h2>
-      <p class="small muted">Your jumping spider records that aren't identified to genus yet, newest first. Once one is, sync and its card unlocks.</p>
+      <p class="small muted">Your jumping spider records that aren't identified to genus yet, ${best ? 'highest Spood score' : 'newest'} first. Once one is, sync and its card unlocks.</p>
       ${tipsHtml(M.G.size < 15)}
       ${M.leads.length ? `<div class="row" style="gap:6px;margin-top:10px">${chip('all', 'All', all.length)}${M.leads.map(l => chip(l.id, l.name, l.obs.length)).join('')}</div>` : ''}
+      ${M.leads.length && !isGuest() ? `<div class="row" style="gap:6px;margin-top:6px">${[['date', 'Newest first'], ['score', 'Highest Spood score first']].map(([k, l]) => `<span class="chip ${(k === 'score') === best ? 'on' : ''}" data-act="leadSort" data-v="${k}" style="cursor:pointer">${l}</span>`).join('')}</div>` : ''}
       <p class="row" style="margin:10px 0 0;gap:8px">${M.leads.length && !isGuest() ? `<a class="btnlink" href="${esc(leadsUrl(lead))}" target="_blank" rel="noopener">Open ${lead ? `these ${fmt(obs.length)}` : `all ${fmt(obs.length)}`} on iNaturalist ↗</a>` : ''}${idAidBtn()}</p></div>
     ${isGuest() ? '<div class="panel"><p>Guests have no records yet. Open SPOODEX with your iNaturalist username to see yours here.</p><button data-act="switch">I have an iNaturalist account</button></div>'
       : obs.length ? `<div class="dexgrid">${obs.map(tile).join('')}</div>`
@@ -2247,7 +2261,7 @@ function viewNeedsId() {
 }
 // Opens the Identification aid in one reused popup window (a tab on phones, or if popups are blocked)
 const idAidBtn = () => !auHome() ? '' : `<a class="btnlink" href="${ID_AID}" target="spoodex-idaid" data-act="idaid">🔑 Identification aid ↗</a>`;
-const layerSwitch = () => `<span>${[['genus','Genera'],['species','Species'],['sets','Sets'],['table','📋 Table'],['needsid',`❓ Mystery spoods (${mysteryCount()})`]].map(([k,l]) => `<span class="chip ${(S.prefs.layer||'genus')===k?'on':''}" data-layer="${k}" style="cursor:pointer">${l}</span>`).join(' ')}</span>`;
+const layerSwitch = () => `<span>${[['genus','Genera'],['species','Species'],['sets','Sets'],['table','📋 Table'],['needsid',`❓ Mystery spoods (${mysteryCount()})`],['best','🏅 Best finds']].map(([k,l]) => `<span class="chip ${(S.prefs.layer||'genus')===k?'on':''}" data-layer="${k}" style="cursor:pointer">${l}</span>`).join(' ')}</span>`;
 function speciesSection(gid) {
   const M = S.M, ref = refFor(S.prefs.scope), cm = S.cmp?.M;
   const ids = new Set();
@@ -3039,6 +3053,175 @@ function viewQuests() {
   <p class="muted small" style="margin-top:14px">Quests check themselves each time you sync.</p>`;
 }
 
+/* ---------------- spood score: each wild record out of 100, from public iNat signals (v2.10; SPEC-spood-score.md, tools/spood_score.py) ---------------- */
+// Five parts, each 0..1 times its weight; their sum (raw points out of 100) goes through a curve so everyday records stay low and
+// the best few percent reach the 80s. Rarity, stop rates and experienced identifiers are always the home country's, so every
+// viewer gets the same numbers. Same rules as the prototype; change both together.
+const SCORE_W = { secret:30, rare:30, story:15, notice:15, puzzle:10 };
+const SCORE_PARTS = [
+  ['secret', 'Secret', 'signs of an unnamed or unplaceable spood: an experienced identifier stopped where IDs rarely stop, or the notes say so'],
+  ['rare', 'Rare', 'how few iNat records there are of what it is'],
+  ['story', 'Story', 'male, female, adult, evidence (egg sac, moult, retreat), 4 or more photos, research grade'],
+  ['notice', 'Noticed', 'faves, comments and identifications from other people'],
+  ['puzzle', 'Puzzle', 'disagreeing identifications'],
+];
+const SECRET_RX = /undescribed|un-described|new species|sp\.? ?nov|unnamed|not (?:yet )?described|morpho ?species/i;
+const ODD_RX = /never seen|first record|range extension|no records|unusual/i;   // a surprise, not necessarily a new species
+const SCORE_CURVE = 40, SCORE_TTL = 7 * 864e5, SCORE_EXPERTS = 50, BEST_PAGE = 60, SECRET_MIN = .6;   // Secret spoods filter: a stop where under ~40% stop, or the notes' words
+const SCORE_FIELDS = '(id:!t,description:!t,faves_count:!t,num_identification_disagreements:!t,photos:(id:!t),identifications:(current:!t,body:!t,user:(login:!t),taxon:(rank_level:!t)),comments:(body:!t,user:(login:!t)))';
+// One record's score inputs, kept small: f faves, d disagreements, n photos, o [rank level of each other person's current ID, their login],
+// c comments from others, w / x the secret / surprise words found in the description, IDs and comments ('' when none)
+function trimScore(o, login) {
+  const me = String(login).toLowerCase(), ids = (o.identifications || []).filter(i => i.current);
+  const others = ids.filter(i => (i.user?.login || '').toLowerCase() !== me), notes = o.comments || [];
+  const text = [o.description || '', ...ids.map(i => i.body || ''), ...notes.map(c => c.body || '')].join(' ');
+  return { f:o.faves_count || 0, d:o.num_identification_disagreements || 0, n:(o.photos || []).length,
+    o:others.map(i => [i.taxon?.rank_level || 0, (i.user?.login || '').toLowerCase()]),
+    c:notes.filter(c => (c.user?.login || '').toLowerCase() !== me).length,
+    w:(SECRET_RX.exec(text) || [''])[0], x:(ODD_RX.exec(text) || [''])[0] };
+}
+const scorePid = () => S.M?.home.country || null;
+const scoreRef = () => S.ref[scorePid() ? 'p' + scorePid() : 'world'] || null;
+let scoreBusy = false, scoreErr = null;
+// Reads the score inputs: every record once a week (1 call per 200), new records by id in between, and the country's
+// top identifiers once per reference refresh. Returns true when something new arrived.
+async function loadScores(force = false) {
+  if (!S.u || !S.M || isGuest() || scoreBusy) return false;
+  const sc = S.u.sc = S.u.sc || { ts:0, r:{} };
+  const stale = force || Date.now() - sc.ts > SCORE_TTL;
+  const missing = Object.values(S.u.obs).filter(o => !o.cap && !(o.id in sc.r)).map(o => o.id);
+  const ref = scoreRef();
+  if (!stale && !missing.length && ref?.dg && ref.ex) return false;
+  scoreBusy = true;
+  try {
+    const pid = scorePid(), R = await ensureRefPlace(pid);
+    if (!R.ex || Date.now() - (R.ext || 0) > REF_TTL) {
+      const d = await api('/observations/identifiers', { taxon_id:SALTICIDAE, place_id:pid, per_page:SCORE_EXPERTS });
+      R.ex = d.results.map(x => (x.user?.login || '').toLowerCase()).filter(Boolean); R.ext = Date.now(); saveShared();
+    }
+    if (stale) {
+      const r = {}; let idAbove = 0;
+      while (true) {
+        const d = await api('/observations', { taxon_id:SALTICIDAE, user_login:S.login, per_page:200, order_by:'id', order:'asc', id_above:idAbove || null, fields:SCORE_FIELDS }, API2);
+        d.results.forEach(o => r[o.id] = trimScore(o, S.login));
+        if (d.results.length < 200) break;
+        idAbove = d.results[d.results.length - 1].id;
+      }
+      sc.r = r; sc.ts = Date.now();
+    } else for (let i = 0; i < missing.length; i += 200) {
+      const d = await api('/observations', { id:missing.slice(i, i + 200).join(','), per_page:200, fields:SCORE_FIELDS }, API2);
+      d.results.forEach(o => sc.r[o.id] = trimScore(o, S.login));
+      missing.slice(i, i + 200).forEach(id => sc.r[id] = sc.r[id] || null);   // deleted or private: not asked for again until the weekly read
+    }
+    saveUser();
+  } catch (e) { console.warn(e); scoreErr = e.message; scoreBusy = false; return false; }
+  scoreBusy = false; scoreErr = null;
+  return true;
+}
+const scoresReady = () => !!(S.u?.sc?.ts || Object.keys(S.u?.sc?.r || {}).length) && !!scoreRef()?.ex;
+// Kicks off loadScores and redraws once it has something; for views that show scores
+// (after a failure it waits for Try again, so a failing call can't loop through render)
+function wantScores() {
+  if (scoreErr || scoreBusy) return;
+  const ready = scoresReady();
+  loadScores().then(ch => { if (ch || (!ready && scoreErr)) { if (ready) softRender(); else render(); } });
+}
+const taxNm = (t, r) => r <= 20 ? `<i>${esc(t)}</i>` : esc(t);
+// → {s score 0-100, raw points, parts {k: 0..1}, why [{k, h html}]} or null (captive, or its inputs not read yet)
+function spoodScore(o, sd = S.u?.sc?.r?.[o.id], ref = scoreRef()) {
+  if (!o || o.cap || !sd || !ref) return null;
+  const t = o.t || {}, l = t.l || 99, part = {}, why = [], ex = new Set(ref.ex || []);
+  const where = esc(S.places[scorePid()]?.n || 'the world'), add = (k, h) => why.push({ k, h });
+  // rare: few iNat records of what it is (log scale; 1 record = 1, about 3,000 = 0); taxa missing from the country's tree aren't scored
+  const n = l <= 10 ? ref.s?.[t.id] : l === 20 ? ref.g?.[t.id] : null;
+  part.rare = n ? Math.max(0, 1 - Math.log10(n) / 3.5) : 0;
+  if (part.rare > .3) add('rare', `${fmt(n)} iNat record${n === 1 ? '' : 's'} of ${taxNm(t.n, l)} in ${where}`);
+  // secret
+  let s = 0;
+  const sw = [];   // secret reasons: the notes' own words first
+  const expert = sd.o.filter(([, u]) => ex.has(u));
+  if (l === 20 && ref.g?.[t.id] && expert.some(([rl]) => rl === 20)) {
+    const stop = (ref.dg?.[t.id] || 0) / ref.g[t.id];
+    s = .25 + .6 * (1 - stop);
+    sw.push(`An experienced identifier stopped at ${taxNm(t.n, l)}, where ${Math.round(100 * stop)}% of records in ${where} stop`);
+  }
+  if (l > 20 && expert.length) { s = Math.max(s, .45); sw.push(`Experienced identifiers left it at ${esc(t.r || 'family')}`); }
+  if (sd.w) { s = 1; sw.unshift(`The notes say “${esc(sd.w)}”`); }
+  else if (sd.x) { s = Math.max(s, .5); sw.unshift(`The notes say “${esc(sd.x)}”`); }
+  sw.forEach(h => add('secret', h));
+  part.secret = s;
+  // an unnamed species has few records by definition: a strong secret stands in for rarity above species
+  if (s >= .6 && l > 10 && s > part.rare) { part.rare = s; add('rare', 'Counted from the secret signs: an unnamed species has few records'); }
+  // story
+  const A = new Set(o.ann), photos = sd.n || o.ph.length, ev = A.has(ANN.EGG) || A.has(ANN.MOLT) || A.has(ANN.CONSTRUCTION);
+  part.story = Math.min(1, .3 * A.has(ANN.MALE) + .15 * A.has(ANN.FEMALE) + .1 * A.has(ANN.ADULT) + .3 * ev + .15 * (photos >= 4) + .2 * (o.q === 'research'));
+  const st = [A.has(ANN.MALE) && 'male', A.has(ANN.FEMALE) && 'female', A.has(ANN.ADULT) && 'adult', ev && 'evidence', photos >= 4 && `${photos} photos`, o.q === 'research' && 'research grade'].filter(Boolean);
+  if (st.length) add('story', st.join(', ').replace(/^./, c => c.toUpperCase()));
+  // notice
+  part.notice = Math.min(1, .25 * sd.f + .15 * sd.c + .05 * sd.o.length);
+  if (sd.f || sd.c) add('notice', `${plural(sd.f, 'fave')}, ${plural(sd.c, 'comment')} from others`);
+  if (sd.o.length) add('notice', `${plural(sd.o.length, 'identification')} from others`);
+  // puzzle
+  part.puzzle = Math.min(1, sd.d / 2);
+  if (sd.d) add('puzzle', plural(sd.d, 'disagreeing identification'));
+  const raw = Object.keys(SCORE_W).reduce((a, k) => a + SCORE_W[k] * part[k], 0);
+  const pts = k => SCORE_W[k] * part[k];
+  why.sort((a, b) => pts(b.k) - pts(a.k));   // the reason from the part worth most comes first (tiles show only that one)
+  return { s:Math.round(100 * (1 - Math.exp(-raw / SCORE_CURVE))), raw, parts:part, why };
+}
+// Bands share the rarity colours: 80+ red, 60s-70s blue, 40s-50s yellow, below that plain
+const scoreCol = s => (s >= 80 ? RARITY[0] : s >= 60 ? RARITY[1] : s >= 40 ? RARITY[2] : RARITY[4]).c;
+const scoreStamp = (sc, id, big, back) => sc ? `<button class="sstamp ${big ? 'big' : ''}" style="--rc:${scoreCol(sc.s)}" ${id ? `data-act="score" data-v="${id}"` : ''}${back ? ` data-g="${back}"` : ''} title="Spood score ${sc.s} of 100">${sc.s}</button>` : '';
+const topWhy = sc => sc?.why[0]?.h || '';
+// Scored wild records, best first
+const scoredRecs = (filter = () => true) => S.M.obs.filter(filter).map(o => ({ o, sc:spoodScore(o) })).filter(x => x.sc).sort((a, b) => b.sc.s - a.sc.s || b.sc.raw - a.sc.raw || b.o.id - a.o.id);
+function openScore(id, back) {
+  const o = S.u.obs[id], sc = spoodScore(o);
+  if (!sc) return;
+  const url = `https://www.inaturalist.org/observations/${id}`, t = o.t || {};
+  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(560px,100%)"><button class="x" data-close="1">✕</button>
+    <div class="hero" style="background-image:url('${esc(photoSize(o.ph[0] || '', 'large'))}')"></div>
+    <div class="body"><div class="row" style="gap:12px;align-items:center">${scoreStamp(sc, null, true)}
+      <div><div class="small" style="letter-spacing:.2em">SPOOD SCORE</div><h2 style="margin:0">${taxNm(t.n || 'Unknown', t.l)}</h2><div class="small muted">${esc(t.r || '')} · ${esc(o.d || 'no date')}</div></div></div>
+      <div class="sbars">${SCORE_PARTS.map(([k, label]) => { const pts = Math.round(SCORE_W[k] * sc.parts[k]);
+        return `<div class="sbar"><div class="row" style="justify-content:space-between"><b>${label}</b><span class="small">${pts} / ${SCORE_W[k]}</span></div>
+          <div class="bar"><i style="width:${pct(pts, SCORE_W[k])}%"></i></div>
+          ${sc.why.filter(w => w.k === k).map(w => `<div class="small">${w.h}</div>`).join('')}</div>`; }).join('')}</div>
+      <p class="small muted">The parts add up to ${Math.round(sc.raw)} of 100 points; the score is 100 × (1 − e<sup>−points/${SCORE_CURVE}</sup>). <a href="#" data-act="howto" data-v="score">How it works</a></p>
+      <p class="row" style="gap:8px"><a class="btnlink" href="${url}" target="_blank" rel="noopener">Open on iNaturalist ↗</a>${back ? `<button data-genus="${back}">← ${taxNm(S.nodes[back]?.n || 'Genus', 20)}</button>` : ''}</p>
+    </div></div></div>`;
+}
+// SPOODEX › 🏅 Best finds: every wild record by its Spood score
+function viewBestFinds() {
+  const P = S.prefs, head = `<div class="panel row" style="margin-bottom:14px">${layerSwitch()}</div>`;
+  if (isGuest()) return head + '<div class="panel"><p>Guests have no records yet. Open SPOODEX with your iNaturalist username to see your best finds.</p><button data-act="switch">I have an iNaturalist account</button></div>';
+  wantScores();
+  if (!scoresReady()) return head + `<div class="panel"><h2>🏅 Best finds</h2><p class="muted">${scoreErr ? esc(scoreErr) + ' <button class="small" data-act="bestRetry">Try again</button>' : `Reading faves, comments and identifications for ${plural(S.M.obs.length, 'record')}…`}</p></div>`;
+  let list = scoredRecs(P.bestFilter === 'secret' ? o => (spoodScore(o)?.parts.secret || 0) >= SECRET_MIN : undefined);
+  if (P.bestSort === 'date') list = list.sort((a, b) => (b.o.d || '').localeCompare(a.o.d || '') || b.o.id - a.o.id);
+  const shown = list.slice(0, S.bestN || BEST_PAGE);
+  const chip = (act, k, label, on) => `<span class="chip ${on ? 'on' : ''}" data-act="${act}" data-v="${k}" style="cursor:pointer">${label}</span>`;
+  const tile = ({ o, sc }) => `<div class="card lead best"><a class="ph" href="#" data-act="score" data-v="${o.id}" style="background-image:url('${esc(photoSize(o.ph[0] || '', 'medium'))}')">${o.ph.length ? '' : '<span class="nophoto">no photo</span>'}</a>
+      ${scoreStamp(sc, o.id)}
+      <div class="meta"><div class="nm">${taxNm(o.t.n || 'Unknown', o.t.l)}</div>
+      <div class="small muted">${o.t.l > 20 ? esc(o.t.r || '') + ' · ' : ''}${esc(o.d || 'no date')}</div>
+      ${topWhy(sc) ? `<div class="small">${topWhy(sc)}</div>` : ''}</div></div>`;
+  return head + `<div class="panel" style="margin-bottom:14px"><h2>🏅 Best finds</h2>
+      <p class="small muted">Your wild records by Spood score, out of 100: signs of an unnamed species, few iNat records in ${esc(S.places[scorePid()]?.n || 'the world')}, what the record shows, and how others reacted. Tap a score for its reasons.</p>
+      <div class="row" style="gap:6px;margin-top:10px">${chip('bestFilter', 'all', 'All', P.bestFilter !== 'secret')}${chip('bestFilter', 'secret', 'Secret spoods', P.bestFilter === 'secret')}
+        <span class="muted small">·</span>${chip('bestSort', 'score', 'Highest first', P.bestSort !== 'date')}${chip('bestSort', 'date', 'Newest first', P.bestSort === 'date')}</div></div>
+    ${shown.length ? `<div class="dexgrid">${shown.map(tile).join('')}</div>` : '<div class="panel"><p>No records match.</p></div>'}
+    ${list.length > shown.length ? `<p style="text-align:center"><button data-act="bestMore">Show ${Math.min(BEST_PAGE, list.length - shown.length)} more of ${fmt(list.length - shown.length)}</button></p>` : ''}`;
+}
+// Genus page: the genus's three best-scoring records
+function bestInGenus(gid) {
+  if (isGuest() || !scoresReady()) return '';
+  const top = scoredRecs(o => genusOf(o.anc) === gid).slice(0, 3);
+  return top.length ? `<h3 style="margin-top:12px">🏅 Best finds</h3><div class="bestrow">${top.map(({ o, sc }) =>
+    `<div class="bestmini"><span class="thumb" style="background-image:url('${esc(photoSize(o.ph[0] || '', 'small'))}')"></span>${scoreStamp(sc, o.id, false, gid)}
+      <span class="small"><a href="#" data-act="score" data-v="${o.id}" data-g="${gid}">${taxNm(o.t.n, o.t.l)} · ${esc(o.d || '')}</a>${topWhy(sc) ? `<br><span class="muted">${topWhy(sc)}</span>` : ''}</span></div>`).join('')}</div>` : '';
+}
+
 /* ---------------- genus page ---------------- */
 async function openGenus(id) {
   const M = S.M, g = M.G.get(id), info = S.info[id] || {}, name = S.nodes[id]?.n || '?';
@@ -3070,6 +3253,7 @@ async function openGenus(id) {
     </div>
     <h3 style="margin-top:12px">Your gallery</h3>
     <div class="gallery">${g.photos.map(p => `<a href="https://www.inaturalist.org/observations/${p.id}" target="_blank" rel="noopener" style="background-image:url('${esc(photoSize(p.url,'small'))}')"></a>`).join('')}</div>
+    ${bestInGenus(id)}
     ${moduleOn(4) ? `<h3 style="margin-top:12px">Mastery points ledger (${fmt(g.xp)} points)</h3><div class="small" style="max-height:140px;overflow:auto">${g.xpLog.slice().reverse().map(e => `<div>${esc(e.d)} · ${esc(e.label)} <span class="reward">+${e.xp}</span></div>`).join('')}</div>` : ''}
   ` : `
     <div class="small" style="letter-spacing:.2em">UNKNOWN</div>
@@ -3095,7 +3279,7 @@ async function openGenus(id) {
     <p class="small">${cg.obs.length} obs · level ${cg.level}/10 · ${cg.state.toLowerCase()} · first ${esc(cg.first.d)}</p>
     <div class="gallery">${cg.photos.slice(0,8).map(p => `<a href="https://www.inaturalist.org/observations/${p.id}" target="_blank" rel="noopener" style="background-image:url('${esc(photoSize(p.url,'small'))}')"></a>`).join('')}</div>` : '';
   const hero = g ? photoSize(g.cover, 'large') : photoSize(stockPh(id), 'large');
-  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal">
+  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" data-gpage="${id}">
     <button class="x" data-close="1">✕</button>
     <div class="hero ${g ? '' : 'unknown'}" style="background-image:url('${esc(hero||'')}')"></div>
     <div class="body">${body}${g && !isGuest() ? `<p class="row" style="margin:10px 0 0"><button data-act="dareGenus" data-v="${id}">🎯 Challenge a friend</button></p>` : ''}${when}${speciesSection(id)}${theirs}${rarity}${hist}
@@ -3104,6 +3288,7 @@ async function openGenus(id) {
       ${!g && stockCr(id) ? ` · <span class="muted">Silhouette from photo ${esc(stockCr(id))}</span>` : ''}</p>
     </div></div></div>`;
   if (!info.s && !info.p) ensureInfo([id]).then(() => { if ($('#modalRoot').innerHTML && S.info[id]?.s) openGenus(id); });
+  if (g && !isGuest() && !scoreErr) loadScores().then(ch => { if (ch && $(`#modalRoot [data-gpage="${id}"]`)) openGenus(id); });
   if (moduleOn(3) && $('#obsvrs')) {
     const key = `${id}:${scopeP || 'w'}`;
     let n = S.observers[key];
@@ -6781,6 +6966,12 @@ document.addEventListener('click', e => {
   if (a === 'flip') { e.preventDefault(); const c = t.closest('.card'); if (c) turnCard(c); return; }
   if (a === 'needsid') { e.preventDefault(); S.prefs.layer = 'needsid'; savePrefs(); if ($('#app').classList.contains('hidden')) enterApp('dex'); else { S.tab = 'dex'; render(); } }
   if (a === 'leadFilter') { S.prefs.leadFilter = val === 'all' ? null : val; savePrefs(); render(); }
+  if (a === 'leadSort') { S.prefs.leadSort = val; savePrefs(); render(); }
+  if (a === 'score') { e.preventDefault(); openScore(+val, +t.dataset.g || null); return; }
+  if (a === 'bestFilter') { S.prefs.bestFilter = val; savePrefs(); S.bestN = 0; render(); }
+  if (a === 'bestSort') { S.prefs.bestSort = val; savePrefs(); S.bestN = 0; render(); }
+  if (a === 'bestMore') { S.bestN = (S.bestN || BEST_PAGE) + BEST_PAGE; render(); }
+  if (a === 'bestRetry') { scoreErr = null; render(); }
   if (a === 'sets') { e.preventDefault(); S.prefs.layer = 'sets'; savePrefs(); S.tab = 'dex'; render(); }
   if (a === 'wview') { S.prefs.wantedView = val; savePrefs(); render(); }
   if (a === 'bountyGo') { e.preventDefault(); S.prefs.wantedView = 'bounty'; savePrefs(); S.tab = 'wanted'; render(); }
@@ -6930,6 +7121,10 @@ $('#loginForm').addEventListener('submit', e => { e.preventDefault(); const v = 
 // What changed, newest first: shown once on Profile to returning players, and in full from Settings. The owner's rule (2026-10-13):
 // sections and views stay where they are; when something has to move, it gets a line here.
 const CHANGES = [
+  { v:'2.10', d:'2026-10-20', items:[
+    { h:'<b>🏅 Best finds</b> (SPOODEX, after Mystery spoods): every wild record gets a <b>Spood score</b> out of 100, from signs of an unnamed species, few iNat records, what the record shows and how others reacted. Tap a score for its reasons.' },
+    { h:'Mystery spoods can be sorted by Spood score, and genus pages show their three best finds.' },
+  ] },
   { v:'2.9', d:'2026-10-16', items:[
     { h:'Profile: your <b>genera, species and ✦ prestige</b> sit under your title; tap prestige to see how it adds up. <b>Your numbers</b> is gone.' },
     { h:'Prestige shows on card backs, on Three to find next (what each would add), on new-genus reveals and in the Trip planner.' },
@@ -7245,6 +7440,10 @@ function howTo(focus) {
     sec('rarity', 'Rarity', `<p>Every genus (or species) recorded in the scope you choose is ranked by how many verifiable iNat records it has there, fewest first:</p>
       <table class="cmp">${RARITY.map((r, i) => `<tr><td>${rarityChip(r)}</td><td>${i === RARITY.length - 1 ? `the rest (most recorded ${Math.round(100 - prev(i) * 100)}%)` : `the ${prev(i) ? `next ${Math.round((r.p - prev(i)) * 100)}%` : `fewest ${Math.round(r.p * 100)}%`}${i ? '' : ', or none recorded there'}`}</td></tr>`).join('')}</table>
       <p>Prestige ✦ adds 10 × the tier (Common 1 to Exceptional 5) for each genus and 3 × the tier for each species.</p>`),
+    sec('score', 'Spood score', `<p>Each wild record gets a score out of 100 from its public iNat data, so you can sort your records from most to least remarkable (SPOODEX › 🏅 Best finds). Five parts add up to 100 points:</p>
+      <table class="cmp">${SCORE_PARTS.map(([k, l, d]) => `<tr><td><b>${l}</b></td><td class="n">${SCORE_W[k]}</td><td class="muted">${esc(d)}</td></tr>`).join('')}</table>
+      <p>An experienced identifier is one of the ${SCORE_EXPERTS} people with the most jumping spider identifications in your country. A stop at genus counts for more where few of the genus's records stop there.
+      Rarity and stop rates use your home country's iNat records. The score is 100 × (1 − e<sup>−points/${SCORE_CURVE}</sup>), so most records sit under 40 and only the best few reach the 80s. Captive records aren't scored.</p>`),
     sec('streak', 'Weekly streak', `<p>A week, Monday to Sunday, counts when you record any wild jumping spider in it, identified or not, by the date you observed it.
       One missed week each calendar month is covered automatically, as long as the week after it counts; two missed weeks in a row end the streak. This week can't end it until Sunday is over.</p>`),
     sec('month', 'Genus of the month', `<p>Each month, a genus that's in season in your state: from the ${FEAT_POOL} most recorded there (at least ${FEAT_MIN} iNat records), one whose busiest months on iNat include this one.
