@@ -598,6 +598,12 @@ details > summary.scsec { cursor:pointer; }
 .scrow { display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 8px; padding:8px 16px; border-bottom:1px dashed var(--dim); background:color-mix(in srgb, var(--accent) 6%, var(--panel)); box-shadow:inset 3px 0 0 var(--accent); }
 .scrow .nm { font:italic 600 16px var(--head); color:var(--ink); text-decoration:none; }
 .scrow .meta { flex-basis:100%; font-size:11px; color:var(--muted); }
+.astrip { flex-basis:100%; display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin-top:6px; }
+.feed .astrip { margin:6px 0 4px; }
+.athumb { position:relative; aspect-ratio:1; min-width:0; padding:0; border:0; border-radius:6px; overflow:hidden; cursor:pointer; background:var(--panel2) center/cover no-repeat; }
+.athumb .sstamp { top:4px; left:4px; width:28px; height:28px; font-size:11px; border-width:1.5px; }
+.athumb .acr { position:absolute; left:0; right:0; bottom:0; padding:12px 4px 3px; font:9px/1.25 var(--body); color:#fff; text-align:left; background:linear-gradient(transparent, rgba(0,0,0,.72)); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.athumb .acr i { font-size:10px; }
 .schave { padding:4px 16px 12px; font-size:12px; line-height:1.8; }
 .schave i { font-family:var(--head); }
 .scnote { padding:10px 16px; margin:0; }
@@ -2458,6 +2464,7 @@ const scanPer = () => SCAN_PER.some(([k]) => k === S.prefs.scanPer) ? S.prefs.sc
 const perTxt = p => p === 'all' ? 'all time' : p === 'month' ? `${MONTHS[new Date().getMonth()]}, any year` : `last ${p} days`;
 // 'sq' = the 0.25° grid square itself (about 27 × 28 km at Cairns; narrower towards the poles)
 const sqTxt = km => km === 'sq' ? 'grid square' : `${km * 2} × ${km * 2} km`;
+const perQ = per => per === 'month' ? { month:new Date().getMonth() + 1 } : per === 'all' ? {} : { d1:new Date(Date.now() - +per * 864e5).toISOString().slice(0, 10) };
 const kmChip = v => v === 'sq' ? '▣ Grid square' : v === 100 ? '100 km' : String(v);
 let scanBusy = false, scanErr = null, scanPending = null, scanSeq = 0;
 const placeNames = new Map();   // 0.1° cell -> "Eacham, Queensland" (this session)
@@ -2470,9 +2477,7 @@ async function runScan(lat, lng, km = scanKm(), per = scanPer()) {
   scanPending = { lat, lng, km, per }; scanBusy = true; scanErr = null;
   drawScanArea(scanPending, km); paintScan();
   try {
-    const c = { lat, lng }, q = { taxon_id:SALTICIDAE, verifiable:true, ...boxQ(c, km) };
-    if (per === 'month') q.month = new Date().getMonth() + 1;
-    else if (per !== 'all') q.d1 = new Date(Date.now() - +per * 864e5).toISOString().slice(0, 10);
+    const c = { lat, lng }, q = { taxon_id:SALTICIDAE, verifiable:true, ...boxQ(c, km), ...perQ(per) };
     const all = await api('/observations/taxonomy', q);
     if (stale()) return;
     const act = per === '30' ? all : await api('/observations/taxonomy', { taxon_id:SALTICIDAE, verifiable:true, ...boxQ(c, km), d1:new Date(Date.now() - ACTIVE_DAYS * 864e5).toISOString().slice(0, 10) });
@@ -2542,10 +2547,13 @@ function scanPanelHtml() {
   const fresh = list.filter(x => !has(x.id)).sort((a, b) => b.c - a.c || rarityIdx(rarityOf(a.id, tab)) - rarityIdx(rarityOf(b.id, tab)));
   const mine = list.filter(x => has(x.id)).sort((a, b) => b.c - a.c);
   const nG = D.G.filter(x => !M.G.has(x.id)).length, nS = D.Sp.filter(x => !M.S.has(x.id)).length;
+  // Photos of the new-to-you genera and species from inside the scanned square, each with its Spood score
+  const newIds = [...D.G.filter(x => !M.G.has(x.id)), ...D.Sp.filter(x => !M.S.has(x.id))].map(x => x.id).slice(0, 120);
+  const AP = newIds.length ? areaPhotos(`scan:${D.lat},${D.lng},${D.km},${D.per},${D.ts}`, { taxon_id:newIds.join(','), ...boxQ(D, D.km), ...perQ(D.per) }, paintScan) : null;
   const row = x => {
     const gid = isG ? x.id : genusOfNode(x.id), pk = isG ? peakInfo(x.id) : null, nm = `<i>${esc(S.nodes[x.id]?.n || '?')}</i>`;
     return `<div class="scrow">${gid ? `<a href="#" data-genus="${gid}" class="nm">${nm}</a>` : `<span class="nm">${nm}</span>`}${cnOf(x.id) ? `<span class="cn">${esc(cnOf(x.id))}</span>` : ''}${rarityChip(rarityOf(x.id, tab))}
-      <span class="meta">${x.r ? `🔥 ${x.r} in the last ${ACTIVE_DAYS} days · ` : ''}${fmt(x.c)} record${x.c === 1 ? '' : 's'} here${pk && !pk.few ? ` · ${pk.now ? '<b class="inseason">🌡 in season</b>' : `peak ${esc(pk.text)}`}` : ''}${!isG && gid ? ` · genus <i>${esc(S.nodes[gid]?.n || '')}</i>${M.G.has(gid) ? ' (yours)' : ' (new too)'}` : ''}</span></div>`;
+      <span class="meta">${x.r ? `🔥 ${x.r} in the last ${ACTIVE_DAYS} days · ` : ''}${fmt(x.c)} record${x.c === 1 ? '' : 's'} here${pk && !pk.few ? ` · ${pk.now ? '<b class="inseason">🌡 in season</b>' : `peak ${esc(pk.text)}`}` : ''}${!isG && gid ? ` · genus <i>${esc(S.nodes[gid]?.n || '')}</i>${M.G.has(gid) ? ' (yours)' : ' (new too)'}` : ''}</span>${AP ? areaStrip(areaPick(AP.list, [x.id], 3)) : ''}</div>`;
   };
   const N = SCAN_ENDS, split = fresh.length > 2 * N + 1;
   const newList = !fresh.length ? '' : !split ? `<div class="scsec">NEW TO YOU · MOST RECORDS FIRST</div>${fresh.map(row).join('')}`
@@ -2555,6 +2563,7 @@ function scanPanelHtml() {
   return head + `<div class="scstats"><div><b>${D.G.length}</b><span>GENERA</span></div><div class="hot"><b>${nG}</b><span>NEW TO YOU</span></div>
       <div><b>${D.Sp.length}</b><span>SPECIES</span></div><div class="hot"><b>${nS}</b><span>NEW SPECIES</span></div></div>
     <div class="sctabs" role="tablist"><button type="button" role="tab" data-act="scanTab" data-v="g" class="${isG ? 'on' : ''}" aria-selected="${isG}">Genera</button><button type="button" role="tab" data-act="scanTab" data-v="s" class="${isG ? '' : 'on'}" aria-selected="${!isG}">Species</button></div>
+    ${AP?.busy && fresh.length ? '<p class="scnote small muted">Finding photos and Spood scores…</p>' : AP?.err && fresh.length ? `<p class="scnote small muted">Photos: ${esc(AP.err)}</p>` : ''}
     ${list.length ? '' : `<p class="scnote">No public salticid records in this square${D.per === 'all' ? '' : ` (${esc(perTxt(D.per))})`} yet.</p>`}
     ${newList || (list.length ? `<p class="scnote">You have every ${isG ? 'genus' : 'species'} recorded here.</p>` : '')}
     ${isG ? ghostRowsHtml(D) : ''}
@@ -2614,7 +2623,7 @@ function drawFrontier() {
 const cellBox = (k, inset = 0) => { const c = cellCenter(k), d = .125 - inset; return [[c.lat - d, c.lng - d], [c.lat + d, c.lng + d]]; };   // Leaflet bounds of a grid square
 
 /* ---------------- the Map tab ---------------- */
-const MAP_LAYERS = [['fog', 'Fog of war'], ['mine', 'Your squares'], ['front', 'Frontier']];
+const MAP_LAYERS = [['mine', 'Your squares'], ['front', 'Frontier']];
 const layerOn = k => k === 'front' ? S.prefs.mapLayers?.front === true : S.prefs.mapLayers?.[k] !== false;
 function mapLegendHtml() {
   const sw = (style, label) => `<span><i class="lgsw" style="${style}"></i>${label}</span>`;
@@ -2662,10 +2671,8 @@ function initMap() {
   };
   base[map3dBase === 'img' ? 'Satellite (habitat)' : 'Terrain'].addTo(map);
   L.control.layers(base, null, { position:'topright' }).addTo(map);
-  const fog = mixHex(cssVar('--panel') || '#f5ecd6', '#a88752', .3), lit = cssVar('--lit') || '#2f6b3a';
-  const holes = [...M.cells25.keys()].map(k => { const [[s, w], [n, e]] = cellBox(k); return [[s, w], [s, e], [n, e], [n, w]]; });
+  const lit = cssVar('--lit') || '#2f6b3a';
   map2d = {
-    fog:L.layerGroup([L.polygon([[[-85, -180], [-85, 180], [85, 180], [85, -180]], ...holes], { stroke:false, fillColor:fog, fillOpacity:FOG_OPACITY, interactive:false })]),
     front:L.layerGroup(),
     mine:L.layerGroup([...M.cells25.keys()].map(k => L.rectangle(cellBox(k), { color:lit, weight:2, dashArray:'1 6', lineCap:'round', fill:false, interactive:false }))),
     home:L.layerGroup(h ? [L.rectangle(boxBounds(h, 25), { color:'#3f6b3a', weight:2.5, dashArray:'6 6', fill:false, interactive:false })] : []),
@@ -2701,7 +2708,7 @@ async function fetchScan(k, into = null) {
   saveShared();
 }
 
-/* ---------------- 3D map: terrain, missing-genus squares by rarity, fog of war, layer toggles (MapLibre; Leaflet stays as the 2D option) ---------------- */
+/* ---------------- 3D map: terrain, your squares, layer toggles (MapLibre; Leaflet stays as the 2D option) ---------------- */
 // cdnjs has no JS build of MapLibre 6 (it's ESM-only), so this is the newest release cdnjs serves as a script
 const MAPLIBRE = 'https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/5.24.0/maplibre-gl.min';
 const TERRAIN_TILES = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
@@ -2714,7 +2721,7 @@ const TERRAIN_ATTR = 'Terrain: ArcticDEM terrain data DEM(s) were created from D
   + 'United Kingdom terrain data © Environment Agency copyright and/or database right 2015. All rights reserved; United States 3DEP (formerly NED) and global GMTED2010 and SRTM terrain data courtesy of the U.S. Geological Survey.';
 const ESRI_TOPO = ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', 'Tiles © Esri — Esri, HERE, Garmin, USGS, NGA, and other contributors'];
 const ESRI_IMG = ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', 'Imagery © Esri, Maxar, Earthstar Geographics'];
-const TERRAIN_X = 1.5, FOG_OPACITY = .72;
+const TERRAIN_X = 1.5;
 let map3d = null, map3dSeq = 0, map3dBase = 'topo', mlLoad = null, mlFailed = false, gl2 = null;
 const hasGL2 = () => gl2 ??= (() => { try { const c = document.createElement('canvas').getContext('webgl2'); c?.getExtension('WEBGL_lose_context')?.loseContext(); return !!c; } catch { return false; } })();
 const use3d = () => !mlFailed && S.prefs.map3d !== false && hasGL2();
@@ -2729,7 +2736,6 @@ function loadMapLibre() {
 }
 // WebGL contexts are scarce (browsers cap them), so the 3D map is torn down whenever the Map tab isn't showing
 function dropMap3d() { map3dSeq++; const m = map3d; map3d = null; m?.remove(); }
-const mixHex = (a, b, t) => /^#[0-9a-f]{6}$/i.test(a) ? '#' + [1, 3, 5].map(i => Math.round(parseInt(a.substr(i, 2), 16) * (1 - t) + parseInt(b.substr(i, 2), 16) * t).toString(16).padStart(2, '0')).join('') : a;
 const cssVar = n => getComputedStyle(document.body).getPropertyValue(n).trim();
 const ring = (k, inset = 0) => { const c = cellCenter(k), d = .125 - inset; return [[c.lng - d, c.lat - d], [c.lng + d, c.lat - d], [c.lng + d, c.lat + d], [c.lng - d, c.lat + d], [c.lng - d, c.lat - d]]; };
 const fc = features => ({ type:'FeatureCollection', features });
@@ -2746,31 +2752,11 @@ function gridEdges(keys) {
   }
   return fc([...edges.values()]);
 }
-// Fog of war: everything outside your recorded 25 km squares. Squares cleared since the last look fade out once.
+// Your recorded 25 km squares, as dotted outlines (the fog of war over everything else was removed in v2.12, owner's request)
 function paintMap3d() {
-  const m = map3d; if (!m?.getSource('fog')) return;
-  const M = S.M, keys = [...M.cells25.keys()], prev = S.u.fog ? new Set(S.u.fog) : null;
-  const fresh = prev ? keys.filter(k => !prev.has(k)) : [];
-  const world = [[-180, -85], [180, -85], [180, 85], [-180, 85], [-180, -85]];
-  // holes wind opposite to the outer ring, or MapLibre reads them as separate polygons
-  m.getSource('fog').setData({ type:'Feature', properties:{}, geometry:{ type:'Polygon', coordinates:[world, ...keys.map(k => ring(k).reverse())] } });
-  m.getSource('fogNew').setData(fc(fresh.map((k, i) => ({ ...square(k), id:i + 1 }))));
-  m.getSource('lit').setData(gridEdges(keys));
-  const h = M.homeCell;
+  const m = map3d; if (!m?.getSource('lit')) return;
+  m.getSource('lit').setData(gridEdges([...S.M.cells25.keys()]));
   paintHome();
-  S.u.fog = keys; saveUser();
-  if (!fresh.length) return;
-  const badge = $('#mapBadge');
-  if (badge) { badge.textContent = `${fresh.length} new square${fresh.length === 1 ? '' : 's'} explored`; badge.classList.remove('hidden'); setTimeout(() => badge.classList.add('hidden'), 9000); }
-  let t0 = 0;
-  const step = now => {
-    if (m !== map3d) return;
-    t0 ||= now;
-    const f = Math.max(0, 1 - (now - t0) / 2500);
-    fresh.forEach((_, i) => m.setFeatureState({ source:'fogNew', id:i + 1 }, { f }));
-    if (f > 0) requestAnimationFrame(step);
-  };
-  setTimeout(() => requestAnimationFrame(step), 900);
 }
 // The home area's outline, unless the scan on show is the home area itself (two outlines on one square just look muddled)
 const sameArea = (a, b, km) => a && b && a.km === km && Math.abs(a.lat - b.lat) < .006 && Math.abs(a.lng - b.lng) < .006;
@@ -2778,14 +2764,14 @@ function paintHome() {
   const h = S.M.homeCell, D = scanPending || S.u.mscan, src = map3d?.getSource('home'); if (!src) return;
   src.setData(fc(h && !sameArea(D, h, 25) ? [{ type:'Feature', properties:{}, geometry:{ type:'LineString', coordinates:boxRing(h, 25) } }] : []));
 }
-const LAYER_IDS = { fog:['fog', 'fogNew'], mine:['lit'], front:['frontFill', 'frontLine'] };
+const LAYER_IDS = { mine:['lit'], front:['frontFill', 'frontLine'] };
 function applyLayers() {
   const m = map3d;
-  if (m?.getLayer('fog')) for (const [k, ids] of Object.entries(LAYER_IDS)) ids.forEach(id => m.setLayoutProperty(id, 'visibility', layerOn(k) ? 'visible' : 'none'));
+  if (m?.getLayer('lit')) for (const [k, ids] of Object.entries(LAYER_IDS)) ids.forEach(id => m.setLayoutProperty(id, 'visibility', layerOn(k) ? 'visible' : 'none'));
   if (map && map2d) {
-    // re-add in a fixed order (fog lowest, then frontier, your squares, home, the scan on top)
-    for (const k of ['fog', 'front', 'mine', 'home']) map2d[k].remove();
-    for (const k of ['fog', 'front', 'mine']) if (layerOn(k)) map2d[k].addTo(map);
+    // re-add in a fixed order (frontier lowest, then your squares, home, the scan on top)
+    for (const k of ['front', 'mine', 'home']) map2d[k].remove();
+    for (const k of ['front', 'mine']) if (layerOn(k)) map2d[k].addTo(map);
     map2d.home.addTo(map);
     if (mapArea) { mapArea.remove(); mapArea.addTo(map); }
   }
@@ -2812,7 +2798,7 @@ async function initMap3d() {
   if (map) { map.remove(); map = null; }
   if (map3d) { const old = map3d; map3d = null; old.remove(); }
   mapPin = null;
-  const fog = mixHex(cssVar('--panel') || '#f5ecd6', '#a88752', .3), lit = cssVar('--lit') || '#2f6b3a', accent = cssVar('--accent') || '#a8412a';
+  const lit = cssVar('--lit') || '#2f6b3a', accent = cssVar('--accent') || '#a8412a';
   const geo = () => ({ type:'geojson', data:fc([]) });
   // Phones: one terrain source for relief and hillshade (half the decoding), fewer pixels, coarser terrain when zoomed in
   const lite = matchMedia('(pointer:coarse)').matches || el.clientWidth < 600;
@@ -2827,13 +2813,10 @@ async function initMap3d() {
     center:h ? [h.lng, h.lat] : [134, -25], zoom:h ? (lite ? 8 : 8.5) : 2, pitch:h ? 55 : 0, bearing:h ? -12 : 0,
     style:{ version:8,
       sources:{ topo:raster(ESRI_TOPO), img:raster(ESRI_IMG), dem:{ ...dem, attribution:TERRAIN_ATTR }, ...(lite ? {} : { hs:dem }),
-        fog:geo(), fogNew:geo(), lit:geo(), front:geo(), home:geo(), scan:geo() },
+        lit:geo(), front:geo(), home:geo(), scan:geo() },
       layers:[
         { id:'topo', type:'raster', source:'topo', layout:{ visibility:map3dBase === 'topo' ? 'visible' : 'none' } },
         { id:'img', type:'raster', source:'img', layout:{ visibility:map3dBase === 'img' ? 'visible' : 'none' } },
-        { id:'fog', type:'fill', source:'fog', layout:vis('fog'), paint:{ 'fill-color':fog, 'fill-opacity':FOG_OPACITY, 'fill-antialias':false } },
-        { id:'fogNew', type:'fill', source:'fogNew', layout:vis('fog'), paint:{ 'fill-color':fog, 'fill-opacity':['*', FOG_OPACITY, ['coalesce', ['feature-state', 'f'], 1]], 'fill-antialias':false } },
-        // relief drawn over the haze, so the land still reads where you haven't been
         { id:'hs', type:'hillshade', source:lite ? 'dem' : 'hs', paint:{ 'hillshade-exaggeration':.35, 'hillshade-shadow-color':'#4a3b26', 'hillshade-highlight-color':'rgba(255,248,230,.45)' } },
         { id:'frontFill', type:'fill', source:'front', layout:vis('front'), paint:{ 'fill-color':FRONT.col, 'fill-opacity':.2 } },
         { id:'frontLine', type:'line', source:'front', layout:vis('front'), paint:{ 'line-color':FRONT.col, 'line-width':2, 'line-dasharray':[2.5, 2] } },
@@ -3218,7 +3201,7 @@ function findRec(id) {
   const c = S.cmp?.save;
   if (c?.obs?.[id]) return { o:c.obs[id], sd:c.sc?.r?.[id], who:S.cmp.login };
   for (const [l, b] of Object.entries(S.crew.best || {})) { const x = b.top?.find(x => x.o.id === id); if (x) return { ...x, who:b.login || l }; }
-  return null;
+  return areaRecs.get(id) || null;
 }
 function openScore(id, back, social) {
   const R = findRec(id); if (!R) return;
@@ -3228,7 +3211,7 @@ function openScore(id, back, social) {
   $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(560px,100%)"><button class="x" data-close="1">✕</button>
     <div class="hero" style="background-image:url('${esc(photoSize(o.ph[0] || '', 'large'))}')"></div>
     <div class="body"><div class="row" style="gap:12px;align-items:center">${scoreStamp(sc, null, { big:true })}
-      <div><div class="small" style="letter-spacing:.2em">SPOOD SCORE${wk === 'balanced' ? '' : ` · ${esc(wName(wk)).toUpperCase()} WEIGHTS`}</div><h2 style="margin:0">${taxNm(t.n || 'Unknown', t.l)}</h2><div class="small muted">${esc(t.r || '')} · ${esc(o.d || 'no date')}${R.who ? ` · ${esc(R.who)}` : ''}</div></div></div>
+      <div><div class="small" style="letter-spacing:.2em">SPOOD SCORE${wk === 'balanced' ? '' : ` · ${esc(wName(wk)).toUpperCase()} WEIGHTS`}</div><h2 style="margin:0">${taxNm(t.n || 'Unknown', t.l)}</h2><div class="small muted">${esc(t.r || '')} · ${esc(o.d || 'no date')}${R.who ? ` · ${esc(R.who)}` : ''}${R.cr ? `<br>Photo ${esc(R.cr)}` : ''}</div></div></div>
       <div class="sbars">${SCORE_PARTS.map(([k, label]) => { const pts = Math.round(W[k] * sc.parts[k]);
         return `<div class="sbar"><div class="row" style="justify-content:space-between"><b>${label}</b><span class="small">${pts} / ${W[k]}</span></div>
           <div class="bar"><i style="width:${pct(pts, W[k])}%"></i></div>
@@ -3388,6 +3371,46 @@ function crewBestHtml(ready) {
   return head + `<p class="small muted">Each person's three highest Spood scores, with the same weights for everyone.</p>
     ${crewBestErr ? `<p>${esc(crewBestErr)} <button data-act="crewBest">Try again</button></p>` : ''}<div class="grid2">${cols.join('')}</div>`;
 }
+
+/* ---------------- area photos: other people's scored records inside a box (scanner and trip planner, v2.12) ---------------- */
+// One v2 read per area: records of the chosen taxa that have a CC0 / CC BY / CC BY-NC photo, most faved first, each scored with
+// SCORE_W like any other person's records. Kept for this session only, and without coordinates (the fields don't ask for any).
+const AREA_TTL = 6 * 3600e3, AREA_RETRY = 60e3;
+const AREA_FIELDS = SCORE_REC_FIELDS.replace('photos:(id:!t,url:!t)', 'photos:(id:!t,url:!t,license_code:!t,attribution:!t)').replace(/\)$/, ',obscured:!t,user:(login:!t,name:!t))');
+const areaSets = new Map(), areaRecs = new Map();   // area key -> {busy, err, ts, list}; record id -> {o, sd, who, cr (photo credit), sc}
+// q: the iNat filters (taxon_id and a box, plus any dates). open: leave obscured records out. redraw: called once the list is in.
+function areaPhotos(key, q, redraw, { open = false, per = 200 } = {}) {
+  let e = areaSets.get(key);
+  if (e && (e.busy || Date.now() - e.ts < (e.err ? AREA_RETRY : AREA_TTL))) return e;
+  e = { busy:true, err:null, ts:0, list:[] }; areaSets.set(key, e);
+  (async () => {
+    try {
+      await ensureScoreRef();
+      const d = await api('/observations', { ...q, verifiable:true, photo_license:Object.keys(OK_LIC).join(','), order_by:'votes', order:'desc', per_page:per, fields:AREA_FIELDS }, API2);
+      for (const raw of d.results) {
+        const ph = (raw.photos || []).find(p => OK_LIC[p.license_code]);
+        if (!ph || (open && raw.obscured)) continue;
+        const o = trimObs(raw), who = raw.user?.login || '';
+        o.ph = [ph.url];
+        const R = { o, sd:trimScore(raw, who), who, cr:creditTxt(byName(ph.attribution, raw.user) || who, ph.license_code) };
+        R.sc = spoodScore(o, R.sd, undefined, SCORE_W);
+        if (R.sc) { areaRecs.set(o.id, R); e.list.push(R); }
+      }
+      e.list.sort(bySc);
+    } catch (err) { e.err = err.message; }
+    e.busy = false; e.ts = Date.now(); redraw();
+  })();
+  return e;
+}
+// The best records of each taxon in turn (one each, then a second each…), so a strip shows as many of them as it can
+function areaPick(list, ids, n) {
+  const per = ids.map(id => list.filter(R => R.o.anc.includes(id))), out = [];
+  for (let i = 0; out.length < n && per.some(l => l[i]); i++) per.forEach(l => { if (l[i] && out.length < n && !out.includes(l[i])) out.push(l[i]); });
+  return out.sort(bySc);
+}
+const areaThumb = R => `<button type="button" class="athumb" data-act="score" data-v="${R.o.id}" data-w="d" title="${esc(`${R.o.t.n || ''} · photo ${R.cr}`)}" style="background-image:url('${esc(photoSize(R.o.ph[0], 'small'))}')">
+  <span class="sstamp" style="--rc:${scoreCol(R.sc.s)}">${R.sc.s}</span><span class="acr"><i>${esc(R.o.t.n || '')}</i><br>${esc(R.cr)}</span></button>`;
+const areaStrip = list => list.length ? `<div class="astrip">${list.map(areaThumb).join('')}</div>` : '';
 
 /* ---------------- genus page ---------------- */
 async function openGenus(id) {
@@ -5940,10 +5963,16 @@ function viewTripPlan() {
   if (!list.length) return body;
   const spots = tripSpots(list.slice(0, ctx.posters), ctx);
   const gl = ids => ids.map(id => `<a href="#" data-act="tripCase" data-v="${id}"><i>${esc(S.nodes[id]?.n || '?')}</i></a>`).join(', ');
+  // Photos of the wanted genera from inside each square (obscured records left out, as on the map), best Spood scores first
+  // (only once the plan has settled: while it streams in, the squares' genus lists still change)
+  const sqPhotos = s => { if (tripBusy) return ''; const [[sl, w], [n, e]] = cellBox(s.k);
+    const A = areaPhotos(`trip:${s.k}:${s.g.join(',')}`, { taxon_id:s.g.join(','), swlat:sl.toFixed(4), swlng:w.toFixed(4), nelat:n.toFixed(4), nelng:e.toFixed(4) },
+      () => { if (S.tab === 'trip') softRender(); }, { open:true, per:60 });
+    return A.busy ? '<div class="small muted">Finding photos…</div>' : areaStrip(areaPick(A.list, s.g, 6)); };
   body += `<h2>Record squares</h2>
     <p class="small muted">~25 km squares holding recent records of your top ${Math.min(ctx.posters, list.length)} suspects: darker = more of them recorded there. ${t.area ? '' : `The dashed square reaches ${TRIP_KM} km each way from ${lbl}.`} Exact locations are never shown, and obscured records are left out.</p>
     <div class="maplayout"><div id="tripMapSlot"></div><div class="panel">
-      ${spots.length ? spots.slice(0, 6).map(s => `<div class="feed"><b>${s.d != null ? `~${Math.max(5, Math.round(s.d / 5) * 5)} km ${bearingTxt(ctx.centre, cellCenter(s.k))}` : `Square ${cellLabel(cellCenter(s.k))}`}</b> · ${s.g.length} wanted ${s.g.length === 1 ? 'genus' : 'genera'} · last record ${esc(agoTxt(s.last))}<div class="small">${gl(s.g)}</div></div>`).join('')
+      ${spots.length ? spots.slice(0, 6).map(s => `<div class="feed"><b>${s.d != null ? `~${Math.max(5, Math.round(s.d / 5) * 5)} km ${bearingTxt(ctx.centre, cellCenter(s.k))}` : `Square ${cellLabel(cellCenter(s.k))}`}</b> · ${s.g.length} wanted ${s.g.length === 1 ? 'genus' : 'genera'} · last record ${esc(agoTxt(s.last))}${sqPhotos(s)}<div class="small">${gl(s.g)}</div></div>`).join('')
         : `<p class="small muted">${tripBusy ? 'Plotting record squares…' : 'No mappable recent records for the top suspects nearby.'}</p>`}
     </div></div>
     <h2 style="margin-top:24px">Wanted posters</h2>
@@ -7301,6 +7330,11 @@ $('#loginForm').addEventListener('submit', e => { e.preventDefault(); const v = 
 // What changed, newest first: shown once on Profile to returning players, and in full from Settings. The owner's rule (2026-10-13):
 // sections and views stay where they are; when something has to move, it gets a line here.
 const CHANGES = [
+  { v:'2.12', d:'2026-10-20', items:[
+    { h:'Map & scanner: each genus or species new to you shows its best photos from the scanned area, each with its Spood score. Tap one for the reasons and the record.' },
+    { h:'Trip planner: each record square in the list shows photos of the wanted genera recorded there, best Spood scores first.' },
+    { h:'The fog of war is gone from the map, and so is its switch.' },
+  ] },
   { v:'2.11', d:'2026-10-20', items:[
     { h:'Best finds: choose how the Spood score is weighted (Balanced, Taxonomist, Photographer, Storyteller), or play <b>⚖ Which is cooler?</b> and let your picks set your own weights.' },
     { h:'<b>🏅 Best finds</b> in Compare (five each, below Crown jewels) and Crew (three each, below the crew table), and your year\'s best find in Wrapped.' },
