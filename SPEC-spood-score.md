@@ -1,6 +1,6 @@
 # Spood score: finding the high-value spoods SPOODEX misses
 
-Status: **Proposal A built in v2.10** (2026-10-20, not shipped yet): SPOODEX › 🏅 Best finds, the score sheet, Mystery spoods sorting and the genus page's best finds. Proposal B and §7 steps 5–6 are not built. The prototype is `tools/spood_score.py` (same rules as the app).
+Status: **built**. v2.10 (shipped 2026-10-20): SPOODEX › 🏅 Best finds, the score sheet, Mystery spoods sorting, the genus page's best finds. v2.11: weight presets, Proposal B (⚖ Which is cooler?, learning your own weights), and Best finds in Compare, Crew and Wrapped. Not built: the out-of-place / out-of-season / elevation signals (§7 step 6). The prototype is `tools/spood_score.py` (same rules as the app).
 
 ## 1. The short answer
 

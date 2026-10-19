@@ -192,6 +192,12 @@ details.set > summary, .set details > summary { cursor:pointer; }
 .bestmini { display:flex; gap:8px; align-items:center; }
 .bestmini .thumb { flex:none; width:52px; height:52px; border-radius:6px; background:var(--panel2) center/cover no-repeat; }
 .card.best .meta .small:last-child { margin-top:3px; }
+.duel { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+.duelcard { display:flex; flex-direction:column; gap:3px; padding:0 0 8px; text-align:left; font:inherit; color:inherit; background:var(--panel2); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; cursor:pointer; }
+.duelcard:hover, .duelcard:focus-visible { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent); }
+.duelcard .ph { display:block; aspect-ratio:1; background:var(--panel) center/cover no-repeat; }
+.duelcard .nm, .duelcard .small { padding:0 8px; }
+.duelcard .nm { font-family:var(--head); font-size:16px; }
 .lacts { display:flex; flex-wrap:wrap; gap:4px 10px; margin-top:4px; font-size:12px; font-weight:600; }
 details.tips { background:var(--panel2); border:1px solid var(--line); border-radius:var(--radius); padding:8px 12px; margin-top:8px; }
 details.tips summary { cursor:pointer; }
@@ -3068,7 +3074,21 @@ const SCORE_PARTS = [
 const SECRET_RX = /undescribed|un-described|new species|sp\.? ?nov|unnamed|not (?:yet )?described|morpho ?species/i;
 const ODD_RX = /never seen|first record|range extension|no records|unusual/i;   // a surprise, not necessarily a new species
 const SCORE_CURVE = 40, SCORE_TTL = 7 * 864e5, SCORE_EXPERTS = 50, BEST_PAGE = 60, SECRET_MIN = .6;   // Secret spoods filter: a stop where under ~40% stop, or the notes' words
+// Weight presets (starting points for the owner to tune) and "mine", learned from Which is cooler? picks. Personal weights apply to your
+// own views (Best finds, Mystery spoods, genus pages, Wrapped); Compare and Crew always use SCORE_W so both sides are scored alike.
+const SCORE_PRESETS = {
+  balanced:{ n:'Balanced', w:SCORE_W },
+  taxonomist:{ n:'Taxonomist', w:{ secret:45, rare:30, story:10, notice:5, puzzle:10 } },
+  photographer:{ n:'Photographer', w:{ secret:10, rare:15, story:35, notice:35, puzzle:5 } },
+  storyteller:{ n:'Storyteller', w:{ secret:15, rare:15, story:45, notice:15, puzzle:10 } },
+};
+const DUEL_MIN = 10, DUEL_GOAL = 25, DUEL_POOL = 400, CREW_BEST_TOP = 10;
+const myWKey = () => S.prefs.scoreW === 'mine' && S.u?.duelW ? 'mine' : SCORE_PRESETS[S.prefs.scoreW] ? S.prefs.scoreW : 'balanced';
+const myW = () => myWKey() === 'mine' ? S.u.duelW : SCORE_PRESETS[myWKey()].w;
+const wName = k => k === 'mine' ? 'Mine' : SCORE_PRESETS[k].n;
 const SCORE_FIELDS = '(id:!t,description:!t,faves_count:!t,num_identification_disagreements:!t,photos:(id:!t),identifications:(current:!t,body:!t,user:(login:!t),taxon:(rank_level:!t)),comments:(body:!t,user:(login:!t)))';
+// A crew member's records with their score inputs in one read: what trimObs needs (no coordinates or places) plus SCORE_FIELDS
+const SCORE_REC_FIELDS = `(id:!t,observed_on:!t,created_at:!t,quality_grade:!t,captive:!t,description:!t,tags:!t,community_taxon_id:!t,faves_count:!t,num_identification_disagreements:!t,taxon:${TAXON_FIELDS},identifications:(current:!t,body:!t,user:(login:!t),taxon:${TAXON_FIELDS}),annotations:(controlled_attribute_id:!t,controlled_value_id:!t,votes:(vote_flag:!t)),photos:(id:!t,url:!t),comments:(body:!t,user:(login:!t)))`;
 // One record's score inputs, kept small: f faves, d disagreements, n photos, o [rank level of each other person's current ID, their login],
 // c comments from others, w / x the secret / surprise words found in the description, IDs and comments ('' when none)
 function trimScore(o, login) {
@@ -3083,40 +3103,53 @@ function trimScore(o, login) {
 const scorePid = () => S.M?.home.country || null;
 const scoreRef = () => S.ref[scorePid() ? 'p' + scorePid() : 'world'] || null;
 let scoreBusy = false, scoreErr = null;
-// Reads the score inputs: every record once a week (1 call per 200), new records by id in between, and the country's
-// top identifiers once per reference refresh. Returns true when something new arrived.
-async function loadScores(force = false) {
-  if (!S.u || !S.M || isGuest() || scoreBusy) return false;
-  const sc = S.u.sc = S.u.sc || { ts:0, r:{} };
+// The country's reference tree (with stop rates) and its top identifiers, once per reference refresh
+async function ensureScoreRef() {
+  const pid = scorePid(), R = await ensureRefPlace(pid);
+  if (!R.ex || Date.now() - (R.ext || 0) > REF_TTL) {
+    const d = await api('/observations/identifiers', { taxon_id:SALTICIDAE, place_id:pid, per_page:SCORE_EXPERTS });
+    R.ex = d.results.map(x => (x.user?.login || '').toLowerCase()).filter(Boolean); R.ext = Date.now(); saveShared();
+  }
+  return R;
+}
+// Pages through someone's salticid records with `fields` (1 call per 200) and hands each raw record to `each`
+async function readAll(login, fields, each) {
+  let idAbove = 0;
+  while (true) {
+    const d = await api('/observations', { taxon_id:SALTICIDAE, user_login:login, per_page:200, order_by:'id', order:'asc', id_above:idAbove || null, fields }, API2);
+    d.results.forEach(each);
+    if (d.results.length < 200) return;
+    idAbove = d.results[d.results.length - 1].id;
+  }
+}
+// Score inputs for a save {obs, sc}: every record once a week, new records by id in between. Returns true when something new arrived.
+async function readScores(login, save, force = false) {
+  const sc = save.sc = save.sc || { ts:0, r:{} };
   const stale = force || Date.now() - sc.ts > SCORE_TTL;
-  const missing = Object.values(S.u.obs).filter(o => !o.cap && !(o.id in sc.r)).map(o => o.id);
+  const missing = Object.values(save.obs || {}).filter(o => !o.cap && !(o.id in sc.r)).map(o => o.id);
   const ref = scoreRef();
   if (!stale && !missing.length && ref?.dg && ref.ex) return false;
-  scoreBusy = true;
-  try {
-    const pid = scorePid(), R = await ensureRefPlace(pid);
-    if (!R.ex || Date.now() - (R.ext || 0) > REF_TTL) {
-      const d = await api('/observations/identifiers', { taxon_id:SALTICIDAE, place_id:pid, per_page:SCORE_EXPERTS });
-      R.ex = d.results.map(x => (x.user?.login || '').toLowerCase()).filter(Boolean); R.ext = Date.now(); saveShared();
-    }
-    if (stale) {
-      const r = {}; let idAbove = 0;
-      while (true) {
-        const d = await api('/observations', { taxon_id:SALTICIDAE, user_login:S.login, per_page:200, order_by:'id', order:'asc', id_above:idAbove || null, fields:SCORE_FIELDS }, API2);
-        d.results.forEach(o => r[o.id] = trimScore(o, S.login));
-        if (d.results.length < 200) break;
-        idAbove = d.results[d.results.length - 1].id;
-      }
-      sc.r = r; sc.ts = Date.now();
-    } else for (let i = 0; i < missing.length; i += 200) {
-      const d = await api('/observations', { id:missing.slice(i, i + 200).join(','), per_page:200, fields:SCORE_FIELDS }, API2);
-      d.results.forEach(o => sc.r[o.id] = trimScore(o, S.login));
-      missing.slice(i, i + 200).forEach(id => sc.r[id] = sc.r[id] || null);   // deleted or private: not asked for again until the weekly read
-    }
-    saveUser();
-  } catch (e) { console.warn(e); scoreErr = e.message; scoreBusy = false; return false; }
-  scoreBusy = false; scoreErr = null;
+  await ensureScoreRef();
+  if (stale) {
+    const r = {};
+    await readAll(login, SCORE_FIELDS, o => r[o.id] = trimScore(o, login));
+    sc.r = r; sc.ts = Date.now();
+  } else for (let i = 0; i < missing.length; i += 200) {
+    const d = await api('/observations', { id:missing.slice(i, i + 200).join(','), per_page:200, fields:SCORE_FIELDS }, API2);
+    d.results.forEach(o => sc.r[o.id] = trimScore(o, login));
+    missing.slice(i, i + 200).forEach(id => sc.r[id] = sc.r[id] || null);   // deleted or private: not asked for again until the weekly read
+  }
   return true;
+}
+// The player's own score inputs
+async function loadScores(force = false) {
+  if (!S.u || !S.M || isGuest() || scoreBusy) return false;
+  scoreBusy = true;
+  let ch = false;
+  try { ch = await readScores(S.login, S.u, force); if (ch) saveUser(); }
+  catch (e) { console.warn(e); scoreErr = e.message; scoreBusy = false; return false; }
+  scoreBusy = false; scoreErr = null;
+  return ch;
 }
 const scoresReady = () => !!(S.u?.sc?.ts || Object.keys(S.u?.sc?.r || {}).length) && !!scoreRef()?.ex;
 // Kicks off loadScores and redraws once it has something; for views that show scores
@@ -3128,7 +3161,8 @@ function wantScores() {
 }
 const taxNm = (t, r) => r <= 20 ? `<i>${esc(t)}</i>` : esc(t);
 // → {s score 0-100, raw points, parts {k: 0..1}, why [{k, h html}]} or null (captive, or its inputs not read yet)
-function spoodScore(o, sd = S.u?.sc?.r?.[o.id], ref = scoreRef()) {
+// W: the weights (myW() for your own views, SCORE_W wherever two people are compared)
+function spoodScore(o, sd = S.u?.sc?.r?.[o?.id], ref = scoreRef(), W = myW()) {
   if (!o || o.cap || !sd || !ref) return null;
   const t = o.t || {}, l = t.l || 99, part = {}, why = [], ex = new Set(ref.ex || []);
   const where = esc(S.places[scorePid()]?.n || 'the world'), add = (k, h) => why.push({ k, h });
@@ -3164,28 +3198,40 @@ function spoodScore(o, sd = S.u?.sc?.r?.[o.id], ref = scoreRef()) {
   // puzzle
   part.puzzle = Math.min(1, sd.d / 2);
   if (sd.d) add('puzzle', plural(sd.d, 'disagreeing identification'));
-  const raw = Object.keys(SCORE_W).reduce((a, k) => a + SCORE_W[k] * part[k], 0);
-  const pts = k => SCORE_W[k] * part[k];
-  why.sort((a, b) => pts(b.k) - pts(a.k));   // the reason from the part worth most comes first (tiles show only that one)
-  return { s:Math.round(100 * (1 - Math.exp(-raw / SCORE_CURVE))), raw, parts:part, why };
+  const raw = Object.keys(SCORE_W).reduce((a, k) => a + W[k] * part[k], 0);
+  const pts = k => W[k] * part[k];
+  const ord = Object.keys(SCORE_W);   // ties: secret first
+  why.sort((a, b) => pts(b.k) - pts(a.k) || ord.indexOf(a.k) - ord.indexOf(b.k));   // the reason from the part worth most comes first (tiles show only that one)
+  return { s:Math.round(100 * (1 - Math.exp(-raw / SCORE_CURVE))), raw, parts:part, why, W };
 }
 // Bands share the rarity colours: 80+ red, 60s-70s blue, 40s-50s yellow, below that plain
 const scoreCol = s => (s >= 80 ? RARITY[0] : s >= 60 ? RARITY[1] : s >= 40 ? RARITY[2] : RARITY[4]).c;
-const scoreStamp = (sc, id, big, back) => sc ? `<button class="sstamp ${big ? 'big' : ''}" style="--rc:${scoreCol(sc.s)}" ${id ? `data-act="score" data-v="${id}"` : ''}${back ? ` data-g="${back}"` : ''} title="Spood score ${sc.s} of 100">${sc.s}</button>` : '';
+// opts: big (the sheet's own stamp), back (genus id for the sheet's ← link), social (scored with SCORE_W, so the sheet uses them too)
+const scoreStamp = (sc, id, { big, back, social } = {}) => sc ? `<button class="sstamp ${big ? 'big' : ''}" style="--rc:${scoreCol(sc.s)}" ${id ? `data-act="score" data-v="${id}"` : ''}${back ? ` data-g="${back}"` : ''}${social ? ' data-w="d"' : ''} title="Spood score ${sc.s} of 100">${sc.s}</button>` : '';
 const topWhy = sc => sc?.why[0]?.h || '';
-// Scored wild records, best first
-const scoredRecs = (filter = () => true) => S.M.obs.filter(filter).map(o => ({ o, sc:spoodScore(o) })).filter(x => x.sc).sort((a, b) => b.sc.s - a.sc.s || b.sc.raw - a.sc.raw || b.o.id - a.o.id);
-function openScore(id, back) {
-  const o = S.u.obs[id], sc = spoodScore(o);
+const bySc = (a, b) => b.sc.s - a.sc.s || b.sc.raw - a.sc.raw || b.o.id - a.o.id;
+// Your scored wild records, best first (with your weights unless W is given)
+const scoredRecs = (filter = () => true, W) => S.M.obs.filter(filter).map(o => ({ o, sc:spoodScore(o, undefined, undefined, W) })).filter(x => x.sc).sort(bySc);
+// Any record a score can be shown for: yours, the Compare rival's, or a crew member's best finds → {o, sd, who (their login; null for yours)}
+function findRec(id) {
+  if (S.u?.obs[id]) return { o:S.u.obs[id], sd:S.u.sc?.r?.[id], who:null };
+  const c = S.cmp?.save;
+  if (c?.obs?.[id]) return { o:c.obs[id], sd:c.sc?.r?.[id], who:S.cmp.login };
+  for (const [l, b] of Object.entries(S.crew.best || {})) { const x = b.top?.find(x => x.o.id === id); if (x) return { ...x, who:b.login || l }; }
+  return null;
+}
+function openScore(id, back, social) {
+  const R = findRec(id); if (!R) return;
+  const o = R.o, W = social || R.who ? SCORE_W : myW(), sc = spoodScore(o, R.sd, undefined, W);
   if (!sc) return;
-  const url = `https://www.inaturalist.org/observations/${id}`, t = o.t || {};
+  const url = `https://www.inaturalist.org/observations/${id}`, t = o.t || {}, wk = W === SCORE_W ? 'balanced' : myWKey();
   $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(560px,100%)"><button class="x" data-close="1">✕</button>
     <div class="hero" style="background-image:url('${esc(photoSize(o.ph[0] || '', 'large'))}')"></div>
-    <div class="body"><div class="row" style="gap:12px;align-items:center">${scoreStamp(sc, null, true)}
-      <div><div class="small" style="letter-spacing:.2em">SPOOD SCORE</div><h2 style="margin:0">${taxNm(t.n || 'Unknown', t.l)}</h2><div class="small muted">${esc(t.r || '')} · ${esc(o.d || 'no date')}</div></div></div>
-      <div class="sbars">${SCORE_PARTS.map(([k, label]) => { const pts = Math.round(SCORE_W[k] * sc.parts[k]);
-        return `<div class="sbar"><div class="row" style="justify-content:space-between"><b>${label}</b><span class="small">${pts} / ${SCORE_W[k]}</span></div>
-          <div class="bar"><i style="width:${pct(pts, SCORE_W[k])}%"></i></div>
+    <div class="body"><div class="row" style="gap:12px;align-items:center">${scoreStamp(sc, null, { big:true })}
+      <div><div class="small" style="letter-spacing:.2em">SPOOD SCORE${wk === 'balanced' ? '' : ` · ${esc(wName(wk)).toUpperCase()} WEIGHTS`}</div><h2 style="margin:0">${taxNm(t.n || 'Unknown', t.l)}</h2><div class="small muted">${esc(t.r || '')} · ${esc(o.d || 'no date')}${R.who ? ` · ${esc(R.who)}` : ''}</div></div></div>
+      <div class="sbars">${SCORE_PARTS.map(([k, label]) => { const pts = Math.round(W[k] * sc.parts[k]);
+        return `<div class="sbar"><div class="row" style="justify-content:space-between"><b>${label}</b><span class="small">${pts} / ${W[k]}</span></div>
+          <div class="bar"><i style="width:${pct(pts, W[k])}%"></i></div>
           ${sc.why.filter(w => w.k === k).map(w => `<div class="small">${w.h}</div>`).join('')}</div>`; }).join('')}</div>
       <p class="small muted">The parts add up to ${Math.round(sc.raw)} of 100 points; the score is 100 × (1 − e<sup>−points/${SCORE_CURVE}</sup>). <a href="#" data-act="howto" data-v="score">How it works</a></p>
       <p class="row" style="gap:8px"><a class="btnlink" href="${url}" target="_blank" rel="noopener">Open on iNaturalist ↗</a>${back ? `<button data-genus="${back}">← ${taxNm(S.nodes[back]?.n || 'Genus', 20)}</button>` : ''}</p>
@@ -3209,7 +3255,9 @@ function viewBestFinds() {
   return head + `<div class="panel" style="margin-bottom:14px"><h2>🏅 Best finds</h2>
       <p class="small muted">Your wild records by Spood score, out of 100: signs of an unnamed species, few iNat records in ${esc(S.places[scorePid()]?.n || 'the world')}, what the record shows, and how others reacted. Tap a score for its reasons.</p>
       <div class="row" style="gap:6px;margin-top:10px">${chip('bestFilter', 'all', 'All', P.bestFilter !== 'secret')}${chip('bestFilter', 'secret', 'Secret spoods', P.bestFilter === 'secret')}
-        <span class="muted small">·</span>${chip('bestSort', 'score', 'Highest first', P.bestSort !== 'date')}${chip('bestSort', 'date', 'Newest first', P.bestSort === 'date')}</div></div>
+        <span class="muted small">·</span>${chip('bestSort', 'score', 'Highest first', P.bestSort !== 'date')}${chip('bestSort', 'date', 'Newest first', P.bestSort === 'date')}</div>
+      <div class="row" style="gap:6px;margin-top:8px"><span class="small">Weights:</span>${[...Object.keys(SCORE_PRESETS), ...(S.u.duelW ? ['mine'] : [])].map(k => chip('scoreW', k, wName(k), myWKey() === k)).join('')}
+        <button class="small" data-act="duel">⚖ Which is cooler?${S.u.duels?.length ? ` (${S.u.duels.length})` : ''}</button></div></div>
     ${shown.length ? `<div class="dexgrid">${shown.map(tile).join('')}</div>` : '<div class="panel"><p>No records match.</p></div>'}
     ${list.length > shown.length ? `<p style="text-align:center"><button data-act="bestMore">Show ${Math.min(BEST_PAGE, list.length - shown.length)} more of ${fmt(list.length - shown.length)}</button></p>` : ''}`;
 }
@@ -3217,9 +3265,128 @@ function viewBestFinds() {
 function bestInGenus(gid) {
   if (isGuest() || !scoresReady()) return '';
   const top = scoredRecs(o => genusOf(o.anc) === gid).slice(0, 3);
-  return top.length ? `<h3 style="margin-top:12px">🏅 Best finds</h3><div class="bestrow">${top.map(({ o, sc }) =>
-    `<div class="bestmini"><span class="thumb" style="background-image:url('${esc(photoSize(o.ph[0] || '', 'small'))}')"></span>${scoreStamp(sc, o.id, false, gid)}
-      <span class="small"><a href="#" data-act="score" data-v="${o.id}" data-g="${gid}">${taxNm(o.t.n, o.t.l)} · ${esc(o.d || '')}</a>${topWhy(sc) ? `<br><span class="muted">${topWhy(sc)}</span>` : ''}</span></div>`).join('')}</div>` : '';
+  return top.length ? `<h3 style="margin-top:12px">🏅 Best finds</h3><div class="bestrow">${top.map(x => bestMini(x, { back:gid })).join('')}</div>` : '';
+}
+// One row: thumbnail, stamp, name and date, the top reason
+const bestMini = ({ o, sc }, opts = {}) => `<div class="bestmini"><span class="thumb" style="background-image:url('${esc(photoSize(o.ph[0] || '', 'small'))}')"></span>${scoreStamp(sc, o.id, opts)}
+  <span class="small"><a href="#" data-act="score" data-v="${o.id}"${opts.back ? ` data-g="${opts.back}"` : ''}${opts.social ? ' data-w="d"' : ''}>${taxNm(o.t.n || 'Unknown', o.t.l)} · ${esc(o.d || '')}</a>${topWhy(sc) ? `<br><span class="muted">${topWhy(sc)}</span>` : ''}</span></div>`;
+
+// ---- Which is cooler? Two of your records side by side, scores hidden. The picks fit your own weights: a Bradley-Terry model
+// over the five parts (P(A beats B) = σ(w · (partsA − partsB))), pulled towards SCORE_W so a few picks can't swing it wildly.
+const domPart = sc => Object.keys(SCORE_W).reduce((b, k) => SCORE_W[k] * sc.parts[k] > SCORE_W[b] * sc.parts[b] ? k : b, 'secret');
+const pairKey = (a, b) => a < b ? `${a}:${b}` : `${b}:${a}`;
+// A pair close in score but strong in different parts (the picks that say most about your taste), not asked before
+function duelPair() {
+  const pool = scoredRecs(o => o.ph.length, SCORE_W).slice(0, DUEL_POOL);
+  if (pool.length < 4) return null;
+  const seen = new Set((S.u.duels || []).map(([a, b]) => pairKey(a, b))), pick = a => a[Math.floor(Math.random() * a.length)];
+  for (let i = 0; i < 80; i++) {
+    const A = pick(pool), near = pool.filter(x => x !== A && Math.abs(x.sc.raw - A.sc.raw) < 15 && domPart(x.sc) !== domPart(A.sc));
+    const B = pick(near.length ? near : pool.filter(x => x !== A));
+    if (!seen.has(pairKey(A.o.id, B.o.id))) return [A.o.id, B.o.id];
+  }
+  return null;
+}
+// [[a, b, winner]] → weights summing to 100, or null under DUEL_MIN usable picks
+function fitWeights(duels) {
+  const K = Object.keys(SCORE_W), prior = K.map(k => SCORE_W[k] / 10), X = [];
+  const parts = id => spoodScore(S.u.obs[id], undefined, undefined, SCORE_W)?.parts;
+  for (const [a, b, win] of duels) {
+    const pa = parts(a), pb = parts(b);
+    if (!pa || !pb) continue;
+    const x = K.map(k => pa[k] - pb[k]);
+    X.push(win === a ? x : x.map(v => -v));
+  }
+  if (X.length < DUEL_MIN) return null;
+  let w = prior.slice();
+  const lam = .3, lr = 1 / (X.length + 1);
+  for (let it = 0; it < 1500; it++) {
+    const g = w.map((wi, j) => lam * (wi - prior[j]));
+    for (const x of X) { const z = x.reduce((a, v, j) => a + v * w[j], 0), p = 1 / (1 + Math.exp(-z)); x.forEach((v, j) => g[j] -= (1 - p) * v); }
+    w = w.map((wi, j) => Math.max(0, wi - lr * g[j]));
+  }
+  const tot = w.reduce((a, v) => a + v, 0);
+  if (!tot) return null;
+  const out = Object.fromEntries(K.map((k, j) => [k, Math.round(100 * w[j] / tot)]));
+  const top = K.reduce((b, k) => out[k] > out[b] ? k : b, K[0]);
+  out[top] += 100 - K.reduce((a, k) => a + out[k], 0);   // rounding: the total stays 100
+  return out;
+}
+function openDuel() {
+  const pr = S.duelPair = duelPair(), n = (S.u.duels || []).length, W = S.u.duelW;
+  const card = id => { const o = S.u.obs[id];
+    return `<button class="duelcard" data-act="duelPick" data-v="${id}"><span class="ph" style="background-image:url('${esc(photoSize(o.ph[0], 'medium'))}')"></span>
+      <span class="nm">${taxNm(o.t.n || 'Unknown', o.t.l)}</span><span class="small muted">${o.t.l > 20 ? esc(o.t.r || '') + ' · ' : ''}${esc(o.d || '')}</span></button>`; };
+  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(620px,100%)"><button class="x" data-close="1">✕</button><div class="body">
+    <h2>⚖ Which is cooler?</h2>
+    <p class="small muted">Tap the record you'd rather show someone. After ${DUEL_MIN} picks SPOODEX weighs the five parts of the score your way; ${DUEL_GOAL} or more make it steadier.</p>
+    ${pr ? `<div class="duel">${card(pr[0])}${card(pr[1])}</div><p class="row" style="justify-content:center;margin-top:8px"><button data-act="duelSkip">Can't choose</button></p>`
+      : '<p>No new pairs left to compare.</p>'}
+    <p class="small"><b>${plural(n, 'pick')}</b>${n < DUEL_MIN ? ` · ${DUEL_MIN - n} more to learn your weights` : ''}</p>
+    ${W ? `<h3>Your weights</h3><div class="sbars">${SCORE_PARTS.map(([k, label]) => `<div class="sbar"><div class="row" style="justify-content:space-between"><b>${label}</b><span class="small">${W[k]} <span class="muted">(Balanced ${SCORE_W[k]})</span></span></div><div class="bar"><i style="width:${W[k]}%"></i></div></div>`).join('')}</div>
+      <p class="row" style="gap:8px">${myWKey() === 'mine' ? '<span class="small">Best finds is using your weights.</span>' : '<button class="primary" data-act="scoreW" data-v="mine">Use my weights</button>'}</p>` : ''}
+    ${n ? '<p><button class="small" data-act="duelReset">Start over</button></p>' : ''}</div></div></div>`;
+}
+
+// ---- Best finds for other people: Compare (the rival's imported records) and Crew (a read of each member's records, top 10 kept)
+let cmpScoreBusy = false, crewBestBusy = false, crewBestErr = null;
+function wantCmpScores() {
+  const C = S.cmp;
+  if (!C?.M || C.loading || cmpScoreBusy || C.scoreErr) return;
+  cmpScoreBusy = true;
+  readScores(C.login, C.save)
+    .then(ch => { if (ch) { if (!store.set('cmp', { login:C.login, save:C.save })) store.del('cmp'); if (S.tab === 'compare') render(); } })
+    .catch(e => { C.scoreErr = e.message; if (S.tab === 'compare') render(); })
+    .finally(() => { cmpScoreBusy = false; });
+}
+function compareBestHtml() {
+  const C = S.cmp, me = esc(who()), them = esc(C.login);
+  if (!isGuest()) wantScores();
+  wantCmpScores();
+  const mine = isGuest() ? [] : scoredRecs(undefined, SCORE_W).slice(0, 5);
+  const theirs = C.save.sc?.ts && scoreRef()?.ex ? C.M.obs.map(o => ({ o, sc:spoodScore(o, C.save.sc.r[o.id], undefined, SCORE_W) })).filter(x => x.sc).sort(bySc).slice(0, 5) : [];
+  const col = (list, empty) => list.length ? `<div class="bestrow">${list.map(x => bestMini(x, { social:true })).join('')}</div>` : `<p class="small muted">${empty}</p>`;
+  return `<h2 style="margin-top:22px">🏅 Best finds</h2>
+  <p class="small muted">Each side's five highest Spood scores, with the same weights for both. Tap a score for its reasons.</p>
+  <div class="grid2"><div class="panel"><h3>${me}</h3>${col(mine, isGuest() ? 'Guests have no records.' : scoreErr ? esc(scoreErr) : 'Reading…')}</div>
+    <div class="panel"><h3>${them}</h3>${col(theirs, C.scoreErr ? esc(C.scoreErr) : 'Reading their faves, comments and identifications…')}</div></div>`;
+}
+async function loadCrewBest() {
+  if (crewBestBusy) return;
+  crewBestBusy = true; crewBestErr = null;
+  const B = S.crew.best = S.crew.best || {}, redraw = () => { if (S.tab === 'crew' && !S.evOpen) render(); };
+  redraw();
+  try {
+    await ensureScoreRef();
+    for (const l of [...S.crew.logins]) {
+      const k = l.toLowerCase();
+      if (B[k] && Date.now() - B[k].ts < SCORE_TTL) continue;
+      const all = [];
+      await readAll(l, SCORE_REC_FIELDS, raw => { const o = trimObs(raw); if (!o.cap) all.push({ o, sd:trimScore(raw, l) }); });
+      if (!S.crew.logins.includes(l)) continue;   // removed while reading
+      B[k] = { ts:Date.now(), login:l, n:all.length,
+        top:all.map(x => ({ ...x, sc:spoodScore(x.o, x.sd, undefined, SCORE_W) })).filter(x => x.sc).sort(bySc).slice(0, CREW_BEST_TOP).map(({ o, sd }) => ({ o, sd })) };
+      saveCrew(); redraw();
+    }
+    saveShared();
+  } catch (e) { crewBestErr = e.message; }
+  crewBestBusy = false; redraw();
+}
+function crewBestHtml(ready) {
+  const B = S.crew.best || {}, started = Object.keys(B).length > 0;
+  const stale = S.crew.logins.some(l => { const b = B[l.toLowerCase()]; return !b || Date.now() - b.ts > SCORE_TTL; });
+  if (started && stale && !crewBestBusy && !crewBestErr) setTimeout(() => loadCrewBest(), 0);
+  if (!isGuest()) wantScores();
+  const head = '<h2 style="margin-top:22px">🏅 Best finds</h2>';
+  if (!started && !crewBestBusy) return head + `<div class="panel"><p class="small">Each person's three highest Spood scores, with the same weights for everyone. Reading them takes about a second for every 200 records each person has.</p>
+    <button data-act="crewBest">🏅 Read the crew's best finds</button>${crewBestErr ? `<p>${esc(crewBestErr)}</p>` : ''}</div>`;
+  const cols = ready.map(m => {
+    const list = m.me ? scoredRecs(undefined, SCORE_W).slice(0, 3)
+      : (B[m.login.toLowerCase()]?.top || []).map(x => ({ ...x, sc:spoodScore(x.o, x.sd, undefined, SCORE_W) })).filter(x => x.sc).sort(bySc).slice(0, 3);
+    return `<div class="panel"><h3>${esc(m.login)}${m.me ? ' <span class="small muted">(you)</span>' : ''}</h3>
+      ${list.length ? `<div class="bestrow">${list.map(x => bestMini(x, { social:true })).join('')}</div>` : `<p class="small muted">${crewBestBusy || (m.me && !scoresReady()) ? 'Reading…' : 'No scored records.'}</p>`}</div>`; });
+  return head + `<p class="small muted">Each person's three highest Spood scores, with the same weights for everyone.</p>
+    ${crewBestErr ? `<p>${esc(crewBestErr)} <button data-act="crewBest">Try again</button></p>` : ''}<div class="grid2">${cols.join('')}</div>`;
 }
 
 /* ---------------- genus page ---------------- */
@@ -3429,6 +3596,7 @@ function viewCompare() {
     <div><h3>${me}</h3><div class="jewels">${jewels(meG, meS).map(jewel).join('') || '<p>No exclusives yet.</p>'}</div></div>
     <div><h3>${them}</h3><div class="jewels">${jewels(themG, themS).map(jewel).join('') || '<p>No exclusives. You have it all.</p>'}</div></div>
   </div>
+  ${compareBestHtml()}
 
   <div class="grid2" style="margin-top:16px">
     <div class="panel"><h3>Head to head <span class="small muted">· ${me} ${winsM}–${winsT} ${them}</span></h3>
@@ -3614,6 +3782,7 @@ function setCrew(list) {
   S.crew.logins = out.slice(0, CREW_MAX);
   const keep = new Set(S.crew.logins.map(l => l.toLowerCase()));
   Object.keys(S.crew.data).forEach(k => { if (!keep.has(k)) delete S.crew.data[k]; });
+  Object.keys(S.crew.best || {}).forEach(k => { if (!keep.has(k)) delete S.crew.best[k]; });
   crewErr = null; saveCrew(); updateUrl();
   if (S.tab === 'crew') render();
   loadCrew();
@@ -3722,6 +3891,7 @@ function viewCrewMain() {
       ${statRow('Genera', x => x.gn)}${statRow('Species', x => x.sn)}${statRow('Prestige ✦', x => x.pr)}
       ${statRow('Genera only they have', x => x.og.length)}${statRow('Species only they have', x => x.os)}${statRow('Observations', x => x.obs)}</table>
     <p class="small muted">Prestige ✦ weights rarity in ${where}. Change the scope on the SPOODEX tab.</p></div>
+  ${crewBestHtml(ready)}
 
   <h2 style="margin-top:22px">Only one of you has these</h2>
   <div class="grid2">${stats.map(x => `<div class="panel"><h3>${name(x.m)} <span class="small muted">${x.og.length} ${x.og.length === 1 ? 'genus' : 'genera'}</span></h3>
@@ -6324,6 +6494,9 @@ async function wrappedExtras(W) {
       W.share = { total:Math.max(mine, root?.descendant_obs_count || 0), mine, where:S.places[pid]?.n || 'your region' };
     }
   } catch (e) { console.warn(e); W.fav = W.fav ?? null; W.share = W.share ?? null; }
+  // the year's highest Spood score (your weights)
+  if (!isGuest()) { while (scoreBusy) await sleep(500); await loadScores(); }
+  W.bestF = isGuest() || !scoresReady() ? null : scoredRecs(o => (o.d || '').startsWith(String(W.Y)))[0] || null;
 }
 const WR_SLIDES = 6;
 function wrappedYears() { return [...new Set(S.M.fieldDays.map(d => d.slice(0, 4)))].sort().reverse(); }
@@ -6367,7 +6540,8 @@ function showWrapped() {
     () => s('YOUR MARK ON THE RECORD', W.share === undefined ? '…' : W.share?.total ? pctTxt(W.share.mine / W.share.total) : '—',
       `${W.share === undefined ? loading : W.share?.total ? `<p class="line">of all verifiable salticid records on iNat in ${esc(W.share.where)} in ${esc(W.Y)} were yours (${fmt(W.share.mine)} of ${fmt(W.share.total)})</p>` : ''}
       ${W.pioneers.length ? `<p class="line">🏅 <b>${W.pioneers.length}</b> pioneer badge${W.pioneers.length === 1 ? '' : 's'}: ${W.pioneers.slice(0, 4).map(p => `${gLink(p.gid)} in ${esc(S.places[p.pid]?.n)}`).join(', ')}${W.pioneers.length > 4 ? '…' : ''}</p>` : ''}
-      ${W.fav === undefined ? '' : W.fav ? `<a class="jewel favpic" href="https://www.inaturalist.org/observations/${W.fav.id}" target="_blank" rel="noopener" style="background-image:url('${esc(photoSize(W.fav.ph, 'medium'))}')"><div class="lab"><div class="small">MOST-FAVED RECORD · ♥ ${W.fav.f}</div><div style="font-family:var(--head);font-size:18px;${['genus','species','subspecies'].includes(W.fav.r) ? 'font-style:italic' : ''}">${esc(W.fav.n)}</div></div></a>` : ''}`),
+      ${W.fav === undefined ? '' : W.fav ? `<a class="jewel favpic" href="https://www.inaturalist.org/observations/${W.fav.id}" target="_blank" rel="noopener" style="background-image:url('${esc(photoSize(W.fav.ph, 'medium'))}')"><div class="lab"><div class="small">MOST-FAVED RECORD · ♥ ${W.fav.f}</div><div style="font-family:var(--head);font-size:18px;${['genus','species','subspecies'].includes(W.fav.r) ? 'font-style:italic' : ''}">${esc(W.fav.n)}</div></div></a>` : ''}
+      ${W.bestF ? `<a class="jewel favpic" href="https://www.inaturalist.org/observations/${W.bestF.o.id}" target="_blank" rel="noopener" style="background-image:url('${esc(photoSize(W.bestF.o.ph[0] || '', 'medium'))}')"><div class="lab"><div class="small">BEST FIND · SPOOD SCORE ${W.bestF.sc.s}</div><div style="font-family:var(--head);font-size:18px">${taxNm(W.bestF.o.t.n || 'Unknown', W.bestF.o.t.l)}</div>${topWhy(W.bestF.sc) ? `<div class="small">${topWhy(W.bestF.sc)}</div>` : ''}</div></a>` : ''}`),
     () => s('YOUR WRAPPED CARD', '', '<div id="wrCard"><p class="muted">Developing the print…</p></div>'),
   ];
   el.innerHTML = slides[W.i]();
@@ -6967,7 +7141,13 @@ document.addEventListener('click', e => {
   if (a === 'needsid') { e.preventDefault(); S.prefs.layer = 'needsid'; savePrefs(); if ($('#app').classList.contains('hidden')) enterApp('dex'); else { S.tab = 'dex'; render(); } }
   if (a === 'leadFilter') { S.prefs.leadFilter = val === 'all' ? null : val; savePrefs(); render(); }
   if (a === 'leadSort') { S.prefs.leadSort = val; savePrefs(); render(); }
-  if (a === 'score') { e.preventDefault(); openScore(+val, +t.dataset.g || null); return; }
+  if (a === 'score') { e.preventDefault(); openScore(+val, +t.dataset.g || null, t.dataset.w === 'd'); return; }
+  if (a === 'scoreW') { S.prefs.scoreW = val; savePrefs(); S.bestN = 0; if ($('#modalRoot .duel, #modalRoot [data-act="duelReset"]')) openDuel(); render(); }
+  if (a === 'duel') { openDuel(); return; }
+  if (a === 'duelSkip') { openDuel(); return; }
+  if (a === 'duelPick' && S.duelPair) { const [x, y] = S.duelPair; S.u.duels = [...(S.u.duels || []), [x, y, +val]]; S.u.duelW = fitWeights(S.u.duels); saveUser(); openDuel(); softRender(); return; }
+  if (a === 'duelReset') { S.u.duels = []; S.u.duelW = null; saveUser(); openDuel(); softRender(); return; }
+  if (a === 'crewBest') { crewBestErr = null; loadCrewBest(); return; }
   if (a === 'bestFilter') { S.prefs.bestFilter = val; savePrefs(); S.bestN = 0; render(); }
   if (a === 'bestSort') { S.prefs.bestSort = val; savePrefs(); S.bestN = 0; render(); }
   if (a === 'bestMore') { S.bestN = (S.bestN || BEST_PAGE) + BEST_PAGE; render(); }
@@ -7121,6 +7301,10 @@ $('#loginForm').addEventListener('submit', e => { e.preventDefault(); const v = 
 // What changed, newest first: shown once on Profile to returning players, and in full from Settings. The owner's rule (2026-10-13):
 // sections and views stay where they are; when something has to move, it gets a line here.
 const CHANGES = [
+  { v:'2.11', d:'2026-10-20', items:[
+    { h:'Best finds: choose how the Spood score is weighted (Balanced, Taxonomist, Photographer, Storyteller), or play <b>⚖ Which is cooler?</b> and let your picks set your own weights.' },
+    { h:'<b>🏅 Best finds</b> in Compare (five each, below Crown jewels) and Crew (three each, below the crew table), and your year\'s best find in Wrapped.' },
+  ] },
   { v:'2.10', d:'2026-10-20', items:[
     { h:'<b>🏅 Best finds</b> (SPOODEX, after Mystery spoods): every wild record gets a <b>Spood score</b> out of 100, from signs of an unnamed species, few iNat records, what the record shows and how others reacted. Tap a score for its reasons.' },
     { h:'Mystery spoods can be sorted by Spood score, and genus pages show their three best finds.' },
@@ -7443,7 +7627,10 @@ function howTo(focus) {
     sec('score', 'Spood score', `<p>Each wild record gets a score out of 100 from its public iNat data, so you can sort your records from most to least remarkable (SPOODEX › 🏅 Best finds). Five parts add up to 100 points:</p>
       <table class="cmp">${SCORE_PARTS.map(([k, l, d]) => `<tr><td><b>${l}</b></td><td class="n">${SCORE_W[k]}</td><td class="muted">${esc(d)}</td></tr>`).join('')}</table>
       <p>An experienced identifier is one of the ${SCORE_EXPERTS} people with the most jumping spider identifications in your country. A stop at genus counts for more where few of the genus's records stop there.
-      Rarity and stop rates use your home country's iNat records. The score is 100 × (1 − e<sup>−points/${SCORE_CURVE}</sup>), so most records sit under 40 and only the best few reach the 80s. Captive records aren't scored.</p>`),
+      Rarity and stop rates use your home country's iNat records. The score is 100 × (1 − e<sup>−points/${SCORE_CURVE}</sup>), so most records sit under 40 and only the best few reach the 80s. Captive records aren't scored.</p>
+      <p>Best finds can weigh the parts differently:</p>
+      <table class="cmp"><tr><th></th>${SCORE_PARTS.map(([, l]) => `<th class="n">${l}</th>`).join('')}</tr>${Object.values(SCORE_PRESETS).map(p => `<tr><td>${esc(p.n)}</td>${SCORE_PARTS.map(([k]) => `<td class="n">${p.w[k]}</td>`).join('')}</tr>`).join('')}</table>
+      <p><b>Mine</b> comes from ⚖ Which is cooler?: after ${DUEL_MIN} picks between two of your records, SPOODEX fits the weights that best explain your choices, starting from Balanced. Your weights apply to your own views and Wrapped; Compare and Crew always use Balanced, so everyone is scored alike.</p>`),
     sec('streak', 'Weekly streak', `<p>A week, Monday to Sunday, counts when you record any wild jumping spider in it, identified or not, by the date you observed it.
       One missed week each calendar month is covered automatically, as long as the week after it counts; two missed weeks in a row end the streak. This week can't end it until Sunday is over.</p>`),
     sec('month', 'Genus of the month', `<p>Each month, a genus that's in season in your state: from the ${FEAT_POOL} most recorded there (at least ${FEAT_MIN} iNat records), one whose busiest months on iNat include this one.
