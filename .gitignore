@@ -2,3 +2,4 @@
 site/
 server/node_modules/
 server/.wrangler/
+__pycache__/
