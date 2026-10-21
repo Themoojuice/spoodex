@@ -262,6 +262,16 @@ a.lcard:hover { border-color:var(--accent); }
 .landstarts { display:flex; flex-direction:column; gap:12px; max-width:560px; }
 .landstarts button.big { min-height:58px; font-size:17px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
 .landstarts button.big small { font-weight:400; font-size:13px; }
+.showcase { display:flex; flex-direction:column; gap:6px; padding-right:96px; }
+.showcase .sticker { width:84px; right:10px; top:10px; }
+.showcase .hand { font-size:22px; }
+.showcase p { margin:0; }
+.showcase button { align-self:flex-start; margin-top:4px; }
+#modeBar:empty { display:none; }
+.modebar { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin:10px auto 0; padding:8px 12px; border:1px dashed var(--line); border-radius:var(--radius); background:var(--panel); font-size:14px; }
+.modebar .sp { flex:1; min-width:160px; }
+.joinsteps { margin:6px 0 12px; padding-left:22px; }
+.joinsteps li { margin:4px 0; }
 #loginForm label { display:block; font-weight:600; margin-bottom:8px; }
 .profhero h1 { font-size:36px; margin:4px 0 0; }
 .herobtns { gap:6px; margin:10px 0 0; }
@@ -795,13 +805,13 @@ details > summary.scsec { cursor:pointer; }
     </div>
     <div id="landPhotos" class="landstrip" aria-label="Jumping spiders recorded on iNaturalist"><span class="lcard blank"><span class="ph skel"><i class="sil"></i></span></span><span class="lcard blank"><span class="ph skel"><i class="sil"></i></span></span><span class="lcard blank"><span class="ph skel"><i class="sil"></i></span></span><span class="lcard blank"><span class="ph skel"><i class="sil"></i></span></span><span class="lcard blank"><span class="ph skel"><i class="sil"></i></span></span><span class="lcard blank"><span class="ph skel"><i class="sil"></i></span></span></div>
     <div id="landStarts" class="landstarts">
+      <div class="panel showcase stk" id="showcase"></div>
       <button type="button" class="primary big" data-act="guest">🧭 See what jumping spiders live near you<small>No iNaturalist account needed</small></button>
       <form id="loginForm" class="panel">
         <label for="loginInput">Already on iNaturalist? Enter your username</label>
         <div class="row"><input id="loginInput" placeholder="iNaturalist username" autocomplete="off" autocapitalize="off" spellcheck="false" required style="flex:1;min-width:150px">
         <button class="primary" type="submit">Open my SPOODEX</button></div>
       </form>
-      <button type="button" data-act="sample">👀 Peek at a full collection</button>
     </div>
   </div>
   <div class="box hidden" id="onboardWork">
@@ -830,6 +840,7 @@ details > summary.scsec { cursor:pointer; }
     </div>
     <nav class="tabs" id="tabs"></nav>
   </div></header>
+  <div class="wrap" id="modeBar"></div>
   <main class="wrap" id="view"></main>
 </div>
 
@@ -958,7 +969,7 @@ const cellKey = (lat, lng, deg) => `${Math.floor(lat/deg)}:${Math.floor(lng/deg)
 // Saves live in IndexedDB (localStorage caps out around 5 MB). Reads come from an in-memory copy loaded once at boot,
 // so store.get/set stay synchronous; writes are batched into IndexedDB in the background. Prefs and the last login
 // stay in localStorage. Where IndexedDB is unavailable, everything falls back to localStorage as before.
-const LS_ONLY = new Set(['prefs', 'lastLogin']);
+const LS_ONLY = new Set(['prefs', 'lastLogin', 'mine']);
 const store = {
   db: null, mem: new Map(), dirty: new Map(), timer: 0, warned: false,
   idb(k) { return this.db && !LS_ONLY.has(k); },
@@ -1112,6 +1123,10 @@ const GUEST = '__guest';
 const SAMPLE_LOGIN = 'themoojuice';   // "Try a sample naturalist": any public account with plenty of salticids
 const isGuest = () => S.login === GUEST;
 const who = () => isGuest() ? 'Guest naturalist' : S.login;
+// v2.13: 'mine' = the username this browser imported through the form (or confirmed with "This is me"). Opening someone else's
+// SPOODEX (the showcase, a ?u= link) is a visit: it doesn't take over lastLogin, and a bar says whose it is.
+const mineLogin = () => store.get('mine', null);
+const othersDex = (login, src) => src !== 'form' && login !== GUEST && (mineLogin() ? mineLogin() !== login : src === 'sample' || src === 'link' || login === SAMPLE_LOGIN);
 // iNat logins are lowercase and matched case-insensitively, so every login is kept lowercase (one save, one share link per person).
 // Also takes "@name" and a pasted profile or observations link.
 const cleanLogin = v => { v = String(v || '').trim(); const m = v.match(/inaturalist\.org\/(?:people|lifelists|observations)\/(?!\d+\b)([\w-]+)/i) || v.match(/[?&]user_id=([\w-]+)/i); return (m ? m[1] : v.replace(/^@/, '')).toLowerCase(); };
@@ -2009,6 +2024,7 @@ function navHtml() {
   $('#tabs .views .on')?.scrollIntoView({ block:'nearest', inline:'nearest' });
 }
 let renderPending = false;
+const seenTabs = new Set();   // each tab is counted once per page load
 function softRender() { if (renderPending) return; renderPending = true; setTimeout(() => { renderPending = false; if (S.tab !== 'map') render(); }, 400); }
 
 function render() {
@@ -2019,6 +2035,8 @@ function render() {
   $('#chassisName').textContent = tier.name;
   $('#whoami').textContent = who();
   $('#shareBtn').classList.toggle('hidden', isGuest());
+  $('#modeBar').innerHTML = modeBarHtml();
+  if (!seenTabs.has(S.tab)) { seenTabs.add(S.tab); track('tab-' + S.tab); }
   $('#lvlBadge').innerHTML = `<span class="lbl">LEVEL </span><span class="lbs">Lv </span>${M.G.size}${M.G.size ? `<span class="lbl lpr"> · ${fmt(prestige(M))} ✦</span>` : ''}`;
   tabNews();
   navHtml();
@@ -2060,8 +2078,8 @@ function viewProfile() {
       ${n ? heroStats(M) : ''}
       ${hl ? `<div class="row" style="gap:8px;margin-top:6px"><span>${headlineHtml(hl)}</span>${bar(hl.found, hl.total)}</div>` : ''}
       ${n ? weekStreakHtml(M.week) : ''}
-      ${isGuest() ? '' : `<p class="row herobtns"><button class="primary" data-act="syncNow">📥 Check my new uploads</button>${S.u.meta.lastSync ? `<span class="small muted">checked ${agoShort(Date.parse(S.u.meta.lastSync))}</span>` : ''}</p>`}
-      ${isGuest() || !n ? '' : `<p class="row herobtns"><button data-act="dexImage">📤 My SPOODEX image</button><button data-act="caseEdit">🗄 Display case</button><button data-act="card">🪪 Title card</button>${M.fieldDays.length ? `<button data-act="wrapped">🎁 ${esc(wrappedYears()[0])} in spoods</button>` : ''}</p>`}
+      ${isGuest() || S.linkView ? '' : `<p class="row herobtns"><button class="primary" data-act="syncNow">📥 Check my new uploads</button>${S.u.meta.lastSync ? `<span class="small muted">checked ${agoShort(Date.parse(S.u.meta.lastSync))}</span>` : ''}</p>`}
+      ${isGuest() || S.linkView || !n ? '' : `<p class="row herobtns"><button data-act="dexImage">📤 My SPOODEX image</button><button data-act="caseEdit">🗄 Display case</button><button data-act="card">🪪 Title card</button>${M.fieldDays.length ? `<button data-act="wrapped">🎁 ${esc(wrappedYears()[0])} in spoods</button>` : ''}</p>`}
     </div>`;
   // your genera, newest first, then a few mystery spoods (records not yet identified to genus) with their photos
   const myst = M.leads.flatMap(l => l.obs).filter(o => o.ph.length).sort((a, b) => (b.d || '').localeCompare(a.d || '') || b.id - a.id).slice(0, 6);
@@ -2070,7 +2088,7 @@ function viewProfile() {
         <span class="nm"><i>${esc(g.name)}</i></span>${cnOf(g.id) ? `<span class="cn">${esc(cnOf(g.id))}</span>` : ''}</div>`).join('')
     + myst.map(o => `<div class="lcard myst" data-act="needsid" title="Mystery spoods: get them identified to genus"><span class="ph" style="background-image:url('${esc(photoSize(o.ph[0], 'small'))}')"></span>
         <span class="nm" style="font-style:normal;white-space:normal">❓ Mystery spood</span><span class="cn">${esc(o.t.n || '')}</span></div>`).join('');
-  const spoods = spoodCards ? `<div class="panel" style="margin-top:16px"><h2>Your spoods${n ? ' <span class="small muted">newest first</span>' : ''}</h2>
+  const spoods = spoodCards ? `<div class="panel" style="margin-top:16px"><h2>${S.linkView ? esc(poss(S.login)) : 'Your'} spoods${n ? ' <span class="small muted">newest first</span>' : ''}</h2>
       <div class="spoods">${spoodCards}</div></div>` : '';
   const three = nextThreeHtml();
   const finds = homeCtx().pid ? (three ? `<div class="panel" style="margin-top:16px">${three}</div>` : '')
@@ -2084,9 +2102,27 @@ function viewProfile() {
     ${M.pets.length ? `<button data-tab="pets">🏺 Your captive spoods and where to find wild ones</button>` : ''}
     ${isGuest() ? '<button data-act="switch">I have an iNaturalist account</button>' : ''}</div></div>` : '';
   const news = newsHtml(), tips = tipsOnce(true);
-  return `${hero}${whatsNewHtml()}${spoods}${finds}${featHtml()}${n ? '' : starter}${news ? `<div style="margin-top:16px">${news}</div>` : ''}
+  return `${hero}${isGuest() ? joinHtml() : ''}${whatsNewHtml()}${spoods}${finds}${featHtml()}${n || isGuest() ? '' : starter}${news ? `<div style="margin-top:16px">${news}</div>` : ''}
   ${tips ? `<div style="margin-top:16px">${tips}</div>` : ''}
   ${trophyHtml()}${merchHtml()}`;
+}
+
+// v2.13: the way in for guests: three steps to their own SPOODEX, iNaturalist's sign-up, and the showcase
+const INAT_SIGNUP = 'https://www.inaturalist.org/signup';
+const joinHtml = () => `<div class="panel" style="margin-top:16px"><h2>Start your own SPOODEX</h2>
+    <ol class="joinsteps"><li><b>Photograph a jumping spider.</b> A phone is enough.</li>
+      <li><b>Post it to iNaturalist.</b> It's free, and other naturalists help identify it.</li>
+      <li><b>Enter your iNaturalist username here.</b> Every genus you've found becomes a card.</li></ol>
+    <div class="row"><a class="btnlink" href="${INAT_SIGNUP}" target="_blank" rel="noopener" data-track="join-inat">Join iNaturalist (free) ↗</a>
+      <button data-act="haveAccount">I already have an account</button><button data-act="sample">👀 Look around a finished SPOODEX</button></div></div>`;
+// The bar above every tab: a guest's way in, or whose SPOODEX a visitor is looking at
+function modeBarHtml() {
+  if (isGuest()) return S.tab === 'profile' ? '' : `<div class="modebar"><span class="sp">Browsing as a guest.</span><button class="small primary" data-act="joinPanel">Start your own SPOODEX</button></div>`;
+  if (!S.linkView) return '';
+  const m = mineLogin();
+  return `<div class="modebar"><span class="sp">You're looking at <b>${esc(poss(S.login))}</b> SPOODEX.</span>
+    ${m ? `<a class="btnlink" href="?u=${encodeURIComponent(m)}">Open my SPOODEX</a>` : '<button class="small primary" data-act="startOwn">Start your own</button>'}
+    <button class="small" data-act="thisIsMe">This is me</button></div>`;
 }
 
 // A found genus's rarity as card attributes (v2.4): a coloured edge from Uncommon up, foil on Rare and Exceptional; Common stays plain
@@ -6257,7 +6293,12 @@ const sinceTxt = ts => { const h = Math.round((Date.now() - ts) / 3600e3); retur
 // A new visit starts after 3 hours away; until then "since your last visit" keeps meaning the same moment
 function markVisit() {
   const v = S.u.visit = S.u.visit || {}, now = Date.now();
-  if (v.last && now - v.last > VISIT_GAP) v.prev = v.last;
+  if (v.last && now - v.last > VISIT_GAP) {
+    v.prev = v.last;
+    const days = (now - v.last) / 864e5;   // v2.13: a return, and roughly how long they were away (no usernames)
+    track(isGuest() ? 'return-guest' : S.linkView ? 'return-visitor' : 'return-visit');
+    track('return-after-' + (days < 1 ? 'hours' : days < 7 ? 'days' : days < 30 ? 'weeks' : 'months'));
+  }
   v.last = now; saveUser();
 }
 let newsBusy = false;
@@ -6786,7 +6827,8 @@ function registerSW() {
 const GOATCOUNTER = 'https://themoojuice.goatcounter.com/count';
 function track(path, event = true) {
   try {
-    if (!/^https?:$/.test(location.protocol) || /^(localhost|127\.|\[::1\]|0\.0\.0\.0)|\.(localhost|test)$/.test(location.hostname)) return;
+    (window.__tracked = window.__tracked || []).push(path);   // what would be sent, for testing in the console
+    if (location.hostname !== 'themoojuice.github.io') return;   // v2.13: only the live site counts (not local copies, previews or mirrors)
     // ?ref=reddit (or any short word) on a posted link names the source: the Reddit and iNat apps often send no referrer
     const ref = (new URLSearchParams(location.search).get('ref') || '').match(/^[\w.-]{1,30}$/)?.[0];
     const q = new URLSearchParams({ p:path, t:event ? path : 'SPOODEX', r:event ? '' : ref ? 'ref:' + ref : (document.referrer || '').split(/[?#]/)[0],
@@ -6796,10 +6838,21 @@ function track(path, event = true) {
   } catch {}
 }
 
+// v2.13: time actually spent: counted in 5 s steps while the page is visible and someone touched, typed or scrolled in the last minute
+const ENGAGED = [[60, 'engaged-1m'], [300, 'engaged-5m'], [900, 'engaged-15m']];
+let engSec = 0, lastAct = Date.now();
+for (const ev of ['pointerdown', 'keydown', 'scroll', 'touchstart', 'wheel']) addEventListener(ev, () => { lastAct = Date.now(); }, { passive:true, capture:true });
+setInterval(() => {
+  if (document.hidden || Date.now() - lastAct > 60e3) return;
+  engSec += 5;
+  for (const [s, name] of ENGAGED) if (engSec === s) track(name);
+}, 5e3);
+document.addEventListener('click', e => { const a = e.target.closest?.('[data-track]'); if (a) track(a.dataset.track); }, true);
+
 /* ---------------- genus lines editor: the owner writes one line per genus by clicking and typing ---------------- */
 // Shown to the owner (?u=themoojuice) or with ?notes in the URL. Drafts save as you type (store key `notes`, this browser) and show
 // in this browser at once; "Copy all" gives the GENUS_NOTES code that puts them in spoodex.html for everyone.
-const notesOn = () => (S.login || '').toLowerCase() === OWNER || new URLSearchParams(location.search).has('notes');
+const notesOn = () => ((S.login || '').toLowerCase() === OWNER && !S.linkView) || new URLSearchParams(location.search).has('notes');
 let notesView = 'mine';
 function notesIds() {
   const mine = S.M.genera.map(g => g.id), written = [...Object.keys(S.notes), ...Object.keys(GENUS_NOTES)].map(Number);
@@ -6922,13 +6975,13 @@ function paintLanding(L) {
 }
 
 /* ---------------- boot / flows ---------------- */
-function loadUser(login) {
+function loadUser(login, keep = true) {
   S.login = login;
   S.u = store.get(ukey(login), null) || { obs:{}, meta:{}, seen:[], scans:{}, completed:[] };
   S.u.scans = S.u.scans || {}; S.u.completed = S.u.completed || []; S.u.seen = S.u.seen || [];
   // v1.17: scans became squares (b:1); older circle scans are dropped and re-read when next needed
   for (const box of [S.u.scans, S.u.active || {}]) for (const k of Object.keys(box)) if (!box[k].b) delete box[k];
-  store.set('lastLogin', login);
+  if (keep) store.set('lastLogin', login);
 }
 // Shareable state lives in the URL: ?u=<login>&vs=<rival>&crew=<a,b,…>. Locations never go in links.
 function updateUrl() {
@@ -6979,8 +7032,9 @@ async function doSync(full) {
   loadNews();
   if (S.crew.logins.length && !crewBusy && crewNeedsLoad()) loadCrew().then(() => { if (S.tab !== 'map') render(); });
 }
-async function onboard(login) {
-  loadUser(login);
+async function onboard(login, src = 'link') {
+  S.linkView = othersDex(login, src);
+  loadUser(login, !S.linkView);
   $('#landStarts').classList.add('hidden'); $('#onboardWork').classList.remove('hidden');
   $('#impBox').classList.remove('hidden'); $('#revBox').classList.add('hidden');
   $('#impHead').textContent = `Reading ${poss(login)} jumping spiders`;
@@ -6990,7 +7044,8 @@ async function onboard(login) {
   try {
     const fresh = !S.u.meta.lastSync;
     await sync({ full:fresh, log:w });
-    if (fresh) track('new-spoodex');
+    if (src === 'form') store.set('mine', login);
+    if (fresh) track(src === 'form' ? 'new-spoodex' : src === 'sample' ? 'sample-dex' : 'link-dex');
     fillElev();
     S.u.seen = S.M.genera.map(g => g.id); saveUser();
     if (fresh) { S.prefs.seenVer = CHANGES[0].v; savePrefs(); }
@@ -6998,7 +7053,8 @@ async function onboard(login) {
     await revealGenera();
   } catch (e) {
     w(/returned 422/.test(e.message) ? noUser(e, login) : `Couldn't finish: ${e.message}`);
-    if (/returned 422/.test(e.message)) { store.del('lastLogin'); store.del(ukey(login)); $('#impHead').textContent = 'Username not found'; }
+    track(/returned 422/.test(e.message) ? 'username-not-found' : 'import-failed');
+    if (/returned 422/.test(e.message)) { if (store.get('lastLogin') === login) store.del('lastLogin'); store.del(ukey(login)); $('#impHead').textContent = 'Username not found'; }
     $('#landStarts').classList.remove('hidden'); $('#loginInput').focus();
   }
 }
@@ -7015,10 +7071,11 @@ async function revealGenera() {
   $('#landPhotos').classList.add('hidden'); $('.landhead .pitch').classList.add('hidden'); scrollTo(0, 0);
   $('#impBox').classList.add('hidden'); $('#revBox').classList.remove('hidden');
   $('#revSkip').classList.toggle('hidden', list.length < 2);
-  $('#revHead').textContent = !all.length ? 'No genera yet' : big ? `Your ${list.length} rarest of ${all.length} genera` : `${all.length} ${all.length === 1 ? 'genus' : 'genera'} found`;
+  const yours = S.linkView ? poss(S.login) : 'Your', inYours = S.linkView ? `in ${poss(S.login)}` : 'in your';
+  $('#revHead').textContent = !all.length ? 'No genera yet' : big ? `${yours} ${list.length} rarest of ${all.length} genera` : `${all.length} ${all.length === 1 ? 'genus' : 'genera'} found`;
   $('#revGrid').innerHTML = list.map(g => `<div class="rcard" data-g="${g.id}"><span class="ph" style="background-image:url('${esc(photoSize(g.cover, 'medium'))}')"></span>
     <div class="nm q">???</div><span class="cn"></span></div>`).join('');
-  $('#revMore').textContent = big ? `…and ${all.length - list.length} more in your SPOODEX.` : '';
+  $('#revMore').textContent = big ? `…and ${all.length - list.length} more ${inYours} SPOODEX.` : '';
   $('#revEnd').innerHTML = '';
   loadNextThree(() => { const el = $('#revNext'); if (el) el.innerHTML = nextThreeHtml(); });
   const cards = [...document.querySelectorAll('#revGrid .rcard')];
@@ -7047,7 +7104,7 @@ function revEndHtml() {
     <p>${n && hl ? `${headlineHtml(hl)}.` : n ? '' : `No ${M.pets.length ? 'wild' : 'public'} jumping spider records identified to genus yet.`}</p>
     ${M.pets.length ? `<p>🏺 ${plural(M.pets.length, 'captive record')} not counted: SPOODEX collects jumping spiders found in the wild. <a href="#" data-act="pets">See ${M.pets.length === 1 ? 'it' : 'them'} in your Spoodarium →</a></p>` : ''}
     ${M.leads.length ? `<p>❓ ${plural(mysteryCount(), 'mystery spood')} not yet identified to genus. <a href="#" data-act="needsid">See them →</a></p>` : ''}
-    <p class="row"><button class="primary big" data-act="openDex">Open your SPOODEX</button>${n && !isGuest() ? '<button data-act="dexImage">📤 Share my SPOODEX</button>' : ''}</p>
+    <p class="row"><button class="primary big" data-act="openDex">${S.linkView ? `Look around ${esc(poss(S.login))} SPOODEX` : 'Open your SPOODEX'}</button>${n && !isGuest() && !S.linkView ? '<button data-act="dexImage">📤 Share my SPOODEX</button>' : ''}</p>
     <div id="revNext">${nextThreeHtml()}</div>${tipsOnce()}</div>`;
 }
 // The photo checklist, shown once to anyone with fewer than 15 genera (the reveal, or Profile until "Got it")
@@ -7251,7 +7308,15 @@ document.addEventListener('click', e => {
   if (a === 'outGo') outSet(+val);
   if (a === 'outRefresh') { S.out.ok = null; paintOut(); loadOut(true); }
   if (a === 'prestige') openPrestige();
-  if (a === 'sample') { $('#loginInput').value = SAMPLE_LOGIN; onboard(SAMPLE_LOGIN); }
+  if (a === 'sample') {
+    track('sample-click');
+    if ($('#app').classList.contains('hidden')) onboard(SAMPLE_LOGIN, 'sample');
+    else location.href = `${location.pathname}?start=sample`;
+  }
+  if (a === 'haveAccount') { track('guest-has-account'); location.href = `${location.pathname}?start=login`; }
+  if (a === 'startOwn') location.href = `${location.pathname}?start`;
+  if (a === 'joinPanel') { S.tab = 'profile'; updateUrl(); render(); scrollTo(0, 0); }
+  if (a === 'thisIsMe') { store.set('mine', S.login); store.set('lastLogin', S.login); S.linkView = false; render(); }
   if (a === 'switch') { store.del('lastLogin'); location.href = location.pathname; }
   if (a === 'wipe') { store.del(ukey(S.login)); store.del('lastLogin'); store.flush().finally(() => location.href = location.pathname); }
 });
@@ -7324,12 +7389,19 @@ $('#syncBtn').addEventListener('click', () => doSync(false));
 $('#shareBtn').addEventListener('click', copyLink);
 $('#menuBtn').addEventListener('click', settings);
 $('#revSkip').addEventListener('click', () => { revSkip = true; document.querySelectorAll('#revGrid .rcard').forEach(flipCard); });
-$('#loginForm').addEventListener('submit', e => { e.preventDefault(); const v = cleanLogin($('#loginInput').value); if (v) onboard(v); });
+$('#loginForm').addEventListener('submit', e => { e.preventDefault(); const v = cleanLogin($('#loginInput').value); if (v) { track('username-submitted'); onboard(v, 'form'); } });
+$('#loginInput').addEventListener('input', () => track('username-typed'), { once:true });
 
 /* ---------------- rewards & routines (v2.8): merch cabinet, weekly streaks, genus of the month, calendar, table, CSV, how it works, what changed, spooding now ---------------- */
 // What changed, newest first: shown once on Profile to returning players, and in full from Settings. The owner's rule (2026-10-13):
 // sections and views stay where they are; when something has to move, it gets a line here.
 const CHANGES = [
+  { v:'2.13', d:'2026-10-21', items:[
+    { h:'Landing page: a finished SPOODEX (themoojuice) up front. Look around it without it becoming yours.' },
+    { h:'Guests get a "Start your own SPOODEX" panel: three steps, a link to join iNaturalist, and the finished SPOODEX to look around.' },
+    { h:'Opening someone else\'s SPOODEX (a link or the showcase) no longer replaces your own: a bar says whose it is, with a way back to yours or "This is me".' },
+    { h:'The anonymous counts now include return visits, time spent and which tabs get opened. Still no usernames, places or cookies.' },
+  ] },
   { v:'2.12', d:'2026-10-20', items:[
     { h:'Map & scanner: each genus or species new to you shows its best photos from the scanned area, each with its Spood score. Tap one for the reasons and the record.' },
     { h:'Trip planner: each record square in the list shows photos of the wanted genera recorded there, best Spood scores first.' },
@@ -7766,7 +7838,14 @@ function caseHtml(login, { head, cards }) {
 }
 // The owner's default case, drawn at once for a first-time visitor (the case link in the launch posts) while the live one loads.
 // Regenerate on ?u=themoojuice&case with caseSnapCode() in the console and paste over this line.
-const CASE_SNAP = {"login":"themoojuice","ts":"2026-10-12","head":"<div class=\"hand\">Masterful <i>Mopsus</i></div><p>Level <b>58</b> · <b>57 / 81</b> genera on iNat in Australia · +1 elsewhere</p>","cards":"<div class=\"casegrid\"><a class=\"ccard rar rar5\" style=\"--rc:#c8322a\" href=\"https://www.inaturalist.org/observations/254324145\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/455516695/medium.jpeg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Maddisonia</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#c8322a\" title=\"Exceptional: rarity by how few iNat records it has\">Exceptional</span> 1 iNat record in Australia</span></span></a><a class=\"ccard rar rar5\" style=\"--rc:#c8322a\" href=\"https://www.inaturalist.org/observations/383764989\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/702453385/medium.jpg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Metacyrba</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#c8322a\" title=\"Exceptional: rarity by how few iNat records it has\">Exceptional</span> 1 iNat record in Australia</span></span></a><a class=\"ccard rar rar5\" style=\"--rc:#c8322a\" href=\"https://www.inaturalist.org/observations/327118838\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/592571470/medium.jpg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Huntiglennia</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#c8322a\" title=\"Exceptional: rarity by how few iNat records it has\">Exceptional</span> 2 iNat records in Australia</span></span></a><a class=\"ccard rar rar4\" style=\"--rc:#2f6fb5\" href=\"https://www.inaturalist.org/observations/377396401\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/690135137/medium.jpg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Yamangalea</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#2f6fb5\" title=\"Rare: rarity by how few iNat records it has\">Rare</span> 5 iNat records in Australia</span></span></a><a class=\"ccard rar rar4\" style=\"--rc:#2f6fb5\" href=\"https://www.inaturalist.org/observations/318585969\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/575808691/medium.jpg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Psenuc</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#2f6fb5\" title=\"Rare: rarity by how few iNat records it has\">Rare</span> 5 iNat records in Australia</span></span></a><a class=\"ccard rar rar4\" style=\"--rc:#2f6fb5\" href=\"https://www.inaturalist.org/observations/407294211\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/748447456/medium.jpg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Chalcolecta</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#2f6fb5\" title=\"Rare: rarity by how few iNat records it has\">Rare</span> 5 iNat records in Australia</span></span></a><a class=\"ccard rar rar4\" style=\"--rc:#2f6fb5\" href=\"https://www.inaturalist.org/observations/407662657\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/749193560/medium.jpg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Porius</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#2f6fb5\" title=\"Rare: rarity by how few iNat records it has\">Rare</span> 6 iNat records in Australia</span></span></a><a class=\"ccard rar rar4\" style=\"--rc:#2f6fb5\" href=\"https://www.inaturalist.org/observations/407331877\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/748527016/medium.jpg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Coccorchestes</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#2f6fb5\" title=\"Rare: rarity by how few iNat records it has\">Rare</span> 6 iNat records in Australia</span></span></a><a class=\"ccard rar rar3\" style=\"--rc:#e0b81c\" href=\"https://www.inaturalist.org/observations/281010169\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/504762407/medium.jpg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Phintella</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#e0b81c\" title=\"Scarce: rarity by how few iNat records it has\">Scarce</span> 17 iNat records in Australia</span></span></a></div>"};
+const CASE_SNAP = {"login":"themoojuice","ts":"2026-10-21","head":"<div class=\"hand\">Elite <i>Euophrys</i></div><p>Level <b>60</b> · <b>59 / 81</b> genera on iNat in Australia · +1 elsewhere</p>","cards":"<div class=\"casegrid\"><a class=\"ccard rar rar5\" style=\"--rc:#c8322a\" href=\"https://www.inaturalist.org/observations/254324145\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/455516695/medium.jpeg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Maddisonia</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#c8322a\" title=\"Exceptional: rarity by how few iNat records it has\">Exceptional</span> 1 iNat record in Australia</span></span></a><a class=\"ccard rar rar5\" style=\"--rc:#c8322a\" href=\"https://www.inaturalist.org/observations/383764989\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/702453385/medium.jpg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Metacyrba</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#c8322a\" title=\"Exceptional: rarity by how few iNat records it has\">Exceptional</span> 1 iNat record in Australia</span></span></a><a class=\"ccard rar rar5\" style=\"--rc:#c8322a\" href=\"https://www.inaturalist.org/observations/327118838\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/592571470/medium.jpg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Huntiglennia</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#c8322a\" title=\"Exceptional: rarity by how few iNat records it has\">Exceptional</span> 2 iNat records in Australia</span></span></a><a class=\"ccard rar rar5\" style=\"--rc:#c8322a\" href=\"https://www.inaturalist.org/observations/409185126\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/752302783/medium.jpg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Frigga</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#c8322a\" title=\"Exceptional: rarity by how few iNat records it has\">Exceptional</span> 2 iNat records in Australia</span></span></a><a class=\"ccard rar rar4\" style=\"--rc:#2f6fb5\" href=\"https://www.inaturalist.org/observations/377396401\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/690135137/medium.jpg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Yamangalea</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#2f6fb5\" title=\"Rare: rarity by how few iNat records it has\">Rare</span> 5 iNat records in Australia</span></span></a><a class=\"ccard rar rar4\" style=\"--rc:#2f6fb5\" href=\"https://www.inaturalist.org/observations/318585969\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/575808691/medium.jpg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Psenuc</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#2f6fb5\" title=\"Rare: rarity by how few iNat records it has\">Rare</span> 5 iNat records in Australia</span></span></a><a class=\"ccard rar rar4\" style=\"--rc:#2f6fb5\" href=\"https://www.inaturalist.org/observations/407662657\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/749193560/medium.jpg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Porius</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#2f6fb5\" title=\"Rare: rarity by how few iNat records it has\">Rare</span> 6 iNat records in Australia</span></span></a><a class=\"ccard rar rar4\" style=\"--rc:#2f6fb5\" href=\"https://www.inaturalist.org/observations/407294211\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/748447456/medium.jpg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Chalcolecta</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#2f6fb5\" title=\"Rare: rarity by how few iNat records it has\">Rare</span> 6 iNat records in Australia</span></span></a><a class=\"ccard rar rar4\" style=\"--rc:#2f6fb5\" href=\"https://www.inaturalist.org/observations/407331877\" target=\"_blank\" rel=\"noopener\" title=\"Open the record on iNaturalist\">\n      <span class=\"ph\" style=\"background-image:url('https://static.inaturalist.org/photos/748527016/medium.jpg')\"></span>\n      <span class=\"meta\"><span class=\"nm\"><i>Coccorchestes</i></span>\n        <span class=\"rl\"><span class=\"rchip\" style=\"--rc:#2f6fb5\" title=\"Rare: rarity by how few iNat records it has\">Rare</span> 6 iNat records in Australia</span></span></a></div>"};
+// v2.13: the landing page's showcase, drawn from the snapshot so it costs no calls
+function showcaseHtml() {
+  const el = $('#showcase'); if (!el) return;
+  el.innerHTML = `${stickerHtml(stickerFor(SAMPLE_LOGIN))}<div class="small muted mono">SEE A FINISHED SPOODEX</div>
+    <h2 style="margin:0">${esc(SAMPLE_LOGIN)}</h2>${CASE_SNAP?.login === SAMPLE_LOGIN ? CASE_SNAP.head : ''}
+    <button type="button" data-act="sample">👀 Look around it</button>`;
+}
 const caseSnapCode = () => `const CASE_SNAP = ${JSON.stringify({ login:S.caseLogin, ts:new Date().toISOString().slice(0, 10), ...caseParts(S.caseLogin, S.M, caseIds(S.M, [])) })};`;
 async function showCase(login, picksQ) {
   track('case');
@@ -7840,13 +7919,25 @@ const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladd
   S.pendingEv = (q.get('ev') || '').trim() || null;
   $('#landSticker').src = STICKERS[1]; $('#impSticker').src = STICKERS[3];
   if (u && q.has('case')) { showCase(u, q.get('case')); return; }
-  const target = u || cleanLogin(store.get('lastLogin'));
+  // v2.13: before 'mine' existed, the last SPOODEX opened here was taken as the visitor's own (unless it was the showcase)
+  const last = cleanLogin(store.get('lastLogin'));
+  if (!mineLogin() && last && last !== GUEST && last !== SAMPLE_LOGIN && store.get(ukey(last))) store.set('mine', last);
+  showcaseHtml();
+  const start = q.get('start');   // ?start, ?start=login, ?start=sample: the landing page, even with a saved SPOODEX
+  if (start != null && !u) {
+    loadLanding(start !== 'sample');
+    if (start === 'sample') onboard(SAMPLE_LOGIN, 'sample');
+    else if (start === 'login') $('#loginInput').focus();
+    return;
+  }
+  const target = u || last;
   if (target && store.get(ukey(target))) {
-    loadUser(target);
+    S.linkView = othersDex(target, u ? 'link' : 'saved');
+    loadUser(target, !S.linkView);
     try { S.M = buildModel(); enterApp(); doSync(false); return; } catch (e) { console.warn(e); }
   }
   loadLanding(!u && !S.pendingEv);   // photos for a first-time visitor; with ?u= the import goes first
-  if (u) { $('#loginInput').value = u; onboard(u); }
+  if (u) { $('#loginInput').value = u; onboard(u, 'link'); }
   else if (S.pendingEv) { const ev = evParse(S.pendingEv); if (ev?.m === 'dare') { loadLanding(true); dareBanner(ev); } else startGuest(); }   // an event link opened by someone new: a dare gets the landing (v2.5), the rest open as a guest
 })();
 </script>
