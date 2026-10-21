@@ -48,9 +48,8 @@ def main():
 
     title = font(fonts, 'SpecialElite.ttf', 132)
     d.text((54, 34), 'SPOODEX', font=title, fill=INK)
-    pitch = font(fonts, 'Fraunces.ttf', 36, [36, 400, 0, 0])
-    for i, ln in enumerate(['A Pokédex for jumping spiders, filled', 'in from your own iNaturalist photos.']):
-        d.text((60, 186 + i * 46), ln, font=pitch, fill=INK)
+    pitch = font(fonts, 'FrauncesItalic.ttf', 52, [72, 400, 0, 0])
+    d.text((60, 206), 'Gotta catch em all!', font=pitch, fill=INK)
 
     st = sticker(html, 0)
     st.thumbnail((250, 250))

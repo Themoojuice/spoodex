@@ -1,6 +1,6 @@
 # SPOODEX
 
-A living Pokédex built from the jumping spiders (Salticidae) you have actually found.
+*Gotta catch em all!* A collection of the jumping spiders (Salticidae) you have actually found.
 Enter an iNaturalist username; SPOODEX reads the public records, collapses them to genus,
 and turns them into a collection, a lineage tree, a nearby-genus scanner and quests.
 
