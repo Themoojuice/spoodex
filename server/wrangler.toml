@@ -2,8 +2,13 @@ name = "spoodex"
 main = "worker.js"
 compatibility_date = "2026-09-01"
 
-# Workers KV namespace for "Spooding now". Create it once with `npx wrangler kv namespace create OUT`
-# and paste the id it prints here (server/README.md).
+# One Workers KV namespace holds everything (keys are prefixed: out:, v:, gb:, prof:, claim:, tok:, rl:).
+# Create it once with `npx wrangler kv namespace create OUT` and paste the id it prints here (server/README.md).
 [[kv_namespaces]]
 binding = "OUT"
 id = "PASTE_THE_KV_NAMESPACE_ID_HERE"
+
+[vars]
+# iNaturalist logins that can moderate every guestbook once they've verified (comma-separated)
+ADMINS = "themoojuice"
+# SALT (for hashing addresses in rate limits) is a secret: `npx wrangler secret put SALT` and type any long random text.

@@ -791,6 +791,111 @@ details > summary.scsec { cursor:pointer; }
   .mranges { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; }
   .mart { width:32px; height:32px; }
 }
+
+/* ---------- v2.14 visiting: the exhibition, the binder, the hit list, the guestbook ---------- */
+.exhibit { display:flex; flex-direction:column; gap:18px; margin-top:6px; }
+.exhead { padding:20px 22px; }
+.exhead.stk { padding-right:170px; }
+.exhead .sticker { width:150px; top:-10px; right:8px; transform:rotate(6deg); }
+.exhead h1 { font:600 46px/1.05 var(--head); margin:2px 0 4px; overflow-wrap:anywhere; }
+.exbio { font:italic 20px/1.4 var(--body); margin:8px 0; max-width:36em; }
+.exbio::before { content:'“'; } .exbio::after { content:'”'; }
+.exstats { margin:8px 0 4px; }
+.exstats span { white-space:nowrap; }
+.exvisits { margin:6px 0 0; }
+.exbtns { margin:12px 0 0; gap:6px; }
+.exbtns button, .exbtns .btnlink { padding:5px 10px; font-size:13px; }
+.btnlink.alt { background:var(--panel2); color:var(--ink); border-color:var(--line); font-weight:500; }
+.exh { display:flex; align-items:center; gap:12px; margin:8px 0 -4px; font:600 13px var(--mono); letter-spacing:.24em; text-transform:uppercase; color:var(--ink); }
+.exh::before, .exh::after { content:''; flex:1; border-top:1px solid var(--line); }
+[data-chassis="cabinet"] .exh { color:#efe4cc; }
+[data-chassis="cabinet"] .exh::before, [data-chassis="cabinet"] .exh::after { border-color:#8f6420; }
+.excentre { display:grid; grid-template-columns:minmax(0, 3fr) minmax(0, 2fr); gap:18px; align-items:start; }
+.exframe { display:block; width:100%; padding:12px; border:0; border-radius:3px; cursor:zoom-in; background:linear-gradient(135deg, #8a6038, #4b311d 55%, #7a5330);
+  box-shadow:0 10px 26px rgba(0,0,0,.35), inset 0 0 0 2px #e2bf7a, inset 0 0 0 5px #5a3b22; }
+.exframe .mat { display:block; padding:16px; background:#f3ead4; box-shadow:inset 0 2px 6px rgba(0,0,0,.25); }
+.exframe .ph { display:block; aspect-ratio:4/3; background:var(--panel2) center/cover no-repeat; box-shadow:0 0 0 1px rgba(0,0,0,.25); }
+.exframe:hover { box-shadow:0 12px 30px rgba(0,0,0,.42), inset 0 0 0 2px #f0d494, inset 0 0 0 5px #5a3b22; }
+.exlabel { border-left:5px solid var(--accent); }
+.exlabel.rar { border-left-color:var(--rc); }
+.exlabel h2 { font:italic 600 30px/1.1 var(--head); margin:2px 0; }
+.exlabel .kv { margin-top:8px; }
+.exgrid .ccard { padding:0; text-align:left; cursor:pointer; font:inherit; color:inherit; width:100%; }
+.exgrid .ccard:hover { border-color:var(--accent); transform:translateY(-2px); }
+.exgrid .ccard .ph { position:relative; display:block; }
+.exgrid .ccard .meta { flex:1; }
+.gbcnt { white-space:nowrap; margin-left:4px; }
+.gbcnt:empty { display:none; }
+.nmine { display:inline-block; background:var(--ink); color:var(--panel); font:600 10.5px var(--mono); letter-spacing:.04em; padding:2px 7px; border-radius:99px; white-space:nowrap; }
+.ph > .nmine, .card .ph > .nmine { position:absolute; left:6px; bottom:6px; z-index:2; }
+.exmiles { list-style:none; margin:0; padding:4px 0 0 18px; border-left:2px solid var(--line); }
+.exmiles li { position:relative; margin:0 0 10px; }
+.exmiles li::before { content:''; position:absolute; left:-25px; top:6px; width:10px; height:10px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 3px var(--bg); }
+.exmiles li .mono { display:inline-block; min-width:92px; color:var(--muted); }
+[data-chassis="cabinet"] .exmiles li, [data-chassis="cabinet"] .exmiles a { color:#efe4cc; }
+[data-chassis="cabinet"] .exmiles li .mono, [data-chassis="cabinet"] .exmiles .muted { color:#c9b48f; }
+.exyours .spoods .lcard { position:relative; }
+.hitbtn { margin:4px 6px 6px; padding:3px 6px; font-size:11.5px; }
+.hitbtn.on { background:var(--lit); color:var(--panel); border-color:var(--lit); }
+.hitcard { position:relative; }
+.hitcard.got { border-color:var(--lit); }
+.hitcard.got .cn { color:var(--lit); font-weight:600; }
+.hitx { position:absolute; top:4px; right:4px; z-index:2; width:24px; height:24px; padding:0; border-radius:50%; font-size:12px; line-height:22px; background:rgba(246,238,219,.92); }
+.exfoot { justify-content:center; margin-top:4px; }
+.exmodes { display:flex; flex-direction:column; gap:6px; }
+.expicks { display:flex; flex-wrap:wrap; gap:8px; margin:6px 0; }
+.expick { display:flex; align-items:center; gap:6px; padding:3px 6px 3px 3px; border:1px solid var(--line); border-radius:var(--radius); background:var(--panel2); }
+.expick .ph { width:34px; height:34px; border-radius:2px; background:center/cover no-repeat; }
+.expick i { font-size:13px; }
+.expick.first { border:2px solid var(--accent); }
+.expick button { padding:1px 6px; }
+.modal textarea { font:15px var(--body); padding:6px 8px; border:1px solid var(--line); border-radius:var(--radius); background:var(--panel2); }
+.vcode { font-size:22px; } .vcode code { font:600 22px var(--mono); padding:4px 10px; background:var(--panel2); border:1px dashed var(--accent); border-radius:var(--radius); user-select:all; }
+/* the binder */
+.overlay.binder { background:rgba(18,12,8,.88); align-items:flex-start; padding-top:28px; }
+.bmodal { position:relative; width:min(760px, 100%); margin:auto; color:#f6eedb; }   /* auto margins centre it without clipping the top when it's taller than the window */
+.bmodal .x { position:absolute; top:-6px; right:0; z-index:3; background:#f6eedb; color:#2a2118; }
+.bstage { display:grid; grid-template-columns:44px minmax(0, 1fr) 44px; gap:8px; align-items:center; touch-action:pan-y; }
+.bnav { height:64px; padding:0; font-size:34px; line-height:1; background:rgba(246,238,219,.12); color:#f6eedb; border-color:rgba(246,238,219,.3); }
+.bnav:disabled { opacity:.25; cursor:default; }
+.bcard { margin:0; background:var(--panel); color:var(--ink); border:3px solid var(--line); border-radius:var(--radius); overflow:hidden; box-shadow:0 16px 40px rgba(0,0,0,.5); animation:bin .25s ease-out; }
+.bcard.rar { border-color:var(--rc); }
+@keyframes bin { from { opacity:.3; transform:scale(.97); } to { opacity:1; transform:none; } }
+.bcard .ph { position:relative; aspect-ratio:4/3; max-height:52vh; width:100%; background:var(--panel2) center/cover no-repeat; display:grid; place-items:center; }
+.bcard .rarb { position:absolute; top:8px; right:8px; }
+.bcard figcaption { padding:10px 14px 12px; border-top:3px double var(--line); }
+.bcard .nm { font:italic 600 26px/1.15 var(--head); }
+.bcard figcaption p { margin:4px 0 0; }
+.bside { margin:12px 52px 0; padding:12px 14px; background:var(--panel); color:var(--ink); border-radius:var(--radius); max-height:34vh; overflow:auto; }
+/* the guestbook */
+.gbform { display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+.gbform textarea { width:100%; resize:vertical; font:15px var(--body); padding:6px 8px; border:1px solid var(--line); border-radius:var(--radius); background:var(--panel2); }
+.gbstamps { display:flex; flex-wrap:wrap; gap:6px; }
+.gbst { padding:4px 10px; border-radius:99px; font-size:13px; }
+.gbst[aria-pressed="true"] { background:var(--accent); color:var(--panel); border-color:var(--accent); }
+.gblist { list-style:none; margin:0; padding:0; }
+.gbe { display:grid; grid-template-columns:28px minmax(0, 1fr); gap:6px; padding:8px 0; border-top:1px dashed var(--line); }
+.gbe:first-child { border-top:0; }
+.gbe .gbk { font-size:20px; line-height:1.2; }
+.gbe .gbm { white-space:pre-line; overflow-wrap:anywhere; }
+.gbe.st-pending { opacity:.75; background:repeating-linear-gradient(135deg, transparent 0 8px, rgba(168,65,42,.06) 8px 16px); }
+.gbe.st-hidden { opacity:.5; }
+.gbby { font-weight:600; color:var(--ink); }
+a.gbby { color:var(--lit); }
+@media (max-width:700px) {
+  .exhead.stk { padding-right:16px; padding-top:22px; }
+  .exhead .sticker { width:78px; top:-14px; right:4px; }
+  .exhead h1 { font-size:32px; padding-right:70px; }
+  .exbio { font-size:17px; }
+  .excentre { grid-template-columns:1fr; gap:12px; }
+  .exframe { padding:8px; } .exframe .mat { padding:9px; }
+  .exlabel h2 { font-size:24px; }
+  .bstage { grid-template-columns:34px minmax(0, 1fr) 34px; gap:4px; }
+  .bnav { height:52px; font-size:28px; }
+  .bside { margin:10px 0 0; max-height:none; }
+  .overlay.binder { padding-top:40px; }
+  .bcard .nm { font-size:22px; }
+}
 </style>
 </head>
 <body data-chassis="notebook">
@@ -969,7 +1074,7 @@ const cellKey = (lat, lng, deg) => `${Math.floor(lat/deg)}:${Math.floor(lng/deg)
 // Saves live in IndexedDB (localStorage caps out around 5 MB). Reads come from an in-memory copy loaded once at boot,
 // so store.get/set stay synchronous; writes are batched into IndexedDB in the background. Prefs and the last login
 // stay in localStorage. Where IndexedDB is unavailable, everything falls back to localStorage as before.
-const LS_ONLY = new Set(['prefs', 'lastLogin', 'mine']);
+const LS_ONLY = new Set(['prefs', 'lastLogin', 'mine', 'auth']);
 const store = {
   db: null, mem: new Map(), dirty: new Map(), timer: 0, warned: false,
   idb(k) { return this.db && !LS_ONLY.has(k); },
@@ -1973,6 +2078,7 @@ function questDone(q, M) {
 // Tabs open up with the collection: `at` = genera needed (owner to confirm, HANDOVER §12). A tab also opens for good once a link or
 // button takes you there (a Compare or event link, "Bounty board →"), and ⚙ "Show every tab" opens them all.
 const TABS = [
+  { k:'visit', label:'Exhibition', has:() => exOn() },   // v2.14: only on someone else's SPOODEX, or your own preview
   { k:'profile', label:'Profile' },
   { k:'dex', label:'SPOODEX' },
   { k:'pets', label:'Spoodarium', has:() => S.M.pets.length || S.M.G.size },   // captive records, or a first genus (v2.9: the terrarium)
@@ -1988,7 +2094,7 @@ const TABS = [
 // Three sections, each a row of views (v2.3, owner 2026-10-10/11: ten tabs in one row were too many; Quests sits under Go spooding). Views still unlock one by one
 // (`at`); a section shows once any of its views is open and reopens on the view you last used in it.
 const SECTIONS = [
-  { k:'collection', label:'Collection', tabs:['profile', 'dex', 'pets', 'tree'] },
+  { k:'collection', label:'Collection', tabs:['visit', 'profile', 'dex', 'pets', 'tree'] },
   { k:'go', label:'Go spooding', tabs:['map', 'quests', 'wanted', 'trip'] },
   { k:'mates', label:'Mates', tabs:['crew', 'compare', 'ladder'] },
 ];
@@ -1999,7 +2105,7 @@ const tabOn = t => S.prefs.peek || tabEarned(t);
 function tabNews() {
   const cur = TABS.find(t => t.k === S.tab);
   if (cur && !tabEarned(cur)) { S.u.tabs = [...(S.u.tabs || []), cur.k]; saveUser(); }
-  const vis = TABS.filter(tabEarned).map(t => t.k);
+  const vis = TABS.filter(t => t.k !== 'visit' && tabEarned(t)).map(t => t.k);
   if (!S.u.tabsSeen) { S.u.tabsSeen = vis; saveUser(); }
   const fresh = vis.filter(k => !S.u.tabsSeen.includes(k));
   if (fresh.length) {
@@ -2029,6 +2135,8 @@ function softRender() { if (renderPending) return; renderPending = true; setTime
 
 function render() {
   if ($('#app').classList.contains('hidden')) return;   // still on the landing page or the reveal: enterApp() renders
+  if (S.exPreview && S.tab !== 'visit') S.exPreview = false;
+  if (S.tab === 'visit' && !exOn()) S.tab = 'profile';
   const M = S.M, tier = TIERS[M.tier];
   if (S.tab !== 'map') dropMap3d();
   document.body.dataset.chassis = S.prefs.chassis === 'auto' ? tier.chassis : S.prefs.chassis;
@@ -2054,7 +2162,7 @@ function render() {
   if (S.tab === 'pets') setTimeout(loadPetWild, 0);
   const plan = S.tab === 'trip' && $('#tripPlan');
   if (plan) plan.innerHTML = viewTripPlan();
-  else v.innerHTML = ({ profile:viewProfile, dex:viewDex, pets:viewPets, tree:viewTree, map:viewMapShell, quests:viewQuests, compare:viewCompare, ladder:viewLadder, crew:viewCrew, wanted:viewWanted, trip:viewTrip })[S.tab]();
+  else v.innerHTML = ({ visit:viewVisit, profile:viewProfile, dex:viewDex, pets:viewPets, tree:viewTree, map:viewMapShell, quests:viewQuests, compare:viewCompare, ladder:viewLadder, crew:viewCrew, wanted:viewWanted, trip:viewTrip })[S.tab]();
   if (S.tab === 'map') { initMap(); loadWx(); }
   if (S.tab === 'trip') mountTripMap();
   if (S.tab === 'crew') { mountEventMap(); evAnimate(); }
@@ -2079,7 +2187,7 @@ function viewProfile() {
       ${hl ? `<div class="row" style="gap:8px;margin-top:6px"><span>${headlineHtml(hl)}</span>${bar(hl.found, hl.total)}</div>` : ''}
       ${n ? weekStreakHtml(M.week) : ''}
       ${isGuest() || S.linkView ? '' : `<p class="row herobtns"><button class="primary" data-act="syncNow">📥 Check my new uploads</button>${S.u.meta.lastSync ? `<span class="small muted">checked ${agoShort(Date.parse(S.u.meta.lastSync))}</span>` : ''}</p>`}
-      ${isGuest() || S.linkView || !n ? '' : `<p class="row herobtns"><button data-act="dexImage">📤 My SPOODEX image</button><button data-act="caseEdit">🗄 Display case</button><button data-act="card">🪪 Title card</button>${M.fieldDays.length ? `<button data-act="wrapped">🎁 ${esc(wrappedYears()[0])} in spoods</button>` : ''}</p>`}
+      ${isGuest() || S.linkView || !n ? '' : `<p class="row herobtns"><button data-act="dexImage">📤 My SPOODEX image</button><button data-act="caseEdit">🏛 Exhibition</button><button data-act="card">🪪 Title card</button>${M.fieldDays.length ? `<button data-act="wrapped">🎁 ${esc(wrappedYears()[0])} in spoods</button>` : ''}</p>`}
     </div>`;
   // your genera, newest first, then a few mystery spoods (records not yet identified to genus) with their photos
   const myst = M.leads.flatMap(l => l.obs).filter(o => o.ph.length).sort((a, b) => (b.d || '').localeCompare(a.d || '') || b.id - a.id).slice(0, 6);
@@ -2102,7 +2210,7 @@ function viewProfile() {
     ${M.pets.length ? `<button data-tab="pets">🏺 Your captive spoods and where to find wild ones</button>` : ''}
     ${isGuest() ? '<button data-act="switch">I have an iNaturalist account</button>' : ''}</div></div>` : '';
   const news = newsHtml(), tips = tipsOnce(true);
-  return `${hero}${isGuest() ? joinHtml() : ''}${whatsNewHtml()}${spoods}${finds}${featHtml()}${n || isGuest() ? '' : starter}${news ? `<div style="margin-top:16px">${news}</div>` : ''}
+  return `${hero}${isGuest() ? joinHtml() : ''}${whatsNewHtml()}${spoods}${exOwnerHtml()}${finds}${hitHtml()}${featHtml()}${n || isGuest() ? '' : starter}${news ? `<div style="margin-top:16px">${news}</div>` : ''}
   ${tips ? `<div style="margin-top:16px">${tips}</div>` : ''}
   ${trophyHtml()}${merchHtml()}`;
 }
@@ -2117,6 +2225,7 @@ const joinHtml = () => `<div class="panel" style="margin-top:16px"><h2>Start you
       <button data-act="haveAccount">I already have an account</button><button data-act="sample">👀 Look around a finished SPOODEX</button></div></div>`;
 // The bar above every tab: a guest's way in, or whose SPOODEX a visitor is looking at
 function modeBarHtml() {
+  if (S.exPreview) return `<div class="modebar"><span class="sp">Preview: your exhibition as visitors see it.</span><button class="small" data-act="caseEdit">✏️ Edit</button><button class="small primary" data-act="exPreviewEnd">Back to your Profile</button></div>`;
   if (isGuest()) return S.tab === 'profile' ? '' : `<div class="modebar"><span class="sp">Browsing as a guest.</span><button class="small primary" data-act="joinPanel">Start your own SPOODEX</button></div>`;
   if (!S.linkView) return '';
   const m = mineLogin();
@@ -2163,7 +2272,7 @@ function cardHtml(id, num) {
   }
   const cls = g.state === 'MASTERED' ? 'b-mast' : g.state === 'SUPPORTED' ? 'b-supp' : 'b-disc', rar = rarAttrs(id);
   return `<div class="card ${g.state === 'MASTERED' && moduleOn(5) ? 'gilded' : ''}${rar.cls}" data-genus="${id}"${rar.style}><span class="badge ${cls}">${g.state}</span>
-    <div class="ph" style="background-image:url('${esc(photoSize(g.cover,'small') || info.p || '')}')">${rar.r?.lv >= 2 ? `<span class="rar rarb">${rarityChip(rar.r)}</span>` : ''}<button class="flip" data-act="flip" data-v="${id}" aria-label="Turn card over" title="Turn card over">↻</button></div>
+    <div class="ph" style="background-image:url('${esc(photoSize(g.cover,'small') || info.p || '')}')">${rar.r?.lv >= 2 ? `<span class="rar rarb">${rarityChip(rar.r)}</span>` : ''}${S.linkView && myMissing(id) ? '<span class="nmine">Not in yours</span>' : ''}<button class="flip" data-act="flip" data-v="${id}" aria-label="Turn card over" title="Turn card over">↻</button></div>
     <div class="meta"><div class="nm">${esc(g.name)}</div>${cnHtml(id)}<div class="num">#${String(num).padStart(3,'0')} · ${esc(tribe)}</div>
     <div class="small muted">${g.obs.length} obs · ${g.c01.size} loc. · ${g.sp.size} sp.</div>
     <div class="pips">${CRITERIA.map(c => `<i class="${g.f[c.k]?'on':''}"></i>`).join('')}</div></div></div>`;
@@ -3462,7 +3571,7 @@ async function openGenus(id) {
     <div class="muted">${esc(lin)}</div>${wow}
     <div class="pips" style="max-width:320px;margin:8px 0">${CRITERIA.map(c => `<i class="${g.f[c.k]?'on':''}"></i>`).join('')}</div>
     <div class="grid2">
-      <div><h3>Your records</h3><dl class="kv">
+      <div><h3>${S.linkView ? esc(poss(S.login)) + ' records' : 'Your records'}</h3><dl class="kv">
         <dt>Observations</dt><dd>${g.obs.length}</dd>
         <dt>Localities</dt><dd>${g.c01.size}</dd>
         ${altitudeLine(g)}
@@ -3471,13 +3580,14 @@ async function openGenus(id) {
         <dt>Latest</dt><dd>${esc(g.last.d)}</dd>
         <dt>Best record</dt><dd>${g.f.rg ? 'Research Grade' : g.f.supported ? 'Community-supported genus' : 'Your ID (not yet community-supported)'}</dd>
         ${shareLine(g)}
-        <dt>Your ${ordinal(g.discIndex)} genus</dt><dd></dd>
+        <dt>${S.linkView ? esc(poss(S.login)) : 'Your'} ${ordinal(g.discIndex)} genus</dt><dd></dd>
       </dl></div>
       <div><h3>Mastery challenges</h3><ul class="checks">${CRITERIA.map(c => `<li class="${g.f[c.k]?'done':''}">${g.f[c.k]?'☑':'☐'} ${c.icon} ${esc(c.label)}${g.f[c.k] ? '' : fixIt(g, c.k)}</li>`).join('')}</ul>
         <p class="small muted">Added annotations on iNat? Press Sync. If a box doesn't tick, use ⚙ → Full resync.</p>
         <p class="small muted">Mastered at ${MASTERY_AT}/10. Sex & life stage come from iNat annotations; behaviour from your descriptions/tags/fields.</p></div>
     </div>
-    <h3 style="margin-top:12px">Your gallery</h3>
+    ${S.linkView ? exMineTag(id) : ''}${gbOn() && !isGuest() ? `<h3 style="margin-top:12px">Guestbook for this card</h3>${gbBlock(S.login, 'g' + id)}` : ''}
+    <h3 style="margin-top:12px">${S.linkView ? esc(poss(S.login)) + ' gallery' : 'Your gallery'}</h3>
     <div class="gallery">${g.photos.map(p => `<a href="https://www.inaturalist.org/observations/${p.id}" target="_blank" rel="noopener" style="background-image:url('${esc(photoSize(p.url,'small'))}')"></a>`).join('')}</div>
     ${bestInGenus(id)}
     ${moduleOn(4) ? `<h3 style="margin-top:12px">Mastery points ledger (${fmt(g.xp)} points)</h3><div class="small" style="max-height:140px;overflow:auto">${g.xpLog.slice().reverse().map(e => `<div>${esc(e.d)} · ${esc(e.label)} <span class="reward">+${e.xp}</span></div>`).join('')}</div>` : ''}
@@ -3510,7 +3620,7 @@ async function openGenus(id) {
     <div class="hero ${g ? '' : 'unknown'}" style="background-image:url('${esc(hero||'')}')"></div>
     <div class="body">${body}${g && !isGuest() ? `<p class="row" style="margin:10px 0 0"><button data-act="dareGenus" data-v="${id}">🎯 Challenge a friend</button></p>` : ''}${when}${speciesSection(id)}${theirs}${rarity}${hist}
       <p class="small"><a href="https://www.inaturalist.org/taxa/${id}" target="_blank" rel="noopener">iNaturalist taxon page ↗</a>
-      ${g ? ` · <a href="https://www.inaturalist.org/observations?user_id=${encodeURIComponent(S.login)}&taxon_id=${id}" target="_blank" rel="noopener">your records ↗</a>` : ''}
+      ${g ? ` · <a href="https://www.inaturalist.org/observations?user_id=${encodeURIComponent(S.login)}&taxon_id=${id}" target="_blank" rel="noopener">${S.linkView ? esc(poss(S.login)) + ' records' : 'your records'} ↗</a>` : ''}
       ${!g && stockCr(id) ? ` · <span class="muted">Silhouette from photo ${esc(stockCr(id))}</span>` : ''}</p>
     </div></div></div>`;
   if (!info.s && !info.p) ensureInfo([id]).then(() => { if ($('#modalRoot').innerHTML && S.info[id]?.s) openGenus(id); });
@@ -6987,6 +7097,7 @@ function loadUser(login, keep = true) {
 function updateUrl() {
   const p = new URLSearchParams();
   if (S.login && !isGuest()) p.set('u', S.login);
+  if (S.linkView && S.exLink?.length) p.set('ex', S.exLink.join(','));
   if (S.cmp?.M && S.cmp.login) p.set('vs', S.cmp.login);
   const evCode = S.tab === 'crew' && S.evOpen && S.events[S.evOpen]?.code;   // usernames, dates, a place id and taxon ids only
   if (evCode) p.set('ev', evCode);
@@ -7018,14 +7129,14 @@ async function doSync(full) {
     fillElev();
     // mystery spoods identified since the last sync: records that were above genus and now sit in a genus (no extra call)
     const solved = prevLeads.map(id => S.u.obs[id]).filter(o => o && !o.cap && genusOf(o.anc));
-    const items = celebrations(fresh, solved);
+    const items = S.linkView ? [] : celebrations(fresh, solved);   // v2.14: a visit never celebrates someone else's finds as yours
     if (items.length) revealQueue(items);
-    merchCheck(!!S.u.merch);
-    if (!items.length && !isGuest() && !$('#reveal')) {
+    if (!S.linkView) merchCheck(!!S.u.merch);
+    if (!items.length && !isGuest() && !S.linkView && !$('#reveal')) {
       const newN = Object.keys(S.u.obs).length - prevN, nx = merchOn() && merchNext();
       toast(`${newN > 0 ? `${plural(newN, 'new record')}, no new genera.` : 'No new records since the last check.'}${nx ? ` ${merchToGo(nx.at)} to your next reward.` : ''}`);
     }
-    queueRanks(prevRank);
+    if (!S.linkView) queueRanks(prevRank);
     loadHomeGhosts();
   } catch (e) { toast(e.message); }
   btn.disabled = false; btn.innerHTML = '⟳<span class="lbl"> Sync</span>';
@@ -7116,8 +7227,9 @@ function tipsOnce(dismiss = false) {
 function enterApp(tab) {
   $('#onboard').classList.add('hidden'); $('#app').classList.remove('hidden');
   markVisit();
-  S.tab = tab || (S.M.G.size || S.u.base ? 'profile' : 'map');
+  S.tab = tab || (S.linkView ? 'visit' : S.M.G.size || S.u.base ? 'profile' : 'map');
   updateUrl(); render();
+  if (S.linkView) { loadPage(S.login); visitPing(S.login); }
   if (S.pendingEv) { const c = S.pendingEv; S.pendingEv = null; openEventCode(c, true); }
   else if (S.pendingVs) { const v = S.pendingVs; S.pendingVs = null; S.tab = 'compare'; render(); loadCompare(v); }
   else if (S.pendingCrew) { const c = S.pendingCrew; S.pendingCrew = null; S.tab = 'crew'; setCrew(c); }
@@ -7162,8 +7274,10 @@ function settings() {
       <button data-act="switch">Switch user</button>
       <button data-act="wipe">Forget this user's cache</button>
     </div>
+    ${gbOn() ? `<p style="margin-top:12px">${S.auth ? `Signed in as <b>✓ ${esc(S.auth.u)}</b>${S.auth.admin ? ' (admin)' : ''} <button class="small" data-act="signOut">Sign out</button>` : '<button data-act="verify">✓ Verify it’s you</button>'}</p>` : ''}
     ${installHtml()}
     <p class="small muted" style="margin-top:14px">Anonymous visit counts via GoatCounter: no cookies, no usernames, no locations.</p>
+    ${gbOn() ? '<p class="small muted">Guestbook entries are public and kept on the SPOODEX server. Visits to a SPOODEX are counted there by day, without your username.</p>' : ''}
     <p class="small muted">Share images fetch iNaturalist photos through wsrv.nl, an image cache, so the downloaded picture can include them. Sent: the photo's public address.</p>
     <p class="small">Weather units <select data-pref="units">${[['', `Automatic (${(() => { const u = S.prefs.units; S.prefs.units = ''; const r = imperial(); S.prefs.units = u; return r; })() ? '°F, inches' : '°C, mm'})`], ['metric', '°C, mm'], ['us', '°F, inches']].map(([v, l]) => `<option value="${v}" ${(S.prefs.units || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></p>
     <p class="small muted">Weather lookups send your home base, and the destination of a dated trip, rounded to ~10 km, to Open-Meteo. Place searches send what you type to iNaturalist and Open-Meteo.</p>
@@ -7216,6 +7330,28 @@ document.addEventListener('click', e => {
   if (a === 'dareGenus') { e.preventDefault(); dareGenus(+val); return; }
   if (a === 'evDareWho' && S.evDraft) { e.preventDefault(); S.evDraft.r = `${S.login}, ${val}`; render(); return; }
   if (a === 'caseEdit') { e.preventDefault(); caseEditor(); return; }
+  if (a === 'binder') { e.preventDefault(); openBinder(+val); return; }
+  if (a === 'binderAt') { e.preventDefault(); openBinder(exOrder().all.indexOf(+val)); return; }
+  if (a === 'bGo') { bStep(+val); return; }
+  if (a === 'hit') { e.preventDefault(); const id = +val; hitToggle([id], !hitIds().has(id)); if ($('.binder')) drawBinder(); else if ($('#modalRoot [data-gpage]')) openGenus(id); else render(); return; }
+  if (a === 'hitAll') { const have = hitIds(), my = myModel(); hitToggle([...S.M.G.keys()].filter(id => my && !my.M.G.has(id) && !have.has(id)), true); render(); return; }
+  if (a === 'hitDrop') { hitToggle([+val], false); render(); return; }
+  if (a === 'gbStamp') { const f = t.closest('form'); f.querySelectorAll('.gbst').forEach(b => b.setAttribute('aria-pressed', String(b === t && b.getAttribute('aria-pressed') !== 'true'))); return; }
+  if (a === 'gbRetry') { delete S.pages[val]; loadPage(val, true); return; }
+  if (a === 'gbAll') { S.gbAll = val; const [l] = val.split('|'); pageRepaint(l, S.pages[l]); return; }
+  if (a === 'gbMod') { e.preventDefault(); gbMod(val); return; }
+  if (a === 'verify') { e.preventDefault(); openVerify(); return; }
+  if (a === 'verifyCheck') { verifyCheck(); return; }
+  if (a === 'verifyBack') { S.verify.step = 'ask'; S.verify.msg = ''; drawVerify(); return; }
+  if (a === 'verifyCopy') { navigator.clipboard.writeText(S.verify.code).then(() => toast('Code copied.'), () => {}); return; }
+  if (a === 'signOut') { signOut(); return; }
+  if (a === 'exPreview') { $('#modalRoot').innerHTML = ''; S.exPreview = true; S.tab = 'visit'; track('ex-preview'); render(); scrollTo(0, 0); return; }
+  if (a === 'exPreviewEnd') { S.exPreview = false; S.tab = 'profile'; render(); scrollTo(0, 0); return; }
+  if (a === 'exCopy') { e.preventDefault(); const url = exLink(); track('ex-copy'); navigator.clipboard.writeText(url).then(() => toast('Exhibition link copied.'), () => window.prompt('Copy this link:', url)); return; }
+  if (a === 'exShare') { e.preventDefault(); navigator.share?.({ title:`${poss(S.login)} SPOODEX`, url:exLink() }).catch(() => {}); return; }
+  if (a === 'exFirst') { const id = +val; S.u.casePicks = [id, ...(S.u.casePicks || []).filter(x => x !== id)]; saveUser(); caseEditor(); exPublish(); return; }
+  if (a === 'exGb') { S.u.exGb = val; saveUser(); exPublish(true); return; }
+  if (a === 'exBioSave') { const el = $('#exBio'); S.u.exBio = (el?.value || '').trim().slice(0, 160); saveUser(); const m = $('#exSaved'); if (m) m.textContent = 'Saving…'; exPublish(true); return; }
   if (a === 'casePick') { e.preventDefault(); casePick(+val); return; }
   if (a === 'caseCopy') { e.preventDefault(); caseShare(false); return; }
   if (a === 'caseShare') { e.preventDefault(); caseShare(true); return; }
@@ -7288,7 +7424,7 @@ document.addEventListener('click', e => {
   if (a === 'evDel') { delete S.events[val]; evSave(); render(); }
   if (a === 'clearBase') { delete S.u.base; saveUser(); S.M = buildModel(); render(); }
   if (a === 'guest') startGuest();
-  if (a === 'openDex') enterApp(S.M.G.size ? 'dex' : S.M.pets.length ? 'pets' : undefined);
+  if (a === 'openDex') enterApp(S.linkView ? 'visit' : S.M.G.size ? 'dex' : S.M.pets.length ? 'pets' : undefined);
   if (a === 'pets') { e.preventDefault(); if ($('#app').classList.contains('hidden')) enterApp('pets'); else { S.tab = 'pets'; updateUrl(); render(); } }
   if (a === 'treeView') { S.prefs.treeView = val; savePrefs(); render(); }
   if (a === 'notes') { e.preventDefault(); openNotes(val ? +val : null); }
@@ -7316,7 +7452,7 @@ document.addEventListener('click', e => {
   if (a === 'haveAccount') { track('guest-has-account'); location.href = `${location.pathname}?start=login`; }
   if (a === 'startOwn') location.href = `${location.pathname}?start`;
   if (a === 'joinPanel') { S.tab = 'profile'; updateUrl(); render(); scrollTo(0, 0); }
-  if (a === 'thisIsMe') { store.set('mine', S.login); store.set('lastLogin', S.login); S.linkView = false; render(); }
+  if (a === 'thisIsMe') { store.set('mine', S.login); store.set('lastLogin', S.login); S.linkView = false; if (S.tab === 'visit') S.tab = 'profile'; render(); }
   if (a === 'switch') { store.del('lastLogin'); location.href = location.pathname; }
   if (a === 'wipe') { store.del(ukey(S.login)); store.del('lastLogin'); store.flush().finally(() => location.href = location.pathname); }
 });
@@ -7324,6 +7460,8 @@ document.addEventListener('submit', async e => {
   const f = e.target.dataset.form; if (!f) return;
   e.preventDefault();
   if (f === 'compare') loadCompare(e.target.login.value);
+  if (f === 'gb') gbPost(e.target);
+  if (f === 'verify') verifyAsk(e.target.u.value);
   if (f === 'crew') setCrew(e.target.logins.value.split(/[\s,;]+/));
   if (f === 'evPlace' && S.evDraft) {
     const q = e.target.q.value.trim(), D = S.evDraft; if (!q) return;
@@ -7396,6 +7534,11 @@ $('#loginInput').addEventListener('input', () => track('username-typed'), { once
 // What changed, newest first: shown once on Profile to returning players, and in full from Settings. The owner's rule (2026-10-13):
 // sections and views stay where they are; when something has to move, it gets a line here.
 const CHANGES = [
+  { v:'2.14', d:'2026-10-21', items:[
+    { h:'Someone else\'s SPOODEX opens on their Exhibition: a centrepiece, up to 8 more on display, milestones, and ▶ Walk the collection, one card at a time (swipe or use the arrow keys).' },
+    { h:'Visiting with your own SPOODEX: their genera you don\'t have are marked "Not in yours", and 🎯 puts them on your hit list, which sits on your Profile under Three to find next.' },
+    { h:'Profile: 🗄 Display case is now 🏛 Exhibition. Pick your centrepiece and what\'s on display, see it as a visitor, and copy its link.' },
+  ] },
   { v:'2.13', d:'2026-10-21', items:[
     { h:'Landing page: a finished SPOODEX (themoojuice) up front. Look around it without it becoming yours.' },
     { h:'Guests get a "Start your own SPOODEX" panel: three steps, a link to join iNaturalist, and the finished SPOODEX to look around.' },
@@ -7765,8 +7908,9 @@ const srvUrl = () => SERVER || (/^(localhost|127\.0\.0\.1|.+\.localhost|192\.168
 const OUT_TTL = 120e3, OUT_POLL = 180e3;
 S.out = { at:0, list:[], ok:null, busy:false };
 async function srv(path, opts = {}) {
-  const r = await fetch(srvUrl() + path, opts.body ? { ...opts, headers:{ 'content-type':'application/json' } } : opts);
-  if (!r.ok) throw new Error(`The SPOODEX server answered ${r.status}`);
+  const headers = { ...(opts.body ? { 'content-type':'application/json' } : {}), ...(S.auth?.token ? { authorization:'Bearer ' + S.auth.token } : {}) };
+  const r = await fetch(srvUrl() + path, { ...opts, headers });
+  if (!r.ok) { let m = ''; try { m = (await r.json()).error; } catch {} throw new Error(m || `The SPOODEX server answered ${r.status}`); }
   return r.json();
 }
 const outOn = () => !!srvUrl() && !!S.u && !isGuest() && S.crew.logins.length > 0;
@@ -7834,7 +7978,9 @@ function caseHtml(login, { head, cards }) {
       <h1>${esc(login)}</h1>${head}</div>${cards}
     <p class="row" style="margin-top:18px">${self ? `<a class="btnlink" href="?u=${encodeURIComponent(mine)}">Open my SPOODEX</a>`
       : own ? `<a class="btnlink" href="?u=${encodeURIComponent(mine)}&vs=${encodeURIComponent(login)}">Compare with mine</a>` : ''}
-      ${self ? '' : `<a class="${own ? '' : 'btnlink'}" href="${location.pathname}">${own ? 'Open my SPOODEX' : 'Start your own SPOODEX'}</a>`}</p>`;
+      ${self ? '' : `<a class="${own ? '' : 'btnlink'}" href="${location.pathname}">${own ? 'Open my SPOODEX' : 'Start your own SPOODEX'}</a>`}
+      <a href="?u=${encodeURIComponent(login)}">▶ Walk the whole collection</a></p>
+    ${gbOn() ? `<p class="small">${visitsSlot(login)}</p><h2 class="exh">Guestbook</h2><div class="panel">${gbBlock(login, 'p')}</div>` : ''}`;
 }
 // The owner's default case, drawn at once for a first-time visitor (the case link in the launch posts) while the live one loads.
 // Regenerate on ?u=themoojuice&case with caseSnapCode() in the console and paste over this line.
@@ -7848,7 +7994,7 @@ function showcaseHtml() {
 }
 const caseSnapCode = () => `const CASE_SNAP = ${JSON.stringify({ login:S.caseLogin, ts:new Date().toISOString().slice(0, 10), ...caseParts(S.caseLogin, S.M, caseIds(S.M, [])) })};`;
 async function showCase(login, picksQ) {
-  track('case');
+  track('case'); visitPing(login);
   const picks = (picksQ || '').split(',').map(Number).filter(n => Number.isInteger(n) && n > 0);
   $('#onboard').classList.add('hidden'); $('#app').classList.add('hidden');
   const box = document.createElement('main'); box.id = 'caseView'; box.className = 'wrap'; document.body.append(box);
@@ -7875,29 +8021,409 @@ async function showCase(login, picksQ) {
     await draw();
   } catch (e) { if (!hit && !$('#caseView .casegrid')) box.innerHTML = `<div class="panel" style="margin-top:24px"><p>${esc(noUser(e, login))}</p><a class="btnlink" href="${location.pathname}">Open SPOODEX</a></div>`; }
 }
-// The owner's side: pick up to 9 genera for the case, then copy or share the link
-function caseEditor() {
-  const M = S.M, picks = (S.u.casePicks || []).filter(id => M.G.has(id)), shown = caseIds(M, picks);
-  const all = [...M.genera].filter(g => g.cover).sort(rarestFirst);
-  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(880px,100%)"><button class="x" data-close="1">✕</button><div class="body">
-    <h2>Display case</h2>
-    <p class="small">A page of your ${shown.length === CASE_N ? 9 : shown.length} ${picks.length ? 'chosen' : 'rarest'} genera for anyone with the link. No places are shown.</p>
-    <p class="row"><button class="primary" data-act="caseCopy">🔗 Copy link</button>${navigator.share ? '<button data-act="caseShare">📤 Share</button>' : ''}
-      <a href="${esc(caseLink(S.login, picks))}" target="_blank" rel="noopener">Preview ↗</a></p>
-    <h3 style="margin-top:14px">${picks.length ? `Your picks (${picks.length} of ${CASE_N})` : `Your ${CASE_N} rarest, until you pick your own`}</h3>
-    <div class="casepick">${all.map(g => `<button class="${picks.includes(g.id) ? 'on' : ''}" data-act="casePick" data-v="${g.id}" aria-pressed="${picks.includes(g.id)}">
-      <span class="ph" style="background-image:url('${esc(photoSize(g.cover, 'small'))}')"></span><i>${esc(g.name)}</i></button>`).join('')}</div></div></div></div>`;
-}
 function casePick(id) {
   const picks = (S.u.casePicks || []).filter(x => S.M.G.has(x));
   S.u.casePicks = picks.includes(id) ? picks.filter(x => x !== id) : picks.length < CASE_N ? [...picks, id] : picks;
   if (picks.length >= CASE_N && !picks.includes(id)) toast(`A case holds ${CASE_N}. Unpick one first.`);
-  saveUser(); caseEditor();
+  saveUser(); caseEditor(); exPublish();
 }
 async function caseShare(native) {
   const url = caseLink(S.login, (S.u.casePicks || []).filter(id => S.M.G.has(id)));
   if (native && navigator.share) { try { await navigator.share({ title:`${poss(S.login)} SPOODEX display case`, url }); } catch {} return; }
   try { await navigator.clipboard.writeText(url); toast('Display case link copied'); } catch { window.prompt('Copy this link:', url); }
+}
+
+/* ---------------- visiting (v2.14): the exhibition, the binder, what they have that you don't, the hit list, the guestbook ---------------- */
+// Someone else's SPOODEX (S.linkView) opens on the Exhibition tab: a placard, a centrepiece, up to 8 more on display, milestones,
+// the visitor's own gaps, and the guestbook. The owner previews it with S.exPreview. Picks: a link's ?ex=, then the owner's
+// published settings (server), then the rarest from home. Visits and the guestbook need the SPOODEX server (server/); without it
+// those parts stay hidden and the rest works.
+const EX_N = 9, PAGE_TTL = 120e3, MILESTONES = [1, 10, 25, 50, 75, 100, 150, 200, 300];
+const STAMP = { sign:{ i:'✍️', l:'Signed the guestbook' }, nice:{ i:'🕷', l:'Nice find!' }, photo:{ i:'📸', l:'Great photo!' },
+  jealous:{ i:'😤', l:'Jealous!' }, never:{ i:'👀', l:'Never seen one' }, hunt:{ i:'🎯', l:'Going after this one' }, note:{ i:'💬', l:'' } };
+const STAMPS_P = ['sign', 'nice', 'jealous', 'never'], STAMPS_G = ['nice', 'photo', 'jealous', 'never', 'hunt'];
+S.pages = {};   // login -> {prof, visits, gb, me, ts} from /page, this session only
+S.auth = store.get('auth', null);   // {u, token, admin} after "Verify it's you" (localStorage, LS_ONLY)
+const gbOn = () => !!srvUrl();
+const exOn = () => S.linkView || S.exPreview;
+const pageOf = l => { const p = S.pages[l]; return p && (p.gb || p.err) ? p : null; };
+const ownBook = l => !!S.auth && S.auth.u === l;
+function setAuth(a) { S.auth = a; if (a) store.set('auth', a); else store.del('auth'); S.pages = {}; }
+
+async function loadPage(login, force = false) {
+  if (!gbOn() || !login || login === GUEST) return;
+  const p = S.pages[login];
+  if (p?.busy || (!force && p && Date.now() - p.ts < PAGE_TTL)) return;
+  S.pages[login] = { ...(p || {}), busy:true };
+  try {
+    const d = await srv(`/page?u=${encodeURIComponent(login)}`);
+    if (S.auth && !d.me) setAuth(null);   // the token was revoked or expired
+    S.pages[login] = { ...d, ts:Date.now() };
+  } catch (e) { S.pages[login] = { ...(p || {}), busy:false, err:e.message, ts:Date.now() }; }
+  pageRepaint(login, p);
+}
+// Redraw what shows a page's data, leaving alone anything someone is typing in
+function pageRepaint(login, before) {
+  const p = S.pages[login], typing = el => el.contains(document.activeElement) && /^(TEXTAREA|INPUT)$/.test(document.activeElement.tagName);
+  const exChanged = JSON.stringify(before?.prof || null) !== JSON.stringify(p?.prof || null);
+  if (S.tab === 'visit' && S.login === login && exChanged && !$('#view .gb textarea:focus, #view .gb input:focus')) { render(); return; }
+  document.querySelectorAll('[data-gb]').forEach(el => { const [l, t] = el.dataset.gb.split('|'); if (l === login && !typing(el)) el.innerHTML = gbInner(l, t); });
+  document.querySelectorAll('[data-visits]').forEach(el => { if (el.dataset.visits === login) el.innerHTML = visitsHtml(login); });
+  document.querySelectorAll('[data-gbcount]').forEach(el => { const [l, t] = el.dataset.gbcount.split('|'); if (l === login) el.innerHTML = gbCountHtml(l, t); });
+  if (S.tab === 'profile' && login === S.login && !S.linkView) { const el = $('#exOwner'); if (el && !typing(el)) el.outerHTML = exOwnerHtml(); }
+}
+// Counted once a day per browser for each SPOODEX you open that isn't yours
+function visitPing(login) {
+  if (!gbOn() || !login || login === GUEST || login === mineLogin() || login === S.auth?.u) return;
+  const day = new Date().toISOString().slice(0, 10), seen = store.get('visited', {});
+  if (seen[login] === day) return;
+  for (const k of Object.keys(seen)) if (seen[k] !== day) delete seen[k];
+  seen[login] = day; store.set('visited', seen);
+  srv('/visit', { method:'POST', body:JSON.stringify({ u:login }) })
+    .then(d => { const p = S.pages[login]; if (p?.gb && d.visits) { p.visits = d.visits; pageRepaint(login, p); } }).catch(() => {});
+}
+function visitsHtml(login) {
+  const v = pageOf(login)?.visits;
+  if (!v) return '';
+  return v.total ? `👣 <b>${fmt(v.week)}</b> visit${v.week === 1 ? '' : 's'} this week${v.last ? ` · ${fmt(v.last)} last week` : ''} · ${fmt(v.total)} in all` : '👣 No visits counted yet';
+}
+const visitsSlot = login => gbOn() ? `<span data-visits="${esc(login)}">${visitsHtml(login)}</span>` : '';
+function gbCountHtml(login, t) { const n = pageOf(login)?.gb?.counts?.[t]; return n ? `💬 ${n}` : ''; }
+const gbCountSlot = (login, t) => gbOn() ? `<span class="gbcnt" data-gbcount="${esc(login)}|${t}">${gbCountHtml(login, t)}</span>` : '';
+
+/* the visitor's own SPOODEX, for "what they have that you don't" and the hit list */
+let myMemo = null;
+function myModel() {
+  const m = mineLogin();
+  if (!m || !S.linkView || m === S.login) return null;
+  const raw = store.db ? store.mem.get(ukey(m)) : localStorage.getItem('spoodex:' + ukey(m));
+  if (!raw) return null;
+  if (myMemo?.raw !== raw) { try { const rec = JSON.parse(raw); myMemo = { raw, login:m, M:buildModel(rec.obs || {}, rec.base) }; } catch { return null; } }
+  return myMemo;
+}
+const myMissing = id => { const my = myModel(); return !!my && !my.M.G.has(id); };
+function hitRec() {
+  const m = mineLogin(); if (!m) return null;
+  const own = !S.linkView && S.login === m, rec = own ? S.u : store.get(ukey(m));
+  return rec ? { rec, save:() => own ? saveUser() : store.set(ukey(m), rec) } : null;
+}
+const hitIds = () => new Set((hitRec()?.rec.hit || []).map(h => h.id));
+function hitToggle(ids, on) {
+  const h = hitRec(); if (!h) { toast('Start your own SPOODEX to keep a hit list.'); return; }
+  const list = h.rec.hit || [], have = new Set(list.map(x => x.id)), from = S.linkView ? S.login : null;
+  if (on) for (const id of ids) { if (!have.has(id)) list.push({ id, from, at:Date.now() }); }
+  h.rec.hit = on ? list : list.filter(x => !ids.includes(x.id));
+  h.save(); track(on ? 'hit-add' : 'hit-remove');
+  if (on) toast(ids.length === 1 ? `${S.nodes[ids[0]]?.n || 'Genus'} is on your hit list.` : `${ids.length} genera added to your hit list.`);
+}
+// Your own Profile: genera you picked up from other people's exhibitions
+function hitHtml() {
+  const list = S.u.hit || []; if (!list.length || S.linkView || isGuest()) return '';
+  ensureInfo(list.map(h => h.id));
+  const found = list.filter(h => S.M.G.has(h.id)).length;
+  const card = h => {
+    const got = S.M.G.has(h.id), ph = got ? { u:photoSize(S.M.G.get(h.id).cover, 'small'), cr:'' } : taxonPhoto(h.id);
+    return `<div class="lcard hitcard${got ? ' got' : ''}" data-genus="${h.id}" title="Open the card"><span class="ph"${ph?.u ? ` style="background-image:url('${esc(photoSize(ph.u, 'small'))}')"` : ''}>${ph?.u ? '' : '<i class="sil"></i>'}</span>
+      <span class="nm"><i>${esc(S.nodes[h.id]?.n || '?')}</i></span><span class="cn">${got ? '✓ Found' : h.from ? `from ${esc(h.from)}` : ''}</span>
+      ${ph?.cr ? `<span class="cr">${esc(ph.cr)}</span>` : ''}<button class="hitx" data-act="hitDrop" data-v="${h.id}" aria-label="Take off the hit list" title="Take off the hit list">✕</button></div>`;
+  };
+  const order = [...list].sort((a, b) => S.M.G.has(a.id) - S.M.G.has(b.id) || b.at - a.at);
+  return `<div class="panel" style="margin-top:16px"><h2>🎯 Hit list <span class="small muted">${found ? `${found} of ${list.length} found` : plural(list.length, 'genus', 'genera')}</span></h2>
+    <div class="spoods">${order.map(card).join('')}</div></div>`;
+}
+
+/* the exhibition */
+function exPicks() {
+  const M = S.M, ok = ids => [...new Set((ids || []).map(Number))].filter(id => M.G.get(id)?.cover);
+  if (S.exPreview) return ok(S.u.casePicks);
+  const link = ok(S.exLink), pub = ok(pageOf(S.login)?.prof?.picks);
+  return link.length ? link : pub;
+}
+function exOrder() {
+  const M = S.M, picks = exPicks(), lead = (picks.length ? picks : caseIds(M, [])).slice(0, EX_N);
+  const rest = [...M.genera].filter(g => !lead.includes(g.id)).sort((a, b) => !!b.cover - !!a.cover || rarestFirst(a, b)).map(g => g.id);
+  return { lead, all:[...lead, ...rest] };
+}
+const exBio = () => S.exPreview ? (S.u.exBio || '') : pageOf(S.login)?.prof?.bio || '';
+function viewVisit() {
+  const M = S.M, login = S.login, n = M.G.size, hl = headline(), mine = mineLogin();
+  if (!n) return `<div class="panel"><h2>${esc(poss(login))} exhibition</h2><p>No genera recorded yet.</p></div>`;
+  const { lead, all } = exOrder(), idx = new Map(all.map((id, i) => [id, i]));
+  ensureInfo(all.slice(0, 30));
+  const since = M.fieldDays[0]?.slice(0, 4), bio = exBio();
+  const head = `<section class="panel exhead stk">${stickerHtml(stickerFor(login))}
+    <div class="small muted mono">THE COLLECTION OF</div><h1>${esc(login)}</h1><div class="hand">${titleHtml(M)}</div>
+    ${bio ? `<p class="exbio">${esc(bio)}</p>` : ''}
+    <p class="exstats">${[`<b>Level ${n}</b>`, M.S.size && plural(M.S.size, 'species', 'species'), `${fmt(prestige(M))} ✦`, since && `spooding since ${esc(since)}`, plural(M.fieldDays.length, 'field day')].filter(Boolean).map(x => `<span>${x}</span>`).join(' · ')}</p>
+    ${hl ? `<p class="small" style="margin:0">${headlineHtml(hl)}</p>` : ''}
+    ${gbOn() ? `<p class="small exvisits">${visitsSlot(login)}</p>` : ''}
+    <p class="row exbtns"><button class="primary" data-act="binder" data-v="0">▶ Walk the collection</button><button data-tab="dex">📇 Catalogue</button>
+      ${mine && mine !== login && !S.exPreview ? `<a class="btnlink alt" href="?u=${encodeURIComponent(mine)}&vs=${encodeURIComponent(login)}">⚔️ Compare with mine</a>` : ''}
+      <a class="btnlink alt" href="https://www.inaturalist.org/people/${encodeURIComponent(login)}" target="_blank" rel="noopener">iNaturalist profile ↗</a></p></section>`;
+  // the centrepiece: a framed photo and its museum label
+  const c = M.G.get(lead[0]), r = tierOf(c.id), ds = c.obs.map(o => o.d).filter(Boolean).sort();
+  const centre = `<section class="excentre">
+    <button type="button" class="exframe" data-act="binder" data-v="0" aria-label="Open ${esc(c.name)} in the binder"><span class="mat"><span class="ph" style="background-image:url('${esc(photoSize(c.cover, 'large'))}')"></span></span></button>
+    <div class="panel exlabel${r?.lv >= 2 ? ' rar' : ''}"${r?.lv >= 2 ? ` style="--rc:${r.c}"` : ''}><div class="small muted mono">CENTREPIECE</div>
+      <h2><i>${esc(c.name)}</i></h2>${cnHtml(c.id)}
+      ${r ? `<p>${rarityChip(r)} ${esc(rarityNote(c.id))}</p>` : ''}
+      <dl class="kv">${ds[0] ? `<dt>First recorded</dt><dd>${esc(ds[0])}</dd>` : ''}<dt>Records</dt><dd>${fmt(c.obs.length)}</dd>
+        ${c.sp.size ? `<dt>Species</dt><dd>${[...c.sp].slice(0, 4).map(id => `<i>${esc(S.nodes[id]?.n || '?')}</i>`).join(', ')}${c.sp.size > 4 ? '…' : ''}</dd>` : ''}
+        <dt>Mastery</dt><dd>${c.level} / 10</dd></dl>
+      ${exMineTag(c.id)}
+      <p class="row small" style="margin:8px 0 0"><a href="https://www.inaturalist.org/observations/${c.coverObs}" target="_blank" rel="noopener">The record ↗</a>${gbCountSlot(login, 'g' + c.id)}</p></div></section>`;
+  // the rest on display
+  const card = id => {
+    const g = M.G.get(id), rr = tierOf(id);
+    return `<button type="button" class="ccard${rr?.lv >= 2 ? ` rar rar${rr.lv}` : ''}" data-act="binder" data-v="${idx.get(id)}"${rr?.lv >= 2 ? ` style="--rc:${rr.c}"` : ''}>
+      <span class="ph" style="background-image:url('${esc(photoSize(g.cover, 'medium'))}')">${myMissing(id) ? '<span class="nmine">Not in yours</span>' : ''}</span>
+      <span class="meta"><span class="nm"><i>${esc(g.name)}</i></span>${cnOf(id) ? `<span class="cn">${esc(cnOf(id))}</span>` : ''}
+        <span class="rl">${rr ? `${rarityChip(rr)} ${esc(rarityNote(id))}` : plural(g.obs.length, 'record')} ${gbCountSlot(login, 'g' + id)}</span></span></button>`;
+  };
+  const shown = lead.slice(1);
+  const display = shown.length ? `<h2 class="exh">On display</h2><div class="casegrid exgrid">${shown.map(card).join('')}</div>` : '';
+  // milestones: the 1st, 10th, 25th… genus and the latest, all from the records
+  const ms = M.genera.filter(g => MILESTONES.includes(g.discIndex));
+  const latest = M.genera[M.genera.length - 1];
+  if (latest && !ms.includes(latest)) ms.push(latest);
+  const miles = `<h2 class="exh">Milestones</h2><ol class="exmiles">${ms.map(g => `<li><span class="mono small">${g === latest && !MILESTONES.includes(g.discIndex) ? 'Latest' : `${ordinal(g.discIndex)} genus`}</span>
+    <a href="#" data-act="binderAt" data-v="${g.id}"><i>${esc(g.name)}</i></a>${cnOf(g.id) ? ` <span class="small">${esc(cnOf(g.id))}</span>` : ''} <span class="small muted">${esc(g.first.d || '')}</span></li>`).join('')}</ol>`;
+  const book = gbOn() ? `<h2 class="exh" id="exGuestbook">Guestbook</h2><div class="panel">${gbBlock(login, '*')}</div>` : '';
+  return `<div class="exhibit">${head}${centre}${display}${exYoursHtml()}${miles}${book}
+    <p class="row exfoot"><button data-act="binder" data-v="0">▶ Walk all ${n} genera</button><button data-tab="dex">📇 Catalogue</button>${M.G.size >= 15 ? '<button data-tab="tree">🗄 Lineage tree</button>' : ''}</p></div>`;
+}
+function exMineTag(id) {
+  const my = myModel(); if (!my) return '';
+  if (my.M.G.has(id)) return '<p class="small">✓ In your SPOODEX too</p>';
+  return `<p class="row" style="margin:6px 0 0"><span class="nmine">Not in yours</span><button class="small" data-act="hit" data-v="${id}">${hitIds().has(id) ? '✓ On your hit list' : '🎯 Add to my hit list'}</button></p>`;
+}
+function exYoursHtml() {
+  if (S.exPreview) return '';
+  const my = myModel(); if (!my) return '';
+  const M = S.M, login = S.login, miss = [...M.genera].filter(g => !my.M.G.has(g.id)).sort(rarestFirst);
+  const extra = my.M.genera.filter(g => !M.G.has(g.id)).length, hits = hitIds(), todo = miss.filter(g => !hits.has(g.id));
+  const cards = miss.map(g => `<div class="lcard" data-genus="${g.id}" title="Open the card"><span class="ph" style="background-image:url('${esc(photoSize(g.cover, 'small'))}')">${g.cover ? '' : '<i class="sil"></i>'}</span>
+    <span class="nm"><i>${esc(g.name)}</i></span>${cnOf(g.id) ? `<span class="cn">${esc(cnOf(g.id))}</span>` : ''}
+    <button class="small hitbtn${hits.has(g.id) ? ' on' : ''}" data-act="hit" data-v="${g.id}">${hits.has(g.id) ? '✓ Hit list' : '🎯 Hit list'}</button></div>`).join('');
+  return `<h2 class="exh">What ${esc(login)} has that you don't</h2><section class="panel exyours">
+    <p><b>${miss.length}</b> of ${esc(poss(login))} genera ${miss.length === 1 ? "isn't" : "aren't"} in your SPOODEX${extra ? ` · you have <b>${extra}</b> ${esc(login)} doesn't` : ''}.</p>
+    ${miss.length ? `<div class="spoods">${cards}</div>
+      <p class="row" style="margin:10px 0 0">${todo.length ? `<button class="primary" data-act="hitAll">🎯 Add ${todo.length === miss.length ? 'all ' : ''}${plural(todo.length, 'genus', 'genera')} to my hit list</button>` : '<span class="small">All of them are on your hit list.</span>'}
+      <a class="btnlink alt" href="?u=${encodeURIComponent(my.login)}&vs=${encodeURIComponent(login)}">⚔️ Full comparison</a></p>` : `<p>You have every genus ${esc(login)} has.</p>`}</section>`;
+}
+
+/* the binder: one card at a time, swipe or arrow keys */
+let bind = null;
+function openBinder(i) {
+  const { all, lead } = exOrder();
+  bind = { ids:all, lead:new Set(lead), i:Math.max(0, Math.min(all.length - 1, i || 0)) };
+  track('binder');
+  drawBinder();
+}
+function drawBinder() {
+  if (!bind) return;
+  const M = S.M, id = bind.ids[bind.i], g = M.G.get(id), r = tierOf(id), my = myModel(), login = S.login;
+  const ds = g.obs.map(o => o.d).filter(Boolean).sort();
+  ensureInfo(bind.ids.slice(bind.i, bind.i + 4)).then(() => { if (bind && bind.ids[bind.i] === id) { const el = $('.bcard .cnslot'); if (el) el.innerHTML = cnHtml(id); } }).catch(() => {});
+  for (const d of [1, -1]) { const n = M.G.get(bind.ids[bind.i + d]); if (n?.cover) new Image().src = photoSize(n.cover, 'large'); }
+  const mineRow = my ? (my.M.G.has(id) ? '<p class="small" style="margin:0">✓ In your SPOODEX too</p>'
+    : `<p class="row" style="margin:0"><span class="nmine">Not in yours</span><button class="small" data-act="hit" data-v="${id}">${hitIds().has(id) ? '✓ On your hit list' : '🎯 Add to my hit list'}</button></p>`) : '';
+  $('#modalRoot').innerHTML = `<div class="overlay binder" data-close="1"><div class="bmodal" role="dialog" aria-label="${esc(poss(login))} collection, card ${bind.i + 1} of ${bind.ids.length}">
+    <button class="x" data-close="1" aria-label="Close">✕</button>
+    <div class="bstage">
+      <button class="bnav" data-act="bGo" data-v="-1" ${bind.i ? '' : 'disabled'} aria-label="Previous card">‹</button>
+      <figure class="bcard${r?.lv >= 2 ? ` rar rar${r.lv}` : ''}"${r?.lv >= 2 ? ` style="--rc:${r.c}"` : ''}>
+        <div class="ph"${g.cover ? ` style="background-image:url('${esc(photoSize(g.cover, 'large'))}')"` : ''}>${g.cover ? '' : '<i class="sil"></i>'}${r?.lv >= 2 ? `<span class="rarb">${rarityChip(r)}</span>` : ''}</div>
+        <figcaption><div class="small mono muted">${bind.i + 1} / ${bind.ids.length}${bind.lead.has(id) ? ' · on display' : ''}</div>
+          <div class="nm"><i>${esc(g.name)}</i></div><div class="cnslot">${cnHtml(id)}</div>
+          <p class="small">${[ds[0] && `First recorded ${esc(ds[0])}`, plural(g.obs.length, 'record'), g.sp.size && plural(g.sp.size, 'species', 'species'), r && esc(rarityNote(id))].filter(Boolean).join(' · ')}</p></figcaption></figure>
+      <button class="bnav" data-act="bGo" data-v="1" ${bind.i < bind.ids.length - 1 ? '' : 'disabled'} aria-label="Next card">›</button>
+    </div>
+    <div class="bside">${mineRow}${gbOn() ? gbBlock(login, 'g' + id) : ''}
+      <p class="small row" style="margin:8px 0 0"><a href="https://www.inaturalist.org/observations/${g.coverObs}" target="_blank" rel="noopener">The record ↗</a><a href="#" data-genus="${id}">Full card →</a></p></div>
+  </div></div>`;
+  const st = $('.bstage'); let x0 = null, y0 = null;
+  st.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive:true });
+  st.addEventListener('touchend', e => {
+    if (x0 == null) return;
+    const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; x0 = null;
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.5) bStep(dx < 0 ? 1 : -1);
+  }, { passive:true });
+}
+function bStep(d) {
+  if (!bind || !$('.binder')) return;
+  const i = bind.i + d; if (i < 0 || i >= bind.ids.length) return;
+  bind.i = i; drawBinder();
+}
+addEventListener('keydown', e => {
+  if (!$('.binder') || /^(TEXTAREA|INPUT|SELECT)$/.test(e.target.tagName)) return;
+  if (e.key === 'ArrowRight') { e.preventDefault(); bStep(1); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); bStep(-1); }
+  else if (e.key === 'Escape') $('#modalRoot').innerHTML = '';
+});
+
+/* the guestbook: stamps and short messages on a profile ('p') or a card ('g<id>'); '*' lists everything and posts to the profile */
+const gbBlock = (login, t) => `<div class="gb" data-gb="${esc(login)}|${t}">${gbInner(login, t)}</div>`;
+function gbInner(login, t) {
+  if (!login || login === GUEST) return '';
+  const pg = pageOf(login);
+  if (!pg) { loadPage(login); return '<p class="small muted">Opening the guestbook…</p>'; }
+  if (pg.err && !pg.gb) return `<p class="small">Couldn't reach the SPOODEX server. <button class="small" data-act="gbRetry" data-v="${esc(login)}">Try again</button></p>`;
+  const list = pg.gb.entries.filter(e => (t === '*' || e.t === t) && (!S.exPreview || e.st === 'ok')), own = ownBook(login) || S.exPreview || (login === S.login && !S.linkView && !$('#caseView'));
+  const shown = list.slice(0, S.gbAll === `${login}|${t}` ? 200 : 12);
+  return `${own ? '' : gbForm(login, t, pg)}
+    ${list.length ? `<ul class="gblist">${shown.map(e => gbEntry(e, login, t === '*' || t === 'mine', pg)).join('')}</ul>
+      ${list.length > shown.length ? `<button class="small" data-act="gbAll" data-v="${esc(login)}|${t}">Show all ${list.length}</button>` : ''}`
+      : `<p class="small muted">${t === 'p' || t === '*' ? 'No entries yet.' : 'No stamps on this card yet.'}</p>`}`;
+}
+function gbEntry(e, login, showOn, pg) {
+  const s = STAMP[e.k] || STAMP.note, gid = e.t !== 'p' ? +e.t.slice(1) : null;
+  const who = e.by ? `<a class="gbby" href="?u=${encodeURIComponent(e.by)}" title="${esc(e.by)} is a verified iNaturalist user">✓ ${esc(e.by)}</a>` : `<span class="gbby">${esc(e.nick || 'A visitor')}</span>`;
+  const on = showOn && gid ? ` · on <a href="#" data-${S.tab === 'visit' && S.login === login ? 'act="binderAt" data-v' : 'genus'}="${gid}"><i>${esc(S.nodes[gid]?.n || 'a card')}</i></a>` : '';
+  const mod = S.exPreview ? '' : pg.gb.mod ? ` · ${e.st === 'ok' ? `<a href="#" data-act="gbMod" data-v="${esc(login)}|${esc(e.id)}|hide">Hide</a>` : `<a href="#" data-act="gbMod" data-v="${esc(login)}|${esc(e.id)}|show">${e.st === 'pending' ? 'Approve' : 'Show'}</a>`} · <a href="#" data-act="gbMod" data-v="${esc(login)}|${esc(e.id)}|delete">Delete</a>`
+    : S.auth && e.by === S.auth.u ? ` · <a href="#" data-act="gbMod" data-v="${esc(login)}|${esc(e.id)}|delete">Delete</a>` : '';
+  return `<li class="gbe st-${esc(e.st)}"><span class="gbk" aria-hidden="true">${s.i}</span><div>${s.l ? `<b>${s.l}</b> ` : ''}${e.m ? `<span class="gbm">${esc(e.m)}</span>` : ''}
+    <div class="small muted">${who}${on} · ${agoShort(e.at)}${e.st === 'pending' ? ' · <b>waiting for approval</b>' : e.st === 'hidden' ? ' · hidden' : ''}${mod}</div></div></li>`;
+}
+function gbForm(login, t, pg) {
+  if (pg.prof.gb === 'off') return `<p class="small muted">${esc(login)} has closed their guestbook.</p>`;
+  const words = !!S.auth || pg.prof.verified, post = t === '*' ? 'p' : t;
+  return `<form class="gbform" data-form="gb" data-u="${esc(login)}" data-t="${post}">
+    <div class="gbstamps" role="group" aria-label="Stamp">${(post === 'p' ? STAMPS_P : STAMPS_G).map(k => `<button type="button" class="gbst" data-act="gbStamp" data-v="${k}" aria-pressed="false">${STAMP[k].i} ${STAMP[k].l}</button>`).join('')}</div>
+    ${words ? `<textarea name="m" maxlength="280" rows="2" placeholder="${post === 'p' ? 'Leave a message' : 'Say something about this one'} (optional)"></textarea>` : ''}
+    <div class="row">${S.auth ? `<span class="small">Signing as <b>✓ ${esc(S.auth.u)}</b></span>` : `<input name="nick" maxlength="24" value="${esc(S.prefs.nick || '')}" placeholder="Your name (optional)" autocomplete="nickname" style="flex:1;min-width:140px">`}
+      <button class="primary" type="submit">Post</button></div>
+    <p class="small muted" style="margin:6px 0 0">${words ? 'Public. No links, phone numbers or locations.' : `Messages open once ${esc(login)} verifies their SPOODEX; stamps work now.`}${S.auth ? '' : ' <a href="#" data-act="verify">Sign with your iNaturalist username</a>'}</p>
+  </form>`;
+}
+async function gbPost(form) {
+  const login = form.dataset.u, t = form.dataset.t, k = form.querySelector('.gbst[aria-pressed="true"]')?.dataset.v || '';
+  const m = form.m?.value.trim() || '', nick = form.nick?.value.trim() || '';
+  if (!k && !m) { toast('Pick a stamp or write something.'); return; }
+  if (nick !== (S.prefs.nick || '')) { S.prefs.nick = nick; savePrefs(); }
+  const btn = form.querySelector('[type=submit]'); btn.disabled = true;
+  try {
+    const d = await srv('/gb', { method:'POST', body:JSON.stringify({ u:login, t, k, m, nick }) });
+    const p = S.pages[login]; if (p) p.gb = d.gb;
+    track('gb-post');
+    toast(d.entry.st === 'pending' ? `Sent. ${login} approves messages before they show.` : 'Posted.');
+    form.reset(); form.querySelectorAll('.gbst').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    document.activeElement?.blur?.();
+    pageRepaint(login, p);
+  } catch (e) { toast(e.message); }
+  btn.disabled = false;
+}
+async function gbMod(v) {
+  const [login, id, a] = v.split('|');
+  if (a === 'delete' && !confirmDelete()) return;
+  try { const d = await srv('/gb/mod', { method:'POST', body:JSON.stringify({ u:login, id, a }) }); const p = S.pages[login]; if (p) p.gb = d.gb; pageRepaint(login, p); }
+  catch (e) { toast(e.message); }
+}
+// Deleting needs a second tap on the same link within 4 seconds (no browser dialogs)
+let delArm = 0;
+function confirmDelete() { if (Date.now() - delArm < 4000) { delArm = 0; return true; } delArm = Date.now(); toast('Tap Delete again to remove it for good.'); return false; }
+
+/* "Verify it's you": a one-off code in your iNaturalist bio proves the account is yours (no passwords) */
+S.verify = null;   // {u, code, step:'ask'|'code'|'done', msg, busy}
+function openVerify(u) {
+  S.verify = { u:u ?? (S.verify?.u || mineLogin() || (S.linkView ? '' : S.login !== GUEST ? S.login : '') || ''), step:'ask', msg:'' };
+  track('verify-open'); drawVerify();
+}
+function drawVerify() {
+  const V = S.verify; if (!V) return;
+  const body = V.step === 'done' ? `<h2>✓ Verified</h2><p>You're signed in as <b>${esc(V.u)}</b> on this browser. Your guestbook entries carry a ✓, and you can moderate your own guestbook.</p>
+      <p>You can take the code out of your iNaturalist bio now.</p><p><button class="primary" data-close="1">Done</button></p>`
+    : V.step === 'code' ? `<h2>Verify it's you</h2>
+      <p>Put this code anywhere in your iNaturalist bio, save, then come back and check:</p>
+      <p class="vcode"><code>${esc(V.code)}</code> <button class="small" data-act="verifyCopy">Copy</button></p>
+      <ol class="small"><li><a href="https://www.inaturalist.org/users/edit" target="_blank" rel="noopener">Open your iNaturalist account settings ↗</a> (signed in as <b>${esc(V.u)}</b>)</li>
+        <li>Paste the code into <b>Bio</b> and press <b>Save</b>.</li><li>Press <b>Check</b> here. The code works for an hour.</li></ol>
+      <p class="row"><button class="primary" data-act="verifyCheck" ${V.busy ? 'disabled' : ''}>${V.busy ? 'Checking…' : 'Check'}</button><button data-act="verifyBack">Use a different username</button></p>
+      ${V.msg ? `<p>${esc(V.msg)}</p>` : ''}`
+    : `<h2>Verify it's you</h2>
+      <p>Proving which iNaturalist account is yours lets you sign guestbooks with a ✓, write a bio and run your own guestbook. No password: you'll put a short code in your iNaturalist bio for a minute.</p>
+      <form class="row" data-form="verify"><input name="u" value="${esc(V.u)}" placeholder="your iNaturalist username" autocomplete="username" autocapitalize="off" spellcheck="false" required style="flex:1;min-width:180px"><button class="primary" ${V.busy ? 'disabled' : ''}>Get my code</button></form>
+      ${V.msg ? `<p>${esc(V.msg)}</p>` : ''}`;
+  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(560px,100%)"><button class="x" data-close="1">✕</button><div class="body">${body}</div></div></div>`;
+}
+async function verifyAsk(u) {
+  const V = S.verify; V.u = cleanLogin(u); V.msg = ''; V.busy = true; drawVerify();
+  try { const d = await srv('/claim', { method:'POST', body:JSON.stringify({ u:V.u }) }); V.code = d.code; V.step = 'code'; }
+  catch (e) { V.msg = e.message; }
+  V.busy = false; drawVerify();
+}
+async function verifyCheck() {
+  const V = S.verify; V.busy = true; V.msg = ''; drawVerify();
+  try {
+    const d = await srv('/claim/check', { method:'POST', body:JSON.stringify({ u:V.u }) });
+    setAuth({ u:d.u, token:d.token, admin:!!d.admin });
+    if (!mineLogin() || S.login === d.u) store.set('mine', d.u);
+    if (S.login === d.u && S.linkView) { S.linkView = false; store.set('lastLogin', d.u); }
+    V.step = 'done'; track('verified');
+    if (S.u && !isGuest() && S.login === d.u) exPublish(true);
+  } catch (e) { V.msg = e.message; }
+  V.busy = false; drawVerify();
+  if (V.step === 'done' && !$('#app').classList.contains('hidden')) render();
+}
+async function signOut() {
+  try { await srv('/logout', { method:'POST' }); } catch {}
+  setAuth(null); toast('Signed out on this browser.'); $('#modalRoot').innerHTML = ''; if (!$('#app').classList.contains('hidden')) render();
+}
+
+/* the owner's side: the exhibition editor (replaces the v2.5 display case editor; the 9 picks are shared) and the Profile panel */
+function exLink(login = S.login, picks = (S.u.casePicks || []).filter(id => S.M.G.get(id)?.cover)) {
+  return `${location.origin}${location.pathname.replace(/(index|spoodex)\.html$/, '')}?u=${encodeURIComponent(login)}${picks.length ? '&ex=' + picks.join(',') : ''}`;
+}
+let exPubTimer = 0;
+function exPublish(now = false) {
+  if (!gbOn() || !ownBook(S.login) || S.linkView || isGuest()) return;
+  clearTimeout(exPubTimer);
+  exPubTimer = setTimeout(async () => {
+    try {
+      const d = await srv('/prof', { method:'PUT', body:JSON.stringify({ u:S.login, bio:S.u.exBio || '', picks:(S.u.casePicks || []).filter(id => S.M.G.has(id)), gb:S.u.exGb || 'open' }) });
+      const p = S.pages[S.login]; if (p?.gb) p.prof = d.prof;
+      const el = $('#exSaved'); if (el) el.textContent = 'Saved for visitors.';
+    } catch (e) { const el = $('#exSaved'); if (el) el.textContent = e.message; else toast(e.message); }
+  }, now ? 0 : 900);
+}
+function caseEditor() {
+  const M = S.M, picks = (S.u.casePicks || []).filter(id => M.G.get(id)?.cover), shown = caseIds(M, picks);
+  const all = [...M.genera].filter(g => g.cover).sort(rarestFirst), verified = ownBook(S.login);
+  const thumb = id => `<span class="ph" style="background-image:url('${esc(photoSize(M.G.get(id).cover, 'small'))}')"></span>`;
+  const gbModes = [['open', 'Open', 'Stamps and messages show straight away.'], ['approve', 'Approve messages first', 'Messages from visitors who haven’t verified wait for you. Stamps show straight away.'], ['off', 'Closed', 'No new entries.']];
+  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(880px,100%)"><button class="x" data-close="1">✕</button><div class="body">
+    <h2>🏛 Your exhibition</h2>
+    <p class="small">What people see first when they open your SPOODEX: ${gbOn() ? 'a line about you, ' : ''}a centrepiece and up to 8 more on display, then the whole collection one card at a time.</p>
+    <p class="row"><button class="primary" data-act="exPreview">👁 See it as a visitor</button><button data-act="exCopy">🔗 Copy exhibition link</button>${navigator.share ? '<button data-act="exShare">📤 Share</button>' : ''}</p>
+    ${gbOn() ? (verified ? `<h3 style="margin-top:14px">A line about you</h3>
+      <textarea id="exBio" maxlength="160" rows="2" placeholder="e.g. Cairns rainforest, mostly at night" style="width:100%">${esc(S.u.exBio || '')}</textarea>
+      <p class="row small" style="margin:4px 0 0"><button class="small" data-act="exBioSave">Save</button><span class="muted" id="exSaved"></span></p>
+      <h3 style="margin-top:14px">Guestbook</h3><div class="exmodes">${gbModes.map(([k, l, d]) => `<label><input type="radio" name="exGb" value="${k}" ${(S.u.exGb || 'open') === k ? 'checked' : ''} data-act="exGb" data-v="${k}"> <b>${l}</b> <span class="small muted">${d}</span></label>`).join('')}</div>`
+      : `<p class="panel small" style="margin-top:12px"><b>Bio and guestbook:</b> <a href="#" data-act="verify">verify it's you</a> to write a line for visitors, approve or hide guestbook entries, and let visitors leave messages (until then they can leave stamps).</p>`) : ''}
+    <h3 style="margin-top:14px">${picks.length ? `On display (${picks.length} of ${CASE_N})` : `Your ${CASE_N} rarest are on display until you pick your own`}</h3>
+    ${picks.length ? `<div class="expicks">${picks.map((id, i) => `<span class="expick${i ? '' : ' first'}">${thumb(id)}<i>${esc(M.G.get(id).name)}</i>${i ? `<button class="small" data-act="exFirst" data-v="${id}" title="Make it the centrepiece">★</button>` : '<b class="small">★ Centrepiece</b>'}</span>`).join('')}</div>
+      <p class="small muted">The first is the centrepiece. ★ moves one to the front.</p>` : ''}
+    <div class="casepick">${all.map(g => `<button class="${picks.includes(g.id) ? 'on' : ''}" data-act="casePick" data-v="${g.id}" aria-pressed="${picks.includes(g.id)}">
+      <span class="ph" style="background-image:url('${esc(photoSize(g.cover, 'small'))}')"></span><i>${esc(g.name)}</i></button>`).join('')}</div>
+    <h3 style="margin-top:16px">Display case</h3>
+    <p class="small">A single page of the same ${shown.length === CASE_N ? 9 : shown.length} genera that opens instantly, with no places shown.</p>
+    <p class="row"><button data-act="caseCopy">🗄 Copy display case link</button>${navigator.share ? '<button data-act="caseShare">📤 Share</button>' : ''}<a href="${esc(caseLink(S.login, picks))}" target="_blank" rel="noopener">Preview ↗</a></p>
+  </div></div></div>`;
+}
+function exOwnerHtml() {
+  if (isGuest() || S.linkView || !S.M.G.size) return '';
+  const pg = gbOn() ? pageOf(S.login) : null;
+  if (gbOn() && !pg) loadPage(S.login);
+  const entries = pg?.gb?.entries || [];
+  if (S.gbSeenAt == null) { S.gbSeenAt = S.u.gbSeen || 0; }
+  const fresh = entries.filter(e => e.at > S.gbSeenAt).length, last = entries[0]?.at || 0;
+  if (last > (S.u.gbSeen || 0)) { S.u.gbSeen = last; saveUser(); }
+  const pending = entries.filter(e => e.st === 'pending').length;
+  return `<div class="panel" id="exOwner" style="margin-top:16px"><h2>🏛 Your exhibition</h2>
+    ${gbOn() ? `<p class="small">${visitsSlot(S.login)}${fresh ? ` · <b>${plural(fresh, 'new guestbook entry', 'new guestbook entries')}</b>` : ''}${pending ? ` · <b>${pending} waiting for approval</b>` : ''}</p>
+      ${pg?.gb ? (entries.length ? `<div data-gb="${esc(S.login)}|*" class="gb">${gbInner(S.login, '*')}</div>` : '<p class="small muted">No guestbook entries yet.</p>') : ''}
+      ${ownBook(S.login) ? '' : `<p class="small"><a href="#" data-act="verify">Verify it's you</a> to approve or hide entries, write a line for visitors and open your guestbook to messages.</p>`}` : ''}
+    <p class="row" style="margin:8px 0 0"><button data-act="caseEdit">✏️ Edit</button><button data-act="exPreview">👁 See it as a visitor</button><button data-act="exCopy">🔗 Copy link</button></p></div>`;
 }
 
 // ?u=<login> opens that SPOODEX (importing it if needed); ?vs=<login> jumps to Compare.
@@ -7918,6 +8444,7 @@ const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladd
   S.pendingCrew = q.get('crew') ? q.get('crew').split(',').map(cleanLogin).filter(Boolean) : null;
   S.pendingEv = (q.get('ev') || '').trim() || null;
   $('#landSticker').src = STICKERS[1]; $('#impSticker').src = STICKERS[3];
+  S.exLink = (q.get('ex') || '').split(',').map(Number).filter(n => Number.isInteger(n) && n > 0).slice(0, EX_N);   // v2.14: an exhibition link's picks
   if (u && q.has('case')) { showCase(u, q.get('case')); return; }
   // v2.13: before 'mine' existed, the last SPOODEX opened here was taken as the visitor's own (unless it was the showcase)
   const last = cleanLogin(store.get('lastLogin'));
