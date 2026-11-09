@@ -861,20 +861,23 @@ details > summary.scsec { cursor:pointer; }
 .bcard figcaption p { margin:4px 0 0; }
 .bside { margin:12px 52px 0; padding:12px 14px; background:var(--panel); color:var(--ink); border-radius:var(--radius); max-height:34vh; overflow:auto; }
 /* reactions */
-.rx { margin-top:10px; }
-.rxbtns { display:flex; flex-wrap:wrap; gap:6px; }
-.rxb { padding:4px 10px; border-radius:99px; font-size:13px; transition:transform .12s; }
-.rxb:active { transform:scale(.92); }
-.rxb.love { font-size:16px; padding:2px 12px; }
-.rxb.on { background:var(--accent); color:var(--panel); border-color:var(--accent); }
-.rxsum { margin:6px 0 0; }
+.rx { display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; margin-top:10px; }
+.rx.own { display:block; }
+/* a native dropdown laid invisibly over a pill: it opens the phone's own picker and can't be clipped inside tables or the binder */
+.rxpick { position:relative; display:inline-flex; align-items:center; padding:3px 11px; border:1px solid var(--line); border-radius:99px; background:var(--panel2); font:13px/1.4 var(--mono); white-space:nowrap; }
+.rxpick.mini { padding:2px 8px; font-size:12px; }
+.rxpick:hover { border-color:var(--accent); }
+.rxpick:focus-within { outline:2px solid var(--accent); outline-offset:1px; }
+.rxpick.on { background:var(--accent); color:var(--panel); border-color:var(--accent); }
+.rxpick .rc:empty { display:none; }
+.rxpick select { position:absolute; inset:0; width:100%; height:100%; padding:0; border:0; opacity:0; color:var(--ink); background:var(--panel); font-size:16px; cursor:pointer; }   /* 16 px: iOS zooms the page on anything smaller */
 .rxsum:has(.rc:empty) { display:none; }
 .rxkinds, .rx.own .rc { display:flex; flex-wrap:wrap; gap:6px; }
 .rxk { display:inline-flex; gap:4px; align-items:center; padding:2px 9px; border:1px solid var(--line); border-radius:99px; background:var(--panel2); font-size:13px; }
-.rxmini { padding:3px 9px; border-radius:99px; font-size:13px; white-space:nowrap; }
-.rxmini.on { background:var(--accent); color:var(--panel); border-color:var(--accent); }
-.rxmini .rc:empty { display:none; }
 .checks li:has(> .rc:empty) { display:none; }
+.chipact { padding:0 3px; border:0; background:none; font-size:15px; line-height:1; }
+.chipact.sent { opacity:.45; }
+@media (max-width:600px) { .rxpick, .rxpick.mini { min-height:34px; padding-inline:12px; } .chipact { padding:8px 6px; margin:-8px -3px; } }
 .sstamp.sstat { cursor:default; }
 .excentre .sstamp.sstat, .exlabel .sstamp.sstat { position:static; flex:none; }
 .phlove:not(:empty) { position:absolute; right:6px; top:6px; z-index:2; padding:1px 8px; border-radius:99px; background:rgba(246,238,219,.94); color:#a8412a; font:600 12px var(--mono); }
@@ -3950,9 +3953,51 @@ function setCrew(list) {
   const keep = new Set(S.crew.logins.map(l => l.toLowerCase()));
   Object.keys(S.crew.data).forEach(k => { if (!keep.has(k)) delete S.crew.data[k]; });
   Object.keys(S.crew.best || {}).forEach(k => { if (!keep.has(k)) delete S.crew.best[k]; });
+  Object.keys(S.crew.inv || {}).forEach(k => { if (!keep.has(k)) delete S.crew.inv[k]; });
   crewErr = null; saveCrew(); updateUrl();
   if (S.tab === 'crew') render();
   loadCrew();
+}
+/* crew invites (v2.17, owner 2026-11-09): adding someone offers a link that asks them to add you back. SPOODEX has no accounts and can't message
+   anyone, so you send it yourself; iNat's compose page takes ?to=<login> but no text, hence copy first. The link only offers: nothing changes
+   until they accept (a ?crew= link replaces the whole crew). S.crew.inv: login -> when invited. */
+const inviter = () => S.linkView ? mineLogin() : isGuest() ? null : S.login;
+const inviteText = () => `I've added you to my SPOODEX crew so we can see who's found which jumping spiders. Add me back here: ${location.origin}${location.pathname.replace(/(index|spoodex)\.html$/, '')}?invite=${encodeURIComponent(inviter())}`;
+const invMark = l => { (S.crew.inv = S.crew.inv || {})[l] = Date.now(); saveCrew(); };
+function openInvite(logins) {
+  if (!inviter() || !logins.length) return;
+  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(520px,100%)"><button class="x" data-close="1">✕</button><div class="body">
+    <h2>✉ Ask ${logins.length === 1 ? esc(logins[0]) : 'them'} to add you back</h2>
+    <textarea id="invTxt" class="posttxt" rows="4">${esc(inviteText())}</textarea>
+    <p class="small">Paste it into a message on iNaturalist and give it a subject.</p>
+    <p class="row">${logins.map(l => `<a class="btnlink" href="https://www.inaturalist.org/messages/new?to=${encodeURIComponent(l)}" target="_blank" rel="noopener" data-act="invSend" data-v="${esc(l)}">📋 Copy, then message ${esc(l)} ↗</a>`).join('')}<button data-close="1">Not now</button></p>
+  </div></div></div>`;
+}
+function inviteSend(l, el) {   // the link itself opens iNaturalist
+  const txt = $('#invTxt').value;
+  navigator.clipboard.writeText(txt).then(() => toast('Invite copied. Paste it into the message.'), () => window.prompt('Copy this invite:', txt));
+  invMark(l); track('invite-sent');
+  if (S.tab === 'crew') render();
+  setTimeout(() => { el.remove(); if (!$('[data-act="invSend"]')) $('#modalRoot').innerHTML = ''; }, 0);
+}
+function openInvited(l) {
+  if (l === inviter() || isMe(l)) { toast('That\'s your own invite link.'); return; }
+  if (S.crew.logins.includes(l)) { toast(`${l} is already in your crew.`); return; }
+  const full = S.crew.logins.length >= CREW_MAX;
+  $('#modalRoot').innerHTML = `<div class="overlay" data-close="1"><div class="modal" style="width:min(520px,100%)"><button class="x" data-close="1">✕</button><div class="body">
+    <h2>👥 ${esc(l)} invited you to their crew</h2>
+    <p>${full ? `Your crew is full (you plus ${CREW_MAX}). Remove someone on the Crew tab, then open this link again.` : 'Add them to yours to see who has which genus, and each other\'s new finds.'}</p>
+    <p class="row">${full ? '<button class="primary" data-tab="crew">Open Crew</button>' : `<button class="primary" data-act="invAccept" data-v="${esc(l)}">Add ${esc(l)} to my crew</button>`}
+      <a class="btnlink alt" href="?u=${encodeURIComponent(l)}" target="_blank" rel="noopener">See their SPOODEX ↗</a><button data-close="1">Not now</button></p>
+  </div></div></div>`;
+}
+function inviteAccept(l) {
+  $('#modalRoot').innerHTML = '';
+  track('invite-accepted');
+  S.tab = 'crew'; S.evOpen = null;
+  setCrew([...S.crew.logins, l]);
+  invMark(l);   // they asked first, so there's no one to invite back
+  toast(`${l} added to your crew.`);
 }
 const crewNeedsLoad = () => S.crew.logins.some(l => { const d = S.crew.data[l.toLowerCase()]; return !d || Date.now() - d.ts > CREW_TTL; });
 // One all-time taxonomy call per member: genus and species sets without importing (or storing) their observations
@@ -4022,7 +4067,7 @@ function viewCrewMain() {
   let form = `<div class="panel${ready.length < 2 ? ' stk' : ''}" style="margin-bottom:16px">${ready.length < 2 ? stickerHtml(6) : ''}<h2>Crew</h2>
     <p class="muted small">Line up ${isGuest() ? '' : 'yourself and '}up to ${CREW_MAX} other naturalists: who has which genus, what only one of you has, and what none of you has found yet. Public iNaturalist records, all time and everywhere, captive/cultivated excluded.</p>
     <form class="row" data-form="crew"><input name="logins" value="${esc(S.crew.logins.join(', '))}" placeholder="iNaturalist usernames, separated by commas" autocomplete="off" style="flex:1;min-width:220px"><button class="primary" ${crewBusy ? 'disabled' : ''}>Set crew</button></form>
-    ${S.crew.logins.length ? `<div class="row small" style="margin-top:8px;gap:6px">${S.crew.logins.map(l => `<span class="chip">${esc(l)} <span data-act="crewDel" data-v="${esc(l)}" title="Remove from crew" style="cursor:pointer">✕</span></span>`).join('')}
+    ${S.crew.logins.length ? `<div class="row small" style="margin-top:8px;gap:6px">${S.crew.logins.map(l => `<span class="chip">${esc(l)} ${inviter() ? `<button type="button" class="chipact${S.crew.inv?.[l] ? ' sent' : ''}" data-act="crewInvite" data-v="${esc(l)}" title="Ask ${esc(l)} to add you back" aria-label="Ask ${esc(l)} to add you back">✉</button> ` : ''}<span data-act="crewDel" data-v="${esc(l)}" title="Remove from crew" style="cursor:pointer">✕</span></span>`).join('')}
       <button data-act="crewRefresh" ${crewBusy ? 'disabled' : ''}>⟳ Refresh</button><button data-act="share">🔗 Copy crew link</button></div>` : ''}
     ${crewBusy ? `<p class="small">Reading crew records… (about a second per person)</p>` : ''}
     ${crewErr ? `<p>${esc(crewErr)} <button data-act="crewRefresh">Try again</button></p>` : ''}
@@ -7243,6 +7288,7 @@ function enterApp(tab) {
   if (S.pendingEv) { const c = S.pendingEv; S.pendingEv = null; openEventCode(c, true); }
   else if (S.pendingVs) { const v = S.pendingVs; S.pendingVs = null; S.tab = 'compare'; render(); loadCompare(v); }
   else if (S.pendingCrew) { const c = S.pendingCrew; S.pendingCrew = null; S.tab = 'crew'; setCrew(c); }
+  if (S.pendingInvite) { const l = S.pendingInvite; S.pendingInvite = null; openInvited(l); }
 }
 async function dareBanner(ev) {
   const id = /^[gs]\d/.test(ev.q || '') ? +ev.q.slice(1) : null;
@@ -7319,8 +7365,11 @@ document.addEventListener('click', e => {
   if (a === 'crewAdd') {
     if (S.crew.logins.some(l => l.toLowerCase() === val.toLowerCase())) toast(`${val} is already in your crew.`);
     else if (S.crew.logins.length >= CREW_MAX) toast(`Your crew is full (you plus ${CREW_MAX}). Remove someone on the Crew tab first.`);
-    else { setCrew([...S.crew.logins, val]); toast(`${val} added to your crew.`); }
+    else { setCrew([...S.crew.logins, val]); if (inviter()) openInvite([val]); else toast(`${val} added to your crew.`); }
   }
+  if (a === 'crewInvite') openInvite([val]);
+  if (a === 'invSend') inviteSend(val, t);
+  if (a === 'invAccept') inviteAccept(val);
   if (a === 'crewDel') setCrew(S.crew.logins.filter(l => l !== val));
   if (a === 'crewRefresh') { crewErr = null; loadCrew(true); }
   if (a === 'card') openTitleCard();
@@ -7342,7 +7391,6 @@ document.addEventListener('click', e => {
   if (a === 'binder') { e.preventDefault(); openBinder(+val); return; }
   if (a === 'binderAt') { e.preventDefault(); openBinder(exOrder().all.indexOf(+val)); return; }
   if (a === 'bGo') { bStep(+val); return; }
-  if (a === 'react') { react(val, t); return; }
   if (a === 'hit') { e.preventDefault(); const id = +val; hitToggle([id], !hitIds().has(id)); if ($('.binder')) drawBinder(); else if ($('#modalRoot [data-gpage]')) openGenus(id); else render(); return; }
   if (a === 'hitAll') { const have = hitIds(), my = myModel(); hitToggle([...S.M.G.keys()].filter(id => my && !my.M.G.has(id) && !have.has(id)), true); render(); return; }
   if (a === 'hitDrop') { hitToggle([+val], false); render(); return; }
@@ -7460,7 +7508,7 @@ document.addEventListener('submit', async e => {
   const f = e.target.dataset.form; if (!f) return;
   e.preventDefault();
   if (f === 'compare') loadCompare(e.target.login.value);
-  if (f === 'crew') setCrew(e.target.logins.value.split(/[\s,;]+/));
+  if (f === 'crew') { const had = [...S.crew.logins]; setCrew(e.target.logins.value.split(/[\s,;]+/)); openInvite(S.crew.logins.filter(l => !had.includes(l))); }
   if (f === 'evPlace' && S.evDraft) {
     const q = e.target.q.value.trim(), D = S.evDraft; if (!q) return;
     try { const d = await api('/places/autocomplete', { q, per_page:8 }); D.hits = d.results.map(x => ({ id:x.id, name:x.display_name || x.name, l:x.admin_level ?? null })); D.msg = D.hits.length ? '' : 'No places found.'; }
@@ -7487,6 +7535,7 @@ document.addEventListener('input', e => {
   if (d.tank === 'name') { tankState().name = e.target.value.trim().slice(0, 30); saveUser(); paintTank(false); }
 });
 document.addEventListener('change', e => {
+  if (e.target.dataset?.react) { const s = e.target, k = s.value; s.selectedIndex = 0; react(`${s.dataset.react}|${k}`, s.closest('.rxpick')); return; }
   if (e.target.dataset?.petname && S.tab === 'pets') render();
   if (e.target.dataset?.tank === 'tag') { tankState().tag = +e.target.value || null; saveUser(); paintTank(); }
 });
@@ -7532,6 +7581,10 @@ $('#loginInput').addEventListener('input', () => track('username-typed'), { once
 // What changed, newest first: shown once on Profile to returning players, and in full from Settings. The owner's rule (2026-10-13):
 // sections and views stay where they are; when something has to move, it gets a line here.
 const CHANGES = [
+  { v:'2.17', d:'2026-11-09', items:[
+    { h:'Reactions are now one small dropdown instead of a row of buttons, with four to pick from: 👍 ❤️ 🤙 😮. On Ladder and Crew rows too.' },
+    { h:'Adding someone to your crew now offers an invite to send them on iNaturalist, with a link that asks them to add you back. ✉ beside a crewmate\'s name brings it up again.' },
+  ] },
   { v:'2.16', d:'2026-10-21', items:[
     { h:'Walking someone\'s collection now goes highest Spood score first, showing the record that earned each score and why. Until someone picks their own, their 9 highest-scoring genera are on display.' },
     { h:'A ❤ on every Ladder row and under each crewmate on the Crew tab, with their reaction count.' },
@@ -8054,8 +8107,9 @@ async function caseShare(native) {
 // v2.16: the binder ranks genera by their best Spood score (owner: "rank by spood score not rarity"), a ❤ on Ladder and Crew rows, a dot
 // on Profile when new reactions arrive, and the last 7 days' reactions and visits in Since your last visit.
 const EX_N = 9, MILESTONES = [1, 10, 25, 50, 75, 100, 150, 200, 300];
-const REACTS = [['love', '❤️', 'Love'], ['sweet', '🕷', 'Sweet spood!'], ['shot', '📸', 'Nice shot!'], ['amazing', '🤩', 'Amazing!'],
-  ['impressive', '🏆', 'Impressive!'], ['jealous', '😤', 'OMG jealous'], ['wow', '😮', 'Wowww'], ['adorable', '🥰', 'Adorable']];
+// v2.17 (owner, 2026-11-09): four reactions in one dropdown instead of a row of eight buttons. love and wow are the old keys, so their counts carry over.
+const REACTS = [['up', '👍', 'Thumbs up'], ['love', '❤️', 'Love'], ['shaka', '🤙', 'Shaka'], ['wow', '😮', 'Shocked']];
+const REACTS_OLD = [['sweet', '🕷', 'Sweet spood!'], ['shot', '📸', 'Nice shot!'], ['amazing', '🤩', 'Amazing!'], ['impressive', '🏆', 'Impressive!'], ['jealous', '😤', 'OMG jealous'], ['adorable', '🥰', 'Adorable']];   // no longer offered; ones already given still count and show
 const REACT = Object.fromEntries(REACTS.map(([k, i, l]) => [k, { i, l }]));
 const GC_READ = 'https://themoojuice.goatcounter.com/counter/', GC_TTL = 10 * 60e3, GC_PAR = 4;
 const GC_PROBE = '/spoodex/spoodex.html';   // always counted; the special TOTAL path is refused cross-site (checked 2026-10-21)
@@ -8104,7 +8158,7 @@ function rcFmt(rk, a) {
   if (rk === 'total') { const n = cnt(a); return n ? `❤ ${plural(n, 'reaction')}` : ''; }
   if (rk === 'kinds') {   // a = login|target: the reactions on one card or the whole collection, by kind
     const [l, t] = a.split('|'), base = t ? rPath(l, 't', t) : rPath(l, 'k');
-    return REACTS.map(([k, i, lab]) => [i, lab, cnt(`${base}/${k}`)]).filter(x => x[2]).map(([i, lab, n]) => `<span class="rxk" title="${esc(lab)}">${i} ${k2(lab)} <b>${fmt(n)}</b></span>`).join('');
+    return [...REACTS, ...REACTS_OLD].map(([k, i, lab]) => [i, lab, cnt(`${base}/${k}`)]).filter(x => x[2]).map(([i, lab, n]) => `<span class="rxk" title="${esc(lab)}" data-emoji>${i} <b>${fmt(n)}</b></span>`).join('');
   }
   if (rk === 'owner') return ownerReactsHtml();
   if (rk === 'rxweek') return rxWeekTxt(a);
@@ -8113,7 +8167,6 @@ function rcFmt(rk, a) {
   if (rk === 'loved') return lovedHtml(a);
   return '';
 }
-const k2 = lab => lab === 'Love' ? '' : esc(lab);
 function rcRepaint() {
   if (gcRedraw) return;
   gcRedraw = requestAnimationFrame(() => {
@@ -8138,18 +8191,20 @@ function visitPing(login) {
   track(vPath(login)); S.rcPlus[vPath(login)] = (S.rcPlus[vPath(login)] || 0) + 1;
 }
 
-/* reactions: one tap each, once per kind per card per browser (GoatCounter can't take one back) */
+/* reactions: a dropdown of four, each once per card per browser (GoatCounter can't take one back) */
 const myReacts = (login, target) => store.get('reacted', {})[`${login}|${target}`] || [];
+const rxSent = mine => REACTS.filter(([k]) => mine.includes(k)).map(r => r[1]).join('');
+const rxOpts = mine => `<option value="" selected disabled hidden>React</option>${REACTS.map(([k, i, l]) => `<option value="${k}" aria-label="${esc(l)}"${mine.includes(k) ? ' disabled' : ''}>${i}${mine.includes(k) ? ' ✓' : ''}</option>`).join('')}`;
+function rxPick(login, target, mini) {
+  const mine = myReacts(login, target), what = mini ? `${poss(login)} collection` : target === 'p' ? 'this collection' : 'this card';
+  return `<span class="rxpick${mini ? ' mini' : ''}${rxSent(mine) ? ' on' : ''}"><span class="rxface" data-emoji>${mini ? `❤ ${rcSlot('num', rPath(login))}` : rxSent(mine) || 'React'} ▾</span><select data-react="${esc(login)}|${target}" aria-label="React to ${esc(what)}">${rxOpts(mine)}</select></span>`;
+}
 function reactRow(login, target) {
   if (!login || login === GUEST) return '';
   if (ownSpoodex(login)) return `<div class="rx own">${rcSlot('kinds', `${login}|${target}`, 'div')}</div>`;
-  const mine = myReacts(login, target);
-  return `<div class="rx"><div class="rxbtns" role="group" aria-label="React to ${target === 'p' ? 'this collection' : 'this card'}">${REACTS.map(([k, i, l]) => {
-    const on = mine.includes(k);
-    return `<button type="button" class="rxb${on ? ' on' : ''}${k === 'love' ? ' love' : ''}" data-act="react" data-v="${esc(login)}|${target}|${k}" aria-pressed="${on}" aria-label="${esc(l)}" title="${on ? 'Sent' : esc(l)}">${i}${k === 'love' ? '' : ` ${l}`}</button>`;
-  }).join('')}</div><p class="rxsum small muted">${rcSlot('total', target === 'p' ? rPath(login) : rPath(login, 't', target))}</p></div>`;
+  return `<div class="rx">${rxPick(login, target)}<span class="rxsum small muted">${rcSlot('total', target === 'p' ? rPath(login) : rPath(login, 't', target))}</span></div>`;
 }
-function react(v, btn) {
+function react(v, el) {
   const [login, target, kind] = v.split('|');
   if (!REACT[kind] || !/^(p|g\d+)$/.test(target) || ownSpoodex(login) || myReacts(login, target).includes(kind)) return;
   const R = store.get('reacted', {}), key = `${login}|${target}`;
@@ -8157,7 +8212,13 @@ function react(v, btn) {
   const keys = Object.keys(R); if (keys.length > 600) keys.slice(0, keys.length - 600).forEach(k => delete R[k]);
   store.set('reacted', R);
   for (const p of [rPath(login), rPath(login, 'k', kind), rPath(login, 't', target), rPath(login, 't', target, kind)]) { track(p); S.rcPlus[p] = (S.rcPlus[p] || 0) + 1; }
-  if (btn) { btn.classList.add('on'); btn.setAttribute('aria-pressed', 'true'); btn.title = 'Sent'; burst(btn, REACT[kind].i); }
+  if (el) burst(el, REACT[kind].i);
+  const mine = myReacts(login, target);
+  document.querySelectorAll('select[data-react]').forEach(s => {   // the same card can be on screen twice
+    if (s.dataset.react !== key) return;
+    const wrap = s.closest('.rxpick'); wrap.classList.add('on'); s.innerHTML = rxOpts(mine);
+    if (!wrap.classList.contains('mini')) wrap.querySelector('.rxface').textContent = `${rxSent(mine)} ▾`;
+  });
   rcRepaint();
 }
 function burst(el, emoji) {
@@ -8260,8 +8321,12 @@ function exWantScores() {
   if (scoreErr || scoreBusy || scoresReady() || isGuest()) return;
   loadScores().then(() => {
     if (!scoresReady()) return;
-    if (S.tab === 'visit') render();
-    if (bind && $('.binder')) { const id = bind.ids[bind.i], o = exOrder(); bind.ids = o.all; bind.lead = new Set(o.lead); bind.rank = o.rank; bind.i = Math.max(0, bind.ids.indexOf(id)); drawBinder(); }
+    const apply = () => {
+      if (S.tab === 'visit') render();
+      if (bind && $('.binder')) { const id = bind.ids[bind.i], o = exOrder(); bind.ids = o.all; bind.lead = new Set(o.lead); bind.rank = o.rank; bind.i = Math.max(0, bind.ids.indexOf(id)); drawBinder(); }
+    };
+    const open = document.activeElement;   // redrawing would snap shut a reaction dropdown someone has just opened
+    if (open?.dataset?.react) open.addEventListener('blur', () => setTimeout(apply, 300), { once:true }); else apply();
   });
 }
 const scoreChip = sc => sc ? `<span class="sstamp sstat" style="--rc:${scoreCol(sc.s)}" title="Best Spood score ${sc.s} of 100">${sc.s}</span>` : '';
@@ -8418,10 +8483,8 @@ function exOwnerHtml() {
     <p class="row" style="margin:8px 0 0"><button data-act="caseEdit">✏️ Edit</button><button data-act="exPreview">👁 See it as a visitor</button><button data-act="exCopy">🔗 Copy link</button></p></div>`;
 }
 // Your own card's reactions, on its genus page
-// A ❤ for someone's whole collection, with their total, for rows that name a naturalist (Ladder, Crew)
-const rxMini = login => { if (ownSpoodex(login)) return rcSlot('card', rPath(login));
-  const on = myReacts(login, 'p').includes('love');
-  return `<button type="button" class="rxmini${on ? ' on' : ''}" data-act="react" data-v="${esc(login)}|p|love" aria-pressed="${on}" title="${on ? 'Sent' : `Send ${esc(login)} a ❤`}">❤ ${rcSlot('num', rPath(login))}</button>`; };
+// The dropdown for someone's whole collection, with their total, for rows that name a naturalist (Ladder, Crew)
+const rxMini = login => ownSpoodex(login) ? rcSlot('card', rPath(login)) : rxPick(login, 'p', true);
 const ownCardReacts = id => `<div class="rx own">${rcSlot('kinds', `${S.login}|g${id}`, 'div')}</div>`;
 
 // ?u=<login> opens that SPOODEX (importing it if needed); ?vs=<login> jumps to Compare.
@@ -8441,6 +8504,8 @@ const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladd
   S.pendingVs = cleanLogin(q.get('vs')) || null;
   S.pendingCrew = q.get('crew') ? q.get('crew').split(',').map(cleanLogin).filter(Boolean) : null;
   S.pendingEv = (q.get('ev') || '').trim() || null;
+  S.pendingInvite = (l => /^[a-z0-9][\w-]{0,39}$/.test(l) ? l : null)(cleanLogin(q.get('invite')));
+  if (S.pendingInvite) track('invite-opened');
   $('#landSticker').src = STICKERS[1]; $('#impSticker').src = STICKERS[3];
   S.exLink = (q.get('ex') || '').split(',').map(Number).filter(n => Number.isInteger(n) && n > 0).slice(0, EX_N);   // v2.14: an exhibition link's picks
   if (u && q.has('case')) { showCase(u, q.get('case')); return; }
@@ -8455,7 +8520,7 @@ const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladd
     else if (start === 'login') $('#loginInput').focus();
     return;
   }
-  const target = u || last;
+  const target = u || (S.pendingInvite ? mineLogin() || (last === GUEST ? last : null) : last);   // an invite opens your own SPOODEX, never one you were visiting
   if (target && store.get(ukey(target))) {
     S.linkView = othersDex(target, u ? 'link' : 'saved');
     loadUser(target, !S.linkView);
@@ -8464,6 +8529,7 @@ const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladd
   loadLanding(!u && !S.pendingEv);   // photos for a first-time visitor; with ?u= the import goes first
   if (u) { $('#loginInput').value = u; onboard(u, 'link'); }
   else if (S.pendingEv) { const ev = evParse(S.pendingEv); if (ev?.m === 'dare') { loadLanding(true); dareBanner(ev); } else startGuest(); }   // an event link opened by someone new: a dare gets the landing (v2.5), the rest open as a guest
+  else if (S.pendingInvite) $('.landhead').insertAdjacentHTML('beforeend', `<div class="panel darebanner"><div><p><b>${esc(S.pendingInvite)}</b> invited you to their spood crew.</p><p class="small muted">Open SPOODEX below to add them back.</p></div></div>`);
 })();
 </script>
 </body>
