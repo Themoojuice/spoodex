@@ -897,6 +897,73 @@ details > summary.scsec { cursor:pointer; }
   .overlay.binder { padding-top:40px; }
   .bcard .nm { font-size:22px; }
 }
+/* v2.18 Crew: the crew as a small bar, then the feed of their records */
+.crewbar { padding:10px 12px; }
+.crewrow { display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; }
+.crewlbl { font:600 13px var(--mono); letter-spacing:.04em; }
+.crewchips { display:contents; }
+.crewchip { display:inline-flex; align-items:center; gap:3px; font-size:13px; padding:2px 4px 2px 3px; }
+.avatar.xs { width:20px; height:20px; margin-right:2px; flex:none; }
+.crewadd { display:flex; gap:6px; flex:1 1 220px; min-width:0; max-width:340px; }
+.crewadd input { flex:1; min-width:0; padding:4px 8px; font-size:13px; }
+.crewadd button { padding:4px 10px; font-size:13px; white-space:nowrap; }
+.crewtools { display:flex; gap:4px; margin-left:auto; }
+.crewtools button { padding:4px 9px; }
+.panel.stk .crewadd { max-width:420px; margin:10px 0; }
+.cfhead { justify-content:space-between; align-items:baseline; gap:4px 10px; }
+.cfchips { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 2px; }
+.cfchips .chip { display:inline-flex; align-items:center; gap:3px; font-size:12.5px; padding:3px 10px; }
+.cfchips .chip .avatar.xs { width:18px; height:18px; margin-left:-6px; }
+.cfwk { opacity:.75; }
+.cflist { display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:10px; margin-top:6px; }
+.cfday { grid-column:1 / -1; font:600 11px var(--mono); letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin:10px 0 0; padding-bottom:3px; border-bottom:1px dashed var(--dim); }
+.cfi { display:flex; gap:10px; background:var(--panel2); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; min-width:0; }
+.cfi.new { border-color:var(--accent); box-shadow:inset 3px 0 0 var(--accent); }
+.cfph { flex:none; width:120px; min-height:120px; background:var(--dim) center/cover no-repeat; display:grid; place-items:center; }
+.cfph.nop .sil { width:54%; }
+.cfm { flex:1; min-width:0; padding:8px 10px 8px 0; display:flex; flex-direction:column; gap:2px; }
+.cfwho { display:flex; align-items:center; flex-wrap:wrap; gap:0 4px; font-size:13px; }
+.cfnew { margin-left:auto; font:600 10px/1.6 var(--mono); letter-spacing:.12em; color:var(--panel); background:var(--accent); border-radius:99px; padding:0 6px; }
+.cfnm { font:italic 600 17px/1.25 var(--head); color:var(--ink); text-decoration:none; overflow-wrap:anywhere; }
+.cfnm:hover { color:var(--accent); }
+.cfcn { line-height:1.3; }
+.cfbs { display:flex; flex-wrap:wrap; gap:4px; margin:3px 0 1px; }
+.cfb { font:11.5px/1.6 var(--mono); padding:0 7px; border:1px solid var(--line); border-radius:99px; background:var(--panel); color:var(--ink); text-decoration:none; white-space:nowrap; }
+.cfb.hot { border-color:#b8892a; background:color-mix(in srgb, #b8892a 16%, var(--panel)); }
+.cfb.miss { border-color:var(--accent); color:var(--accent); }
+.cfb.ok { border-color:var(--lit); color:var(--lit); }
+.cfhon { font-size:12px; }
+.cfa { display:flex; flex-wrap:wrap; gap:2px 10px; margin-top:auto; padding-top:3px; }
+.cfi .cr { font-size:11px; color:var(--muted); }
+.cfrow { grid-column:1 / -1; padding:6px 10px; border-left:3px solid var(--dim); font-size:14px; }
+.cfrow.hype { background:color-mix(in srgb, #b8892a 12%, var(--panel)); border-left-color:#b8892a; }
+.cfrow .rline { font-size:12px; color:var(--muted); }
+.cfmore { text-align:center; margin:12px 0 0; }
+/* v2.18 Did you know?: which strip */
+.dykbar { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:0 0 8px; }
+.dykbar .chip { font-size:13px; padding:3px 10px; }
+.spot.skel { min-height:190px; }
+/* v2.18 Bounty board: a card is the record's link plus a pass button; area, order and list chips */
+.card.bounty .blink { display:block; color:inherit; text-decoration:none; }
+.bpass { position:absolute; top:6px; right:6px; z-index:3; width:28px; height:28px; padding:0; border-radius:99px; display:grid; place-items:center; font-size:13px; line-height:1;
+  background:rgba(246,238,219,.92); color:#2b2419; border:1px solid var(--line); opacity:.85; }
+.bpass:hover, .bpass:focus-visible { opacity:1; border-color:var(--accent); }
+.bctl { gap:8px 18px; margin-top:10px; }
+.bltabs { gap:6px; margin-bottom:8px; }
+.bltabs .chip { font-size:13px; padding:4px 11px; }
+@media (max-width:600px) {
+  .cflist { grid-template-columns:minmax(0, 1fr); }
+  .cfph { width:96px; min-height:96px; }
+  /* phones: one line of people that scrolls sideways (bar and feed), so the feed starts near the top */
+  .crewtools { order:1; margin-left:auto; }
+  .crewchips, .cfchips { display:flex; flex-wrap:nowrap; gap:6px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
+  .crewchips { order:2; flex:1 1 100%; min-width:0; }
+  .crewchips::-webkit-scrollbar, .cfchips::-webkit-scrollbar { display:none; }
+  .crewchips .chip, .cfchips .chip { flex:none; }
+  .crewadd { max-width:none; flex-basis:100%; order:3; }
+  .crewtools button, .crewadd button { min-height:34px; }
+  .bpass { width:34px; height:34px; }
+}
 </style>
 </head>
 <body data-chassis="notebook">
@@ -1415,8 +1482,11 @@ const GENUS_NOTES = {};   // genus id -> one line written by the owner; replaces
 S.notes = store.get('notes', {});   // the owner's drafts from the genus-lines editor (this browser only) until they're baked into GENUS_NOTES
 const ownNote = id => S.notes[id] || GENUS_NOTES[id] || '';
 const wowLine = id => ownNote(id) || wikiLine(id);
-function wikiLine(id) {
-  const s = (S.info[id]?.s || '').replace(/\s+/g, ' ').trim(), name = S.nodes[id]?.n || ''; if (!s) return '';
+function wikiLine(id) { return wikiLineOf(S.info[id]?.s, [S.nodes[id]?.n || '']); }
+// names: the taxon's own name (and, for a species, its genus), left out when judging whether a sentence says anything. v2.18: also used
+// for species (Did you know? › New on iNat this week), where "X is a species of jumping spider in the genus Y" says nothing either.
+function wikiLineOf(summary, names, species = false) {
+  const s = (summary || '').replace(/\s+/g, ' ').trim(); if (!s) return '';
   const sents = [];
   for (const p of s.split(/(?<=[.!?])\s+(?=[A-Z])/)) {   // glue back splits after initials and abbreviations ("C. L. Koch", "e.g. Portia")
     const prev = sents[sents.length - 1];
@@ -1424,8 +1494,11 @@ function wikiLine(id) {
   }
   for (const t of sents) {
     if (WOW_SKIP.test(t)) continue;
-    const rest = t.split(name).join('').replace(/\b(is|was|are|a|an|the|of|in|genus|genera|spiders?|family|salticidae|jumping|or|and|its|this|monotypic)\b|[(),.;:]/gi, '').trim();
-    if (rest.length >= 4) return t.length > 240 ? t.slice(0, t.lastIndexOf(' ', 230)) + '…' : t;
+    let rest = t;
+    for (const n of names) if (n) rest = rest.split(n).join('');
+    rest = rest.replace(/\b(is|was|are|a|an|the|of|in|genus|genera|spiders?|family|salticidae|jumping|or|and|its|this|monotypic)\b|[(),.;:]/gi, '');
+    if (species) rest = rest.replace(/\b(sub)?species\b/gi, '');
+    if (rest.trim().length >= 4) return t.length > 240 ? t.slice(0, t.lastIndexOf(' ', 230)) + '…' : t;
   }
   return '';
 }
@@ -2153,11 +2226,14 @@ function render() {
   // Ladder and crew fetch lazily when opened (errors stop the auto-retry until the player asks again)
   if (S.tab === 'ladder' && !ladderBusy && !ladderErr && ladderKey() && ladderNeedsLoad(S.ladder[ladderKey()])) loadLadder();
   if (S.tab === 'crew' && !crewBusy && !crewErr && crewNeedsLoad()) loadCrew();
+  if (S.tab === 'crew' && !S.evOpen && !crewObsBusy && !crewObsErr && crewObsNeedsLoad()) loadCrewObs();
   if (S.tab === 'wanted' && wView() === 'posters' && !wantedBusy && !wantedErr && Date.now() - wantedTs > WANTED_TTL) loadWanted();
   if (S.tab === 'wanted' && wView() === 'bounty' && !bountyBusy && !bountyErr && bountyWhere() && bountyNeedsLoad()) loadBounties();
   if (S.tab === 'trip' && !tripBusy && !tripErr && tripNeedsLoad()) loadTrip();
   if (S.tab === 'profile' && !pioneerBusy && !isGuest()) setTimeout(drainPioneer, 0);
-  if (S.tab === 'crew') { S.crew.seen = Date.now(); saveCrew(); setTimeout(crewCeremony, 600); }
+  // the feed marks records uploaded since the last time you looked; that moment holds while you stay on the tab
+  if (S.tab === 'crew') { if (crewPrevSeen == null) crewPrevSeen = S.crew.seen || Date.now(); S.crew.seen = Date.now(); saveCrew(); setTimeout(crewCeremony, 600); }
+  else crewPrevSeen = null;
   if (S.tab === 'crew' && S.evOpen && S.events[S.evOpen] && !evErr[S.evOpen]) loadEvent(S.evOpen);
   if (S.tab === 'crew' && !S.evOpen && !S.evBroken && cupDue()) loadCups();
   if (S.tab === 'pets') setTimeout(loadPetWild, 0);
@@ -2497,14 +2573,92 @@ function spotlights() {
   for (let i = 0; out.length < SPOT_N && buckets.some(b => b.length); i++) { const b = buckets[i % buckets.length]; if (b.length) out.push(b.shift()); }
   return out.slice(0, SPOT_N);
 }
+// A strip card. Near-you cards come from spotlights(); world and week cards (v2.18) bring their own facts, photo, link and extra line
 function spotCard(x) {
-  const fs = factsFor(x.id, x.n, x.never).slice(0, 3), ph = x.never ? plateFor(x.n) : x.id ? treePh(x.id) : null;
-  const go = x.never ? `href="${esc(afdUrl(taxaAu(x.n)))}" target="_blank" rel="noopener"` : `href="#" data-genus="${x.id}"`;
+  const fs = (x.facts || (x.world ? worldFacts(x.id) : factsFor(x.id, x.n, x.never))).slice(0, 3);
+  const ph = 'ph' in x ? x.ph : x.never ? plateFor(x.n) : x.id ? treePh(x.id) : null;
+  const go = x.go || (x.never ? `href="${esc(afdUrl(taxaAu(x.n)))}" target="_blank" rel="noopener"` : `href="#" data-genus="${x.id}"`);
+  const cn = x.cn ?? (x.id ? cnOf(x.id) : '');
+  const extra = x.extra ?? (x.world ? `<a class="small" href="https://www.inaturalist.org/taxa/${x.id}" target="_blank" rel="noopener" data-track="dyk-open">Where it lives, on iNaturalist ↗</a>`
+    : x.id && (wantedList() || []).some(w => w.id === x.id) ? `<button class="small" data-act="wanted" data-v="${x.id}">🧭 Where to look</button>` : '');
   return `<div class="spot"><a class="sph ${x.never && !ph ? 'plateph' : ''} ${ph?.plate ? 'vint' : ''}" ${go} style="${ph ? plateBg(ph) : ''}">${ph ? '' : x.never ? '<span>🏛</span>' : '<i class="sil"></i>'}</a>
-    <div class="smeta"><div class="sk">DID YOU KNOW?</div><a class="snm" ${go}><i>${esc(x.n)}</i></a>${x.id && cnOf(x.id) ? `<div class="small muted">${esc(cnOf(x.id))}</div>` : ''}
+    <div class="smeta"><div class="sk">DID YOU KNOW?</div><a class="snm" ${go}><i>${esc(x.n)}</i></a>${cn ? `<div class="small muted">${esc(cn)}</div>` : ''}
       <ul class="sfacts">${fs.map(([i, t]) => `<li><span aria-hidden="true">${i}</span> ${esc(t)}</li>`).join('') || '<li class="muted">No records near you yet.</li>'}</ul>
-      ${x.id && (wantedList() || []).some(w => w.id === x.id) ? `<button class="small" data-act="wanted" data-v="${x.id}">🧭 Where to look</button>` : ''}
+      ${extra}
       ${ph?.sp ? `<div class="small">Pictured: <i>${esc(ph.sp)}</i></div>` : ''}${ph?.cr ? `<div class="cr">${esc(ph.cr)}</div>` : ''}</div></div>`;
+}
+/* Did you know? beyond your region (v2.18, owner 2026-11-10: "as the number 1 ranked user in australia by FAR, its not often i see species
+   i dont already know well"). 🌏 Around the world: genera on iNat with at least DYK_MIN verifiable records, none in your home country and
+   not in your SPOODEX, SPOT_N a day in a different order each day (↻ deals the next SPOT_N); facts from the world list and Wikipedia via
+   iNat. 🆕 New on iNat this week: of the species uploaded at research grade anywhere in the last 7 days, the ones with the fewest iNat
+   records ever (one v2 species_counts call, twice a day), minus species you have; photos only CC0 / CC BY / CC BY-NC, credited. */
+const DYK_MIN = 5, DYK_WEEK_TTL = 12 * 3600e3, DYK_RARE = 100;
+const DYK_FIELDS = '(count:!t,taxon:(id:!t,name:!t,rank:!t,observations_count:!t,preferred_common_name:!t,ancestor_ids:!t,default_photo:(url:!t,license_code:!t,attribution:!t)))';
+S.dyk = store.get('dyk', {});   // week: {ts, d1, n, list:[{id, n, cn, ever, wk, anc, ph, cr, wl}]}
+let dykBusy = false, dykErr = null, dykOff = 0;
+const wsCache = new WeakMap();
+// Species on iNat per genus, from the world list (counted once per copy of the list)
+function worldSpecies(gid) {
+  const W = S.ref.world; if (!W?.s) return 0;
+  let m = wsCache.get(W);
+  if (!m) { m = new Map(); for (const sid of Object.keys(W.s)) { const g = genusOfNode(+sid); if (g) m.set(g, (m.get(g) || 0) + 1); } wsCache.set(W, m); }
+  return m.get(gid) || 0;
+}
+function worldSpots() {
+  const W = S.ref.world; if (!W) return null;
+  const home = S.M.home.country ? S.ref['p' + S.M.home.country] : null;
+  const pool = Object.keys(W.g).map(Number).filter(id => W.g[id] >= DYK_MIN && !S.M.G.has(id) && home?.g?.[id] == null && S.nodes[id]?.r === 'genus').sort((a, b) => a - b);
+  const order = shuffle(pool, rng(hash32(`${new Date().toDateString()}:${S.login}`)));
+  const at = order.length ? (dykOff * SPOT_N) % order.length : 0;
+  return [...order.slice(at), ...order.slice(0, at)].slice(0, SPOT_N).map(id => ({ id, n:S.nodes[id]?.n || '', world:true }));
+}
+function worldFacts(id) {
+  const W = S.ref.world, c = W?.g[id], ns = worldSpecies(id), home = S.M.home.country && S.ref['p' + S.M.home.country], wl = wikiLine(id), out = [];
+  if (wl) out.push(['📖', wl]);
+  if (c != null) out.push(['🌏', `${plural(c, 'iNat record')} worldwide${home ? `, none in ${S.places[S.M.home.country]?.n || 'your country'}` : ''}.`]);
+  if (ns) out.push(['🧬', `${plural(ns, 'species', 'species')} on iNat.`]);
+  return out;
+}
+async function loadDykWorld() {
+  if (dykBusy) return;
+  dykBusy = true; dykErr = null;
+  try { await ensureRefPlace(null); } catch (e) { dykErr = e.message; }
+  dykBusy = false;
+  if (S.tab === 'tree') softRender();
+}
+const dykWeekStale = () => !S.dyk.week || Date.now() - S.dyk.week.ts > DYK_WEEK_TTL;
+async function loadDykWeek() {
+  if (dykBusy) return;
+  dykBusy = true; dykErr = null;
+  try {
+    const d1 = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10);
+    const d = await api('/observations/species_counts', { taxon_id:SALTICIDAE, created_d1:d1, quality_grade:'research', per_page:500, fields:DYK_FIELDS }, API2);
+    const list = d.results.filter(r => r.taxon?.rank === 'species').map(({ count, taxon:t }) => {
+      const p = t.default_photo, ok = !!(p?.url && OK_LIC[p.license_code]);
+      return { id:t.id, n:t.name, cn:t.preferred_common_name || '', ever:t.observations_count || 0, wk:count || 0, anc:t.ancestor_ids || [],
+        ph:ok ? photoSize(p.url, 'medium') : '', cr:ok ? creditTxt(byName(p.attribution) || 'iNaturalist user', p.license_code) : '' };
+    }).sort((a, b) => a.ever - b.ever).slice(0, 40);
+    // one line about each from Wikipedia (via iNat); /taxa takes 30 ids, more than the strip ever shows
+    const ids = list.slice(0, 30).map(x => x.id);
+    if (ids.length) (await api('/taxa/' + ids.join(','))).results.forEach(t => {
+      const x = list.find(y => y.id === t.id); if (x) x.wl = wikiLineOf(stripHtml(t.wikipedia_summary || ''), [t.name, t.name.split(' ')[0]], true); });
+    S.dyk.week = { ts:Date.now(), d1, n:d.total_results, list }; store.set('dyk', S.dyk);
+  } catch (e) { dykErr = e.message; }
+  dykBusy = false;
+  if (S.tab === 'tree') softRender();
+}
+function weekSpots() {
+  const W = S.dyk.week; if (!W) return null;
+  return W.list.filter(x => !S.M.S.has(x.id)).slice(0, SPOT_N).map(x => {
+    const c = S.ccph[x.id], ph = x.ph ? { u:x.ph, cr:x.cr } : c?.u ? { u:c.u, cr:c.cr } : null;
+    const g = x.anc.find(a => S.nodes[a]?.r === 'genus'), facts = [];
+    if (x.wl) facts.push(['📖', x.wl]);
+    facts.push(['🔎', x.ever <= DYK_RARE ? `Only ${plural(x.ever, 'iNat record')}, ever.` : `${plural(x.ever, 'iNat record')} in all.`]);
+    facts.push(['🆕', `${plural(x.wk, 'research-grade record')} uploaded this week.`]);
+    if (!x.anc.some(a => S.M.G.has(a))) facts.push(['🎯', 'Its genus isn\'t in your SPOODEX.']);
+    return { id:x.id, n:x.n, cn:x.cn, ph, facts, go:`href="https://www.inaturalist.org/taxa/${x.id}" target="_blank" rel="noopener"`,
+      extra:`<span class="small"><a href="https://www.inaturalist.org/observations?taxon_id=${x.id}&created_d1=${esc(W.d1)}&quality_grade=research" target="_blank" rel="noopener" data-track="dyk-open">This week's record${x.wk === 1 ? '' : 's'} ↗</a>${g ? ` · <a href="#" data-genus="${g}">Genus page</a>` : ''}</span>` };
+  });
 }
 function treeTile(id) {
   const g = S.M.G.get(id), n = S.nodes[id]?.n || '?', tr = tierOf(id), ph = g ? photoSize(g.cover, 'small') : photoSize(stockPh(id), 'small');
@@ -2530,20 +2684,36 @@ function viewTree() {
   const M = S.M, view = S.prefs.treeView || 'drawers';
   const sw = `<span class="row" style="gap:6px">${[['drawers', '🗄 Drawers'], ['outline', '🌿 Outline']].map(([k, l]) => `<span class="chip ${view === k ? 'on' : ''}" data-act="treeView" data-v="${k}" style="cursor:pointer">${l}</span>`).join('')}</span>`;
   if (view === 'outline') return `<div class="panel row" style="margin-bottom:12px">${sw}</div>${viewTreeOutline()}`;
-  const groups = treeGroups(), wl = wantedList() || [], spots = spotlights();
+  const groups = treeGroups(), wl = wantedList() || [], near = spotlights();
+  // which Did you know? strip (v2.18): the player's choice, else near you while that has at least 6 cards, else around the world
+  const mode = ['near', 'world', 'week'].includes(S.prefs.dyk) ? S.prefs.dyk : near.length >= 6 ? 'near' : 'world';
+  if (mode === 'world' && !S.ref.world && !dykBusy && !dykErr) loadDykWorld();
+  if (mode === 'week' && dykWeekStale() && !dykBusy && !dykErr) loadDykWeek();
+  const spots = mode === 'world' ? worldSpots() : mode === 'week' ? weekSpots() : near;   // null while a list loads
   // pictures and museum facts for what's on screen (each call is cached; lore only with museum records switched on)
-  const need = [...new Set([...spots.map(x => x.id), ...groups.flatMap(g => [...g.drawers.values()].map(d => d.ids[0]))].filter(id => id && !S.info[id]))];
+  const gIds = mode === 'week' ? [] : (spots || []).map(x => x.id), redraw = () => { if (S.tab === 'tree') softRender(); };
+  const need = [...new Set([...gIds, ...groups.flatMap(g => [...g.drawers.values()].map(d => d.ids[0]))].filter(id => id && !S.info[id]))];
   if (need.length) ensureInfo(need);
-  else ensureCcPhotos(spots.map(x => x.id), () => { if (S.tab === 'tree') softRender(); });
+  else ensureCcPhotos(gIds, redraw);
+  if (mode === 'week' && spots) ccFetch(spots.filter(x => !x.ph).map(x => x.id), redraw);
   const loreNeed = n => !S.lore[n] || (taxaAu(n)?.inat == null && taxaAu(n) && !('syn' in S.lore[n]));
-  [...new Set([...spots.map(x => x.n), ...(auHome() ? auNever().map(t => t.n) : [])])].filter(loreNeed).slice(0, 8)
+  [...new Set([...(mode === 'near' ? near.map(x => x.n) : []), ...(auHome() ? auNever().map(t => t.n) : [])])].filter(loreNeed).slice(0, 8)
     .forEach(n => ensureLore(n, 'genus').then(r => { if (r && S.tab === 'tree') softRender(); }).catch(() => {}));
+  const empty = { near:scopeGenera().inScope.length ? `Every genus on iNat in ${esc(scopeLabel(S.prefs.scope))} is in your SPOODEX.` : '',
+    world:'Every genus on iNat with a few records is in your SPOODEX.', week:'Every species uploaded at research grade this week is in your SPOODEX.' }[mode];
+  const dyk = `<div class="dykbar">${[['near', `🧭 ${esc(scopeLabel(S.prefs.scope))}`], ['world', '🌏 Around the world'], ['week', '🆕 New on iNat this week']]
+      .map(([k, l]) => `<span class="chip${mode === k ? ' on' : ''}" data-act="dyk" data-v="${k}" data-track="dyk-${k}" style="cursor:pointer">${l}</span>`).join('')}
+      ${mode === 'world' && spots?.length ? `<button class="small" data-act="dykMore" data-track="dyk-more">↻ Another ${SPOT_N}</button>` : ''}</div>
+    ${spots?.length ? `<div class="spots">${spots.map(spotCard).join('')}</div>`
+      : mode !== 'near' && dykErr ? `<p class="small" style="margin:0 0 16px">${esc(dykErr)} <button class="small" data-act="dykRetry">Try again</button></p>`
+      : !spots ? `<div class="spots">${'<div class="spot skel"></div>'.repeat(3)}</div>`
+      : empty ? `<p class="small muted" style="margin:0 0 16px">${empty}</p>` : ''}`;
   const all = groups.flatMap(g => [...g.drawers.values()]), hl = headline();
   const unexp = all.filter(d => !d.ids.some(id => M.G.has(id))).length;
   return `<div class="panel" style="margin-bottom:14px"><div class="row" style="justify-content:space-between;gap:8px"><h2 style="margin:0">Lineages</h2>${sw}</div>
       <p style="margin:8px 0 0">${hl ? `${headlineHtml(hl)} · ` : ''}<b>${all.length - unexp}</b> of ${all.length} lineages explored${auHome() ? ` · Australia's checklist: ${TAXA_AU.length} genera, ${auNever().length} never on iNat` : ''}</p>
       <p class="small muted" style="margin:4px 0 0">Classification as used on iNaturalist (subfamily › tribe › genus). <label><input type="checkbox" data-pref="reveal" ${S.prefs.reveal ? 'checked' : ''}> reveal names</label></p></div>
-    ${spots.length ? `<div class="spots">${spots.map(spotCard).join('')}</div>` : ''}
+    ${dyk}
     ${groups.map(g => { const ids = [...g.drawers.values()].flatMap(d => d.ids), f = ids.filter(id => M.G.has(id)), hero = f.find(id => OWNER_PICKS[id]) || f[0];
       return `<section class="tsec"><div class="tban" style="${hero ? `background-image:url('${esc(photoSize(M.G.get(hero).cover, 'large'))}')` : ''}"><div><b>${esc(g.n)}</b> <span class="rank">subfamily</span><br><span>${f.length} of ${ids.length} genera found</span></div></div>
         ${[...g.drawers.values()].map(d => drawerHtml(d, wl)).join('')}</section>`; }).join('')}
@@ -3940,6 +4110,13 @@ function viewLadder() {
 const CREW_MAX = 5, CREW_TTL = 6 * 3600e3, CREW_FEED = 40;
 S.crew = store.get('crew', { logins:[], data:{} });   // data: lowercased login -> {ts, login, obs, g:{genusId:obs}, s:{speciesId:obs}, wk:{obs, g:[ids]}, err?}; feed:[events]; seen: ts
 let crewBusy = false, crewErr = null;
+// v2.18: the feed's records, one v2 call for the whole crew, newest uploads first (owner, 2026-11-10: "by far the best feature"; iNat has no
+// easy way to follow friends' records). obs: {ts, k (logins), page, n, more, list:[trimCrewObs]}; icons: lowercased login -> iNat avatar.
+// No coordinates or places are asked for; photos show under the event rule (evPhOk: CC0 / CC BY / CC BY-NC, the owner's, or yours).
+const CREW_OBS_TTL = 20 * 60e3, CREW_OBS_N = 30, CREW_OBS_KEEP = 90;
+const CREW_OBS_FIELDS = '(id:!t,created_at:!t,observed_on:!t,quality_grade:!t,comments_count:!t,faves_count:!t,identifications_count:!t,'
+  + 'taxon:(id:!t,name:!t,rank:!t,preferred_common_name:!t,ancestor_ids:!t),user:(login:!t,icon_url:!t),photos:(url:!t,license_code:!t))';
+let crewObsBusy = false, crewObsErr = null, crewFilter = null, crewPrevSeen = null;
 const saveCrew = () => store.set('crew', S.crew);
 function setCrew(list) {
   const seen = new Set(), out = [];
@@ -3954,9 +4131,10 @@ function setCrew(list) {
   Object.keys(S.crew.data).forEach(k => { if (!keep.has(k)) delete S.crew.data[k]; });
   Object.keys(S.crew.best || {}).forEach(k => { if (!keep.has(k)) delete S.crew.best[k]; });
   Object.keys(S.crew.inv || {}).forEach(k => { if (!keep.has(k)) delete S.crew.inv[k]; });
-  crewErr = null; saveCrew(); updateUrl();
+  Object.keys(S.crew.icons || {}).forEach(k => { if (!keep.has(k)) delete S.crew.icons[k]; });
+  crewErr = null; crewObsErr = null; saveCrew(); updateUrl();
   if (S.tab === 'crew') render();
-  loadCrew();
+  loadCrew(); loadCrewObs();
 }
 /* crew invites (v2.17, owner 2026-11-09): adding someone offers a link that asks them to add you back. SPOODEX has no accounts and can't message
    anyone, so you send it yourself; iNat's compose page takes ?to=<login> but no text, hence copy first. The link only offers: nothing changes
@@ -4004,7 +4182,7 @@ const crewNeedsLoad = () => S.crew.logins.some(l => { const d = S.crew.data[l.to
 async function loadCrew(force = false) {
   if (crewBusy) return;
   crewBusy = true; crewErr = null;
-  const redraw = () => { if (S.tab === 'crew') render(); };
+  const redraw = crewRedraw;
   try {
     for (const l of [...S.crew.logins]) {
       const k = l.toLowerCase(), cur = S.crew.data[k];
@@ -4032,22 +4210,120 @@ async function loadCrew(force = false) {
   crewBusy = false; redraw();
   crewHype();
 }
-const crewUnseen = () => (S.crew.feed || []).some(e => e.ts > (S.crew.seen || 0) && (e.kind === 'ev' || S.crew.logins.includes(e.login)));
-function crewFeedHtml(ready) {
-  const M = S.M, feed = (S.crew.feed || []).filter(e => e.kind === 'ev' || S.crew.logins.includes(e.login)).slice(-12).reverse();
-  const names = ids => ids.slice(0, 6).map(gLink).join(', ') + (ids.length > 6 ? ` and ${ids.length - 6} more` : '');
+// The Crew tab's dot: event news, a new genus or species for someone, or a record uploaded since you last looked
+const crewUnseen = () => (S.crew.feed || []).some(e => e.ts > (S.crew.seen || 0) && (e.kind === 'ev' || S.crew.logins.includes(e.login)))
+  || !!crewObsNow()?.list.some(x => Date.parse(x.at) > (S.crew.seen || 0));
+const crewObsKey = () => S.crew.logins.map(l => l.toLowerCase()).sort().join(',');
+const crewObsNow = () => S.crew.obs?.k === crewObsKey() ? S.crew.obs : null;
+const crewObsNeedsLoad = () => S.crew.logins.length > 0 && (!crewObsNow() || Date.now() - S.crew.obs.ts > CREW_OBS_TTL);
+function trimCrewObs(o) {
+  const t = o.taxon || {}, p = o.photos?.[0];
+  return { id:o.id, at:o.created_at || '', d:o.observed_on || '', q:o.quality_grade || '', c:o.comments_count || 0, f:o.faves_count || 0, i:o.identifications_count || 0,
+    tid:t.id || null, t:t.name || '', r:t.rank || '', cn:t.preferred_common_name || '', anc:t.ancestor_ids || [],
+    u:o.user?.login || '', ph:p?.url ? photoSize(p.url, 'small') : '', lc:p?.license_code || null };
+}
+// Page 1 replaces the list; "Show more" appends the next page
+async function loadCrewObs(more = false) {
+  if (crewObsBusy || !S.crew.logins.length) return;
+  const k = crewObsKey(), cur = crewObsNow(), page = more && cur ? (cur.page || 1) + 1 : 1;
+  crewObsBusy = true; crewObsErr = null; paintCrewFeed();
+  try {
+    const d = await api('/observations', { user_login:S.crew.logins.join(','), taxon_id:SALTICIDAE, captive:false, order_by:'created_at', order:'desc',
+      per_page:CREW_OBS_N, page, fields:CREW_OBS_FIELDS }, API2);
+    if (crewObsKey() === k) {
+      const icons = S.crew.icons = S.crew.icons || {};
+      d.results.forEach(o => { if (o.user?.login && o.user.icon_url) icons[o.user.login.toLowerCase()] = o.user.icon_url; });
+      const old = page > 1 ? cur.list : [], got = d.results.map(trimCrewObs).filter(x => !old.some(y => y.id === x.id));
+      const list = [...old, ...got].slice(0, CREW_OBS_KEEP);
+      S.crew.obs = { ts:page > 1 ? cur.ts : Date.now(), k, page, n:d.total_results, list, more:d.total_results > page * CREW_OBS_N && list.length < CREW_OBS_KEEP };
+      saveCrew();
+    }
+  } catch (e) { crewObsErr = e.message; }
+  crewObsBusy = false;
+  if (crewObsKey() !== k) { loadCrewObs(); return; }   // the crew changed while reading
+  paintCrewFeed();
+  if (!$('#app').classList.contains('hidden')) navHtml();   // the Crew tab's dot
+}
+// Redraw the Crew tab, unless someone is typing a name into it (then only the feed)
+function crewRedraw() {
+  if (S.tab !== 'crew') return;
+  const a = document.activeElement;
+  if (a?.closest?.('.crewadd') && a.value) { paintCrewFeed(); return; }
+  render();
+}
+function paintCrewFeed() { const el = S.tab === 'crew' && !S.evOpen && $('#crewFeed'); if (el) el.innerHTML = crewFeedHtml(); }
+const crewIcon = l => S.crew.icons?.[String(l).toLowerCase()] || '';
+const crewAv = l => `<span class="avatar xs" aria-hidden="true"${crewIcon(l) ? ` style="background-image:url('${esc(crewIcon(l))}')"` : ''}></span>`;
+// A record's genus, when its tree is known (loadCrew adds every genus in a crew member's collection to S.nodes)
+const crewObsGenus = x => x.r === 'genus' ? x.tid : x.anc.find(id => S.nodes[id]?.r === 'genus') || null;
+function crewDayLabel(ts) {
+  const d = new Date(ts), now = new Date();
+  if (d.toDateString() === now.toDateString()) return 'Today';
+  if (d.toDateString() === new Date(Date.now() - 864e5).toDateString()) return 'Yesterday';
+  return d.toLocaleDateString(undefined, { weekday:'short', day:'numeric', month:'short', ...(d.getFullYear() !== now.getFullYear() ? { year:'numeric' } : {}) });
+}
+const obsDay = d => d ? new Date(d + 'T12:00:00').toLocaleDateString(undefined, { day:'numeric', month:'short', ...(d.slice(0, 4) !== String(new Date().getFullYear()) ? { year:'numeric' } : {}) }) : '';
+// The feed (v2.18): the crew's records as cards that open on iNaturalist (to comment, fave or identify), newest upload first, a day
+// heading between days, filter chips per person with their uploads this week, and the collection news in between: new genera and
+// species (with ↗ to that person's records of each on iNat) where no card already shows them, honours, and event news.
+function crewFeedHtml() {
+  const M = S.M, F = crewObsNow(), logins = S.crew.logins, prev = crewPrevSeen ?? S.crew.seen ?? Date.now();
+  const lo = s => String(s).toLowerCase(), who = crewFilter && logins.some(l => lo(l) === crewFilter) ? crewFilter : null;
+  const pick = l => !who || lo(l) === who;
+  const list = (F?.list || []).filter(x => pick(x.u));
+  const news = (S.crew.feed || []).filter(e => !e.kind && logins.includes(e.login));
+  const data = l => S.crew.data[lo(l)];
+  const newTo = (l, id, kind) => news.some(e => lo(e.login) === lo(l) && (e[kind] || []).includes(id)) || data(l)?.[kind]?.[id] === 1;
+  const hons = news.flatMap(e => (e.hype || []).map(h => ({ ...h, l:lo(e.login) })));
+  // what the cards on screen already show, so the news lines don't repeat them
+  const covered = new Set(list.flatMap(x => [`${lo(x.u)}:${crewObsGenus(x)}`, `${lo(x.u)}:${x.tid}`]));
+  // "First X for them" goes only on the earliest of their records of X on screen (the list is newest first)
+  const earliest = new Map();
+  for (const x of [...list].reverse()) for (const k of [`${lo(x.u)}:g${crewObsGenus(x)}`, `${lo(x.u)}:s${x.tid}`]) if (!earliest.has(k)) earliest.set(k, x.id);
   const day = ts => new Date(ts).toLocaleDateString(undefined, { day:'numeric', month:'short' });
-  const ev = e => { if (e.kind === 'ev') return `<div class="feed">${EV_MODES[e.m]?.i || '🏁'} ${S.events[e.id] ? `<a href="#" data-act="evOpen" data-v="${esc(e.id)}">${esc(e.n)}</a>` : esc(e.n)}: ${esc(e.txt)}<div class="small muted">${day(e.ts)}</div></div>`;
-    const miss = isGuest() ? [] : e.g.filter(id => !M.G.has(id));
-    return `<div class="feed${e.g.length ? ' hype' : ''}">🆕 <b>${esc(e.login)}</b> added ${e.g.length ? `${e.g.length} ${e.g.length === 1 ? 'genus' : 'genera'} (${names(e.g)})` : ''}${e.g.length && e.s.length ? ' and ' : ''}${e.s.length ? `${e.s.length} species` : ''} to their collection${miss.length ? ` <span class="small">· ${miss.length < e.g.length ? `${miss.length} not` : e.g.length === 1 ? 'not' : 'none of them'} in yours 😤</span>` : ''}
-      ${e.g.length ? hypeHtml(e) : ''}<div class="small muted">spotted between ${day(e.since)} and ${day(e.ts)}</div></div>`; };
-  const others = ready.filter(m => !m.me && m.wk);
-  const busy = others.filter(m => m.wk.obs).sort((a,b) => b.wk.obs - a.wk.obs), quiet = others.filter(m => !m.wk.obs);
-  return `<div class="panel" style="margin-bottom:16px"><h2>Crew feed</h2>
-    ${feed.map(ev).join('') || '<p class="small muted">Nothing new in anyone\'s collection yet. SPOODEX checks the crew every 6 hours and posts new genera and species here.</p>'}
-    <h3 style="margin-top:12px">Uploads in the last 7 days</h3>
-    ${busy.map(m => `<div class="small">📷 <b>${esc(m.login)}</b>: ${m.wk.obs} salticid record${m.wk.obs === 1 ? '' : 's'}${m.wk.g.length ? ` across ${names(m.wk.g)}` : ''}</div>`).join('') || '<p class="small muted">A quiet week for the crew.</p>'}
-    ${quiet.length ? `<p class="small muted">No uploads: ${quiet.map(m => esc(m.login)).join(', ')}</p>` : ''}</div>`;
+  const card = x => {
+    const g = crewObsGenus(x), url = `https://www.inaturalist.org/observations/${x.id}`, fresh = Date.parse(x.at) > prev, ph = evPhOk(x);
+    const firstG = g && earliest.get(`${lo(x.u)}:g${g}`) === x.id && newTo(x.u, g, 'g');
+    const firstS = !firstG && x.r === 'species' && earliest.get(`${lo(x.u)}:s${x.tid}`) === x.id && newTo(x.u, x.tid, 's');
+    const h = hons.find(h => h.l === lo(x.u) && (h.t === g || h.t === x.tid));
+    const name = ['genus', 'subgenus', 'complex', 'species', 'subspecies', 'variety', 'hybrid'].includes(x.r) ? `<i>${esc(x.t)}</i>` : `${esc(x.t || 'Unknown')} <span class="small muted">${esc(x.r)}</span>`;
+    const badges = [firstG ? `<span class="cfb hot">🆕 First <i>${esc(S.nodes[g]?.n || '')}</i> for ${esc(x.u)}</span>` : firstS ? `<span class="cfb hot">🆕 New species for ${esc(x.u)}</span>` : '',
+      g && !isGuest() && !M.G.has(g) ? `<a href="#" class="cfb miss" data-genus="${g}" title="Not in your SPOODEX: open the genus page">🎯 Not in yours</a>` : '',
+      x.q === 'needs_id' ? '<span class="cfb">Needs ID</span>' : x.q === 'research' ? '<span class="cfb ok">Research grade</span>' : x.q === 'casual' ? '<span class="cfb">Casual</span>' : ''].join('');
+    const stats = [x.c ? `<span title="Comments">💬 ${x.c}</span>` : '', x.f ? `<span title="Faves">⭐ ${x.f}</span>` : '', x.i ? `<span title="Identifications from other people">${plural(x.i, 'ID')}</span>` : '',
+      x.d && x.d !== x.at.slice(0, 10) ? `observed ${esc(obsDay(x.d))}` : ''].filter(Boolean).join(' · ');
+    return `<article class="cfi${fresh ? ' new' : ''}">
+      <a class="cfph${ph ? '' : ' nop'}" href="${url}" target="_blank" rel="noopener" data-track="crew-feed-open"${ph ? ` style="background-image:url('${esc(x.ph)}')"` : ''} aria-label="${esc(x.u)}'s record on iNaturalist">${ph ? '' : '<i class="sil"></i>'}</a>
+      <div class="cfm"><div class="cfwho">${crewAv(x.u)}<b>${esc(x.u)}</b><span class="small muted">· ${esc(agoShort(Date.parse(x.at)))}</span>${fresh ? '<span class="cfnew">NEW</span>' : ''}</div>
+        <a class="cfnm" href="${url}" target="_blank" rel="noopener" data-track="crew-feed-open">${name}</a>${x.cn ? `<div class="small muted cfcn">${esc(x.cn)}</div>` : ''}
+        ${badges ? `<div class="cfbs">${badges}</div>` : ''}
+        ${h ? `<div class="cfhon">${sealHtml(honourOf(h.rank))} The <b>${ordinal(h.rank)}</b> naturalist to record <i>${esc(S.nodes[h.t]?.n || '?')}</i> in ${esc(S.places[h.p]?.n || '')}</div>` : ''}
+        <div class="cfa small"><a href="${url}" target="_blank" rel="noopener" data-track="crew-feed-open">💬 Comment on iNaturalist ↗</a>${stats ? `<span class="muted">${stats}</span>` : ''}</div>
+        ${ph && !isMe(x.u) ? `<div class="cr">${esc(evPhCredit(x))}</div>` : ''}</div></article>`;
+  };
+  const theirs = (l, id) => `<a href="https://www.inaturalist.org/observations?user_id=${encodeURIComponent(l)}&taxon_id=${id}" target="_blank" rel="noopener" data-track="crew-feed-open" title="${esc(l)}'s records of it on iNaturalist" aria-label="${esc(l)}'s records of it on iNaturalist">↗</a>`;
+  const names = (ids, f) => ids.slice(0, 5).map(f).join(', ') + (ids.length > 5 ? ` and ${ids.length - 5} more` : '');
+  const row = e => {
+    if (e.kind === 'ev') return who ? '' : `<div class="cfrow">${EV_MODES[e.m]?.i || '🏁'} ${S.events[e.id] ? `<a href="#" data-act="evOpen" data-v="${esc(e.id)}">${esc(e.n)}</a>` : esc(e.n)}: ${esc(e.txt)}</div>`;
+    const l = lo(e.login), g = e.g.filter(id => !covered.has(`${l}:${id}`)), s = (e.s || []).filter(id => !covered.has(`${l}:${id}`));
+    if (!g.length && !s.length) return '';
+    const miss = isGuest() ? [] : g.filter(id => !M.G.has(id)), hype = (e.hype || []).filter(h => !covered.has(`${l}:${h.t}`));
+    return `<div class="cfrow${g.length ? ' hype' : ''}">🆕 <b>${esc(e.login)}</b> added ${g.length ? `${plural(g.length, 'genus', 'genera')} (${names(g, id => `${gLink(id)} ${theirs(e.login, id)}`)})` : ''}${g.length && s.length ? ' and ' : ''}${s.length ? `${plural(s.length, 'species', 'species')} (${names(s, id => `<i>${esc(S.nodes[id]?.n || '?')}</i> ${theirs(e.login, id)}`)})` : ''} to their collection${miss.length ? ` <span class="small">· ${miss.length < g.length ? `${miss.length} not` : g.length === 1 ? 'not' : 'none of them'} in yours 😤</span>` : ''}
+      ${g.length || hype.length ? hypeHtml({ ...e, g, hype }) : ''}<div class="small muted">spotted between ${day(e.since)} and ${day(e.ts)}</div></div>`;
+  };
+  const items = [...list.map(x => ({ ts:Date.parse(x.at) || 0, h:card(x) })),
+    ...(S.crew.feed || []).filter(e => e.kind === 'ev' || (logins.includes(e.login) && pick(e.login))).slice(-12).map(e => ({ ts:e.ts, h:row(e) }))]
+    .filter(x => x.h).sort((a, b) => b.ts - a.ts);
+  let last = '';
+  const stream = items.map(x => { const k = new Date(x.ts).toDateString(), head = k !== last ? `<div class="cfday">${esc(crewDayLabel(x.ts))}</div>` : ''; last = k; return head + x.h; }).join('');
+  const chips = logins.length > 1 ? `<div class="cfchips">${[['', 'Everyone'], ...logins.map(l => [lo(l), l])].map(([k, l]) => {
+    const n = k ? data(l)?.wk?.obs : null;
+    return `<span class="chip${(who || '') === k ? ' on' : ''}" data-act="crewFilter" data-v="${esc(k)}" style="cursor:pointer">${k ? crewAv(l) : ''}${esc(l)}${n != null ? ` <span class="cfwk">· ${n} this week</span>` : ''}</span>`; }).join('')}</div>` : '';
+  const loading = crewObsBusy || (!F && !crewObsErr);
+  return `<div class="panel cfeed" style="margin-bottom:16px"><div class="row cfhead"><h2 style="margin:0">Crew feed</h2>${F ? `<span class="small muted">Updated ${esc(agoShort(F.ts))}</span>` : ''}</div>
+    ${chips}${loading ? `<p class="small">Reading ${who ? `${esc(who)}'s` : 'the crew\'s'} latest records…</p>` : ''}${crewObsErr ? `<p class="small">${esc(crewObsErr)} <button class="small" data-act="crewObsRetry">Try again</button></p>` : ''}
+    ${stream ? `<div class="cflist">${stream}</div>` : loading ? '' : `<p class="small muted">No jumping spider records from ${who ? esc(who) : 'your crew'} yet.</p>`}
+    ${F?.more ? `<p class="cfmore"><button data-act="crewMore" data-track="crew-feed-more"${crewObsBusy ? ' disabled' : ''}>Show ${CREW_OBS_N} more</button></p>` : ''}</div>`;
 }
 function crewMembers() {
   const M = S.M, out = [];
@@ -4059,23 +4335,32 @@ function crewMembers() {
 function viewCrew() {
   if (S.evBroken) return '<div class="panel"><p style="margin:0">This event link is broken.</p></div>';
   const E = S.evOpen && S.events[S.evOpen];
-  return E ? viewEvent(E) : eventsHtml() + viewCrewMain();
+  return E ? viewEvent(E) : viewCrewMain();
 }
+// v2.18 (owner, 2026-11-10): the feed front and centre with the crew as a small bar above it, then events, then the crew compared
 function viewCrewMain() {
-  const scope = S.prefs.scope, where = esc(scopeLabel(scope));
   const members = crewMembers(), ready = members.filter(m => !m.pending && !m.err);
-  let form = `<div class="panel${ready.length < 2 ? ' stk' : ''}" style="margin-bottom:16px">${ready.length < 2 ? stickerHtml(6) : ''}<h2>Crew</h2>
-    <p class="muted small">Line up ${isGuest() ? '' : 'yourself and '}up to ${CREW_MAX} other naturalists: who has which genus, what only one of you has, and what none of you has found yet. Public iNaturalist records, all time and everywhere, captive/cultivated excluded.</p>
-    <form class="row" data-form="crew"><input name="logins" value="${esc(S.crew.logins.join(', '))}" placeholder="iNaturalist usernames, separated by commas" autocomplete="off" style="flex:1;min-width:220px"><button class="primary" ${crewBusy ? 'disabled' : ''}>Set crew</button></form>
-    ${S.crew.logins.length ? `<div class="row small" style="margin-top:8px;gap:6px">${S.crew.logins.map(l => `<span class="chip">${esc(l)} ${inviter() ? `<button type="button" class="chipact${S.crew.inv?.[l] ? ' sent' : ''}" data-act="crewInvite" data-v="${esc(l)}" title="Ask ${esc(l)} to add you back" aria-label="Ask ${esc(l)} to add you back">✉</button> ` : ''}<span data-act="crewDel" data-v="${esc(l)}" title="Remove from crew" style="cursor:pointer">✕</span></span>`).join('')}
-      <button data-act="crewRefresh" ${crewBusy ? 'disabled' : ''}>⟳ Refresh</button><button data-act="share">🔗 Copy crew link</button></div>` : ''}
-    ${crewBusy ? `<p class="small">Reading crew records… (about a second per person)</p>` : ''}
-    ${crewErr ? `<p>${esc(crewErr)} <button data-act="crewRefresh">Try again</button></p>` : ''}
-    ${members.filter(m => m.err).map(m => `<p class="small">⚠ ${esc(m.login)}: ${esc(m.err)}</p>`).join('')}</div>`;
-  if (outOn()) { form += `<div class="panel outp" id="outBox" style="margin-bottom:16px">${outHtml()}</div>`; setTimeout(() => loadOut(), 0); }
-  if (ready.some(m => !m.me)) form += crewFeedHtml(ready);
-  if (ready.length < 2) return form + (S.crew.logins.length ? '' : `<p class="muted">Add at least ${isGuest() ? 'two naturalists' : 'one other naturalist'}. Tip: the <a href="#" data-tab="ladder">Ladder</a> has a “+ Crew” button on every row.</p>`);
-
+  let out = crewBarHtml(members);
+  if (outOn()) { out += `<div class="panel outp" id="outBox" style="margin-bottom:16px">${outHtml()}</div>`; setTimeout(() => loadOut(), 0); }
+  if (S.crew.logins.length) out += `<div id="crewFeed">${crewFeedHtml()}</div>`;
+  return out + eventsHtml() + (ready.length >= 2 ? crewCompareHtml(ready) : '');
+}
+// The crew in one line: each person (✉ asks them to add you back, ✕ removes them), a box to add someone, ⟳ and 🔗 (the crew link)
+function crewBarHtml(members) {
+  const n = S.crew.logins.length, full = n >= CREW_MAX;
+  const form = `<form class="crewadd" data-form="crewAdd"><input name="logins" placeholder="${full ? `Crew full (you plus ${CREW_MAX})` : 'Add by iNat username'}" autocomplete="off" autocapitalize="none" spellcheck="false" aria-label="Add a naturalist to your crew by their iNaturalist username"${full ? ' disabled' : ''}><button${full ? ' disabled' : ''}>＋ Add</button></form>`;
+  const notes = `${crewBusy ? '<p class="small" style="margin:8px 0 0">Reading crew records… (about a second per person)</p>' : ''}${crewErr ? `<p style="margin:8px 0 0">${esc(crewErr)} <button data-act="crewRefresh">Try again</button></p>` : ''}
+    ${members.filter(m => m.err).map(m => `<p class="small" style="margin:8px 0 0">⚠ ${esc(m.login)}: ${esc(m.err)}</p>`).join('')}`;
+  if (!n) return `<div class="panel stk" style="margin-bottom:16px">${stickerHtml(6)}<h2>Crew</h2>
+    <p>Add friends by their iNaturalist username to follow their jumping spider records here.</p>${form}
+    <p class="small muted" style="margin-bottom:0">Tip: the <a href="#" data-tab="ladder">Ladder</a> has a “+ Crew” button on every row.</p>${notes}</div>`;
+  const chip = l => `<span class="chip crewchip">${crewAv(l)}${esc(l)}${inviter() ? `<button type="button" class="chipact${S.crew.inv?.[l] ? ' sent' : ''}" data-act="crewInvite" data-v="${esc(l)}" title="Ask ${esc(l)} to add you back" aria-label="Ask ${esc(l)} to add you back">✉</button>` : ''}<button type="button" class="chipact" data-act="crewDel" data-v="${esc(l)}" title="Remove ${esc(l)} from your crew" aria-label="Remove ${esc(l)} from your crew">✕</button></span>`;
+  return `<div class="panel crewbar" style="margin-bottom:16px"><div class="crewrow"><span class="crewlbl">👥 Crew</span><span class="crewchips">${S.crew.logins.map(chip).join('')}</span>
+    ${form}<span class="crewtools"><button type="button" data-act="crewRefresh" title="Refresh the crew" aria-label="Refresh the crew"${crewBusy ? ' disabled' : ''}>⟳</button><button type="button" data-act="share" title="Copy a link to this crew" aria-label="Copy a link to this crew">🔗</button></span></div>${notes}</div>`;
+}
+// Who has which genus: the table, best finds, what only one of you has, what nobody has yet, and the genus matrix
+function crewCompareHtml(ready) {
+  const scope = S.prefs.scope, where = esc(scopeLabel(scope));
   const holders = new Map(), sHolders = new Map();
   ready.forEach(m => { Object.keys(m.g).forEach(id => (holders.get(+id) || holders.set(+id, []).get(+id)).push(m));
                        Object.keys(m.s).forEach(id => (sHolders.get(+id) || sHolders.set(+id, []).get(+id)).push(m)); });
@@ -4097,7 +4382,8 @@ function viewCrewMain() {
       ${ready.map(m => `<td class="have">${m.g[id] ? `✓<span class="small muted"> ${fmt(m.g[id])}</span>` : ''}</td>`).join('')}
       <td class="n small">${one ? `only ${esc(ms[0].login)}` : all ? 'everyone' : `${ms.length}/${ready.length}`}</td></tr>`; }).join('');
 
-  return form + `
+  return `<h2 style="margin-top:22px">The crew compared</h2>
+  <p class="small muted">Who has which genus, what only one of you has, and what none of you has found yet. Public iNaturalist records, all time and everywhere, captive/cultivated excluded.</p>
   <div class="panel tablewrap"><h3>The crew <span class="small muted">· ${holders.size} genera between you, ${everyone} shared by everyone</span></h3>
     <table class="cmp"><tr><th></th>${stats.map(x => `<th class="n">${name(x.m)}</th>`).join('')}</tr>
       ${statRow('Genera', x => x.gn)}${statRow('Species', x => x.sn)}${statRow('Prestige ✦', x => x.pr)}
@@ -4994,11 +5280,13 @@ function dareGenus(id) {
   Object.assign(D, { q:'g' + id, r:`${S.login}, ` });
   $('#modalRoot').innerHTML = '';
   S.tab = 'crew'; S.evOpen = null; S.evBroken = false; S.evDraft = D;
-  updateUrl(); render(); scrollTo(0, 0);
+  updateUrl(); render(); evFormShow();
   const el = $('[data-evf="r"]'); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
 }
 // people you might dare: your crew and your latest Compare rival
 const dareWho = () => [...new Set([...S.crew.logins, store.get('cmp')?.login].filter(l => l && !isMe(l)))].slice(0, 6);
+// Since v2.18 events sit below the crew feed, so a new event's form is scrolled to rather than found at the top
+const evFormShow = () => ($('.evform') || $('#view'))?.scrollIntoView({ block:'start' });
 function evFormHtml() {
   const D = S.evDraft, m = D.m;
   const chip = (act, v, on, label) => `<span class="chip ${on ? 'on' : ''}" data-act="${act}" data-v="${v}" style="cursor:pointer">${label}</span>`;
@@ -5620,8 +5908,11 @@ function taxonPhoto(id) {
 S.ccph = store.get('ccph', {});
 let ccBusy = false;
 async function ensureCcPhotos(ids, redraw = () => {}) {
-  const need = [...new Set(ids)].filter(id => id && !OWNER_PICKS[id] && !S.ownph[id]?.u && S.info[id] && !OK_LIC[S.info[id].lc]
-    && (!S.ccph[id] || Date.now() - S.ccph[id].ts > OWNPH_TTL));
+  return ccFetch([...new Set(ids)].filter(id => id && !OWNER_PICKS[id] && !S.ownph[id]?.u && S.info[id] && !OK_LIC[S.info[id].lc]), redraw);
+}
+// The same lookup for any taxon (v2.18: also the species on Did you know? › New on iNat this week)
+async function ccFetch(ids, redraw = () => {}) {
+  const need = ids.filter(id => id && (!S.ccph[id] || Date.now() - S.ccph[id].ts > OWNPH_TTL));
   if (ccBusy || !need.length) return;
   ccBusy = true;
   try {
@@ -6378,14 +6669,26 @@ function viewSets() {
     ${!ref ? '' : sps.map(x => row(x, `<i>${esc(x.name)}</i>`, 'species')).join('') || '<p class="small">None yet.</p>'}`;
 }
 
-/* ---------------- bounty board: records near you waiting for an ID ---------------- */
-const BOUNTY_TTL = 3600e3, BOUNTY_KM = 50;
+/* ---------------- bounty board: records waiting for an ID ---------------- */
+// v2.18 (owner, 2026-11-10: an iNat user loved it): three lists (genera you're missing, unnamed spoods, and genus known with the species
+// wanted), near home / the state / the country, newest or longest waiting, BOUNTY_N at a time with Show more, ✕ to pass on a record, and
+// the records you open from the board are checked on each refresh, so an ID you added still counts after the record leaves Needs ID.
+const BOUNTY_TTL = 3600e3, BOUNTY_KM = 50, BOUNTY_N = 40, BOUNTY_KEEP = 200;
 const BOUNTY_FIELDS = '(id:!t,observed_on:!t,created_at:!t,obscured:!t,geojson:!t,taxon:(id:!t,name:!t,rank:!t,ancestor_ids:!t),user:(login:!t),photos:(url:!t),identifications:(current:!t,user:(login:!t)))';
 const BOUNTY_RANKS = [[1, 'Deputy'], [5, 'Bounty hunter'], [15, 'Marshal'], [40, 'Sheriff'], [100, 'Legend of the ID frontier']];
+const BOUNTY_LISTS = [['conf', '🎯 Wanted, unconfirmed', 'Records of genera you\'re missing, still at Needs ID.'],
+  ['unk', '❓ Unnamed spoods', 'Identified only to family, subfamily or tribe.'],
+  ['gen', '🔬 Species wanted', 'Identified to genus, waiting for someone to name the species.']];
 let bountyBusy = false, bountyErr = null;
-const bountyWhere = () => { const h = S.M.homeCell, pid = S.M.home.state || S.M.home.country;
+// Within 50 km of home, else the state: what Since your last visit counts. The board itself can look wider (S.prefs.bountyRange).
+const bountyHome = () => { const h = S.M.homeCell, pid = S.M.home.state || S.M.home.country;
   return h ? boxQ(h, BOUNTY_KM) : pid ? { place_id:pid } : null; };
-const bountyNeedsLoad = () => { const b = S.u.bounty?.data; return !b || Date.now() - b.ts > BOUNTY_TTL || b.k !== JSON.stringify(bountyWhere()); };
+const bountyRange = () => { const r = S.prefs.bountyRange; return r === 'country' || r === 'state' ? r : S.M.homeCell ? 'near' : 'state'; };
+const bountyPid = () => bountyRange() === 'country' ? S.M.home.country || S.M.home.state : S.M.home.state || S.M.home.country;
+const bountyWhere = () => bountyRange() === 'near' ? bountyHome() : bountyPid() ? { place_id:bountyPid() } : null;
+const bountyOrder = () => S.prefs.bountySort === 'old' ? 'asc' : 'desc';
+const bountyKey = () => JSON.stringify([bountyWhere(), bountyOrder()]);
+const bountyNeedsLoad = () => { const b = S.u.bounty?.data; return !b?.lists || Date.now() - b.ts > BOUNTY_TTL || b.k !== bountyKey(); };
 function trimBounty(o) {
   const c = o.geojson?.coordinates, h = S.M.homeCell, me = String(S.login).toLowerCase(), t = o.taxon || {};
   return { id:o.id, d:o.observed_on || '', up:(o.created_at || '').slice(0, 10), t:t.name || '?', r:t.rank || '', tid:t.id,
@@ -6393,52 +6696,92 @@ function trimBounty(o) {
     mine:(o.identifications || []).some(i => i.user?.login?.toLowerCase() === me),
     km:h && c && !o.obscured ? Math.max(5, Math.round(kmBetween(h, { lat:c[1], lng:c[0] }) / 5) * 5) : null };
 }
+// Genera on the area's iNat list that you're missing (the state's list near home and for the state, the country's for the country)
+const bountyMissing = () => { const ref = S.ref['p' + bountyPid()]; return ref ? Object.keys(ref.g).map(Number).filter(id => !S.M.G.has(id)) : []; };
+function bountyQuery(k, page, where = bountyWhere(), order = bountyOrder()) {
+  const q = { taxon_id:SALTICIDAE, quality_grade:'needs_id', per_page:BOUNTY_N, page, order_by:'created_at', order, fields:BOUNTY_FIELDS, ...where };
+  if (k === 'unk') return api('/observations', { ...q, hrank:'family', lrank:'subtribe' }, API2);
+  if (k === 'gen') return api('/observations', { ...q, rank:'genus' }, API2);
+  const miss = bountyMissing();
+  return miss.length ? api('/observations', { ...q, taxon_id:miss.slice(0, 80).join(',') }, API2) : Promise.resolve({ results:[], total_results:0 });
+}
+const bountyNotMine = () => { const me = String(S.login).toLowerCase(); return o => o.user?.login?.toLowerCase() !== me; };
+function bountyHelped(xs) { const B = S.u.bounty, h = new Set(B.helped); xs.forEach(x => { if (x.mine) h.add(x.id); }); B.helped = [...h]; }
 async function loadBounties() {
   const where = bountyWhere(); if (bountyBusy || !where) return;
   bountyBusy = true; bountyErr = null;
   const redraw = () => { if (S.tab === 'wanted' && wView() === 'bounty') softRender(); };
+  const k = bountyKey(), order = bountyOrder();   // a change of area or order mid-read reloads afterwards (the key won't match)
   try {
-    await ensureRef('state');
-    const me = String(S.login).toLowerCase(), notMine = o => o.user?.login?.toLowerCase() !== me;
-    const q = { taxon_id:SALTICIDAE, quality_grade:'needs_id', per_page:40, order_by:'created_at', order:'desc', fields:BOUNTY_FIELDS, ...where };
-    const a = await api('/observations', { ...q, hrank:'family', lrank:'subtribe' }, API2);
-    // Genera you're missing from your state, currently sitting at Needs ID nearby
-    const ref = S.ref['p' + (S.M.home.state || S.M.home.country)];
-    const miss = ref ? Object.keys(ref.g).map(Number).filter(id => !S.M.G.has(id)) : [];
-    const b = miss.length ? await api('/observations', { ...q, taxon_id:miss.slice(0, 80).join(',') }, API2) : { results:[], total_results:0 };
-    const bounty = S.u.bounty = S.u.bounty || { helped:[] };
-    const all = [...a.results, ...b.results].filter(notMine).map(trimBounty);
-    const helped = new Set(bounty.helped); all.filter(x => x.mine).forEach(x => helped.add(x.id));
-    bounty.helped = [...helped];
-    bounty.data = { ts:Date.now(), k:JSON.stringify(where), unk:a.results.filter(notMine).map(trimBounty), unkN:a.total_results,
-      conf:b.results.filter(notMine).map(trimBounty), confN:b.total_results };
-    saveUser();
+    await ensureRef(bountyRange() === 'country' ? 'country' : 'state');
+    const B = S.u.bounty = S.u.bounty || { helped:[] }, notMine = bountyNotMine(), lists = {};
+    for (const [id] of BOUNTY_LISTS) { const d = await bountyQuery(id, 1, where, order); lists[id] = { list:d.results.filter(notMine).map(trimBounty), n:d.total_results, page:1 }; }
+    bountyHelped(Object.values(lists).flatMap(L => L.list));
+    B.data = { ts:Date.now(), k, lists };
+    saveUser(); redraw();
+    try { await bountyCheck(); } catch (e) { console.warn(e); }
   } catch (e) { bountyErr = e.message; }
   bountyBusy = false;
   redraw();
 }
+async function loadBountyMore(id) {
+  const b = S.u.bounty?.data, L = b?.lists?.[id];
+  if (bountyBusy || !L || b.k !== bountyKey()) return;
+  bountyBusy = true; bountyErr = null; softRender();
+  try {
+    const d = await bountyQuery(id, L.page + 1), got = d.results.filter(bountyNotMine()).map(trimBounty).filter(x => !L.list.some(y => y.id === x.id));
+    L.list.push(...got); L.page++; L.n = d.total_results; bountyHelped(got); saveUser();
+  } catch (e) { bountyErr = e.message; }
+  bountyBusy = false;
+  if (S.tab === 'wanted' && wView() === 'bounty') render();
+}
+// The records you've opened from the board and the ones you've helped lately: has your ID landed, and are they research grade now?
+async function bountyCheck() {
+  const B = S.u.bounty; if (!B || isGuest()) return;
+  const closed = new Set(B.closed || []), me = String(S.login).toLowerCase();
+  const ids = [...new Set([...(B.opened || []), ...(B.helped || []).slice(-100)])].filter(id => !closed.has(id)).slice(0, BOUNTY_KEEP);
+  if (!ids.length) return;
+  const d = await api('/observations', { id:ids.join(','), per_page:200, fields:'(id:!t,quality_grade:!t,identifications:(current:!t,user:(login:!t)))' }, API2);
+  const helped = new Set(B.helped), fresh = [];
+  for (const o of d.results) {
+    if (!(o.identifications || []).some(i => i.current && i.user?.login?.toLowerCase() === me)) continue;
+    helped.add(o.id);
+    if (o.quality_grade === 'research') { closed.add(o.id); fresh.push(o.id); }
+  }
+  B.helped = [...helped]; B.closed = [...closed].slice(-2000); B.opened = (B.opened || []).filter(id => !closed.has(id));
+  if (fresh.length && B.checked) toast(`🏁 ${plural(fresh.length, 'bounty', 'bounties')} you added an ID to ${fresh.length === 1 ? 'is' : 'are'} research grade now.`);
+  B.checked = Date.now(); saveUser();
+}
 function bountyRank(n) { let r = null; for (const x of BOUNTY_RANKS) if (n >= x[0]) r = x; return r; }
 function viewBounty() {
-  const M = S.M, b = S.u.bounty?.data, helped = S.u.bounty?.helped?.length || 0, rank = bountyRank(helped), next = BOUNTY_RANKS.find(x => x[0] > helped);
-  const where = M.homeCell ? `within ${BOUNTY_KM} km of your home base` : `in ${esc(S.places[M.home.state || M.home.country]?.n || 'your region')}`;
-  const card = x => `<a class="card bounty" href="https://www.inaturalist.org/observations/${x.id}" target="_blank" rel="noopener" title="Open on iNaturalist to add an ID">
+  const M = S.M, B = S.u.bounty, b = B?.data?.lists ? B.data : null, helped = B?.helped?.length || 0, closed = B?.closed?.length || 0;
+  const rank = bountyRank(helped), next = BOUNTY_RANKS.find(x => x[0] > helped);
+  const r = bountyRange(), st = M.home.state, co = M.home.country, pn = id => esc(S.places[id]?.n || 'your region');
+  const where = r === 'near' ? `within ${BOUNTY_KM} km of your home base` : `in ${pn(bountyPid())}`;
+  const chip = (act, v, cur, label) => `<span class="chip ${cur === v ? 'on' : ''}" data-act="${act}" data-v="${v}" style="cursor:pointer">${label}</span>`;
+  const ranges = [M.homeCell && ['near', `Within ${BOUNTY_KM} km`], st && ['state', pn(st)], co && co !== st && ['country', pn(co)]].filter(Boolean);
+  const sort = S.prefs.bountySort === 'old' ? 'old' : 'new', skip = new Set(B?.skip || []);
+  const card = x => `<div class="card bounty"><a class="blink" href="https://www.inaturalist.org/observations/${x.id}" target="_blank" rel="noopener" data-act="bountyOpen" data-v="${x.id}" data-track="bounty-open" title="Open on iNaturalist to add an ID">
       ${x.mine ? '<span class="badge b-supp">✓ YOU IDed</span>' : ''}<div class="ph" style="background-image:url('${esc(x.ph)}')"></div>
       <div class="meta"><div class="nm">${x.r === 'genus' || x.r === 'species' ? `<i>${esc(x.t)}</i>` : esc(x.t)}</div>
-      <div class="small muted">${x.km != null ? `~${x.km} km · ` : ''}uploaded ${esc(agoTxt(x.up))} · ${x.n} ID${x.n === 1 ? '' : 's'}</div></div></a>`;
+      <div class="small muted">${x.km != null ? `~${x.km} km · ` : ''}uploaded ${esc(agoTxt(x.up))} · ${x.n} ID${x.n === 1 ? '' : 's'}</div></div></a>
+    <button type="button" class="bpass" data-act="bountyPass" data-track="bounty-pass" data-v="${x.id}" title="Pass on this one (hides it)" aria-label="Hide this record">✕</button></div>`;
   const head = `<div class="panel" style="margin-bottom:16px"><h2>Bounty board</h2>
     <p class="small muted">Salticid records ${where} still waiting for an identification. Cards open on iNaturalist; your own records are left out.</p>
-    <p style="margin-bottom:0">${rank ? `<b>${esc(rank[1])}</b> · ` : ''}You've added IDs to <b>${helped}</b> bounty record${helped === 1 ? '' : 's'}.${next ? ` <span class="small muted">${next[0] - helped} more for ${esc(next[1])}.</span>` : ''}
+    <p style="margin-bottom:0">${rank ? `<b>${esc(rank[1])}</b> · ` : ''}You've added IDs to <b>${helped}</b> bounty record${helped === 1 ? '' : 's'}${closed ? `; <b>${closed}</b> ${closed === 1 ? 'is' : 'are'} research grade now 🏁` : ''}.${next ? ` <span class="small muted">${next[0] - helped} more for ${esc(next[1])}.</span>` : ''}
       <a href="#" class="small" data-act="bountyRefresh">refresh</a></p>
+    <div class="row small bctl">${ranges.length > 1 ? `<span class="row" style="gap:6px">${ranges.map(([k, l]) => chip('bountyRange', k, r, l)).join('')}</span>` : ''}
+      <span class="row" style="gap:6px">${chip('bountySort', 'new', sort, 'Newest')}${chip('bountySort', 'old', sort, 'Longest waiting')}</span></div>
     <p style="margin:10px 0 0">${idAidBtn()}</p>
     ${bountyBusy ? '<p class="small">Checking the records…</p>' : ''}${bountyErr ? `<p>${esc(bountyErr)} <button data-act="bountyRefresh">Try again</button></p>` : ''}</div>`;
   if (!bountyWhere()) return head + '<p class="muted">Set a home base on the Map tab so SPOODEX knows where to look.</p>';
-  if (!b) return head + `<h2>Wanted, unconfirmed</h2>${skelCards(7)}`;
-  return head + `<h2>Wanted, unconfirmed</h2>
-    <p class="small muted">Records of genera you're missing, still at Needs ID (${fmt(b.confN)} in all).</p>
-    ${b.conf.length ? `<div class="dexgrid">${b.conf.map(card).join('')}</div>` : '<p class="small">None right now.</p>'}
-    <h2 style="margin-top:22px">Unnamed spoods</h2>
-    <p class="small muted">Identified only to family, subfamily or tribe (${fmt(b.unkN)} in all, newest first).</p>
-    ${b.unk.length ? `<div class="dexgrid">${b.unk.map(card).join('')}</div>` : '<p class="small">None right now.</p>'}`;
+  if (!b) return head + skelCards(7);
+  const [k, , blurb] = BOUNTY_LISTS.find(([id]) => id === S.prefs.bountyList) || BOUNTY_LISTS.find(([id]) => b.lists[id]?.n) || BOUNTY_LISTS[0];
+  const L = b.lists[k] || { list:[], n:0, page:1 }, shown = L.list.filter(x => !skip.has(x.id)), passed = L.list.length - shown.length;
+  return head + `<div class="row bltabs">${BOUNTY_LISTS.map(([id, lab]) => chip('bountyList', id, k, `${lab} <b>${fmt(b.lists[id]?.n || 0)}</b>`)).join('')}</div>
+    <p class="small muted">${blurb} ${fmt(L.n)} in all, ${sort === 'old' ? 'longest waiting' : 'newest'} first.${passed ? ` ${passed} passed · <a href="#" data-act="bountyUnpass">show them again</a>` : ''}</p>
+    ${shown.length ? `<div class="dexgrid">${shown.map(card).join('')}</div>` : `<p class="small">None right now.${r !== 'country' && ranges.length > 1 ? ' A wider area above may have some.' : ''}</p>`}
+    ${L.page * BOUNTY_N < L.n ? `<p style="text-align:center;margin:14px 0 0"><button data-act="bountyMore" data-v="${k}" data-track="bounty-more"${bountyBusy ? ' disabled' : ''}>Show ${BOUNTY_N} more</button></p>` : ''}`;
 }
 
 /* ---------------- since your last visit: what turned up near you while you were away ---------------- */
@@ -6475,7 +6818,7 @@ async function loadNews() {
       const d = await api('/observations/taxonomy', { taxon_id:SALTICIDAE, verifiable:true, place_id:pid, created_d1:d1 });
       d.results.forEach(addNode); n.st = genera(d); n.stT = total(d);
     }
-    const where = bountyWhere();
+    const where = bountyHome();   // "near you", whatever area the Bounty board is set to
     if (where) n.unk = (await api('/observations', { taxon_id:SALTICIDAE, quality_grade:'needs_id', hrank:'family', lrank:'subtribe', created_d1:d1, per_page:0, ...where }, API2)).total_results;
     S.u.news = n; saveUser(); saveShared();
     const fresh = (n.near || []).filter(x => !M.G.has(x.id));
@@ -6931,7 +7274,7 @@ function wxInner() {
   return `${head}${wxErr ? `<p class="small">${esc(wxErr)}; showing the forecast from ${agoShort(f.ts)}. <button data-act="wxRetry">Try again</button></p>` : ''}
     ${wxCardsHtml(f, wxDays(f))}`;
 }
-// The day cards, best bet and key; shared by the Map tab (home, 7 days) and the Trip planner (the trip's dates)
+// The day cards and best bet; shared by the Map tab (home, 7 days) and the Trip planner (the trip's dates). The key under them went in v2.18 (owner: "useless")
 function wxCardsHtml(f, days) {
   const today = new Date(Date.now() + f.off * 1000).toISOString().slice(0, 10);
   const top = days.filter(x => !x.none).sort((a, b) => b.stars - a.stars || b.score - a.score || (b.to - b.from) - (a.to - a.from))[0];
@@ -6943,8 +7286,7 @@ function wxCardsHtml(f, days) {
       <span class="t">${tDeg(x.temp)} · ${x.sky}${x.rain >= WX.dry.pp[0] ? ` · ${x.rain}% rain` : ''}</span>${x.why.length ? `<span class="why">${x.why.map(esc).join('<br>')}</span>` : ''}${cal(x)}</div>`;
   const cal = x => `<button class="wxcal" data-act="ics" data-v="${esc([x.d, x.from, x.to, f.off, x.stars, stripHtml([tDeg(x.temp), x.sky, ...x.why].join(' · '))].join('|'))}" aria-label="Add ${day(x.d)} ${wxSpan(x.from, x.to)} to your calendar" title="Add to calendar">🗓</button>`;
   return `<div class="wxdays${days.length > 7 ? ' many' : ''}">${days.map(card).join('')}</div>
-    ${top ? `<p class="wxbest">Best bet: <b>${day(top.d)} ${wxSpan(top.from, top.to)}</b> ${wxStars(top.stars)} ${tDeg(top.temp)} · ${top.sky}${top.why.length ? ` · ${esc(top.why[0])}` : ''}</p>` : ''}
-    <p class="small muted" style="margin:0">Stars rate each day's best stretch for warmth, sun, rain and wind, and rise when it clears after rain, wind or a cool spell, or turns warm and humid. The bar is the day hour by hour; the outlined part is that stretch.</p>`;
+    ${top ? `<p class="wxbest">Best bet: <b>${day(top.d)} ${wxSpan(top.from, top.to)}</b> ${wxStars(top.stars)} ${tDeg(top.temp)} · ${top.sky}${top.why.length ? ` · ${esc(top.why[0])}` : ''}</p>` : ''}`;
 }
 // "5 min ago", else the day: when a scan or forecast was read
 const agoShort = ts => { const m = Math.round((Date.now() - ts) / 60e3); return m < 2 ? 'just now' : m < 90 ? `${m} min ago` : sinceTxt(ts); };
@@ -7098,8 +7440,8 @@ const stockCr = id => OWNER_PICKS[id] ? creditTxt(OWNER) : S.info[id]?.a || '';
 const LAND_TTL = 14 * 864e5;
 const OK_LIC = { 'cc0':'CC0', 'cc-by':'CC BY', 'cc-by-nc':'CC BY-NC' };
 const PH_FIELDS = '(id:!t,taxon:(id:!t,ancestor_ids:!t),user:(login:!t,name:!t),photos:(url:!t,license_code:!t,attribution:!t))';
-// "(c) Jane Doe, some rights reserved (CC BY-NC)" -> "Jane Doe"
-const byName = (attr, user) => (/^\(c\)\s*(.+?),\s*(?:some|no|all) rights reserved/i.exec(attr || '') || [])[1] || user?.name || user?.login || '';
+// "(c) Jane Doe, some rights reserved (CC BY-NC)" -> "Jane Doe"; CC0 photos read "no rights reserved, uploaded by Jane Doe" (v2.18)
+const byName = (attr, user) => (/^\(c\)\s*(.+?),\s*(?:some|no|all) rights reserved/i.exec(attr || '') || /uploaded by\s+(.+?)\s*$/i.exec(attr || '') || [])[1] || user?.name || user?.login || '';
 const creditTxt = (by, lic) => `© ${by}${OK_LIC[lic] ? ', ' + OK_LIC[lic] : ''}`;
 const genusIn = (o, ids) => ids.find(id => o.taxon?.id === id || (o.taxon?.ancestor_ids || []).includes(id));
 let landBusy = false;
@@ -7196,6 +7538,7 @@ async function doSync(full) {
   btn.disabled = false; btn.innerHTML = '⟳<span class="lbl"> Sync</span>';
   loadNews();
   if (S.crew.logins.length && !crewBusy && crewNeedsLoad()) loadCrew().then(() => { if (S.tab !== 'map') render(); });
+  if (!crewObsBusy && crewObsNeedsLoad()) loadCrewObs();   // so the Crew tab's dot shows new uploads
 }
 async function onboard(login, src = 'link') {
   S.linkView = othersDex(login, src);
@@ -7371,7 +7714,13 @@ document.addEventListener('click', e => {
   if (a === 'invSend') inviteSend(val, t);
   if (a === 'invAccept') inviteAccept(val);
   if (a === 'crewDel') setCrew(S.crew.logins.filter(l => l !== val));
-  if (a === 'crewRefresh') { crewErr = null; loadCrew(true); }
+  if (a === 'crewRefresh') { crewErr = null; crewObsErr = null; loadCrew(true); loadCrewObs(); }
+  if (a === 'crewFilter') { crewFilter = val || null; paintCrewFeed(); return; }
+  if (a === 'dyk') { S.prefs.dyk = val; savePrefs(); dykErr = null; render(); return; }
+  if (a === 'dykMore') { dykOff++; render(); return; }
+  if (a === 'dykRetry') { dykErr = null; render(); return; }
+  if (a === 'crewMore') { loadCrewObs(true); return; }
+  if (a === 'crewObsRetry') { crewObsErr = null; loadCrewObs(); return; }
   if (a === 'card') openTitleCard();
   if (a === 'honCard') openHonourCard(val);
   if (a === 'honDispatch') openDispatch(val);
@@ -7384,7 +7733,7 @@ document.addEventListener('click', e => {
     const w = window.open(ID_AID, 'spoodex-idaid', 'popup,width=1280,height=880');
     if (w) { e.preventDefault(); w.focus(); }
   }
-  if (a === 'duelRival') { e.preventDefault(); const D = evDraftNew('duel'); evPreset(D, 'd2'); D.r = `${S.login}, ${val}`; S.tab = 'crew'; S.evOpen = null; S.evDraft = D; updateUrl(); render(); scrollTo(0, 0); return; }
+  if (a === 'duelRival') { e.preventDefault(); const D = evDraftNew('duel'); evPreset(D, 'd2'); D.r = `${S.login}, ${val}`; S.tab = 'crew'; S.evOpen = null; S.evDraft = D; updateUrl(); render(); evFormShow(); return; }
   if (a === 'dareGenus') { e.preventDefault(); dareGenus(+val); return; }
   if (a === 'evDareWho' && S.evDraft) { e.preventDefault(); S.evDraft.r = `${S.login}, ${val}`; render(); return; }
   if (a === 'caseEdit') { e.preventDefault(); caseEditor(); return; }
@@ -7426,6 +7775,14 @@ document.addEventListener('click', e => {
   if (a === 'bountyGo') { e.preventDefault(); S.prefs.wantedView = 'bounty'; savePrefs(); S.tab = 'wanted'; render(); }
   if (a === 'scanHist') { const H = S.u.scanHist?.[+val]; if (H) { if (Date.now() - H.ts < SCAN_TTL) { S.u.mscan = H; saveUser(); drawScanArea(H, H.km); paintScan(); loadScanGhosts(H); } else runScan(H.lat, H.lng, H.km, H.per); } }
   if (a === 'bountyRefresh') { e.preventDefault(); bountyErr = null; loadBounties(); render(); }
+  if (a === 'bountyRange') { S.prefs.bountyRange = val; savePrefs(); bountyErr = null; render(); return; }
+  if (a === 'bountySort') { S.prefs.bountySort = val; savePrefs(); bountyErr = null; render(); return; }
+  if (a === 'bountyList') { S.prefs.bountyList = val; savePrefs(); render(); return; }
+  if (a === 'bountyMore') { loadBountyMore(val); return; }
+  if (a === 'bountyPass') { const B = S.u.bounty; if (B) { B.skip = [+val, ...(B.skip || []).filter(id => id !== +val)].slice(0, 500); saveUser(); } t.closest('.card')?.remove(); return; }
+  if (a === 'bountyUnpass') { e.preventDefault(); if (S.u.bounty) { S.u.bounty.skip = []; saveUser(); } render(); return; }
+  // no preventDefault: the link opens the record on iNaturalist; the next refresh checks whether you added an ID
+  if (a === 'bountyOpen') { const B = S.u.bounty; if (B) { B.opened = [+val, ...(B.opened || []).filter(id => id !== +val)].slice(0, BOUNTY_KEEP); saveUser(); } }
   if (a === 'newsDismiss') { if (S.u.news) S.u.news.dismissed = true; const r = cnt(rPath(S.login), 'week'); if (r) S.u.rxWeekGot = r; saveUser(); render(); }
   if (a === 'exOwnerGo') { e.preventDefault(); $('#exOwner')?.scrollIntoView({ behavior:'smooth', block:'start' }); }
   if (a === 'tripCase') { e.preventDefault(); openCase(+val, tripCtx()); }
@@ -7447,7 +7804,7 @@ document.addEventListener('click', e => {
   if (a === 'map3d') { S.prefs.map3d = val === '1'; savePrefs(); render(); }
   if (a === 'wxRetry') loadWx(true);
   if (a === 'install') installApp();
-  if (a === 'evNew') { S.evDraft = evDraftNew(); render(); }
+  if (a === 'evNew') { S.evDraft = evDraftNew(); render(); evFormShow(); }
   if (a === 'evHunt') { $('#modalRoot').innerHTML = ''; openEventCode(huntCode(), false); }   // the official one: the same event for everyone
   if (a === 'evPostText') { S.evPost = !S.evPost; render(); }
   if (a === 'evPostCopy') { const ta = $('#evPostTxt'); if (ta) navigator.clipboard.writeText(ta.value).then(() => toast('Post text copied.'), () => { ta.focus(); ta.select(); }); }
@@ -7509,6 +7866,15 @@ document.addEventListener('submit', async e => {
   e.preventDefault();
   if (f === 'compare') loadCompare(e.target.login.value);
   if (f === 'crew') { const had = [...S.crew.logins]; setCrew(e.target.logins.value.split(/[\s,;]+/)); openInvite(S.crew.logins.filter(l => !had.includes(l))); }
+  if (f === 'crewAdd') {   // v2.18: the crew bar's box adds to the crew (one name or several)
+    const had = [...S.crew.logins], add = e.target.logins.value.split(/[\s,;]+/).map(cleanLogin).filter(Boolean);
+    if (!add.length) return;
+    const dup = add.find(l => had.some(h => h.toLowerCase() === l.toLowerCase()));
+    setCrew([...had, ...add]);
+    const fresh = S.crew.logins.filter(l => !had.includes(l));
+    if (fresh.length) { if (inviter()) openInvite(fresh); else toast(`${fresh.join(', ')} added to your crew.`); }
+    else if (dup) toast(`${dup} is already in your crew.`);
+  }
   if (f === 'evPlace' && S.evDraft) {
     const q = e.target.q.value.trim(), D = S.evDraft; if (!q) return;
     try { const d = await api('/places/autocomplete', { q, per_page:8 }); D.hits = d.results.map(x => ({ id:x.id, name:x.display_name || x.name, l:x.admin_level ?? null })); D.msg = D.hits.length ? '' : 'No places found.'; }
@@ -7581,6 +7947,11 @@ $('#loginInput').addEventListener('input', () => track('username-typed'), { once
 // What changed, newest first: shown once on Profile to returning players, and in full from Settings. The owner's rule (2026-10-13):
 // sections and views stay where they are; when something has to move, it gets a line here.
 const CHANGES = [
+  { v:'2.18', d:'2026-11-12', items:[
+    { h:'Crew: the feed comes first, with your crew\'s latest records as cards that open on iNaturalist so you can comment. Adding people is the small bar above it; events and the crew comparison sit below.' },
+    { h:'Lineage tree: Did you know? can show genera from around the world or the rarest species new on iNat this week.' },
+    { h:'Bounty board: one list at a time (Wanted, Unnamed spoods, and Species wanted), near home, the state or the country, newest or longest waiting, Show more, ✕ to pass on a record.' },
+  ] },
   { v:'2.17', d:'2026-11-09', items:[
     { h:'Reactions are now one small dropdown instead of a row of buttons, with four to pick from: 👍 ❤️ 🤙 😮. On Ladder and Crew rows too.' },
     { h:'Adding someone to your crew now offers an invite to send them on iNaturalist, with a link that asks them to add you back. ✉ beside a crewmate\'s name brings it up again.' },
@@ -8490,7 +8861,7 @@ const ownCardReacts = id => `<div class="rx own">${rcSlot('kinds', `${S.login}|g
 // ?u=<login> opens that SPOODEX (importing it if needed); ?vs=<login> jumps to Compare.
 // Otherwise a returning player opens straight from cache, then quietly syncs.
 // Shared caches get their defaults when the script loads, before IndexedDB is open; re-read them once it is.
-const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladder', 'crew', 'pioneer', 'haunts', 'trip', 'elev', 'wx', 'events', 'frontier', 'ownph', 'notes', 'lore', 'facts', 'ccph'];
+const PERSISTED = ['nodes', 'places', 'info', 'ref', 'observers', 'pheno', 'ladder', 'crew', 'pioneer', 'haunts', 'trip', 'elev', 'wx', 'events', 'frontier', 'ownph', 'notes', 'lore', 'facts', 'ccph', 'dyk'];
 (async function boot() {
   track(location.pathname, false);
   registerSW(); netState();
