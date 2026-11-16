@@ -2978,7 +2978,7 @@ function spotCard(x) {
     : x.id && (wantedList() || []).some(w => w.id === x.id) ? `<button class="small" data-act="wanted" data-v="${x.id}">🧭 Where to look</button>` : '');
   return `<div class="spot"><a class="sph ${x.never && !ph ? 'plateph' : ''} ${ph?.plate ? 'vint' : ''}" ${go} style="${ph ? plateBg(ph) : ''}">${ph ? '' : x.never ? '<span>🏛</span>' : '<i class="sil"></i>'}</a>
     <div class="smeta"><div class="sk">DID YOU KNOW?</div><a class="snm" ${go}><i>${esc(x.n)}</i></a>${cn ? `<div class="small muted">${esc(cn)}</div>` : ''}
-      <ul class="sfacts">${fs.map(([i, t, src]) => `<li><span aria-hidden="true">${i}</span> ${esc(t)}${src?.href ? ` <a class="src" href="${esc(src.href)}" target="_blank" rel="noopener" data-track="dyk-src">${esc(src.s)} ↗</a>` : ''}</li>`).join('') || '<li class="muted">No records near you yet.</li>'}</ul>
+      <ul class="sfacts">${fs.map(([i, t, src]) => `<li><span aria-hidden="true">${i}</span> ${esc(t)}${src?.href ? ` <a class="src" href="${esc(src.href)}" target="_blank" rel="noopener" data-track="dyk-src">${esc(src.s)} ↗</a>` : src?.s ? ` <span class="src">${esc(src.s)}</span>` : ''}</li>`).join('') || '<li class="muted">No records near you yet.</li>'}</ul>
       ${extra}
       ${ph?.sp ? `<div class="small">Pictured: <i>${esc(ph.sp)}</i></div>` : ''}${ph?.cr ? `<div class="cr">${esc(ph.cr)}</div>` : ''}</div></div>`;
 }
@@ -2987,7 +2987,7 @@ function spotCard(x) {
    not in your SPOODEX, SPOT_N a day in a different order each day (↻ deals the next SPOT_N); facts from the world list and Wikipedia via
    iNat. 🆕 New on iNat this week: of the species uploaded at research grade anywhere in the last 7 days, the ones with the fewest iNat
    records ever (one v2 species_counts call, twice a day), minus species you have; photos only CC0 / CC BY / CC BY-NC, credited. */
-const DYK_MIN = 5, DYK_WEEK_TTL = 12 * 3600e3, DYK_RARE = 100;
+const DYK_MIN = 5, DYK_WEEK_TTL = 12 * 3600e3, DYK_RARE = 100, DYK_LIT_EVERY = 3;
 const DYK_FIELDS = '(count:!t,taxon:(id:!t,name:!t,rank:!t,observations_count:!t,preferred_common_name:!t,ancestor_ids:!t,default_photo:(url:!t,license_code:!t,attribution:!t)))';
 S.dyk = store.get('dyk', {});   // week: {ts, d1, n, list:[{id, n, cn, ever, wk, anc, ph, cr, wl}]}
 let dykBusy = false, dykErr = null, dykOff = 0;
@@ -3003,7 +3003,10 @@ function worldSpots() {
   const W = S.ref.world; if (!W) return null;
   const home = S.M.home.country ? S.ref['p' + S.M.home.country] : null;
   const pool = Object.keys(W.g).map(Number).filter(id => W.g[id] >= DYK_MIN && !S.M.G.has(id) && home?.g?.[id] == null && S.nodes[id]?.r === 'genus').sort((a, b) => a - b);
-  const order = shuffle(pool, rng(hash32(`${new Date().toDateString()}:${S.login}`)));
+  // v2.19 (owner 2026-11-16): every DYK_LIT_EVERY-th card, starting with the first, is a genus with a fact of its own (📚 or ✍️) while those last
+  const r = rng(hash32(`${new Date().toDateString()}:${S.login}`)), has = id => { const n = S.nodes[id]?.n; return !!(GENUS_LIT[n]?.length || ownFact(n)); };
+  const lit = shuffle(pool.filter(has), r), rest = shuffle(pool.filter(id => !has(id)), r), order = [];
+  for (let i = 0; lit.length || rest.length; i++) order.push(lit.length && (i % DYK_LIT_EVERY === 0 || !rest.length) ? lit.shift() : rest.shift());
   const at = order.length ? (dykOff * SPOT_N) % order.length : 0;
   return [...order.slice(at), ...order.slice(0, at)].slice(0, SPOT_N).map(id => ({ id, n:S.nodes[id]?.n || '', world:true }));
 }
@@ -8348,6 +8351,7 @@ $('#loginInput').addEventListener('input', () => track('username-typed'), { once
 const CHANGES = [
   { v:'2.19', d:'2026-11-16', items:[
     { h:'Lineage tree: Did you know? cards can show a fact from the scientific literature (📚) for 91 genera, with a link to the paper it comes from.' },
+    { h:'Around the world: every third card is a genus with one of those facts.' },
   ] },
   { v:'2.18', d:'2026-11-12', items:[
     { h:'Crew: the feed comes first, with your crew\'s latest records as cards that open on iNaturalist so you can comment. Adding people is the small bar above it; events and the crew comparison sit below.' },
