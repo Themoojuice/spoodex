@@ -299,6 +299,7 @@ button.hstat:hover b { text-decoration:underline; }
 .spot .sk { font-size:11px; letter-spacing:.2em; color:var(--accent); }
 .spot .snm { font:italic 600 19px var(--head); color:var(--ink); text-decoration:none; }
 .spot .sfacts { list-style:none; margin:4px 0; padding:0; font-size:12.5px; display:grid; gap:3px; }
+.spot .sfacts .src { font-size:11px; color:var(--muted); white-space:nowrap; }
 .spot .cr { font-size:11px; color:var(--muted); margin-top:auto; }
 .tsec { margin-bottom:18px; }
 .tban { height:120px; border-radius:var(--radius) var(--radius) 0 0; background:#3a2f22 center/cover no-repeat; display:flex; align-items:flex-end; overflow:hidden; }
@@ -2525,6 +2526,399 @@ function speciesSection(gid) {
 const GENUS_FACTS = {};   // genus name -> one "Did you know" line written by the owner (editor: ⚙ → ✏️ Genus lines and facts)
 S.facts = store.get('facts', {});   // the owner's drafts, this browser only, until they're baked into GENUS_FACTS
 const ownFact = name => S.facts[name] || GENUS_FACTS[name] || '';
+// Facts from the literature (v2.19, owner 2026-11-15): genus name -> [{t line, s short citation, d DOI or URL, sp species, if the line is
+// about one or a list when several}]. Each line was drafted from the paper it cites and approved by the owner on the review page
+// (HANDOVER §9); a card shows one a day, sourced. Built by the bake step between the markers: approved lines only, don't hand-edit.
+// GENUS_LIT:begin
+const GENUS_LIT = {
+  "Abracadabrella": [
+    { t:"Abracadabrella is not named for 'abracadabra': Żabka described the name as a random combination of letters.", s:"Zabka 1991", d:"https://biodiversitylibrary.org/part/214959" },
+    { t:"Abracadabrella looks like the flat-bodied Afraflacilla-Pseudicius group in shape and colour but lacks their stridulatory organs.", s:"Zabka 1991", d:"https://biodiversitylibrary.org/part/214959" },
+  ],
+  "Adoxotoma": [
+    { t:"Adoxotoma's cheliceral teeth are intermediate between the pluridentate and fissidentate patterns, unlike the rest of the Astieae.", s:"Zabka 2002", d:"10.3853/j.0067-1975.54.2002.1365" },
+  ],
+  "Aelurillus": [
+    { t:"Ants were 31% of field prey for Aelurillus m-nigrum, yet in the lab it chose ants only when the arena had sand and a stone.", s:"Huseynov et al. 2008", d:"10.1016/j.beproc.2007.11.006", sp:"Aelurillus m-nigrum" },
+  ],
+  "Afraflacilla": [
+    { t:"Afraflacilla and its Pseudicius relatives carry stridulatory organs, the feature Żabka used to separate them from look-alike Abracadabrella.", s:"Zabka 1991", d:"https://biodiversitylibrary.org/part/214959" },
+  ],
+  "Ananeon": [
+    { t:"Ananeon means 'not Neon': Richardson chose the name to mark this tiny Australian litter spider as distinct from the genus Neon.", s:"Richardson 2013", d:"10.11646/zootaxa.3716.3.8" },
+  ],
+  "Anasaitis": [
+    { t:"Anasaitis canosus prefers ants to other insects and uses ant-specific hunting tactics even with no prior experience of ants.", s:"Jackson & van Olphen 1991", d:"10.1111/j.1469-7998.1991.tb04389.x", sp:"Anasaitis canosus" },
+    { t:"Males of Anasaitis canosus court a mature female away from her nest visually, but with vibrations when she is inside it.", s:"Jackson & Macnab 1989", d:"10.1080/03014223.1989.10422566", sp:"Anasaitis canosus" },
+  ],
+  "Ancipitilobus": [
+    { t:"Most of the type series of Trite concinna, from Lord Howe Island, proved to be a different spider, named Ancipitilobus howensis in 2016.", s:"Richardson 2016", d:"10.11646/zootaxa.4114.5.1", sp:"Ancipitilobus howensis" },
+    { t:"Ancipitilobus is named for a pair of lobes on the male palp (Latin anceps, 'two-headed', and lobus).", s:"Richardson 2016", d:"10.11646/zootaxa.4114.5.1" },
+  ],
+  "Apricia": [
+    { t:"Apricia comes from Latin apricus, 'lying open to the sun', after the habit of its type species, A. jovialis, of basking on sunny walls.", s:"Richardson 2016", d:"10.11646/zootaxa.4114.5.1", sp:"Apricia jovialis" },
+    { t:"Before Apricia was erected in 2016, A. jovialis was listed in the American genus Breda and then in Ocrisiona.", s:"Richardson 2016", d:"10.11646/zootaxa.4114.5.1", sp:"Apricia jovialis" },
+  ],
+  "Attulus": [
+    { t:"Attulus penicillatus is one of the jumping spiders that regularly overwinter inside empty land snail shells on Central European steppe.", s:"Dziváková et al. 2022", d:"10.3390/insects13100950", sp:"Attulus penicillatus" },
+    { t:"Attulus pubescens pushes off mainly with its long fourth legs, unlike Pseudeuophrys lanigera, which pulls with its third legs.", s:"Goetzke & Federle 2021", d:"10.1007/s00359-021-01466-6", sp:"Attulus pubescens" },
+    { t:"Genome-scale data show most Eurasian sitticines are one recent, rapid radiation, now united in Attulus.", s:"Maddison et al. 2020", d:"10.3897/zookeys.925.39691" },
+  ],
+  "Australoneon": [
+    { t:"Australoneon lives in litter or moss in the wetter south-east of Australia, with a strong preference for Nothofagus forest.", s:"Richardson 2025", d:"10.3853/j.2201-4349.77.2025.1925" },
+    { t:"Australoneon's type species, A. zabkai, honours Marek Żabka; other species honour L. Koch, E. Keyserling and F. Wanless.", s:"Richardson 2025", d:"10.3853/j.2201-4349.77.2025.1925" },
+  ],
+  "Bagheera": [
+    { t:"Bagheera kiplingi lives mainly on Beltian bodies, the protein-rich leaf tips ant-acacias grow to feed their guardian ants.", s:"Meehan et al. 2009", d:"10.1016/j.cub.2009.08.049", sp:"Bagheera kiplingi" },
+    { t:"Bagheera kiplingi was the first spider shown to feed primarily and deliberately on plants, using field watching and stable isotopes.", s:"Meehan et al. 2009", d:"10.1016/j.cub.2009.08.049", sp:"Bagheera kiplingi" },
+  ],
+  "Barraina": [
+    { t:"Barraina takes its name from the Ngajan word for its type locality; B. anfracta lives in leaf litter of north Queensland rainforests.", s:"Richardson 2013", d:"10.11646/zootaxa.3716.3.8", sp:"Barraina anfracta" },
+  ],
+  "Bavia": [
+    { t:"Male-male fights in Bavia aericeps are ferocious, with rivals often upended and stunned.", s:"Jackson 1986", d:"10.1071/zo9860381", sp:"Bavia aericeps" },
+    { t:"Bavia aericeps builds unusually strong, spacious nests on the undersides of palm and other tree leaves in tropical Queensland.", s:"Jackson 1986", d:"10.1071/zo9860381", sp:"Bavia aericeps" },
+  ],
+  "Brettus": [
+    { t:"Brettus adonis and B. cingulatus invade other spiders' webs, vibrate the silk to deceive the owner, then eat it, its prey or its eggs.", s:"Jackson & Hallas 1986", d:"10.1080/03014223.1986.10422979" },
+    { t:"Two Brettus species solved a novel escape test by trial and error, repeating a tactic that worked and switching after one that failed.", s:"Cross & Jackson 2015", d:"10.1007/s10071-014-0819-z" },
+  ],
+  "Canama": [
+    { t:"Canama limagigi, described in 2026 from Indonesia, is named from Indonesian lima gigi, 'five teeth', for the teeth on the male's chelicerae.", s:"Takács-Vágó et al. 2026", d:"10.3897/zookeys.1293.190325", sp:"Canama limagigi" },
+    { t:"Canama wanita takes its name from the Indonesian word for 'woman', because the species is known only from females.", s:"Takács-Vágó et al. 2026", d:"10.3897/zookeys.1293.190325", sp:"Canama wanita" },
+  ],
+  "Capeyorkia": [
+    { t:"Capeyorkia was erected in 2016 for Thorell's 'Trite' vulpecula, after Richardson found that Trite does not occur on mainland Australia.", s:"Richardson 2016", d:"10.11646/zootaxa.4114.5.1", sp:"Capeyorkia vulpecula" },
+    { t:"Capeyorkia vulpecula, described by Thorell in 1881, was known only from its type specimen from Cape York when redescribed in 2016.", s:"Richardson 2016", d:"10.11646/zootaxa.4114.5.1", sp:"Capeyorkia vulpecula" },
+  ],
+  "Carrhotus": [
+    { t:"Even before maturity, male Carrhotus xanthogramma are heavier, more active and bolder than females of the same stage.", s:"Mezőfi et al. 2023", d:"10.1093/cz/zoac069", sp:"Carrhotus xanthogramma" },
+  ],
+  "Cocalus": [
+    { t:"Cocalus gibbosus stalks across other spiders' webs without sticking to their glue, yet it makes no deceptive vibrations, unlike Portia.", s:"Jackson 1990", d:"10.1080/03014223.1990.10422947", sp:"Cocalus gibbosus" },
+    { t:"Cocalus gibbosus moults and lays eggs on silk sheets spun against tree trunks, never building a typical enclosed salticid nest.", s:"Jackson 1990", d:"10.1080/03014223.1990.10422947", sp:"Cocalus gibbosus" },
+    { t:"Unlike seven web-signalling spartaeines, Cocalus gibbosus failed a trial-and-error escape test from an island in water.", s:"Cross & Jackson 2015", d:"10.1007/s10071-014-0819-z", sp:"Cocalus gibbosus" },
+    { t:"In lab tests, Cocalus stalking a web spider moved farther while simulated wind or struggling prey shook the web, masking its approach.", s:"Cerveira et al. 2003", d:"10.1080/03014223.2003.9518321" },
+  ],
+  "Coccorchestes": [
+    { t:"Coccorchestes ferreus, described in 1984 from one female collected in 1949, was the first of this New Guinea genus found in Australia.", s:"Griswold 1984", d:"https://britishspiders.org.uk/system/files/library/060402.pdf", sp:"Coccorchestes ferreus" },
+    { t:"Female Coccorchestes ferreus are about 3 mm long, with a pitted, armoured carapace and a shiny, hairless shield over the abdomen.", s:"Griswold 1984", d:"https://britishspiders.org.uk/system/files/library/060402.pdf", sp:"Coccorchestes ferreus" },
+  ],
+  "Colonus": [
+    { t:"In trials, Colonus puerperus never ate the ant-mimicking Peckhamia picata and seemed to class it as an ant early in the hunt.", s:"Durkee et al. 2011", d:"10.1603/EN11057", sp:"Colonus puerperus" },
+  ],
+  "Corythalia": [
+    { t:"Corythalia conferta has been found living in a potter wasp's mud pot and in a chamber of an organ-pipe wasp's clay nest.", s:"Giannotti 2022", d:"10.14295/bjs.v1i10.173", sp:"Corythalia conferta" },
+  ],
+  "Cosmophasis": [
+    { t:"Cosmophasis bitaeniata eats green tree ant larvae and mimics the ants' cuticular hydrocarbons; major workers ignored its cuticle extracts.", s:"Allan et al. 2002", d:"10.1023/a:1015249012493", sp:"Cosmophasis bitaeniata" },
+    { t:"Cosmophasis bitaeniata gets its ant-like scent by eating green ant larvae, so its chemical profile matches the colony it fed from.", s:"Elgar & Allan 2004", d:"10.1007/s00114-004-0507-y", sp:"Cosmophasis bitaeniata" },
+    { t:"In Cosmophasis umbratica, males reflect UV while females glow green under UV; blocking either signal disrupted courtship.", s:"Lim et al. 2007", d:"10.1126/science.1134254", sp:"Cosmophasis umbratica" },
+    { t:"Male Cosmophasis umbratica get UV colour from scales built as a chitin-air-chitin sandwich, which adds a second reflection peak near 385 nm.", s:"Land et al. 2007", d:"10.1098/rspb.2007.0328", sp:"Cosmophasis umbratica" },
+    { t:"Portia labiata, a spider-eating salticid, chose UV-reflecting male Cosmophasis umbratica over males with their UV filtered out.", s:"Bulbert et al. 2015", d:"10.1002/ece3.1419", sp:"Cosmophasis umbratica" },
+  ],
+  "Cyrba": [
+    { t:"Infrared video showed Cyrba algerina from Azerbaijan catching prey in complete darkness.", s:"Guseinov et al. 2004", d:"10.1080/03014223.2004.9518382", sp:"Cyrba algerina" },
+    { t:"Cyrba algerina, C. ocellata and C. simoni invade webs and find deceptive signals by trial and error, guided by the resident's reply.", s:"Jackson 2002", d:"10.1080/03014223.2002.9518294" },
+    { t:"Spiders were 56% of Cyrba algerina's prey in Azerbaijan, half of them oecobiids, which it also preferred in lab tests.", s:"Guseinov et al. 2004", d:"10.1080/03014223.2004.9518382", sp:"Cyrba algerina" },
+    { t:"Cyrba has a display found in no other salticid genus, which Jackson called 'quiver swim waving'.", s:"Jackson 1990", d:"10.1080/03014223.1990.10422593" },
+    { t:"In Portugal, Cyrba algerina from a site rich in Oecobius spiders was drawn to their scent; those from a site without oecobiids were not.", s:"Cerveira & Jackson 2011", d:"10.1007/s10164-010-0233-1", sp:"Cyrba algerina" },
+  ],
+  "Cytaea": [
+    { t:"In a survey of 99 islands off Australia, Cytaea was the richest salticid genus, with 16 species.", s:"Żabka et al. 2017", d:"10.1111/aen.12317" },
+    { t:"Two Cytaea species described in 2025, C. melete and C. telksinoe, are named after Muses of Greek mythology.", s:"Trębicki et al. 2025", d:"10.3853/j.2201-4349.77.2025.1926" },
+  ],
+  "Damoetas": [
+    { t:"Damoetas is the odd one out in the Australasian Ligonipedina: its relatives Ligonipes, Rhombonotus and Judalana share a flattened male palp.", s:"Maddison & Szűts 2019", d:"10.3897/zookeys.842.32970" },
+  ],
+  "Diolenius": [
+    { t:"On ginger leaves in New Guinea, Diolenius holds its very long first legs like fly wings and walks backwards like a fly.", s:"Żabka 1992", d:"https://britishspiders.org.uk/system/files/library/090103.pdf" },
+  ],
+  "Eris": [
+    { t:"Eris jumping spiders drink extrafloral nectar from partridge pea, and plants with resident jumping spiders set more seed.", s:"Ruhren & Handel 1999", d:"10.1007/s004420050780" },
+    { t:"A sublethal insecticide dose made Eris militaris personalities about 23% less consistent without changing average behaviour.", s:"Royauté et al. 2015", d:"10.1111/1365-2435.12413", sp:"Eris militaris" },
+  ],
+  "Euophrys": [
+    { t:"Euophrys omnisuperstes, 'standing above all', was described from the upper slopes of Everest and Makalu, its holotype from about 5,900 m.", s:"Wanless 1975", d:"https://britishspiders.org.uk/system/files/library/030505.pdf", sp:"Euophrys omnisuperstes" },
+    { t:"Small salticids found at 6,700 m on Everest in 1924 seem to be Euophrys omnisuperstes, though too damaged to confirm.", s:"Wanless 1975", d:"https://britishspiders.org.uk/system/files/library/030505.pdf", sp:"Euophrys omnisuperstes" },
+    { t:"Everest's high-altitude salticids feed on flies and springtails living on wind-blown plant debris, the end of a short food chain.", s:"Wanless 1975", d:"https://britishspiders.org.uk/system/files/library/030505.pdf" },
+  ],
+  "Euryattus": [
+    { t:"Females of a Queensland Euryattus species nest inside rolled-up leaves hung on silk; males court them with vibrations on the nest.", s:"Jackson et al. 1997", d:"10.1111/j.1469-7998.1997.tb05754.x" },
+    { t:"Portia fimbriata in Queensland lures Euryattus females out of their leaf nests by mimicking the courtship vibrations of Euryattus males.", s:"Jackson & Wilcox 1990", d:"10.1007/bf00171580" },
+    { t:"A Queensland Euryattus readily recognised an approaching Portia fimbriata as a predator; Jacksonoides queenslandicus did not.", s:"Jackson & Wilcox 1990", d:"10.1007/bf00171580" },
+  ],
+  "Evarcha": [
+    { t:"Evarcha culicivora, an East African species, feeds indirectly on vertebrate blood by choosing blood-fed female mosquitoes as prey.", s:"Jackson et al. 2005", d:"10.1073/pnas.0507398102", sp:"Evarcha culicivora" },
+    { t:"In Evarcha culicivora, eating blood-fed mosquitoes gives a spider an odour that makes it more attractive to the opposite sex.", s:"Cross et al. 2009", d:"10.1073/pnas.0904125106", sp:"Evarcha culicivora" },
+    { t:"Evarcha culicivora is drawn to human odour: in tests, adults and juveniles stayed longer near previously worn socks than unworn ones.", s:"Cross & Jackson 2011", d:"10.1098/rsbl.2010.1233", sp:"Evarcha culicivora" },
+    { t:"Male Evarcha culicivora have bright red faces; males facing a mirror image with the red hidden by eyeliner escalated less.", s:"Cross et al. 2020", d:"10.3758/s13420-020-00411-y", sp:"Evarcha culicivora" },
+    { t:"Some Evarcha arcuata rest at night hanging from a single silk thread fixed to vegetation overhead, rather than in a silk retreat.", s:"Rößler et al. 2021", d:"10.1186/s12983-021-00410-3", sp:"Evarcha arcuata" },
+    { t:"Of 1115 field prey records for Evarcha culicivora, 80% were mosquitoes, most of them females.", s:"Jackson et al. 2016", d:"10.1098/rsos.160584", sp:"Evarcha culicivora" },
+  ],
+  "Frewena": [
+    { t:"Male Frewena maculata have third legs far longer than the others, with a darker, fringed patella and tibia.", s:"Richardson 2013", d:"10.11646/zootaxa.3716.3.8", sp:"Frewena maculata" },
+    { t:"Frewena is named after its Northern Territory type locality, and its type species, F. maculata, means 'spotted' in Latin.", s:"Richardson 2013", d:"10.11646/zootaxa.3716.3.8", sp:"Frewena maculata" },
+  ],
+  "Frigga": [
+    { t:"In Chile, Frigga crocuta, a dominant local predator, made no attempt to attack warning-coloured milkweed bugs, even sharing a leaf shelter.", s:"Faúndez et al. 2016", d:"https://tb.plazi.org/GgServer/html/AA2E87E5FFFFEA6AFF0C6324C874C6C6", sp:"Frigga crocuta" },
+  ],
+  "Gelotia": [
+    { t:"A Sri Lankan Gelotia invades other spiders' webs, deceives the owner with specialised vibrations, then eats it.", s:"Jackson 1990", d:"10.1080/03014223.1990.10422946" },
+    { t:"Like Portia, a Sri Lankan Gelotia hangs up a dead leaf on which it rests and lays its eggs.", s:"Jackson 1990", d:"10.1080/03014223.1990.10422946" },
+  ],
+  "Grayenulla": [
+    { t:"Grayenulla, named for arachnologist Michael Gray, is known from dry semi-desert inland Queensland and WA, mostly from pitfall traps.", s:"Zabka 1992", d:"10.3853/j.0067-1975.44.1992.31" },
+    { t:"Grayenulla has three strong bristles jutting from the middle of the clypeus, and its third legs are the longest.", s:"Zabka 1992", d:"10.3853/j.0067-1975.44.1992.31" },
+  ],
+  "Habronattus": [
+    { t:"Habronattus pyrrithrix sees red via a retinal filter that shifts some green receptors to red, a mechanism unknown before in spiders.", s:"Zurek et al. 2015", d:"10.1016/j.cub.2015.03.033", sp:"Habronattus pyrrithrix" },
+    { t:"Courting Habronattus dossenus males pair each visual display with substrate vibrations: thumps, scrapes and buzzes.", s:"Elias et al. 2003", d:"10.1242/jeb.00634", sp:"Habronattus dossenus" },
+    { t:"Habronattus dossenus males mated more often courting on leaf litter, which carries their vibrations, than on rock or desert sand.", s:"Elias et al. 2004", d:"10.1242/jeb.01261", sp:"Habronattus dossenus" },
+    { t:"Habronattus pugillis males differ in face colour, setae and dance from one Arizona sky-island range to the next, driven by sexual selection.", s:"Masta & Maddison 2002", d:"10.1073/pnas.072493099", sp:"Habronattus pugillis" },
+    { t:"Sex chromosome-autosome fusions arose at least 8 times within Habronattus, a remarkable number for such a small clade.", s:"Maddison & Leduc-Robert 2013", d:"10.1111/evo.12109" },
+  ],
+  "Hasarius": [
+    { t:"Hasarius adansoni gauges depth from blur: one green-sensitive retinal layer always gets a defocused image; light colour alters its jumps.", s:"Nagata et al. 2012", d:"10.1126/science.1211667", sp:"Hasarius adansoni" },
+    { t:"Hasarius adansoni uses its dragline mid-jump to correct body pitch; without silk, spiders landing upright slipped or tumbled.", s:"Chen et al. 2013", d:"10.1098/rsif.2013.0572", sp:"Hasarius adansoni" },
+    { t:"Hasarius adansoni learned to avoid coloured papers paired with heat, telling blue, green, yellow and red apart, apparently by hue.", s:"Nakamura & Yamashita 2000", d:"10.1007/s003590000143", sp:"Hasarius adansoni" },
+  ],
+  "Heliophanus": [
+    { t:"Heliophanus termitophagus eats termites in the wild but accepts a broader range of prey in the lab, making it a 'euryphagous specialist'.", s:"Michálek et al. 2021", d:"10.1636/JoA-S-20-060", sp:"Heliophanus termitophagus" },
+    { t:"Heliophanus cupreus and H. flavipes fed a lipid-rich diet survived better and then preferred aphids over spider prey.", s:"Řezáč et al. 2026", d:"10.1093/ee/nvaf135" },
+  ],
+  "Helpis": [
+    { t:"Tested in darkness, Helpis minitabunda kept a roughly straight path through a maze by alternating left and right turns.", s:"Taylor 1995", d:"10.46867/c42c7k", sp:"Helpis minitabunda" },
+    { t:"Helpis minitabunda exposed to field doses of the insecticide imidacloprid took over twice as long to handle prey and killed fewer.", s:"Rajan-Sheela & Wignall 2026", d:"10.1093/jee/toag243", sp:"Helpis minitabunda" },
+  ],
+  "Holoplatys": [
+    { t:"In a New Zealand Holoplatys, well-fed spiders never killed displaying conspecifics but often ate ones that failed to display.", s:"Jackson & Harding 1982", d:"10.1080/03014223.1982.10423881" },
+    { t:"A New Zealand Holoplatys has about 27 major displays, a repertoire the authors called unusually large and complex for a salticid.", s:"Jackson & Harding 1982", d:"10.1080/03014223.1982.10423881" },
+  ],
+  "Hyllus": [
+    { t:"Hyllus diardi, H. semicupreus and H. treleaveni have all been recorded preying on vertebrates, rare among jumping spiders.", s:"Nyffeler et al. 2025", d:"10.1636/joa-s-23-034" },
+    { t:"Hyllus treleaveni is the largest jumping spider in Africa.", s:"Wesołowska & Cumming 2004", d:"10.3161/0003454043598177", sp:"Hyllus treleaveni" },
+  ],
+  "Jacksonoides": [
+    { t:"Jacksonoides queenslandicus is the salticid Portia fimbriata most often eats in Queensland; Portia knows it partly by its big front eyes.", s:"Harland & Jackson 2000", d:"10.1242/jeb.203.22.3485", sp:"Jacksonoides queenslandicus" },
+    { t:"Jacksonoides queenslandicus catches prey in the webs of other spiders, and females were seen eating each other's eggs.", s:"Jackson 1988", d:"10.1080/03014223.1988.10422606", sp:"Jacksonoides queenslandicus" },
+  ],
+  "Jotus": [
+    { t:"Male Jotus remus wave a bristly paddle on leg III over the edge of a leaf to lure a female on the far side; it is not used face to face.", s:"Otto & Hill 2016", d:"10.5281/zenodo.7173033", sp:"Jotus remus" },
+    { t:"Jotus remus is named from the Latin for oar, after the flat paddle of long setae at the end of each male third leg.", s:"Otto & Hill 2016", d:"10.5281/zenodo.7173033", sp:"Jotus remus" },
+  ],
+  "Judalana": [
+    { t:"Adult Judalana lutea resemble the ant Opisthopsis rufithorax, but its hatchlings look like small black ants until a few moults later.", s:"Rix 1999", d:"https://www.biodiversitylibrary.org/page/40168538", sp:"Judalana lutea" },
+    { t:"A Judalana lutea female guards her orange eggs inside a folded leaf until they hatch, after which she dies.", s:"Rix 1999", d:"https://www.biodiversitylibrary.org/page/40168538", sp:"Judalana lutea" },
+    { t:"Judalana was named by its describer, Michael Rix, after his parents, Judy and Alan.", s:"Rix 1999", d:"https://www.biodiversitylibrary.org/page/40168538" },
+  ],
+  "Ligonipes": [
+    { t:"Ligonipes illustris belongs to Australia's golden mimicry complex: at least 140 gold-bodied, ant-like species from four arthropod orders.", s:"Pekar et al. 2017", d:"10.7554/eLife.22089", sp:"Ligonipes illustris" },
+  ],
+  "Lyssomanes": [
+    { t:"In Lyssomanes viridis contests, the male with longer chelicerae usually wins; male chelicerae grow with strong positive allometry.", s:"Tedore & Johnsen 2012", d:"10.1016/j.beproc.2011.10.017", sp:"Lyssomanes viridis" },
+    { t:"Lyssomanes viridis finds its leafy perch by light level and leaf brightness, not by the star shape or green of its sweetgum host.", s:"Tedore & Johnsen 2016", d:"10.1242/jeb.129122", sp:"Lyssomanes viridis" },
+    { t:"Female pheromones speed up male Lyssomanes viridis in recognising images of their own species.", s:"Tedore & Johnsen 2013", d:"10.1242/jeb.071118", sp:"Lyssomanes viridis" },
+  ],
+  "Maddisonia": [
+    { t:"Maddisonia, named for salticid authority Wayne Maddison, holds tiny spiders under 3 mm long with a large, corkscrew-like embolus.", s:"Zabka 2014", d:"10.3853/j.2201-4349.66.2014.1599" },
+    { t:"Maddisonia berbekai honours Polish mountaineer Maciej Berbeka, who died in 2013 during a pioneering winter ascent of Broad Peak.", s:"Zabka 2014", d:"10.3853/j.2201-4349.66.2014.1599", sp:"Maddisonia berbekai" },
+  ],
+  "Maevia": [
+    { t:"Maevia inclemens has two male forms: a tufted male that stilts and waves about 9 cm from a female, and a grey male that sidles at 3 cm.", s:"Clark & Morjan 2001", d:"10.1098/rspb.2001.1819", sp:"Maevia inclemens" },
+    { t:"Maevia inclemens females carry two separate recognition templates, one for each male form, though both forms look the same size to her.", s:"Clark & Uetz 1993", d:"10.1073/pnas.90.24.11954", sp:"Maevia inclemens" },
+    { t:"Courting grey males of Maevia inclemens are spotted by Phidippus audax from farther away than tufted males.", s:"Clark et al. 2018", d:"10.1636/JoA-S-16-029R2.1", sp:"Maevia inclemens" },
+    { t:"Maevia eureka, described from early-mid Miocene amber in Mexico, is the first known fossil of the genus.", s:"Riquelme & Menéndez-Acuña 2017", d:"10.7717/peerj.3614", sp:"Maevia eureka" },
+  ],
+  "Maratus": [
+    { t:"Super-black patches on male Maratus speciosus and M. karrie reflect under 0.5% of light, helped by tightly packed cuticular microlens bumps.", s:"McCoy et al. 2019", d:"10.1098/rspb.2019.0589", sp:["Maratus speciosus","Maratus karrie"] },
+    { t:"The rainbow scales of Maratus robinsoni and M. chrysomelas carry nanogratings on curved surfaces that split light into the full spectrum.", s:"Hsiung et al. 2017", d:"10.1038/s41467-017-02451-x", sp:["Maratus robinsoni","Maratus chrysomelas"] },
+    { t:"Maratus splendens has the fastest jump acceleration yet measured in a jumping spider; leg III powers the jump and features in courtship.", s:"Narendra et al. 2025", d:"10.1242/jeb.249416", sp:"Maratus splendens" },
+    { t:"Male Maratus volans pair their dance with substrate vibrations; mating success depended on both the visual and the vibratory display.", s:"Girard et al. 2015", d:"10.1098/rspb.2015.2222", sp:"Maratus volans" },
+    { t:"In Maratus splendens the blue scales have no pigment and are coloured by structure, while its white, cream and red scales are pigmentary.", s:"Stavenga et al. 2016", d:"10.1098/rsif.2016.0437", sp:"Maratus splendens" },
+    { t:"Maratus griseus tracked glossy moving targets less precisely than matte ones, and its attack jumps at glossy targets were far less accurate.", s:"Franklin et al. 2024", d:"10.1016/j.cub.2024.09.066", sp:"Maratus griseus" },
+  ],
+  "Marpissa": [
+    { t:"In Marpissa muscosa the tiny posterior median eyes feed straight to the arcuate body, suggesting they do not detect movement.", s:"Steinhoff et al. 2020", d:"10.1002/cne.24861", sp:"Marpissa muscosa" },
+    { t:"On a treadmill, Marpissa muscosa needed its tracheae only at top running speed, when they boosted aerobic metabolism.", s:"Schmitz 2005", d:"10.1242/jeb.01497", sp:"Marpissa muscosa" },
+  ],
+  "Megaloastia": [
+    { t:"Megaloastia mainae spends most of its time on downward-facing surfaces of large rocks; its long legs may suit rapid running upside down.", s:"Soley et al. 2016", d:"10.1080/03014223.2015.1122639", sp:"Megaloastia mainae" },
+  ],
+  "Menemerus": [
+    { t:"Menemerus semilimbatus was the first invertebrate shown to tell biological motion from random motion in point-light displays.", s:"De Agrò et al. 2021", d:"10.1371/journal.pbio.3001172", sp:"Menemerus semilimbatus" },
+    { t:"With other eyes masked, Menemerus semilimbatus told biological from random motion only when its anterior lateral eyes could see.", s:"De Agrò et al. 2024", d:"10.1242/jeb.247061", sp:"Menemerus semilimbatus" },
+    { t:"Menemerus females guarding hatchlings abandoned them more often when they saw ants or ant-like Myrmarachne melanotarsa, a brood predator.", s:"Nelson & Jackson 2009", d:"10.1098/rsbl.2009.0355" },
+  ],
+  "Mopsus": [
+    { t:"Mopsus mormon males court females outside nests visually but inside nests by non-visual signals, and cohabit beside subadult females.", s:"Jackson 1983", d:"10.1071/ZO9830039", sp:"Mopsus mormon" },
+  ],
+  "Myrmaplata": [
+    { t:"Myrmaplata plataleoides mimics weaver ants but avoids touching them; a group of its model ants was photographed killing a female in India.", s:"Ramachandra & Hill 2018", d:"https://peckhamia.com/peckhamia/PECKHAMIA_174.1.pdf", sp:"Myrmaplata plataleoides" },
+  ],
+  "Myrmarachne": [
+    { t:"Myrmarachne males, with their long jaws, appear to mimic an ant carrying something in its mandibles rather than a plain worker ant.", s:"Nelson & Jackson 2006", d:"10.1098/rspb.2005.3340" },
+    { t:"Myrmarachne formicaria walks on all eight legs, raising its forelegs like antennae only when stopped, and follows winding, ant-like paths.", s:"Shamble et al. 2017", d:"10.1098/rspb.2017.0308", sp:"Myrmarachne formicaria" },
+    { t:"Myrmarachne melanotarsa lives in silk nest complexes that can hold over 50 individuals, often shared with other jumping spiders.", s:"Jackson et al. 2008", d:"10.1080/03014220809510118", sp:"Myrmarachne melanotarsa" },
+    { t:"Myrmarachne melanotarsa preys on eggs and young of ant-wary salticids; Menemerus mothers often abandoned their broods on seeing it.", s:"Nelson & Jackson 2009", d:"10.1098/rsbl.2009.0355", sp:"Myrmarachne melanotarsa" },
+    { t:"Seven Myrmarachne species jumped and caught prey less well than non-mimic salticids; narrower-bodied species fared worse.", s:"Hashimoto et al. 2020", d:"10.1038/s41598-020-75010-y" },
+  ],
+  "Naphrys": [
+    { t:"Naphrys pulex attacks ants head-on and prefers them even as motionless dead lures, without any prior experience of ants.", s:"Li et al. 1996", d:"10.1111/j.1469-7998.1996.tb05305.x", sp:"Naphrys pulex" },
+  ],
+  "Neon": [
+    { t:"Neon long stood alone as the only genus of its tribe, Neonini, until New Guinea's Papuaneon was shown to be its sister group in 2016.", s:"Maddison 2016", d:"10.11646/zootaxa.4200.3.9" },
+  ],
+  "Ohilimia": [
+    { t:"Ohilimia scutellata is listed in Australia's golden mimicry complex: at least 140 gold-bodied, ant-like species from four arthropod orders.", s:"Pekar et al. 2017", d:"10.7554/eLife.22089", sp:"Ohilimia scutellata" },
+  ],
+  "Orsima": [
+    { t:"Orsima ichneumon is a reverse mimic: its abdomen tip and long, mobile spinnerets look like an insect's head with antennae.", s:"Żabka 1992", d:"https://britishspiders.org.uk/system/files/library/090103.pdf", sp:"Orsima ichneumon" },
+    { t:"Orsima is known from both West-Central Africa and Malaya, a split range Żabka thought reflects an ancient range broken up.", s:"Żabka 1992", d:"https://britishspiders.org.uk/system/files/library/090103.pdf" },
+  ],
+  "Papuaneon": [
+    { t:"Papuaneon, described from Papua New Guinea in 2016, is the sister group of Neon; its Australian species run from Cape York to Tasmania.", s:"Maddison 2016", d:"10.11646/zootaxa.4200.3.9" },
+  ],
+  "Paracyrba": [
+    { t:"Paracyrba wanlessi lives inside hollow internodes of fallen bamboo and hunts mosquito larvae, pupae and adults.", s:"Jackson et al. 2014", d:"10.1098/rsos.140131", sp:"Paracyrba wanlessi" },
+    { t:"Paracyrba wanlessi chooses mosquitoes over other prey in or out of water, even when raised on a diet without mosquitoes.", s:"Jackson et al. 2014", d:"10.1098/rsos.140131", sp:"Paracyrba wanlessi" },
+  ],
+  "Paraphidippus": [
+    { t:"Paraphidippus cf. aurantius has been seen attacking a bird hatchling that weighed about 4-6 times as much as the spider.", s:"Nyffeler et al. 2021", d:"10.1636/joa-s-20-090", sp:"Paraphidippus aurantius" },
+  ],
+  "Paraplatoides": [
+    { t:"Paraplatoides looks like 'near Platoides', but its author said the name is a random combination of letters.", s:"Zabka 1992", d:"10.3853/j.0067-1975.44.1992.31" },
+    { t:"Grass-dwelling Paraplatoides have cryptic colours, strongly elongate flat bodies and well-developed, oxyopid-like spines on the first legs.", s:"Zabka 1992", d:"10.3853/j.0067-1975.44.1992.31" },
+  ],
+  "Peckhamia": [
+    { t:"Peckhamia picata is also spared by ants and spider-hunting wasps that hunt by smell, though it does not smell like its model ant.", s:"Uma et al. 2013", d:"10.1371/journal.pone.0079660", sp:"Peckhamia picata" },
+    { t:"The ant mimic Peckhamia picata was eaten by predatory salticids less than a third as often as non-mimic jumping spiders.", s:"Durkee et al. 2011", d:"10.1603/EN11057", sp:"Peckhamia picata" },
+  ],
+  "Pellenes": [
+    { t:"Pellenes tripunctatus overwinters in empty land-snail shells; one Czech shell held six together, five females and a male.", s:"Dzivakova et al. 2022", d:"10.3390/insects13100950", sp:"Pellenes tripunctatus" },
+  ],
+  "Phaeacius": [
+    { t:"Phaeacius neither stalks nor invades webs: it sits camouflaged on tree trunks and lunges down on passing insects.", s:"Jackson & Hallas 1986", d:"10.1080/03014223.1986.10422979" },
+    { t:"Phaeacius malayensis prefers spiders to insects, and other jumping spiders to other hunting spiders.", s:"Li 2000", d:"10.1139/z00-176", sp:"Phaeacius malayensis" },
+  ],
+  "Phidippus": [
+    { t:"Phidippus audax freezes at low-pitched sounds, and its brain neurons respond to them from over 3 m away, with no eardrums.", s:"Shamble et al. 2016", d:"10.1016/j.cub.2016.08.041", sp:"Phidippus audax" },
+    { t:"Phidippus regius can recognise individual spiders, losing interest in one it has met but re-engaging when shown a new one.", s:"Dahl & Cheng 2025", d:"10.7554/eLife.97146", sp:"Phidippus regius" },
+    { t:"Phidippus regius has been recorded eating frogs and anole lizards in Florida, more often than any other jumping spider.", s:"Nyffeler et al. 2025", d:"10.1636/joa-s-23-034", sp:"Phidippus regius" },
+    { t:"Moving retinae in salticid principal eyes were first described in Phidippus and Metaphidippus: saccades, tracking and scanning.", s:"Land 1969", d:"10.1242/jeb.51.2.471" },
+    { t:"The green sheen on Phidippus johnsoni chelicerae comes from a stack of 86 alternating air and chitin layers acting as a reflector.", s:"Ingram et al. 2011", d:"10.1016/j.asd.2010.07.006", sp:"Phidippus johnsoni" },
+    { t:"Phidippus audax can be raised from spiderling to adult on dead prey alone, though survival is lower than on live prey.", s:"Vickers et al. 2014", d:"10.1636/J13-31.1", sp:"Phidippus audax" },
+  ],
+  "Philaeus": [
+    { t:"Flies were half the prey of Philaeus chrysops in Azerbaijan, yet 15% of its catches were longer than the spider itself.", s:"Huseynov 2008", d:"10.13156/arac.2011.14.6.262", sp:"Philaeus chrysops" },
+  ],
+  "Phintella": [
+    { t:"Phintella vittata gave the first evidence of an animal using UVB in communication: females preferred males that reflect UVB.", s:"Li et al. 2008", d:"10.1016/j.cub.2008.04.020", sp:"Phintella vittata" },
+    { t:"Females of Phintella vittata and P. bifurcilinea have UV-fluorescent palps; males prefer glowing females, but so does a Portia predator.", s:"Zhou et al. 2025", d:"10.1111/1749-4877.12979", sp:["Phintella vittata","Phintella bifurcilinea"] },
+    { t:"Phintella piatensis lives among weaver ants without eating or mimicking them; mating spiders were safe from ants only with a nest.", s:"Nelson & Jackson 2009", d:"10.1080/00222930802610469", sp:"Phintella piatensis" },
+  ],
+  "Plexippus": [
+    { t:"Plexippus paykulli avoided striped prey, yet hiding males' facial stripes did not change how aggressively females met courting males.", s:"Humbel et al. 2023", d:"10.1016/j.anbehav.2023.08.006", sp:"Plexippus paykulli" },
+    { t:"Plexippus paykulli leapt at flies from farther away on a non-camouflaging background, and stalked more slowly when it was camouflaged.", s:"Bear & Hasson 1997", d:"10.1006/anbe.1997.0525", sp:"Plexippus paykulli" },
+  ],
+  "Portia": [
+    { t:"In tests, Portia africana told 1 prey from 2 and 2 from 3, but treated 3 or more as a single category, 'many'.", s:"Cross & Jackson 2017", d:"10.1098/rsfs.2016.0035", sp:"Portia africana" },
+    { t:"Queensland Portia fimbriata stalks jumping spiders with palps tucked, freezing when faced; the prey's big front eyes cue this tactic.", s:"Harland & Jackson 2000", d:"10.1242/jeb.203.22.3485", sp:"Portia fimbriata" },
+    { t:"Portia labiata detours to reach spitting spiders from behind, but may go straight at egg-carrying ones, whose eggs block their spit.", s:"Jackson et al. 2002", d:"10.1007/s10071-002-0150-y", sp:"Portia labiata" },
+    { t:"Queensland Portia fimbriata lures Euryattus females out of rolled-leaf nests with vibrations that mimic courting Euryattus males.", s:"Jackson & Wilcox 1990", d:"10.1007/BF00171580", sp:"Portia fimbriata" },
+    { t:"Portia stalking a web spider moves further while wind or other disturbance shakes the web, masking its own approach.", s:"Wilcox et al. 1996", d:"10.1006/anbe.1996.0031" },
+    { t:"Watched in the field, Portia fimbriata detours to web spiders kept the prey out of sight for a median 17 minutes.", s:"Jackson & Wilcox 1993", d:"10.1111/j.1469-7998.1993.tb02677.x", sp:"Portia fimbriata" },
+  ],
+  "Psecas": [
+    { t:"Psecas chapoda supplied 18% of the nitrogen of its host bromeliad, and plants with spiders grew leaves 15% longer.", s:"Romero et al. 2006", d:"10.1890/0012-9658(2006)87[803:BSIHPN]2.0.CO;2", sp:"Psecas chapoda" },
+    { t:"Psecas chapoda lives almost only on the bromeliad Bromelia balansae across a large geographic range in South America.", s:"Romero 2006", d:"10.1111/j.1744-7429.2006.00173.x", sp:"Psecas chapoda" },
+    { t:"Its bromeliad host sheltered Psecas chapoda from a wildfire, and the spider population was back to pre-fire levels in 5 months.", s:"de Omena et al. 2018", d:"10.1111/een.12497", sp:"Psecas chapoda" },
+  ],
+  "Pseudeuophrys": [
+    { t:"Pseudeuophrys lanigera jumps mainly with its long third legs and needs adhesive claw tufts to avoid slipping on smooth surfaces.", s:"Goetzke & Federle 2021", d:"10.1007/s00359-021-01466-6", sp:"Pseudeuophrys lanigera" },
+  ],
+  "Saitis": [
+    { t:"Saitis barbipes males court with red leg ornaments, yet microspectrophotometry finds no red photoreceptor in the species.", s:"Glenszczyk et al. 2021", d:"10.1007/s00114-021-01774-6", sp:"Saitis barbipes" },
+    { t:"Saitis barbipes females mated as readily with males whose red ornaments were painted black as with males painted red.", s:"Plate & Tedore 2025", d:"10.1007/s00114-024-01950-4", sp:"Saitis barbipes" },
+    { t:"A phylogenomic study found Saitis and the peacock spider genus Maratus intermixed, with each genus paraphyletic as defined.", s:"Girard et al. 2021", d:"10.1093/biolinnean/blaa165" },
+  ],
+  "Salticus": [
+    { t:"The zebra spider Salticus scenicus slows its stalk progressively as it closes on motionless prey.", s:"Dill 1975", d:"10.1139/z75-153", sp:"Salticus scenicus" },
+    { t:"In Salticus scenicus, book lungs or tracheae alone can meet resting oxygen needs, but peak activity needs both working together.", s:"Schmitz & Perry 2001", d:"10.1242/jeb.204.24.4321", sp:"Salticus scenicus" },
+  ],
+  "Sandalodes": [
+    { t:"Philaeus superciliosus, a jumping spider described from Germany in 1883, proved to be Sandalodes superbus, likely imported in dyewood.", s:"Breitling et al. 2016", d:"10.5431/aramit5209", sp:"Sandalodes superbus" },
+  ],
+  "Sarinda": [
+    { t:"Sarinda marcosi is a Batesian mimic of the carpenter ant Camponotus mus; a predatory salticid never caught one in trials.", s:"Hagopián et al. 2021", d:"10.1636/joa-s-19-069", sp:"Sarinda marcosi" },
+  ],
+  "Servaea": [
+    { t:"Unusually for a jumping spider, Servaea incana takes many ants: they make up a large share of its diet on eucalypt trunks.", s:"McGinley et al. 2015", d:"10.1071/ZO15032", sp:"Servaea incana" },
+    { t:"Servaea incana males often court females inside bark retreats visually, as the thin silk walls let the pair see each other.", s:"McGinley et al. 2015", d:"10.1071/ZO15032", sp:"Servaea incana" },
+    { t:"Most Servaea incana females mate once in their life, becoming unreceptive straight after their first copulation.", s:"Mendez et al. 2017", d:"10.1371/journal.pone.0184940", sp:"Servaea incana" },
+  ],
+  "Siler": [
+    { t:"Female Siler semiglaucus prefer males whose abdomen pattern has lower contrast, judging differences in proportion, as Weber's law predicts.", s:"Kwek et al. 2023", d:"10.1111/1365-2435.14400", sp:"Siler semiglaucus" },
+    { t:"Siler collingwoodi is an imperfect ant mimic: its gait matches several ant models and its colours help it blend into the background.", s:"Zeng et al. 2023", d:"10.1016/j.isci.2023.106747", sp:"Siler collingwoodi" },
+  ],
+  "Simaetha": [
+    { t:"Simaetha paetula and S. thoracica hunt like typical jumping spiders but also build large prey-catching webs.", s:"Jackson 1985", d:"10.1111/j.1469-7998.1985.tb00071.x", sp:"Simaetha paetula" },
+    { t:"Simaetha often lives inside colonies of the social spider Phryganoporus candidus, gleaning insects from the edges of their webs.", s:"Jackson 1985", d:"10.1111/j.1469-7998.1985.tb00071.x" },
+    { t:"An Australian Miocene fossil, 11-16 million years old, is a Simaetha: the first Miocene jumping spider described from a southern continent.", s:"Richardson et al. 2023", d:"10.1093/zoolinnean/zlad105" },
+  ],
+  "Spartaeus": [
+    { t:"Spartaeus spinimanus and S. thailandicus build large sheet webs on tree trunks and catch prey, especially moths, on or near them.", s:"Jackson & Pollard 1990", d:"10.1111/j.1469-7998.1990.tb04735.x" },
+  ],
+  "Stenaelurillus": [
+    { t:"Stenaelurillus guttiger and S. modestus eat almost only termites, and where they meet they specialise on different termite genera.", s:"Pekár et al. 2020", d:"10.1111/een.12914" },
+  ],
+  "Tauala": [
+    { t:"Tauala lepidus of north Queensland rainforest leaps or walks into other spiders' webs to catch the spiders and insects there.", s:"Jackson 1988", d:"10.1080/03014223.1988.10422960", sp:"Tauala lepidus" },
+    { t:"Tauala lepidus twitches its abdomen in courtship and contests, and also when it touches other spiders' webs while hunting them.", s:"Jackson 1988", d:"10.1080/03014223.1988.10422960", sp:"Tauala lepidus" },
+  ],
+  "Thiodina": [
+    { t:"Most species long called Thiodina were moved to Colonus and Nilakantha in 2015, once Thiodina's type species proved unrelated to them.", s:"Bustamante et al. 2015", d:"10.11646/zootaxa.4012.1.10" },
+  ],
+  "Thyene": [
+    { t:"A female Thyene imperialis in Israel was seen leaping into Cyclosa orb webs to catch the resident spiders.", s:"Jager 2012", d:"10.5431/aramit4302", sp:"Thyene imperialis" },
+  ],
+  "Toxeus": [
+    { t:"Toxeus magnus mothers secrete milk droplets from the epigastric furrow, and spiderlings drink it until the subadult stage.", s:"Chen et al. 2018", d:"10.1126/science.aat3692", sp:"Toxeus magnus" },
+    { t:"In Toxeus magnus, maternal care continues after offspring reach sexual maturity, a pattern otherwise known from long-lived vertebrates.", s:"Chen et al. 2018", d:"10.1126/science.aat3692", sp:"Toxeus magnus" },
+    { t:"Toxeus magnus mothers that raised and nursed young outlived both virgin females and mated females that gave no care.", s:"Jiang et al. 2024", d:"10.1016/j.isci.2024.110098", sp:"Toxeus magnus" },
+  ],
+  "Trite": [
+    { t:"Trite planiceps lives in rolled-up New Zealand flax leaves, and inside them in darkness signals by tapping legs I and vibrating its abdomen.", s:"Taylor & Jackson 1999", d:"10.1080/03014223.1999.9518184", sp:"Trite planiceps" },
+    { t:"Trite planiceps males find females hidden inside rolled-up flax leaves by following chemical cues on the females' draglines.", s:"Taylor 1998", d:"https://www.americanarachnology.org/journal-joa/joa-all-articles/article/download/JoA_v26_p330.pdf/?no_cache=1", sp:"Trite planiceps" },
+    { t:"Trite planiceps given caffeine kept responding to a repeated visual stimulus for longer than spiders given plain water.", s:"Humphrey et al. 2019", d:"10.1037/com0000203", sp:"Trite planiceps" },
+  ],
+  "Tutelina": [
+    { t:"Tutelina similis is an ant mimic that also feeds on ants.", s:"Wing 1983", d:"", sp:"Tutelina similis" },
+  ],
+  "Yamangalea": [
+    { t:"Yamangalea is named from 'yamangelé', the Ipili word for spider; Maddison first collected it on Ipili land in Papua New Guinea.", s:"Maddison 2009", d:"10.11646/zootaxa.2021.1.1" },
+    { t:"Apart from its large posterior median eyes and spartaeine-like gait, Yamangalea could pass in life for a typical euophryine.", s:"Maddison 2009", d:"10.11646/zootaxa.2021.1.1" },
+    { t:"Yamangalea lubinae was the first member of the Cocalodinae, an early-branching jumping spider group, found in Australia.", s:"Żabka 2012", d:"10.11646/zootaxa.3176.1.3", sp:"Yamangalea lubinae" },
+  ],
+  "Yllenus": [
+    { t:"Yllenus arenarius lives about two years (up to 770 days), the longest wild salticid lifespan known when reported in 2005.", s:"Bartos 2005", d:"10.1636/04-73.1", sp:"Yllenus arenarius" },
+    { t:"Yllenus arenarius forms two groups at one site, one breeding in odd years and one in even years, with little or no gene flow between.", s:"Bartos 2005", d:"10.1636/04-73.1", sp:"Yllenus arenarius" },
+    { t:"Yllenus arenarius burrows into loose dune sand and spins silk nests just below the surface for nights, moults, eggs and winter.", s:"Bartos 2002", d:"10.1636/0161-8202(2002)030[0275:TSSNOY]2.0.CO;2", sp:"Yllenus arenarius" },
+  ],
+  "Zenodorus": [
+    { t:"Three Australian Zenodorus species reared without ever meeting ants still chose ants over other insects and used ant-specific attacks.", s:"Jackson & Li 2001", d:"10.1080/03014223.2001.9518272" },
+    { t:"Three Australian Zenodorus species catch ants by ambush, by open pursuit, and by gleaning them from spider webs.", s:"Jackson & Li 2001", d:"10.1080/03014223.2001.9518272" },
+  ],
+  "Zygoballus": [
+    { t:"Zygoballus rufipes males come in two discrete sizes, apparently because they mature at two different instars.", s:"Faber 1994", d:"10.1111/j.1469-7998.1994.tb01568.x", sp:"Zygoballus rufipes" },
+  ],
+};
+// GENUS_LIT:end
+function litFact(name, sp = null) {
+  const L = (GENUS_LIT[name] || []).filter(f => !sp || !f.sp || [].concat(f.sp).includes(sp)); if (!L.length) return null;
+  const f = L[hash32(`${new Date().toDateString()}:${name}`) % L.length];
+  return ['📚', f.t, { s:f.s, href:/^10\./.test(f.d) ? `https://doi.org/${f.d}` : f.d }];
+}
 const SPOT_N = 12;
 function treeGroups() {
   const M = S.M, sc = scopeGenera(), ids = [...new Set([...sc.inScope, ...sc.extras])];
@@ -2546,6 +2940,7 @@ const treePh = id => { const g = S.M.G.get(id); return g?.cover ? { u:photoSize(
 function factsFor(id, name, never) {
   const out = [], f = ownFact(name), sc = scopeLabel(S.prefs.scope);
   if (f) out.push(['✍️', f]);
+  const lf = litFact(name); if (lf) out.push(lf);
   const syn = never && S.lore[name]?.syn;
   if (syn) out.push(['🏛', `Not on iNat under this name in Australia: the Atlas of Living Australia files it under ${syn}.`]);
   else if (never) out.push(['🏛', `Zero iNaturalist records in Australia so far.`]);
@@ -2583,7 +2978,7 @@ function spotCard(x) {
     : x.id && (wantedList() || []).some(w => w.id === x.id) ? `<button class="small" data-act="wanted" data-v="${x.id}">🧭 Where to look</button>` : '');
   return `<div class="spot"><a class="sph ${x.never && !ph ? 'plateph' : ''} ${ph?.plate ? 'vint' : ''}" ${go} style="${ph ? plateBg(ph) : ''}">${ph ? '' : x.never ? '<span>🏛</span>' : '<i class="sil"></i>'}</a>
     <div class="smeta"><div class="sk">DID YOU KNOW?</div><a class="snm" ${go}><i>${esc(x.n)}</i></a>${cn ? `<div class="small muted">${esc(cn)}</div>` : ''}
-      <ul class="sfacts">${fs.map(([i, t]) => `<li><span aria-hidden="true">${i}</span> ${esc(t)}</li>`).join('') || '<li class="muted">No records near you yet.</li>'}</ul>
+      <ul class="sfacts">${fs.map(([i, t, src]) => `<li><span aria-hidden="true">${i}</span> ${esc(t)}${src?.href ? ` <a class="src" href="${esc(src.href)}" target="_blank" rel="noopener" data-track="dyk-src">${esc(src.s)} ↗</a>` : ''}</li>`).join('') || '<li class="muted">No records near you yet.</li>'}</ul>
       ${extra}
       ${ph?.sp ? `<div class="small">Pictured: <i>${esc(ph.sp)}</i></div>` : ''}${ph?.cr ? `<div class="cr">${esc(ph.cr)}</div>` : ''}</div></div>`;
 }
@@ -2614,6 +3009,9 @@ function worldSpots() {
 }
 function worldFacts(id) {
   const W = S.ref.world, c = W?.g[id], ns = worldSpecies(id), home = S.M.home.country && S.ref['p' + S.M.home.country], wl = wikiLine(id), out = [];
+  const name = S.nodes[id]?.n || '', f = ownFact(name), lf = litFact(name);
+  if (f) out.push(['✍️', f]);
+  if (lf) out.push(lf);
   if (wl) out.push(['📖', wl]);
   if (c != null) out.push(['🌏', `${plural(c, 'iNat record')} worldwide${home ? `, none in ${S.places[S.M.home.country]?.n || 'your country'}` : ''}.`]);
   if (ns) out.push(['🧬', `${plural(ns, 'species', 'species')} on iNat.`]);
@@ -2651,7 +3049,8 @@ function weekSpots() {
   const W = S.dyk.week; if (!W) return null;
   return W.list.filter(x => !S.M.S.has(x.id)).slice(0, SPOT_N).map(x => {
     const c = S.ccph[x.id], ph = x.ph ? { u:x.ph, cr:x.cr } : c?.u ? { u:c.u, cr:c.cr } : null;
-    const g = x.anc.find(a => S.nodes[a]?.r === 'genus'), facts = [];
+    const g = x.anc.find(a => S.nodes[a]?.r === 'genus'), facts = [], lf = g && litFact(S.nodes[g]?.n, x.n);
+    if (lf) facts.push(lf);
     if (x.wl) facts.push(['📖', x.wl]);
     facts.push(['🔎', x.ever <= DYK_RARE ? `Only ${plural(x.ever, 'iNat record')}, ever.` : `${plural(x.ever, 'iNat record')} in all.`]);
     facts.push(['🆕', `${plural(x.wk, 'research-grade record')} uploaded this week.`]);
@@ -7947,6 +8346,9 @@ $('#loginInput').addEventListener('input', () => track('username-typed'), { once
 // What changed, newest first: shown once on Profile to returning players, and in full from Settings. The owner's rule (2026-10-13):
 // sections and views stay where they are; when something has to move, it gets a line here.
 const CHANGES = [
+  { v:'2.19', d:'2026-11-16', items:[
+    { h:'Lineage tree: Did you know? cards can show a fact from the scientific literature (📚) for 91 genera, with a link to the paper it comes from.' },
+  ] },
   { v:'2.18', d:'2026-11-12', items:[
     { h:'Crew: the feed comes first, with your crew\'s latest records as cards that open on iNaturalist so you can comment. Adding people is the small bar above it; events and the crew comparison sit below.' },
     { h:'Lineage tree: Did you know? can show genera from around the world or the rarest species new on iNat this week.' },
